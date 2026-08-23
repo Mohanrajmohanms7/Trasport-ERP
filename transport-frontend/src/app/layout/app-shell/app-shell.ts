@@ -2,6 +2,8 @@ import { Component, signal, computed, inject, HostListener, ViewChild, ElementRe
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { Subject, forkJoin, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, switchMap, catchError, takeUntil } from 'rxjs/operators';
 import { FfThemeService } from '../../shared-ui/infrastructure/services/ff-theme.service';
@@ -35,7 +37,7 @@ interface SearchHit {
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatMenuModule],
+  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule],
   templateUrl: './app-shell.html',
   styles: [`
     :host { display: block; height: 100%; }
@@ -57,6 +59,7 @@ export class AppShellComponent implements OnDestroy {
   private masterService = inject(MasterService);
   private bookingService = inject(BookingMgmtService);
   private tripService = inject(TripMgmtService);
+  private dialog = inject(MatDialog);
 
   @ViewChild('globalSearchInput') globalSearchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('paletteInput') paletteInput?: ElementRef<HTMLInputElement>;
@@ -375,13 +378,29 @@ export class AppShellComponent implements OnDestroy {
   }
 
   logout() {
-    if (!confirm('Are you sure you want to sign out?')) return;
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      width: '380px',
+      data: {
+        title: 'Sign Out Confirm',
+        message: 'Are you sure you want to end your current session and sign out of FleetFlow ERP?',
+        confirmText: 'Sign Out',
+        cancelText: 'Cancel',
+        type: 'danger'
+      }
+    });
 
-    this.auth.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: () => {
-        this.auth.clearLocalSession();
-        this.router.navigate(['/login']);
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.auth.logout().subscribe({
+          next: () => {
+            this.auth.clearLocalSession();
+            this.router.navigate(['/login']);
+          },
+          error: () => {
+            this.auth.clearLocalSession();
+            this.router.navigate(['/login']);
+          }
+        });
       }
     });
   }

@@ -42,6 +42,10 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
   imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatInputModule, MatIconModule, MatTabsModule],
   templateUrl: './profile.html',
   styles: [`
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -49,6 +53,9 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
     @keyframes scaleIn {
       from { opacity: 0; transform: scale(0.95); }
       to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease forwards;
     }
     .animate-fade-in-up {
       animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -103,6 +110,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   avatarBase64 = signal<string | null>(null);
+  previewAvatar = signal<string | null>(null);
 
   initForms() {
     this.profileForm = this.fb.group({
@@ -235,10 +243,23 @@ export class UserProfileComponent implements OnInit {
       const reader = new FileReader();
       reader.onload = () => {
         const base64String = reader.result as string;
-        this.avatarBase64.set(base64String);
-        this.saveProfile(); // Auto-save after photo update
+        this.previewAvatar.set(base64String);
+        input.value = ''; // Clear file input
       };
       reader.readAsDataURL(file);
+    }
+  }
+
+  cancelPreview() {
+    this.previewAvatar.set(null);
+  }
+
+  savePreview() {
+    const img = this.previewAvatar();
+    if (img) {
+      this.avatarBase64.set(img);
+      this.previewAvatar.set(null);
+      this.saveProfile();
     }
   }
 

@@ -173,4 +173,31 @@
     </div>
 
   </main>
+
+  <!-- Avatar Preview Modal -->
+  @if (previewAvatar()) {
+    <div class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div class="w-[360px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-6 animate-scale-in">
+        <div class="flex flex-col items-center gap-1 text-center">
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Avatar Preview</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Review your profile picture before saving.</p>
+        </div>
+
+        <div class="w-40 h-40 rounded-full overflow-hidden border-4 border-blue-500 shadow-md flex items-center justify-center bg-slate-100 dark:bg-slate-950">
+          <img [src]="previewAvatar()" class="w-full h-full object-cover">
+        </div>
+
+        <div class="flex gap-3 w-full">
+          <button type="button" (click)="cancelPreview()"
+                  class="flex-1 h-10 border border-slate-250 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-lg text-xs cursor-pointer transition">
+            Cancel
+          </button>
+          <button type="button" (click)="savePreview()"
+                  class="flex-1 h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs cursor-pointer shadow-sm transition">
+            Save Photo
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>
