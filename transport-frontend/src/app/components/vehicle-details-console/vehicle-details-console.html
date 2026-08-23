@@ -11,182 +11,323 @@
     </div>
   </header>
 
-  <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <!-- Main workspace layouts -->
+  <div class="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto pr-1">
 
-    <!-- Vehicle selector — required before documents / workshop / driver logs -->
-    <div class="px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800" [formGroup]="vehicleSelectForm">
-      <div class="max-w-md">
-        <ff-dropdown
-          formControlName="vehicleId"
-          label="Select Vehicle"
-          [options]="vehicleOptions"
-          [required]="true"
-          searchPlaceholder="Search vehicle code or name..." />
+    <!-- Top Control Grid -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
+      <!-- Left: Vehicle Selection Card -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <span class="material-icons">local_shipping</span>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Vehicle Scope</h3>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500">Select active vehicle from fleet</p>
+          </div>
+        </div>
+        <div [formGroup]="vehicleSelectForm">
+          <ff-dropdown
+            formControlName="vehicleId"
+            label="Select Vehicle"
+            [options]="vehicleOptions"
+            [required]="true"
+            searchPlaceholder="Search vehicle code or name..." />
+        </div>
+        @if (selectedVehicle()) {
+          <div class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800/80 rounded-lg">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+              Selected: <span class="text-slate-900 dark:text-white">{{ selectedVehicle()?.code }}</span>
+            </span>
+          </div>
+        }
       </div>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Working on:
-        <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedVehicleLabel() }}</span>
-      </p>
-    </div>
-    
-    <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button (click)="activeTab.set('documents')" [class.border-b-2]="activeTab() === 'documents'" [class.border-blue-600]="activeTab() === 'documents'" [class.text-slate-900]="activeTab() === 'documents'" [class.dark:text-white]="activeTab() === 'documents'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
-        Registration & Expiry Documents
-      </button>
-      <button (click)="activeTab.set('maintenance')" [class.border-b-2]="activeTab() === 'maintenance'" [class.border-blue-600]="activeTab() === 'maintenance'" [class.text-slate-900]="activeTab() === 'maintenance'" [class.dark:text-white]="activeTab() === 'maintenance'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
-        Workshop & Service Logs
-      </button>
-      <button (click)="activeTab.set('driver')" [class.border-b-2]="activeTab() === 'driver'" [class.border-blue-600]="activeTab() === 'driver'" [class.text-slate-900]="activeTab() === 'driver'" [class.dark:text-white]="activeTab() === 'driver'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
-        Driver Assignments Log
-      </button>
-    </div>
 
-    <!-- Tab Viewports -->
-    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
-      
-      <!-- 1. Documents Tab Viewport -->
-      @if (activeTab() === 'documents') {
-        <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Active Expiry Documents</span>
-          <button (click)="openDocEditor()" [disabled]="!vehicleId()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-            <span class="material-icons text-sm">upload_file</span> Register Document
-          </button>
-        </div>
+      <!-- Right: Vehicle Specifications Card -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-center min-h-[160px]">
+        @if (selectedVehicle()) {
+          <div class="flex flex-col gap-4 h-full justify-between">
+            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-800/85 pb-2">
+              <div>
+                <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Fleet Specifications</span>
+                <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                  {{ selectedVehicle()?.name || 'Unnamed Vehicle' }}
+                </h2>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
+                {{ selectedVehicle()?.ownerType || 'OWNED' }}
+              </span>
+            </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-                <th class="p-4">Document Type</th>
-                <th class="p-4">Document Number</th>
-                <th class="p-4">Expiration Date</th>
-                <th class="p-4">File Path Reference</th>
-                <th class="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (doc of documents(); track doc.docNumber) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-bold text-slate-900 dark:text-white">{{ doc.docType }}</td>
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ doc.docNumber }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ doc.expiryDate }}</td>
-                  <td class="p-4 text-slate-500 font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
-                  <td class="p-4 text-center">
-                    <button (click)="deleteDocument(doc)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete Document">
-                      <span class="material-icons text-sm">delete</span>
-                    </button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No active documents registered yet.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Brand / Model</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.brand || '-' }} / {{ selectedVehicle()?.model || '-' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Chassis Number</span>
+                <span class="font-mono font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.chassisNumber || '-' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Engine Number</span>
+                <span class="font-mono font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.engineNumber || '-' }}</span>
+              </div>
+              <div class="flex flex-col gap-0.5">
+                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Owner Name</span>
+                <span class="font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.ownerName || '-' }}</span>
+              </div>
+            </div>
 
-      <!-- 2. Maintenance Logs Tab Viewport -->
-      @if (activeTab() === 'maintenance') {
-        <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Workshop Repairs History</span>
-          <button (click)="openMaintenanceEditor()" [disabled]="!vehicleId()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-            <span class="material-icons text-sm">build</span> Log Workshop Entry
-          </button>
-        </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="material-icons text-slate-400 text-base">event</span>
+                <div class="flex flex-col">
+                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Purchase Date</span>
+                  <span class="font-semibold text-slate-700 dark:text-slate-300">{{ selectedVehicle()?.purchaseDate || 'N/A' }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="material-icons text-slate-400 text-base">verified_user</span>
+                <div class="flex flex-col">
+                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Insurance Expiry</span>
+                  <span class="font-semibold text-slate-750 dark:text-slate-300">{{ selectedVehicle()?.insuranceExpiryDate || 'N/A' }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="material-icons text-slate-400 text-base">assignment_turned_in</span>
+                <div class="flex flex-col">
+                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Permit Expiry</span>
+                  <span class="font-semibold text-slate-750 dark:text-slate-300">{{ selectedVehicle()?.permitExpiryDate || 'N/A' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="flex flex-col items-center justify-center text-center p-4">
+            <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-950/60 flex items-center justify-center text-slate-400 dark:text-slate-650 mb-2">
+              <span class="material-icons">info_outline</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300">No Vehicle Selected</h4>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mt-0.5">Select a vehicle on the left to display its full specification dashboard</p>
+          </div>
+        }
+      </div>
+    </section>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-                <th class="p-4">Repair Type</th>
-                <th class="p-4">Workshop</th>
-                <th class="p-4">Service Date</th>
-                <th class="p-4">Next Due Date</th>
-                <th class="p-4 text-right">Cost (INR)</th>
-                <th class="p-4">Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (log of maintenanceLogs(); track log.serviceDate) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-bold text-slate-900 dark:text-white">{{ log.serviceType }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ log.workshop }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ log.serviceDate }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ log.nextServiceDate || 'N/A' }}</td>
-                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ log.cost | number }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-450 leading-relaxed max-w-xs overflow-hidden text-ellipsis">{{ log.remarks || '-' }}</td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No maintenance log records found.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-
-      <!-- 3. Driver Assignments Tab Viewport -->
-      @if (activeTab() === 'driver') {
-        <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Active Driver Assignments Logs</span>
-          <div class="flex items-center gap-2">
-            <button (click)="unassignDriver()" [disabled]="!vehicleId()" class="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 disabled:opacity-50 disabled:cursor-not-allowed text-slate-900 dark:text-white font-semibold py-2 px-4 rounded-lg shadow border border-slate-200 dark:border-slate-700 transition text-xs">
-              Unassign Current Driver
+    <!-- Bottom console detail tables -->
+    <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+      @if (selectedVehicle()) {
+        <!-- Segmented Tab switcher capsule -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 px-6 py-4 shrink-0 select-none bg-slate-50/50 dark:bg-slate-900/10">
+          <div class="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl gap-1">
+            <button type="button" (click)="activeTab.set('documents')" 
+                    [class]="activeTab() === 'documents' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">assignment</span> Documents
             </button>
-            <button [matMenuTriggerFor]="driverSelectMenu" [disabled]="!vehicleId()" class="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-              Assign Active Driver
+            <button type="button" (click)="activeTab.set('maintenance')" 
+                    [class]="activeTab() === 'maintenance' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">build</span> Workshop Logs
             </button>
-            <mat-menu #driverSelectMenu="matMenu" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-              @for (drv of drivers(); track drv.id) {
-                <button mat-menu-item (click)="assignDriver(drv.id)" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  {{ drv.name }} ({{ drv.licenseNumber || drv.code }})
-                </button>
-              }
-            </mat-menu>
+            <button type="button" (click)="activeTab.set('driver')" 
+                    [class]="activeTab() === 'driver' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">person</span> Assignments
+            </button>
           </div>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-                <th class="p-4">Assignment Date</th>
-                <th class="p-4">Driver Code/ID</th>
-                <th class="p-4">Status</th>
-                <th class="p-4">Removal Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (asg of assignments(); track asg.assignmentDate) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ asg.assignmentDate }}</td>
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">DRIVER #{{ asg.driverId }}</td>
-                  <td class="p-4">
-                    <span [class.bg-emerald-50]="!asg.removalDate" [class.dark:bg-emerald-950]="!asg.removalDate" [class.text-emerald-700]="!asg.removalDate" [class.dark:text-emerald-400]="!asg.removalDate"
-                          [class.bg-slate-100]="asg.removalDate" [class.dark:bg-slate-950]="asg.removalDate" [class.text-slate-500]="asg.removalDate"
-                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-850">
-                      {{ asg.removalDate ? 'INACTIVE' : 'ACTIVE' }}
-                    </span>
-                  </td>
-                  <td class="p-4 text-slate-600 dark:text-slate-450">{{ asg.removalDate || 'Current Duty' }}</td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="4" class="p-8 text-center text-slate-500 font-semibold">No driver assignments logged yet.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <!-- Tab Viewports -->
+        <div class="flex-1 min-h-0 p-6 overflow-y-auto flex flex-col gap-4">
+          
+          <!-- 1. Documents Tab Viewport -->
+          @if (activeTab() === 'documents') {
+            <div class="flex justify-between items-center shrink-0">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Registration & Expiry Documents</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-550">Upload and keep track of vital vehicle license papers</p>
+              </div>
+              <button (click)="openDocEditor()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+                <span class="material-icons text-sm">upload_file</span> Register Document
+              </button>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                    <th class="p-4">Document Type</th>
+                    <th class="p-4">Document Number</th>
+                    <th class="p-4">Expiration Date</th>
+                    <th class="p-4">File Reference</th>
+                    <th class="p-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (doc of documents(); track doc.docNumber) {
+                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
+                      <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30 uppercase tracking-wider">
+                          {{ doc.docType }}
+                        </span>
+                      </td>
+                      <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-bold">{{ doc.docNumber }}</td>
+                      <td class="p-4 text-slate-750 dark:text-slate-300 font-semibold">{{ doc.expiryDate }}</td>
+                      <td class="p-4 text-slate-400 font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
+                      <td class="p-4 text-center">
+                        <button (click)="deleteDocument(doc)" class="p-1.5 text-slate-400 hover:text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition duration-200 border-none bg-transparent cursor-pointer" title="Delete Document">
+                          <span class="material-icons text-base">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="p-12 text-center text-slate-400 font-semibold">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">description</span>
+                          <span class="text-xs text-slate-400 dark:text-slate-600">No active documents registered for this vehicle.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- 2. Maintenance Logs Tab Viewport -->
+          @if (activeTab() === 'maintenance') {
+            <div class="flex justify-between items-center shrink-0">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Workshop Repairs History</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-550">Track workshop logs, parts replaced, and maintenance expenses</p>
+              </div>
+              <button (click)="openMaintenanceEditor()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+                <span class="material-icons text-sm">build</span> Log Workshop Entry
+              </button>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                    <th class="p-4">Repair Type</th>
+                    <th class="p-4">Workshop</th>
+                    <th class="p-4">Service Date</th>
+                    <th class="p-4">Next Due Date</th>
+                    <th class="p-4 text-right">Cost (INR)</th>
+                    <th class="p-4">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (log of maintenanceLogs(); track log.serviceDate) {
+                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
+                      <td class="p-4 font-bold text-slate-900 dark:text-white">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/30 uppercase tracking-wider">
+                          {{ log.serviceType }}
+                        </span>
+                      </td>
+                      <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ log.workshop }}</td>
+                      <td class="p-4 text-slate-650 dark:text-slate-350">{{ log.serviceDate }}</td>
+                      <td class="p-4 text-slate-650 dark:text-slate-350">{{ log.nextServiceDate || 'N/A' }}</td>
+                      <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ log.cost | number }}</td>
+                      <td class="p-4 text-slate-600 dark:text-slate-450 leading-relaxed max-w-xs overflow-hidden text-ellipsis">{{ log.remarks || '-' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="p-12 text-center text-slate-400 font-semibold">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">build</span>
+                          <span class="text-xs text-slate-400 dark:text-slate-600">No maintenance log records found for this vehicle.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- 3. Driver Assignments Tab Viewport -->
+          @if (activeTab() === 'driver') {
+            <div class="flex justify-between items-center shrink-0">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Active Driver Assignments Logs</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-550">Assign primary drivers to this vehicle scope or review past duty handovers</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button (click)="unassignDriver()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold py-2 px-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-750 transition duration-200 text-xs cursor-pointer">
+                  Unassign Current Driver
+                </button>
+                <button [matMenuTriggerFor]="driverSelectMenu" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+                  Assign Active Driver
+                </button>
+                <mat-menu #driverSelectMenu="matMenu" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+                  @for (drv of drivers(); track drv.id) {
+                    <button mat-menu-item (click)="assignDriver(drv.id)" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {{ drv.name }} ({{ drv.licenseNumber || drv.code }})
+                    </button>
+                  }
+                </mat-menu>
+              </div>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                    <th class="p-4">Assignment Date</th>
+                    <th class="p-4">Driver Code/ID</th>
+                    <th class="p-4">Status</th>
+                    <th class="p-4">Removal Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (asg of assignments(); track asg.assignmentDate) {
+                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
+                      <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ asg.assignmentDate }}</td>
+                      <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-bold">DRIVER #{{ asg.driverId }}</td>
+                      <td class="p-4">
+                        <span [class.bg-emerald-50]="!asg.removalDate" [class.dark:bg-emerald-950/40]="!asg.removalDate" [class.text-emerald-700]="!asg.removalDate" [class.dark:text-emerald-450]="!asg.removalDate"
+                              [class.bg-slate-100]="asg.removalDate" [class.dark:bg-slate-950]="asg.removalDate" [class.text-slate-500]="asg.removalDate"
+                              class="px-2.5 py-0.5 rounded-full text-[9px] font-bold border border-slate-200 dark:border-slate-850 uppercase tracking-wide">
+                          {{ asg.removalDate ? 'INACTIVE' : 'ACTIVE' }}
+                        </span>
+                      </td>
+                      <td class="p-4 text-slate-600 dark:text-slate-450">{{ asg.removalDate || 'Current Duty' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="4" class="p-12 text-center text-slate-400 font-semibold">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">people</span>
+                          <span class="text-xs text-slate-400 dark:text-slate-600">No driver assignments logged yet for this vehicle.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Dynamic Illustrative Welcome Placeholder -->
+        <div class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/50 dark:bg-slate-900/10">
+          <div class="w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 animate-pulse">
+            <span class="material-icons text-4xl">local_shipping</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Welcome to Vehicle Workspace</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-455 max-w-sm mt-2 leading-relaxed">
+            Please select a vehicle from the top-left dropdown to inspect its official registration documents, view repair workshop logs, or assign active drivers.
+          </p>
         </div>
       }
-
-    </div>
-  </main>
+    </main>
+  </div>
 
   <!-- Slide-out Sidebar Form Editor for Documents -->
   @if (showDocEditor()) {
