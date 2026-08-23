@@ -1,0 +1,16 @@
+<div class="ff-toolbar">
+  @if (title()) {
+    <h2 class="ff-toolbar__title">{{ title() }}</h2>
+  }
+  <div class="ff-toolbar__actions">
+    <ng-content select="[ffToolbarActions]" />
+    @for (action of actions(); track action.id) {
+      <ff-button
+        [label]="action.label"
+        [icon]="action.icon || ''"
+        [variant]="action.variant || 'outline'"
+        [disabled]="!!action.disabled"
+        [permission]="action.permission || ''" />
+    }
+  </div>
+</div>

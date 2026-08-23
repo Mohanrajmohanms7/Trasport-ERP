@@ -1,0 +1,29 @@
+.ff-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--ff-space-10) var(--ff-space-6);
+  color: var(--ff-text-muted);
+}
+
+.ff-empty__icon {
+  font-size: 3rem;
+  opacity: 0.5;
+  margin-bottom: var(--ff-space-4);
+}
+
+.ff-empty__title {
+  margin: 0;
+  font-size: var(--ff-text-lg);
+  font-weight: 700;
+  color: var(--ff-text-primary);
+}
+
+.ff-empty__message {
+  margin: var(--ff-space-2) 0 var(--ff-space-5);
+  font-size: var(--ff-text-sm);
+  max-width: 360px;
+  line-height: 1.5;
+}

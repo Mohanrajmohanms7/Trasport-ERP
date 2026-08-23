@@ -1,0 +1,226 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 overflow-hidden">
+  <!-- Header Title -->
+  <header class="flex flex-col gap-1 border-b border-slate-200 dark:border-slate-800 pb-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">dashboard_customize</span>
+          Master Data Management
+        </h1>
+        <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Configure your master foundation tables, drivers, vehicles, and lookups</p>
+      </div>
+      <button (click)="openAddForm()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow-lg flex items-center gap-2 transition duration-200">
+        <span class="material-icons">add</span>
+        {{ addButtonLabel() }}
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Nav and Search -->
+  <section class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+      <button (click)="switchTab('vehicle')" [class]="activeTab() === 'vehicle' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300'" class="px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 whitespace-nowrap">
+        <span class="material-icons text-sm">local_shipping</span> Vehicles
+      </button>
+      <button (click)="switchTab('driver')" [class]="activeTab() === 'driver' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300'" class="px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 whitespace-nowrap">
+        <span class="material-icons text-sm">badge</span> Drivers
+      </button>
+      <button (click)="switchTab('customer')" [class]="activeTab() === 'customer' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300'" class="px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 whitespace-nowrap">
+        <span class="material-icons text-sm">people</span> Customers
+      </button>
+      <button (click)="switchTab('lookup')" [class]="activeTab() === 'lookup' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-300'" class="px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 whitespace-nowrap">
+        <span class="material-icons text-sm">list_alt</span> Secondary Lookups
+      </button>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Lookup Selector (Only visible for generic lookups) -->
+      @if (activeTab() === 'lookup') {
+        <div class="w-48">
+          <ff-dropdown [formControl]="lookupTypeControl" label="Lookup Type" [options]="lookupTypeOptions" [clearable]="false" />
+        </div>
+      }
+
+      <!-- Search Input -->
+      <div class="w-64">
+        <ff-searchbox [placeholder]="searchPlaceholder()" (ffSearch)="onSearch($event)" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Content Grid -->
+  <main class="flex-1 min-h-0 overflow-auto">
+    <!-- List Table (full width) -->
+    <div class="h-full min-h-0 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:shadow-xl flex flex-col">
+      <!-- AG Grid/Table emulation -->
+      <div class="flex-1 min-h-0 overflow-auto">
+        <table mat-table [dataSource]="activeData()" class="w-full text-left border-collapse bg-slate-100 dark:bg-slate-800">
+          
+          <!-- Code Column -->
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">{{ codeFieldLabel() }}</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 font-mono text-blue-700 dark:text-blue-400">{{ element.code }}</td>
+          </ng-container>
+
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">{{ nameFieldLabel() }}</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium">{{ element.name }}</td>
+          </ng-container>
+
+          <!-- Vehicle Specific Columns -->
+          <ng-container matColumnDef="model">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Model</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.model || 'N/A' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="brand">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Brand</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.brand || 'N/A' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="ownerType">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Owner</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+              <span class="px-2.5 py-1 rounded-md text-xs font-semibold" [ngClass]="element.ownerType === 'SELF' ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700' : 'bg-amber-50 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700'">
+                {{ element.ownerType }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Driver Specific Columns -->
+          <ng-container matColumnDef="licenseNumber">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">License No</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono">{{ element.licenseNumber }}</td>
+          </ng-container>
+          <ng-container matColumnDef="phoneNumber">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Phone</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.phoneNumber || 'N/A' }}</td>
+          </ng-container>
+
+          <!-- Customer Specific Columns -->
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Email</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.email || 'N/A' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="phone">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Phone</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.phone || 'N/A' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="creditLimit">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Credit Limit</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.creditLimit | currency:'INR':'symbol':'1.2-2' }}</td>
+          </ng-container>
+
+          <!-- Lookup Specific Columns -->
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Description</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">{{ element.description || 'N/A' }}</td>
+          </ng-container>
+
+          <!-- Status Column -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Status</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700">
+              <button (click)="toggleStatus(element.id)" [class]="element.status === 'ACTIVE' ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800'" class="px-2.5 py-1 rounded-md text-xs font-semibold transition duration-150">
+                {{ element.status }}
+              </button>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="p-4 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold bg-slate-100 dark:bg-slate-900/50">Actions</th>
+            <td mat-cell *matCellDef="let element" class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
+              <button (click)="openEditForm(element)" class="p-1 text-blue-700 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition duration-150" title="Edit">
+                <span class="material-icons text-base">edit</span>
+              </button>
+              <button (click)="deleteItem(element.id)" class="p-1 text-rose-700 dark:text-rose-450 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition duration-150" title="Delete">
+                <span class="material-icons text-base">delete</span>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns()"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns();" class="hover:bg-slate-200 dark:hover:bg-slate-750 transition duration-150"></tr>
+        </table>
+      </div>
+
+      <!-- Paginator -->
+      <mat-paginator [length]="totalElements()" [pageSize]="pageSize()" [pageIndex]="pageIndex()" [pageSizeOptions]="[5, 10, 20]" (page)="onPageChange($event)" class="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-700"></mat-paginator>
+    </div>
+  </main>
+
+  <!-- Centered Edit/Create Master Popup -->
+  @if (showEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showEditor.set(false)">
+      <div class="master-editor-modal w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">edit_note</span>
+            {{ editorTitle() }}
+          </h2>
+          <button type="button" (click)="showEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="editorForm" (ngSubmit)="save()" class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4 text-slate-700 dark:text-slate-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ff-textbox formControlName="code" [label]="codeFieldLabel()" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" [label]="nameFieldLabel()" prefixIcon="label" [required]="true" />
+          </div>
+
+          <ff-textarea formControlName="description" label="Description" [rows]="3" />
+
+          @if (activeTab() === 'vehicle') {
+            <div class="flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-400">Vehicle Specifications</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ff-textbox formControlName="chassisNumber" label="Chassis No" />
+                <ff-textbox formControlName="engineNumber" label="Engine No" />
+                <ff-textbox formControlName="model" label="Model" />
+                <ff-textbox formControlName="brand" label="Brand" />
+                <ff-textbox formControlName="ownerName" label="Owner Name" />
+                <ff-dropdown
+                  formControlName="ownerType"
+                  label="Owner Type"
+                  [options]="ownerTypeOptions"
+                  searchPlaceholder="Search ownership…" />
+              </div>
+            </div>
+          }
+
+          @if (activeTab() === 'driver') {
+            <div class="flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-400">Driver Credentials</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ff-textbox formControlName="licenseNumber" label="License Number" prefixIcon="badge" [required]="true" />
+                <ff-textbox formControlName="phoneNumber" label="Phone Number" prefixIcon="call" [digitsOnly]="true" />
+              </div>
+            </div>
+          }
+
+          @if (activeTab() === 'customer') {
+            <div class="flex flex-col gap-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <h3 class="text-sm font-semibold text-blue-700 dark:text-blue-400">Customer Details</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ff-textbox formControlName="email" label="Email" type="email" prefixIcon="mail" />
+                <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
+                <ff-textbox formControlName="gstNumber" label="GST Number" prefixIcon="badge" />
+                <ff-number formControlName="creditLimit" label="Credit Limit" [min]="0" />
+              </div>
+              <ff-textarea formControlName="address" label="Billing Address" [rows]="2" />
+            </div>
+          }
+        </form>
+
+        <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
+          <ff-button type="button" [label]="saveButtonLabel()" icon="save" variant="primary" [disabled]="editorForm.invalid" (ffClick)="save()" />
+        </div>
+      </div>
+    </div>
+  }
+</div>

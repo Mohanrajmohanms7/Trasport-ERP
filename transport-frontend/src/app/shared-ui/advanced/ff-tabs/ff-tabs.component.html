@@ -1,0 +1,20 @@
+<div class="ff-tabs" [attr.data-variant]="variant()" role="tablist">
+  @for (tab of tabs(); track tab.id) {
+    <button
+      type="button"
+      role="tab"
+      class="ff-tabs__tab"
+      [class.ff-tabs__tab--active]="isActive(tab.id)"
+      [disabled]="tab.disabled"
+      [attr.aria-selected]="isActive(tab.id)"
+      (click)="selectTab(tab.id, tab.disabled)">
+      @if (tab.icon) {
+        <span class="material-symbols-outlined ff-tabs__icon">{{ tab.icon }}</span>
+      }
+      {{ tab.label }}
+    </button>
+  }
+</div>
+<div class="ff-tabs__panel">
+  <ng-content />
+</div>

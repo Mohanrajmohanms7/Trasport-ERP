@@ -1,0 +1,82 @@
+@if (isVisible()) {
+  <div
+    class="ff-field ff-autocomplete"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <label class="ff-field__label" [attr.for]="inputId()">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </label>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <div class="ff-field__control">
+        @if (prefixIcon()) {
+          <span class="ff-field__icon ff-field__icon--prefix material-symbols-outlined" aria-hidden="true">
+            {{ prefixIcon() }}
+          </span>
+        } @else {
+          <span class="ff-field__icon ff-field__icon--prefix material-symbols-outlined" aria-hidden="true">search</span>
+        }
+
+        <input
+          class="ff-field__input"
+          [class.ff-field__input--with-prefix]="true"
+          [class.ff-field__input--with-suffix]="!!value() || loading()"
+          [id]="inputId()"
+          type="text"
+          role="combobox"
+          [attr.aria-expanded]="panelOpen()"
+          [attr.aria-autocomplete]="'list'"
+          [attr.placeholder]="placeholder() || 'Type to search…'"
+          [attr.aria-invalid]="hasError()"
+          [value]="inputDisplay()"
+          [disabled]="isDisabled()"
+          [readOnly]="isReadonly()"
+          (input)="onInput($event)"
+          (focus)="onFocusInput()"
+          (blur)="onBlurInput()"
+          (keydown)="onKeydown($event)" />
+
+        @if (loading()) {
+          <span class="ff-field__icon ff-field__icon--suffix"><span class="ff-spinner"></span></span>
+        } @else if (value()) {
+          <button type="button" class="ff-field__icon ff-field__icon--suffix" aria-label="Clear" (mousedown)="$event.preventDefault()" (click)="clear()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+
+        @if (panelOpen() && filteredOptions().length) {
+          <ul class="ff-autocomplete__panel" role="listbox">
+            @for (opt of filteredOptions(); track $index) {
+              <li
+                role="option"
+                class="ff-autocomplete__option"
+                [class.ff-autocomplete__option--active]="$index === activeIndex()"
+                [class.ff-autocomplete__option--disabled]="opt.disabled"
+                (mousedown)="$event.preventDefault()"
+                (click)="selectOption(opt)">
+                {{ opt.label }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

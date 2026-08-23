@@ -1,0 +1,40 @@
+.ff-confirm {
+  padding: var(--ff-space-6);
+  min-width: 320px;
+  max-width: 420px;
+  color: var(--ff-text-primary);
+}
+
+.ff-confirm__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-3);
+  margin-bottom: var(--ff-space-3);
+}
+
+.ff-confirm__icon {
+  font-size: 1.5rem;
+}
+
+.ff-confirm__icon--primary { color: var(--ff-color-primary-600); }
+.ff-confirm__icon--danger { color: var(--ff-color-danger-500); }
+.ff-confirm__icon--warning { color: var(--ff-color-warning-500); }
+
+.ff-confirm__title {
+  margin: 0;
+  font-size: var(--ff-text-lg);
+  font-weight: 700;
+}
+
+.ff-confirm__message {
+  margin: 0 0 var(--ff-space-6);
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-secondary);
+  line-height: 1.5;
+}
+
+.ff-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ff-space-2);
+}

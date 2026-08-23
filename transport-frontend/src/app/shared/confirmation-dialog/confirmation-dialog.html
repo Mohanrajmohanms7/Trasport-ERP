@@ -1,0 +1,18 @@
+<div class="ff-confirm" [attr.data-tone]="tone">
+  <div class="ff-confirm__badge" aria-hidden="true">
+    <span class="material-icons">{{ iconName }}</span>
+  </div>
+
+  <h2 class="ff-confirm__title" style="color:#0f172a !important;">{{ data.title }}</h2>
+  <p class="ff-confirm__message" style="color:#1e293b !important;">{{ data.message }}</p>
+
+  <div class="ff-confirm__actions">
+    <button type="button" class="ff-confirm__btn ff-confirm__btn--ghost" style="color:#0f172a !important;" (click)="cancel()">
+      {{ cancelLabel }}
+    </button>
+    <button type="button" class="ff-confirm__btn ff-confirm__btn--solid" style="color:#ffffff !important;" (click)="confirm()">
+      <span class="material-icons">{{ tone === 'danger' ? 'delete' : 'check' }}</span>
+      {{ confirmLabel }}
+    </button>
+  </div>
+</div>

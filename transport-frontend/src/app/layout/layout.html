@@ -1,0 +1,160 @@
+<div class="min-h-screen bg-slate-950 text-slate-100 flex font-sans overflow-hidden">
+  
+  <!-- Sidebar Navigation -->
+  <aside [class]="sidebarCollapsed() ? 'w-20' : 'w-64'" class="bg-slate-900 border-r border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none">
+    
+    <!-- Branding Header -->
+    <div class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+      <div class="flex items-center gap-3 overflow-hidden" [class.justify-center]="sidebarCollapsed()">
+        <span class="material-icons text-blue-500 text-2xl font-bold animate-pulse">explore</span>
+        @if (!sidebarCollapsed()) {
+          <span class="text-lg font-extrabold tracking-tight text-white whitespace-nowrap">Transport <span class="text-blue-500">ERP</span></span>
+        }
+      </div>
+      @if (!sidebarCollapsed()) {
+        <button (click)="toggleSidebar()" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-850 transition duration-150">
+          <span class="material-icons text-lg">menu_open</span>
+        </button>
+      }
+    </div>
+
+    <!-- Navigation List -->
+    <nav class="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
+      @for (item of menuItems(); track item.route) {
+        <a [routerLink]="item.route" 
+           routerLinkActive="bg-blue-600/10 text-blue-400 border-l-4 border-blue-500 font-semibold"
+           [routerLinkActiveOptions]="{exact: item.route === '/'}"
+           class="flex items-center gap-4 px-3 py-3 rounded-lg text-sm text-slate-400 hover:text-slate-100 hover:bg-slate-850 transition-all duration-200 group relative">
+          
+          <span class="material-icons text-xl group-hover:scale-105 transition duration-200">{{ item.icon }}</span>
+          
+          @if (!sidebarCollapsed()) {
+            <span class="whitespace-nowrap">{{ item.label }}</span>
+            @if (item.badge) {
+              <span class="ml-auto bg-blue-600/20 text-blue-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-600/30">{{ item.badge }}</span>
+            }
+          } @else {
+            <!-- Tooltip on collapsed state -->
+            <span class="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-xs font-semibold text-white rounded border border-slate-700 opacity-0 group-hover:opacity-100 pointer-events-none transition duration-200 z-50 whitespace-nowrap">
+              {{ item.label }}
+            </span>
+          }
+        </a>
+      }
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="p-4 border-t border-slate-800 flex items-center justify-between overflow-hidden">
+      @if (!sidebarCollapsed()) {
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-between border border-slate-700 overflow-hidden">
+            <span class="material-icons text-slate-400 text-xl m-auto">account_circle</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-xs font-semibold text-white">{{ userProfile().name }}</span>
+            <span class="text-[10px] text-slate-500">{{ userProfile().role }}</span>
+          </div>
+        </div>
+      }
+      <button (click)="logout()" class="p-1 text-slate-400 hover:text-rose-400 rounded hover:bg-slate-850 transition duration-150" title="Sign Out">
+        <span class="material-icons text-lg">logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Layout Main Content Area -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    
+    <!-- Top Header Navigation Toolbar -->
+    <header class="h-16 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-6 shrink-0 z-40">
+      
+      <!-- Left Controls (Collapsing Toggle & Breadcrumbs) -->
+      <div class="flex items-center gap-4">
+        @if (sidebarCollapsed()) {
+          <button (click)="toggleSidebar()" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-850 transition duration-150">
+            <span class="material-icons text-lg">menu</span>
+          </button>
+        }
+        
+        <!-- Breadcrumbs Navigation path display -->
+        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-450">
+          @for (bc of breadcrumbs(); track bc; let last = $last) {
+            <span [class.text-blue-400]="last" [class.text-slate-300]="!last">{{ bc }}</span>
+            @if (!last) {
+              <span class="material-icons text-xs text-slate-600">chevron_right</span>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Right Controls (Notifications & User Actions) -->
+      <div class="flex items-center gap-4">
+        
+        <!-- Notifications Bell -->
+        <button class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-850 transition duration-150 relative" title="Notifications">
+          <span class="material-icons text-lg">notifications</span>
+          @if (notificationCount() > 0) {
+            <span class="absolute top-0 right-0 w-4 h-4 bg-rose-500 text-white text-[9px] font-extrabold flex items-center justify-center rounded-full border border-slate-900 shadow-md">
+              {{ notificationCount() }}
+            </span>
+          }
+        </button>
+
+        <!-- Help Desk link -->
+        <button class="p-1.5 text-slate-400 hover:text-white rounded hover:bg-slate-850 transition duration-150" title="Help Desk">
+          <span class="material-icons text-lg">help_outline</span>
+        </button>
+
+        <div class="w-[1px] h-6 bg-slate-800"></div>
+
+        <!-- Profile Quick Actions -->
+        <button [matMenuTriggerFor]="profileMenu" class="flex items-center gap-2 hover:bg-slate-850 p-1 px-2 rounded-lg transition duration-150">
+          <span class="material-icons text-slate-400 text-xl">account_circle</span>
+          <span class="text-xs font-semibold text-slate-300">{{ userProfile().name }}</span>
+          <span class="material-icons text-xs text-slate-500">arrow_drop_down</span>
+        </button>
+
+        <mat-menu #profileMenu="matMenu" class="bg-slate-900 border border-slate-800 text-slate-100">
+          <div class="px-4 py-2 border-b border-slate-800 text-xs flex flex-col gap-0.5">
+            <span class="font-bold text-white">{{ userProfile().name }}</span>
+            <span class="text-slate-450 text-[10px]">{{ userProfile().email }}</span>
+          </div>
+          <button mat-menu-item routerLink="/profile" class="hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span class="material-icons text-sm text-slate-400">person</span>
+            Profile Settings
+          </button>
+          <button mat-menu-item routerLink="/company-admin" class="hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span class="material-icons text-sm text-slate-400">corporate_fare</span>
+            Company Settings
+          </button>
+          <button mat-menu-item class="hover:bg-slate-800 text-slate-300 flex items-center gap-2">
+            <span class="material-icons text-sm text-slate-400">security</span>
+            Security Credentials
+          </button>
+          <div class="border-t border-slate-800 my-1"></div>
+          <button mat-menu-item (click)="logout()" class="hover:bg-slate-800 text-rose-400 flex items-center gap-2">
+            <span class="material-icons text-sm text-rose-400">logout</span>
+            Sign Out
+          </button>
+        </mat-menu>
+
+      </div>
+    </header>
+
+    <!-- Dynamic Router Pages Content Outlet -->
+    <main class="flex-1 overflow-y-auto bg-slate-950">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- Footer Copyright toolbar -->
+    <footer class="h-10 bg-slate-900 border-t border-slate-800 flex items-center justify-between px-6 text-[10px] text-slate-500 shrink-0 select-none">
+      <span>&copy; 2026 Transport ERP. All rights reserved.</span>
+      <div class="flex items-center gap-4">
+        <span>V1.0.0 (Scaffolding Foundation)</span>
+        <a href="#" class="hover:text-slate-300 transition duration-150">Terms</a>
+        <a href="#" class="hover:text-slate-300 transition duration-150">Privacy</a>
+      </div>
+    </footer>
+
+  </div>
+</div>

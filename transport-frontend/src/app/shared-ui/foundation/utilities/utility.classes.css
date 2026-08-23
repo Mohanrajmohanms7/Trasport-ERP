@@ -1,0 +1,47 @@
+/**
+ * FleetFlow Utility Classes
+ */
+
+.ff-surface-card {
+  background-color: var(--ff-surface-card);
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-lg);
+  box-shadow: var(--ff-shadow-sm);
+}
+
+.ff-text-muted {
+  color: var(--ff-text-muted);
+}
+
+.ff-text-secondary {
+  color: var(--ff-text-secondary);
+}
+
+.ff-page {
+  background-color: var(--ff-surface-page);
+  color: var(--ff-text-primary);
+  min-height: 100%;
+}
+
+.ff-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes ff-skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ff-skeleton {
+  background: var(--ff-surface-hover);
+  border-radius: var(--ff-radius-md);
+  animation: ff-skeleton 1.5s ease-in-out infinite;
+}

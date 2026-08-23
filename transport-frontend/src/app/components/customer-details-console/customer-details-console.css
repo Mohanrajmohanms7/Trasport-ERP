@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.console-page {
+  height: 100%;
+}

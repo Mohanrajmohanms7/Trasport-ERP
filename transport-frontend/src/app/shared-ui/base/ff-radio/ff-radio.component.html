@@ -1,0 +1,51 @@
+@if (isVisible()) {
+  <fieldset
+    class="ff-field ff-radio-group"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [class.ff-radio-group--horizontal]="layout() === 'horizontal'"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <legend class="ff-field__label">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </legend>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <div class="ff-radio-group__options" role="radiogroup" [attr.aria-required]="isRequired()">
+        @for (opt of options(); track $index) {
+          <label
+            class="ff-radio"
+            [class.ff-radio--disabled]="isDisabled() || opt.disabled"
+            [class.ff-radio--selected]="isSelected(opt.value)">
+            <input
+              type="radio"
+              class="ff-radio__input"
+              [name]="inputId()"
+              [value]="$index"
+              [checked]="isSelected(opt.value)"
+              [disabled]="isDisabled() || !!opt.disabled"
+              (change)="select(opt.value)"
+              (blur)="onBlur()" />
+            <span class="ff-radio__mark" aria-hidden="true"></span>
+            <span class="ff-radio__label">{{ opt.label }}</span>
+          </label>
+        }
+      </div>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </fieldset>
+}

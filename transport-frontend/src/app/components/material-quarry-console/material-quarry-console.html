@@ -1,0 +1,388 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans relative overflow-hidden text-slate-800 dark:text-slate-100">
+
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-0.5">
+      <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl">landscape</span>
+        Material & Quarry
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm">
+        Create materials and quarries, then set pricing and loading points
+      </p>
+    </div>
+  </header>
+
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+
+    <div class="flex flex-wrap border-b border-slate-200 dark:border-slate-800 px-4 pt-3 select-none shrink-0 gap-1">
+      <button type="button" (click)="activeTab.set('materials')"
+        [class.border-b-2]="activeTab() === 'materials'"
+        [class.border-blue-600]="activeTab() === 'materials'"
+        [class.text-slate-900]="activeTab() === 'materials'"
+        [class.dark:text-white]="activeTab() === 'materials'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Materials
+      </button>
+      <button type="button" (click)="activeTab.set('quarries')"
+        [class.border-b-2]="activeTab() === 'quarries'"
+        [class.border-blue-600]="activeTab() === 'quarries'"
+        [class.text-slate-900]="activeTab() === 'quarries'"
+        [class.dark:text-white]="activeTab() === 'quarries'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Quarries
+      </button>
+      <button type="button" (click)="activeTab.set('pricing')"
+        [class.border-b-2]="activeTab() === 'pricing'"
+        [class.border-blue-600]="activeTab() === 'pricing'"
+        [class.text-slate-900]="activeTab() === 'pricing'"
+        [class.dark:text-white]="activeTab() === 'pricing'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Pricing
+      </button>
+      <button type="button" (click)="activeTab.set('locations')"
+        [class.border-b-2]="activeTab() === 'locations'"
+        [class.border-blue-600]="activeTab() === 'locations'"
+        [class.text-slate-900]="activeTab() === 'locations'"
+        [class.dark:text-white]="activeTab() === 'locations'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Loading Locations
+      </button>
+    </div>
+
+    <div class="flex-1 min-h-0 p-4 overflow-hidden flex flex-col">
+
+      @if (activeTab() === 'materials') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Material Master</span>
+            <button type="button" (click)="openAddMaterial()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add</span> Add Material
+            </button>
+          </div>
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Material Code</th>
+                  <th class="p-4">Material Name</th>
+                  <th class="p-4 text-right">Default Rate</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of materials(); track row.id) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ row.name }}</td>
+                    <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ row.defaultRate | number }}</td>
+                    <td class="p-4">{{ row.status }}</td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" (click)="openEditMaterial(row)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button type="button" (click)="deleteMaterial(row)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No materials yet. Click Add Material.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'quarries') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Quarry Master (optional)</span>
+            <button type="button" (click)="openAddQuarry()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add</span> Add Quarry
+            </button>
+          </div>
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Quarry Code</th>
+                  <th class="p-4">Quarry Name</th>
+                  <th class="p-4">Address</th>
+                  <th class="p-4">Contact</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of quarries(); track row.id) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ row.name }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-300">{{ row.locationAddress || '—' }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-300">{{ row.contactNumber || '—' }}</td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" (click)="openEditQuarry(row)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button type="button" (click)="deleteQuarry(row)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No quarries yet. Optional — click Add Quarry if needed.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'pricing') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="shrink-0 max-w-md" [formGroup]="materialSelectForm">
+            <ff-dropdown
+              formControlName="materialId"
+              label="Select Material"
+              [options]="materialOptions"
+              [required]="true"
+              searchPlaceholder="Search M Sand, Jalli..." />
+            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              Pricing for:
+              <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedMaterialLabel() }}</span>
+            </p>
+          </div>
+
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Active Base Pricing</span>
+            <button type="button" (click)="openPriceEditor()" [disabled]="!materialId()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">payments</span> Configure Pricing Rule
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Material Rate</th>
+                  <th class="p-4">Transport Rate</th>
+                  <th class="p-4">Royalty Rate</th>
+                  <th class="p-4">Loading Charges</th>
+                  <th class="p-4">Effective Date</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (price of prices(); track price.effectiveDate) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ price.materialRate | number }}</td>
+                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.transportRate | number }}</td>
+                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.royaltyRate | number }}</td>
+                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.loadingCharge | number }}</td>
+                    <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ price.effectiveDate }}</td>
+                    <td class="p-4 text-center">
+                      <button type="button" (click)="deletePrice(price)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Rule">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No pricing rules. Create a Material first, then add pricing.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'locations') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Loading Points</span>
+            <button type="button" (click)="openAddLocation()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add_location_alt</span> Register Loading Point
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Location Code</th>
+                  <th class="p-4">Loading Point</th>
+                  <th class="p-4 text-right">Loading Charge</th>
+                  <th class="p-4">Coordinates (Lat, Lon)</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (loc of loadingLocations(); track loc.locationCode) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ loc.locationCode }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ loc.loadingPoint }}</td>
+                    <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ loc.loadingCharges | number }}</td>
+                    <td class="p-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                      {{ loc.latitude || '0.000000' }}, {{ loc.longitude || '0.000000' }}
+                    </td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" (click)="openEditLocation(loc)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit Point">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button type="button" (click)="deleteLocation(loc)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Point">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No loading locations registered.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+    </div>
+  </main>
+
+  @if (showMaterialEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ editingMaterial() ? 'Edit Material' : 'Create Material' }}
+          </h2>
+          <button type="button" (click)="showMaterialEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        @if (saveError()) {
+          <p class="text-xs text-rose-600 font-semibold">{{ saveError() }}</p>
+        }
+        <form [formGroup]="materialForm" (ngSubmit)="saveMaterial()" class="flex-1 flex flex-col gap-4 overflow-y-auto">
+          <ff-textbox formControlName="code" label="Material Code" prefixIcon="tag" [required]="true" />
+          <ff-textbox formControlName="name" label="Material Name" prefixIcon="label" [required]="true" />
+          <ff-number formControlName="defaultRate" label="Default Rate" [min]="0" />
+          <ff-number formControlName="density" label="Density" [min]="0" [step]="0.001" />
+          <ff-textarea formControlName="description" label="Description" [rows]="2" />
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showMaterialEditor.set(false)" />
+            <ff-button type="submit" label="Save Material" icon="save" variant="primary" [disabled]="materialForm.invalid || loading()" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showQuarryEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ editingQuarry() ? 'Edit Quarry' : 'Create Quarry' }}
+          </h2>
+          <button type="button" (click)="showQuarryEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        @if (saveError()) {
+          <p class="text-xs text-rose-600 font-semibold">{{ saveError() }}</p>
+        }
+        <form [formGroup]="quarryForm" (ngSubmit)="saveQuarry()" class="flex-1 flex flex-col gap-4 overflow-y-auto">
+          <ff-textbox formControlName="code" label="Quarry Code" prefixIcon="tag" [required]="true" />
+          <ff-textbox formControlName="name" label="Quarry Name" prefixIcon="label" [required]="true" />
+          <ff-textbox formControlName="ownerName" label="Owner Name" prefixIcon="person" />
+          <ff-textbox formControlName="contactNumber" label="Contact Number" prefixIcon="call" />
+          <ff-textarea formControlName="locationAddress" label="Address" [rows]="2" />
+          <ff-textarea formControlName="description" label="Description" [rows]="2" />
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showQuarryEditor.set(false)" />
+            <ff-button type="submit" label="Save Quarry" icon="save" variant="primary" [disabled]="quarryForm.invalid || loading()" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showPriceEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-500">payments</span>
+            Configure Pricing Rule
+          </h2>
+          <button type="button" (click)="showPriceEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Material: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedMaterialLabel() }}</span></p>
+
+        <form [formGroup]="priceForm" (ngSubmit)="savePrice()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+          <ff-number formControlName="materialRate" label="Base Material Rate" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-number formControlName="transportRate" label="Default Transport Rate" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-number formControlName="royaltyRate" label="Government Royalty Charges" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-number formControlName="loadingCharge" label="Default Loading Charges" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-datepicker formControlName="effectiveDate" label="Effective Active Date" [required]="true" />
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showPriceEditor.set(false)" />
+            <ff-button type="submit" label="Save Pricing Rule" icon="save" variant="primary" [disabled]="priceForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showLocationEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-500">add_location_alt</span>
+            {{ editingLocation() ? 'Edit Loading Point' : 'Register Loading Point' }}
+          </h2>
+          <button type="button" (click)="showLocationEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="locationForm" (ngSubmit)="saveLocation()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+          <div class="grid grid-cols-2 gap-4">
+            <ff-textbox formControlName="locationCode" label="Location Code" placeholder="E.g., LOC-10" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="loadingPoint" label="Loading Point Name" placeholder="Location Name" prefixIcon="location_on" [required]="true" />
+          </div>
+          <ff-number formControlName="loadingCharges" label="Loading Point Charges" placeholder="0.00" [min]="0" [required]="true" />
+          <div class="grid grid-cols-2 gap-4">
+            <ff-number formControlName="latitude" label="Latitude Coord" placeholder="11.123456" [allowNegative]="true" />
+            <ff-number formControlName="longitude" label="Longitude Coord" placeholder="78.123456" [allowNegative]="true" />
+          </div>
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showLocationEditor.set(false)" />
+            <ff-button type="submit" label="Save Location" icon="save" variant="primary" [disabled]="locationForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

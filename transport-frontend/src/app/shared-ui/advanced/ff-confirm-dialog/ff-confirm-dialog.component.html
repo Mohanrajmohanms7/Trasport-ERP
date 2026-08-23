@@ -1,0 +1,14 @@
+<div class="ff-confirm">
+  <div class="ff-confirm__header">
+    <span class="material-symbols-outlined ff-confirm__icon" [class]="iconClass()">{{ iconName() }}</span>
+    <h2 class="ff-confirm__title">{{ data.title }}</h2>
+  </div>
+  <p class="ff-confirm__message">{{ data.message }}</p>
+  <div class="ff-confirm__actions">
+    <ff-button [label]="data.cancelText || 'Cancel'" variant="ghost" (ffClick)="cancel()" />
+    <ff-button
+      [label]="data.confirmText || 'Confirm'"
+      [variant]="data.type === 'danger' ? 'danger' : 'primary'"
+      (ffClick)="confirm()" />
+  </div>
+</div>

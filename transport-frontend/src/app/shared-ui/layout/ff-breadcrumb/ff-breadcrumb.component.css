@@ -1,0 +1,30 @@
+.ff-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ff-space-1);
+  font-size: var(--ff-text-xs);
+}
+
+.ff-breadcrumb__link {
+  color: var(--ff-text-link);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ff-breadcrumb__link:hover {
+  text-decoration: underline;
+}
+
+.ff-breadcrumb__item {
+  color: var(--ff-text-muted);
+}
+
+.ff-breadcrumb__item--current {
+  color: var(--ff-text-secondary);
+  font-weight: 600;
+}
+
+.ff-breadcrumb__sep {
+  color: var(--ff-text-muted);
+}

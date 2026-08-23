@@ -1,0 +1,494 @@
+/* Tailwind CSS v4 */
+@import "tailwindcss";
+
+@source "./app/**/*.html";
+@source "./app/**/*.ts";
+
+/* Custom variant for selector-based dark mode in Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Angular Material prebuilt theme */
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+/* FleetFlow Design System (ff-* tokens + utilities) */
+@import "./app/shared-ui/foundation/themes/ff-tokens.css";
+@import "./app/shared-ui/foundation/utilities/utility.classes.css";
+
+/*
+  Design tokens — keep real slate scale for dark surfaces.
+  Do NOT remap slate-950 to a light color (that broke dark mode: white text on light bg).
+*/
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-900: #1e3a8a;
+
+  --color-success-500: #10b981;
+  --color-danger-500: #ef4444;
+  --color-warning-500: #f59e0b;
+  --color-info-500: #06b6d4;
+
+  /* Custom mid-tones used in templates (between standard slate steps) */
+  --color-slate-350: #94a3b8;
+  --color-slate-450: #64748b;
+  --color-slate-550: #475569;
+  --color-slate-650: #334155;
+  --color-slate-750: #1e293b;
+  --color-slate-850: #0f172a;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  --animate-skeleton: skeleton 1.5s ease-in-out infinite;
+
+  @keyframes skeleton {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .4;
+    }
+  }
+}
+
+/* Global styles layout setup */
+html, body, app-root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--ff-surface-page, #f8fafc);
+  color: var(--ff-text-primary, #0f172a);
+  font-family: var(--ff-font-sans, 'Inter', system-ui, -apple-system, sans-serif);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+.dark html,
+html.dark,
+html.dark body,
+.dark body {
+  background-color: var(--ff-surface-page, #0f172a);
+  color: var(--ff-text-primary, #f8fafc);
+}
+
+/* Enable scrolling only on auth/public pages when rendering outside app-shell */
+body:has(.min-h-screen.flex-col.md\:flex-row) {
+  overflow: auto !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Material Field Customizations */
+.density-compact .mat-mdc-text-field-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  height: 48px !important;
+}
+
+.mat-mdc-card {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ----------------------------------------------------
+   LIGHT MODE — adapt screens that hardcode dark slate classes
+   (bg-slate-950 / text-white / etc.) so light theme stays readable
+   ---------------------------------------------------- */
+html:not(.dark) .bg-slate-950 {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .bg-slate-950\/40 {
+  background-color: #f1f5f9 !important;
+}
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-900\/60,
+html:not(.dark) .bg-slate-900\/20 {
+  background-color: #ffffff !important;
+}
+html:not(.dark) .bg-slate-850,
+html:not(.dark) .bg-slate-850\/50,
+html:not(.dark) .hover\:bg-slate-850\/50:hover {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .bg-slate-800\/50 {
+  background-color: #f1f5f9 !important;
+}
+html:not(.dark) .border-slate-850,
+html:not(.dark) .border-slate-800,
+html:not(.dark) .border-slate-800\/40,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-700\/50 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Body / headings that used text-white on dark panels */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) .text-slate-100 {
+  color: #0f172a !important;
+}
+
+/* Generic text-white → dark text, but keep CTA / filled buttons white */
+html:not(.dark) .text-white {
+  color: #0f172a !important;
+}
+html:not(.dark) button.text-white,
+html:not(.dark) a.text-white,
+html:not(.dark) .bg-blue-600,
+html:not(.dark) .bg-blue-500,
+html:not(.dark) .bg-blue-600 .text-white,
+html:not(.dark) .bg-blue-500 .text-white,
+html:not(.dark) button.bg-blue-600,
+html:not(.dark) button.bg-blue-500,
+html:not(.dark) a.bg-blue-600,
+html:not(.dark) [class*="bg-blue-600"].text-white,
+html:not(.dark) [class*="bg-emerald-"].text-white,
+html:not(.dark) [class*="bg-rose-"].text-white {
+  color: #ffffff !important;
+}
+
+/* Active nav / routerLinkActive often sets text-white on blue chip */
+html:not(.dark) a.bg-blue-600,
+html:not(.dark) a.bg-blue-600 span {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-350 {
+  color: #334155 !important; /* strong body secondary */
+}
+html:not(.dark) .text-slate-400 {
+  color: #475569 !important;
+}
+html:not(.dark) .text-slate-450,
+html:not(.dark) .text-slate-500 {
+  color: #64748b !important;
+}
+html:not(.dark) .text-blue-400 {
+  color: #2563eb !important;
+}
+html:not(.dark) .text-emerald-400 {
+  color: #059669 !important;
+}
+html:not(.dark) .text-amber-400,
+html:not(.dark) .text-amber-500 {
+  color: #d97706 !important;
+}
+html:not(.dark) .text-rose-400 {
+  color: #e11d48 !important;
+}
+html:not(.dark) .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+html:not(.dark) button.hover\:text-white:hover,
+html:not(.dark) a.bg-blue-600:hover {
+  color: #ffffff !important;
+}
+html:not(.dark) tr:hover,
+html:not(.dark) .hover\:bg-slate-850\/50:hover,
+html:not(.dark) .hover\:bg-slate-800:hover {
+  background-color: #f1f5f9 !important;
+}
+
+/* Tables — readable density & contrast in light mode */
+html:not(.dark) table thead tr {
+  background-color: #f8fafc !important;
+  color: #475569 !important;
+}
+html:not(.dark) table tbody td {
+  color: #334155 !important;
+}
+html:not(.dark) table tbody td.text-emerald-400,
+html:not(.dark) table .text-emerald-400 {
+  color: #059669 !important;
+}
+html:not(.dark) table tbody td.text-blue-400,
+html:not(.dark) table .text-blue-400 {
+  color: #2563eb !important;
+}
+html:not(.dark) table tbody td.text-white,
+html:not(.dark) table .font-semibold.text-white {
+  color: #0f172a !important;
+}
+
+/* Slide-over panels hardcoded dark */
+html:not(.dark) .fixed.inset-0 .bg-slate-900 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* ----------------------------------------------------
+   DARK MODE — surfaces & Material + readable table text
+   ---------------------------------------------------- */
+html.dark,
+html.dark body {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .mat-mdc-card {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .cdk-overlay-backdrop {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+.dark .mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: transparent !important;
+  color: #f8fafc !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+.dark .cdk-overlay-backdrop.cdk-overlay-dark-backdrop,
+.cdk-overlay-backdrop.cdk-overlay-dark-backdrop {
+  background: rgba(2, 6, 23, 0.78) !important;
+  backdrop-filter: blur(3px);
+}
+
+/* Force confirmation popup readability on every theme */
+app-confirmation-dialog .ff-confirm {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+app-confirmation-dialog .ff-confirm__title {
+  color: #0f172a !important;
+}
+app-confirmation-dialog .ff-confirm__message {
+  color: #1e293b !important;
+}
+app-confirmation-dialog .ff-confirm__btn--ghost {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+app-confirmation-dialog .ff-confirm__btn--solid {
+  color: #ffffff !important;
+}
+
+.dark .mat-mdc-menu-panel,
+.dark .mat-menu-panel {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+.dark .mat-mdc-menu-item,
+.dark .mat-menu-item {
+  color: #e2e8f0 !important;
+}
+.dark .mat-mdc-menu-item:hover,
+.dark .mat-menu-item:hover {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.dark .mat-mdc-select-panel {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+.dark .mat-mdc-option {
+  color: #e2e8f0 !important;
+}
+.dark .mat-mdc-option:hover:not(.mdc-list-item--disabled),
+.dark .mat-mdc-option.mat-mdc-option-active {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.dark .mat-mdc-text-field-wrapper {
+  background-color: #0f172a !important;
+}
+.dark .mat-mdc-form-field-label {
+  color: #94a3b8 !important;
+}
+.dark input.mat-mdc-input-element,
+.dark textarea.mat-mdc-input-element {
+  color: #ffffff !important;
+}
+
+.dark .mat-mdc-table {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+.dark .mat-mdc-header-row {
+  background-color: #0f172a !important;
+}
+.dark .mat-mdc-row {
+  border-bottom: 1px solid #334155 !important;
+}
+.dark .mat-mdc-cell,
+.dark .mat-mdc-header-cell {
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .mat-mdc-tooltip .mdc-tooltip__surface {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.dark input[type="text"]:not(.mat-mdc-input-element),
+.dark input[type="number"]:not(.mat-mdc-input-element),
+.dark input[type="date"]:not(.mat-mdc-input-element),
+.dark select:not(.mat-mdc-select) {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* Dark mode: ensure console tables keep readable contrast */
+html.dark table thead tr {
+  color: #94a3b8 !important;
+}
+html.dark table tbody td {
+  color: #e2e8f0 !important;
+}
+html.dark table .text-emerald-400 {
+  color: #34d399 !important;
+}
+html.dark table .text-blue-400 {
+  color: #60a5fa !important;
+}
+html.dark table .text-white,
+html.dark table td.text-white {
+  color: #f8fafc !important;
+}
+
+/* ----------------------------------------------------
+   Typography — more readable tables & labels
+   ---------------------------------------------------- */
+table {
+  font-size: 0.8125rem; /* 13px */
+}
+table th {
+  font-size: 0.6875rem; /* 11px */
+  letter-spacing: 0.04em;
+  font-weight: 700 !important;
+}
+table td {
+  font-weight: 500;
+}
+table .font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Compact layout without crushing readability */
+table th,
+table td,
+table th.p-4,
+table td.p-4 {
+  padding: 10px 14px !important;
+}
+
+.flex-1.p-6.overflow-y-auto.flex.flex-col.gap-4 {
+  padding: 16px !important;
+  gap: 12px !important;
+}
+
+header h1.text-3xl,
+.text-3xl {
+  font-size: 1.375rem !important; /* 22px — readable page titles */
+  line-height: 1.3 !important;
+  font-weight: 800 !important;
+}
+header .material-icons.text-3xl {
+  font-size: 1.375rem !important;
+}
+.pb-4.shrink-0 {
+  padding-bottom: 10px !important;
+}
+
+/* Form gaps — keep usable spacing */
+.gap-6 {
+  gap: 1rem !important;
+}
+.gap-5 {
+  gap: 0.875rem !important;
+}
+.gap-4 {
+  gap: 0.75rem !important;
+}
+
+/* Console page root — fill shell content area (all module screens) */
+.console-page {
+  background: transparent !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.console-page > header {
+  flex-shrink: 0 !important;
+}
+
+.console-page > main {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Scrollable tab / list regions inside console cards */
+.console-page > main .flex-1.min-h-0 {
+  overflow: auto !important;
+}
+
+/* Routed pages using ff-page-container also fill height */
+.ff-page-container {
+  height: 100% !important;
+  min-height: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: auto !important;
+}
+
+/* Grid / table bodies scroll when many rows */
+.ff-grid__body,
+.mat-mdc-table-sticky-container,
+.mat-mdc-dialog-container {
+  max-height: none;
+}

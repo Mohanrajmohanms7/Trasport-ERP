@@ -1,0 +1,71 @@
+# Production stack for Oracle Always Free / any VPS
+# Usage:
+#   1. cp .env.prod.example .env.prod
+#   2. Edit .env.prod (strong passwords + JWT secret)
+#   3. docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Public ports: 80 only (frontend). Backend + Postgres stay on internal Docker network.
+# Browser calls /api/* → nginx proxies to backend:8080 (same origin, no CORS issues).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: transport-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - transport-net
+    # No ports: section — DB is NOT exposed to the internet
+
+  backend:
+    build:
+      context: ./transport-backend
+    container_name: transport-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      APP_BOOTSTRAP_ENABLED: ${APP_BOOTSTRAP_ENABLED:-false}
+      APP_BOOTSTRAP_ADMIN_PASSWORD: ${APP_BOOTSTRAP_ADMIN_PASSWORD}
+    # No public ports — only reachable via frontend nginx proxy
+    expose:
+      - "8080"
+    networks:
+      - transport-net
+
+  frontend:
+    build:
+      context: ./transport-frontend
+    container_name: transport-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${HOST_HTTP_PORT:-80}:80"
+    networks:
+      - transport-net
+
+volumes:
+  postgres-data:
+
+networks:
+  transport-net:
+    driver: bridge

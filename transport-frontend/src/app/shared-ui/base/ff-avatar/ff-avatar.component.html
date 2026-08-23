@@ -1,0 +1,7 @@
+<div [class]="classes()" [style.--ff-avatar-color]="color() || null">
+  @if (src()) {
+    <img class="ff-avatar__img" [src]="src()" [alt]="alt() || name() || 'Avatar'" />
+  } @else {
+    <span class="ff-avatar__initials" aria-hidden="true">{{ initials() }}</span>
+  }
+</div>

@@ -1,0 +1,131 @@
+<ff-loading-overlay />
+
+<ff-page-container>
+  <ff-page-header
+    title="FleetFlow UI Playground"
+    subtitle="Complete component library demo"
+    [breadcrumbs]="[{ label: 'Dashboard', route: '/dashboard' }, { label: 'Playground' }]"
+    [actions]="[
+      { id: 'theme', label: 'Toggle Theme', icon: 'contrast', variant: 'outline' },
+      { id: 'sidebar', label: 'Open Sidebar', icon: 'side_navigation', variant: 'outline' },
+      { id: 'confirm', label: 'Confirm Dialog', icon: 'help', variant: 'outline' }
+    ]"
+    (actionClick)="onHeaderAction($event)" />
+
+  <div class="ff-playground__kpis">
+    <ff-dashboard-card label="Total Drivers" [value]="152" icon="people" color="primary" trend="+12 this month" [trendUp]="true" />
+    <ff-dashboard-card label="Active Trips" [value]="34" icon="local_shipping" color="info" />
+    <ff-dashboard-card label="On Leave" [value]="8" icon="event_busy" color="warning" />
+    <ff-dashboard-card label="Inactive" [value]="3" icon="person_off" color="danger" />
+  </div>
+
+  <ff-tabs [tabs]="tabs" [activeTab]="activeTab()" (tabChange)="activeTab.set($event)" />
+
+  @if (activeTab() === 'forms') {
+    <ff-toolbar title="Driver Registration Form">
+      <div ffToolbarActions>
+        <ff-button label="Simulate Save" icon="save" variant="primary" (ffClick)="simulateLoading()" />
+      </div>
+    </ff-toolbar>
+
+    <div class="ff-playground__display-row">
+      <ff-searchbox label="Quick Search" placeholder="Name, code…" (ffSearch)="onSearch($event)" />
+      <div class="ff-playground__avatars">
+        <ff-avatar name="Rajesh Kumar" size="md" />
+        <ff-avatar name="Suresh Babu" size="lg" />
+        <ff-avatar name="Anand R" src="" size="sm" />
+      </div>
+      <ff-status-badge label="Active" color="success" />
+      <ff-badge label="Verified" color="primary" [dot]="true" />
+    </div>
+
+    @if (searchLog()) {
+      <p class="ff-playground__search-log">{{ searchLog() }}</p>
+    }
+
+    <div class="ff-playground__chips">
+      @for (chip of chips(); track $index) {
+        <ff-chip [label]="chip" [removable]="true" (ffRemove)="removeChip($index)" />
+      }
+    </div>
+
+    <ff-stepper [steps]="steps" [activeStep]="activeStep()" (stepChange)="activeStep.set($event)" />
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="ff-playground__form">
+      <ff-textbox formControlName="name" label="Driver Name" prefixIcon="person" [required]="true" />
+      <ff-textbox formControlName="email" label="Email" prefixIcon="mail" [required]="true" />
+      <ff-password formControlName="password" label="Portal Password" [required]="true" />
+      <ff-autocomplete formControlName="vehicle" label="Assigned Vehicle" [options]="vehicleOptions" [required]="true" />
+      <ff-radio formControlName="licenseType" label="License Type" [options]="licenseTypeOptions" layout="horizontal" [required]="true" />
+      <ff-number formControlName="capacity" label="Capacity (Tons)" [min]="1" [max]="50" [required]="true" />
+      <ff-dropdown formControlName="status" label="Status" [options]="statusOptions" [required]="true" />
+      <ff-dropdown
+        formControlName="currency"
+        label="Default Currency"
+        [options]="currencyOptions"
+        [required]="true"
+        [clearable]="true"
+        searchPlaceholder="Search options..." />
+      <ff-datepicker formControlName="licenseExpiry" label="License Expiry" [required]="true" />
+      <ff-datetime formControlName="joinedAt" label="Joined Date & Time" />
+      <ff-timepicker formControlName="shiftStart" label="Shift Start" />
+      <div class="ff-playground__full">
+        <ff-textarea formControlName="address" label="Address" [rows]="3" />
+      </div>
+      <ff-file-upload label="Upload Documents" [multiple]="true" hint="License, ID proof" />
+      <ff-image-upload label="Driver Photo" />
+      <ff-checkbox formControlName="termsAccepted" label="Documents verified" [required]="true" />
+      <ff-switch formControlName="isActive" label="Active for trips" />
+      <div class="ff-playground__actions">
+        <ff-button type="submit" label="Save Driver" icon="save" variant="primary" />
+        <ff-button type="button" label="Reset" variant="outline" (ffClick)="form.reset({ isActive: true, status: 'ACTIVE', licenseType: 'HMV', capacity: 12, shiftStart: '09:00' })" />
+      </div>
+    </form>
+
+    @if (submitted()) {
+      <pre class="ff-playground__output">{{ submitted() }}</pre>
+    }
+
+    <ff-expansion-panel title="Advanced Notes" subtitle="Implementation details">
+      <p class="ff-playground__note">All form controls extend <code>FfControlBase</code> with CVA, validation, permissions, and theme support.</p>
+    </ff-expansion-panel>
+  }
+
+  @if (activeTab() === 'layout') {
+    <ff-filter-panel [fields]="filterFields" (filterApply)="notifySvc.info('Filters applied')" (filterReset)="notifySvc.info('Filters reset')" />
+
+    <ff-card title="Layout Components" subtitle="Card, empty state, footer">
+      <p>Compose pages with <code>ff-page-container</code>, <code>ff-page-header</code>, <code>ff-toolbar</code>, and <code>ff-card</code>.</p>
+      <div ffCardFooter>
+        <ff-button label="Toggle Empty State" variant="outline" (ffClick)="showEmpty.set(!showEmpty())" />
+      </div>
+    </ff-card>
+
+    @if (showEmpty()) {
+      <ff-empty-state
+        title="No drivers yet"
+        message="Add your first driver to get started."
+        actionLabel="Add Driver"
+        (action)="sidebarOpen.set(true)" />
+    }
+
+    <ff-page-footer [sticky]="true">
+      <ff-button label="Cancel" variant="ghost" />
+      <ff-button label="Save Changes" icon="save" variant="primary" />
+    </ff-page-footer>
+  }
+
+  @if (activeTab() === 'grid') {
+    <ff-card title="Driver List" [padding]="'none'">
+      <ff-grid [config]="gridConfig" [data]="drivers()" />
+    </ff-card>
+  }
+</ff-page-container>
+
+<ff-sidebar [open]="sidebarOpen()" title="Driver Details" (closed)="sidebarOpen.set(false)">
+  <p>Use <code>ff-sidebar</code> for detail drawers and quick-edit panels.</p>
+  <div ffSidebarFooter>
+    <ff-button label="Close" variant="outline" (ffClick)="sidebarOpen.set(false)" />
+    <ff-button label="Save" variant="primary" />
+  </div>
+</ff-sidebar>

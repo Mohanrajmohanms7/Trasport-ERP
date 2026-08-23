@@ -1,0 +1,12 @@
+<div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm mb-6">
+  <!-- Section Title Header -->
+  <div class="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4 select-none">
+    <span [class]="iconColorClass" class="material-symbols-outlined text-xl">{{ icon }}</span>
+    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">{{ title }}</h3>
+  </div>
+  
+  <!-- Section Fields Grid Content projection -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <ng-content></ng-content>
+  </div>
+</div>

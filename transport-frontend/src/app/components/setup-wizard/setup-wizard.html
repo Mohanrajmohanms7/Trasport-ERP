@@ -1,0 +1,208 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 font-sans py-8 px-4">
+  <div class="max-w-4xl mx-auto flex flex-col gap-6">
+
+    <!-- Header -->
+    <div class="flex flex-col items-center text-center gap-2 select-none">
+      <div class="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/25">
+        <span class="material-symbols-outlined text-white text-[30px]">rocket_launch</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">Welcome to FleetFlow ERP</h1>
+      <p class="text-sm text-slate-500 max-w-lg">
+        Let's set up your business. Complete the steps below, or skip any step and add the data later from the ERP screens.
+      </p>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="p-3 bg-rose-50 border border-rose-100 rounded-lg text-xs font-semibold text-rose-600 flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-base">report</span>
+        <span>{{ errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Seeding Card -->
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex flex-col gap-4 shadow-sm select-none">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-blue-600 text-[28px] mt-0.5">database_schema</span>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-sm font-bold text-slate-900">Example supporting data (recommended)</h3>
+          <p class="text-xs text-slate-500 max-w-2xl">
+            Loads dropdowns, sample materials (M Sand, Jalli), and one quarry for your company only.
+            It does not create Customer / Vehicle / Driver — enter one of each yourself, then complete Booking → Trip → Invoice.
+          </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" (click)="seedSupportingData()" [disabled]="loading()"
+                class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-bold rounded-xl shadow-md transition flex items-center gap-2 cursor-pointer">
+          <span class="material-symbols-outlined text-[16px]">{{ loading() ? 'sync' : 'playlist_add_check' }}</span>
+          {{ loading() ? 'Loading…' : 'Load Example Lookups & Materials' }}
+        </button>
+        <button type="button" (click)="seedDemoData()" [disabled]="loading()"
+                class="h-10 px-4 bg-white border border-slate-200 hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer"
+                title="Wipes the whole database — local AKS demo only">
+          <span class="material-symbols-outlined text-[16px]">warning</span>
+          Full DB reset (dev only)
+        </button>
+      </div>
+    </div>
+
+    <!-- Wizard -->
+    <div class="bg-white rounded-2xl border border-slate-200/70 shadow-[0_10px_40px_-12px_rgba(15,23,42,0.18)] p-6 sm:p-8">
+      <mat-stepper orientation="vertical" [linear]="false" #stepper>
+
+        <!-- Step 1: Company -->
+        <mat-step [stepControl]="companyForm">
+          <ng-template matStepLabel>
+            Company Information
+            @if (isSaved('company')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="companyForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Company Code" placeholder="DEMO" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Company Name" placeholder="Demo Transport ERP" prefixIcon="corporate_fare" [required]="true" />
+            <ff-textbox formControlName="gstNumber" label="GST Number" prefixIcon="badge" />
+            <ff-textbox formControlName="panNumber" label="PAN Number" prefixIcon="badge" />
+            <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
+            <ff-textbox formControlName="email" label="Email" type="email" prefixIcon="mail" />
+            <div class="sm:col-span-2">
+              <ff-textbox formControlName="address" label="Address" prefixIcon="location_on" />
+            </div>
+            <ff-textbox formControlName="city" label="City" prefixIcon="location_on" />
+            <ff-textbox formControlName="state" label="State" prefixIcon="map" />
+            <ff-textbox formControlName="pincode" label="Pincode" prefixIcon="pin_drop" [digitsOnly]="true" />
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" (click)="saveCompany()" [disabled]="companyForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" matStepperNext class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Next</button>
+          </div>
+        </mat-step>
+
+        <!-- Step 2: Branch -->
+        <mat-step>
+          <ng-template matStepLabel>
+            Branch
+            @if (isSaved('branch')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="branchForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Branch Code" placeholder="BR01" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Branch Name" placeholder="Salem Branch" prefixIcon="corporate_fare" [required]="true" />
+            <ff-textbox formControlName="manager" label="Manager" prefixIcon="person" />
+            <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
+            <div class="sm:col-span-2">
+              <ff-textbox formControlName="address" label="Address" prefixIcon="location_on" />
+            </div>
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" matStepperPrevious class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Back</button>
+            <button type="button" (click)="saveBranch()" [disabled]="branchForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" matStepperNext class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Next</button>
+          </div>
+        </mat-step>
+
+        <!-- Step 3: Vehicle -->
+        <mat-step>
+          <ng-template matStepLabel>
+            Vehicle Master
+            @if (isSaved('vehicle')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="vehicleForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Registration Number" placeholder="TN 37 AB 1234" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Vehicle Name" placeholder="Tipper 01" prefixIcon="local_shipping" [required]="true" />
+            <ff-textbox formControlName="brand" label="Brand" />
+            <ff-textbox formControlName="model" label="Model" />
+            <ff-textbox formControlName="ownerName" label="Owner Name" prefixIcon="person" />
+            <ff-dropdown
+              formControlName="ownerType"
+              label="Ownership"
+              [options]="ownerTypeOptions"
+              [required]="true"
+              searchPlaceholder="Search ownership…" />
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" matStepperPrevious class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Back</button>
+            <button type="button" (click)="saveVehicle()" [disabled]="vehicleForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" matStepperNext class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Next</button>
+          </div>
+        </mat-step>
+
+        <!-- Step 4: Driver -->
+        <mat-step>
+          <ng-template matStepLabel>
+            Driver Master
+            @if (isSaved('driver')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="driverForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Driver Code" placeholder="DR00001" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Driver Name" prefixIcon="person" [required]="true" />
+            <ff-textbox formControlName="licenseNumber" label="License Number" prefixIcon="badge" [required]="true" />
+            <ff-datepicker formControlName="licenseExpiryDate" label="License Expiry" />
+            <ff-textbox formControlName="phoneNumber" label="Mobile Number" prefixIcon="call" [digitsOnly]="true" />
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" matStepperPrevious class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Back</button>
+            <button type="button" (click)="saveDriver()" [disabled]="driverForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" matStepperNext class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Next</button>
+          </div>
+        </mat-step>
+
+        <!-- Step 5: Customer -->
+        <mat-step>
+          <ng-template matStepLabel>
+            Customer Master
+            @if (isSaved('customer')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="customerForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Customer Code" placeholder="CUST001" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Customer Name" prefixIcon="person" [required]="true" />
+            <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
+            <ff-textbox formControlName="email" label="Email" type="email" prefixIcon="mail" />
+            <ff-textbox formControlName="gstNumber" label="GST Number" prefixIcon="badge" />
+            <ff-number formControlName="creditLimit" label="Credit Limit" [min]="0" />
+            <div class="sm:col-span-2">
+              <ff-textbox formControlName="address" label="Address" prefixIcon="location_on" />
+            </div>
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" matStepperPrevious class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Back</button>
+            <button type="button" (click)="saveCustomer()" [disabled]="customerForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" matStepperNext class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Next</button>
+          </div>
+        </mat-step>
+
+        <!-- Step 6: Material -->
+        <mat-step>
+          <ng-template matStepLabel>
+            Material Master
+            @if (isSaved('material')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
+          </ng-template>
+          <form [formGroup]="materialForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+            <ff-textbox formControlName="code" label="Material Code" placeholder="MSAND" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Material Name" placeholder="M-Sand" prefixIcon="label" [required]="true" />
+            <ff-number formControlName="defaultRate" label="Default Rate" [min]="0" />
+            <ff-number formControlName="density" label="Density" [min]="0" [step]="0.001" />
+            <div class="sm:col-span-2">
+              <ff-textbox formControlName="description" label="Description" prefixIcon="notes" />
+            </div>
+          </form>
+          <div class="flex items-center gap-3 pt-5">
+            <button type="button" matStepperPrevious class="h-10 px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-lg transition cursor-pointer">Back</button>
+            <button type="button" (click)="saveMaterial()" [disabled]="materialForm.invalid || loading()" class="h-10 px-5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition cursor-pointer">Save</button>
+            <button type="button" (click)="finishSetup()" [disabled]="loading()" class="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 cursor-pointer">
+              <span class="material-symbols-outlined text-[18px]">check_circle</span>
+              Finish Setup
+            </button>
+          </div>
+        </mat-step>
+
+      </mat-stepper>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="flex items-center justify-between">
+      <button type="button" (click)="skipSetup()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 transition cursor-pointer">
+        Skip for now
+      </button>
+      <p class="text-xs text-slate-400">You can change all of this later under Settings.</p>
+    </div>
+
+  </div>
+</div>

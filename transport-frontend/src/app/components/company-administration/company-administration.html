@@ -1,0 +1,377 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">corporate_fare</span>
+        Company Administration
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Configure company profiles, registers branches, manage fiscal dates parameters, and default number sequences</p>
+    </div>
+  </header>
+
+  <!-- Messages Alert Banners -->
+  @if (successMessage()) {
+    <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-850 rounded-lg text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-2.5 max-w-3xl">
+      <span class="material-icons text-sm">check_circle</span>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+  @if (errorMessage()) {
+    <div class="p-3.5 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-2.5 max-w-3xl">
+      <span class="material-icons text-sm">report_problem</span>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Navigation Controls -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none overflow-x-auto">
+      <button (click)="activeTab.set('profile')" [class.border-b-2]="activeTab() === 'profile'" [class.border-blue-600]="activeTab() === 'profile'" [class.text-slate-900]="activeTab() === 'profile'" [class.dark:text-white]="activeTab() === 'profile'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
+        Company Profile
+      </button>
+      <button (click)="activeTab.set('branches')" [class.border-b-2]="activeTab() === 'branches'" [class.border-blue-600]="activeTab() === 'branches'" [class.text-slate-900]="activeTab() === 'branches'" [class.dark:text-white]="activeTab() === 'branches'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
+        Branches
+      </button>
+      <button (click)="activeTab.set('years')" [class.border-b-2]="activeTab() === 'years'" [class.border-blue-600]="activeTab() === 'years'" [class.text-slate-900]="activeTab() === 'years'" [class.dark:text-white]="activeTab() === 'years'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
+        Financial Years
+      </button>
+      <button (click)="activeTab.set('settings')" [class.border-b-2]="activeTab() === 'settings'" [class.border-blue-600]="activeTab() === 'settings'" [class.text-slate-900]="activeTab() === 'settings'" [class.dark:text-white]="activeTab() === 'settings'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white whitespace-nowrap">
+        Business Preferences
+      </button>
+    </div>
+
+    <!-- Tab Panels Viewports -->
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+      
+      <!-- Loading indicator -->
+      @if (loading()) {
+        <div class="flex-1 flex flex-col items-center justify-center p-12 gap-3 text-center">
+          <span class="w-8 h-8 border-3 border-slate-200 dark:border-slate-800 border-t-blue-500 rounded-full animate-spin"></span>
+          <span class="text-xs text-slate-600 dark:text-slate-450">Saving configurations data...</span>
+        </div>
+      } @else {
+
+        <!-- 1. Company Profile Viewport -->
+        @if (activeTab() === 'profile') {
+          <form [formGroup]="companyForm" (ngSubmit)="saveCompany()" class="flex flex-col gap-5 max-w-4xl">
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ff-textbox formControlName="code" label="Company Code" [readonly]="true" prefixIcon="tag" />
+              <div class="md:col-span-2">
+                <ff-textbox formControlName="name" label="Company Name" placeholder="Company Name" prefixIcon="corporate_fare" [required]="true" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ff-textbox formControlName="gstNumber" label="GSTIN Registry" placeholder="27AAAAA1111A1Z1" prefixIcon="badge" [required]="true" />
+              <ff-textbox formControlName="panNumber" label="PAN Card No" placeholder="AAAAA1111A" prefixIcon="badge" [required]="true" />
+              <ff-textbox formControlName="cinNumber" label="CIN Registry" placeholder="CIN Number" prefixIcon="badge" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <ff-textbox formControlName="phone" label="Phone number" placeholder="Phone" prefixIcon="call" [digitsOnly]="true" [required]="true" />
+              <ff-textbox formControlName="email" label="Email Address" type="email" placeholder="email@company.com" prefixIcon="mail" [required]="true" />
+              <ff-textbox formControlName="website" label="Website URL" placeholder="www.company.com" prefixIcon="link" />
+            </div>
+
+            <ff-textarea formControlName="address" label="Registered Address" placeholder="Registered office address details" [rows]="3" [required]="true" />
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <ff-textbox formControlName="city" label="City" placeholder="City" prefixIcon="location_on" [required]="true" />
+              <ff-textbox formControlName="state" label="State" placeholder="State" prefixIcon="map" [required]="true" />
+              <ff-textbox formControlName="country" label="Country" prefixIcon="public" [required]="true" />
+              <ff-textbox formControlName="pincode" label="Pincode" placeholder="Pincode" prefixIcon="pin_drop" [digitsOnly]="true" [required]="true" />
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
+              <ff-button type="submit" label="Save Profile Details" icon="save" variant="primary" [disabled]="companyForm.invalid || loading()" />
+            </div>
+
+          </form>
+        }
+
+        <!-- 2. Branches Management Viewport -->
+        @if (activeTab() === 'branches') {
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Branch Offices Locations</span>
+            <button (click)="openAddBranch()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add_location_alt</span> Register Branch
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Branch Code</th>
+                  <th class="p-4">Branch Name</th>
+                  <th class="p-4">Manager</th>
+                  <th class="p-4">Phone</th>
+                  <th class="p-4">Email</th>
+                  <th class="p-4">Coordinates (Lat, Lon)</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (branch of branches(); track branch.code) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ branch.code }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ branch.name }}</td>
+                    <td class="p-4 text-slate-700 dark:text-slate-300">{{ branch.manager || 'N/A' }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-350">{{ branch.phone }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-350">{{ branch.email }}</td>
+                    <td class="p-4 font-mono text-[10px] text-slate-500">
+                      {{ branch.latitude || '0.000000' }}, {{ branch.longitude || '0.000000' }}
+                    </td>
+                    <td class="p-4">
+                      <span [class.bg-emerald-50]="branch.status === 'ACTIVE'" [class.dark:bg-emerald-950]="branch.status === 'ACTIVE'" [class.text-emerald-700]="branch.status === 'ACTIVE'" [class.dark:text-emerald-400]="branch.status === 'ACTIVE'"
+                            [class.bg-slate-100]="branch.status === 'INACTIVE'" [class.dark:bg-slate-950]="branch.status === 'INACTIVE'" [class.text-slate-600]="branch.status === 'INACTIVE'" [class.dark:text-slate-400]="branch.status === 'INACTIVE'"
+                            class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-850">
+                        {{ branch.status }}
+                      </span>
+                    </td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button (click)="openEditBranch(branch)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button (click)="deleteBranch(branch)" class="p-1 hover:text-rose-600 dark:hover:text-rose-400 transition">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- 3. Financial Years Viewport -->
+        @if (activeTab() === 'years') {
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Fiscal Financial Years</span>
+            <button (click)="openAddYear()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add_chart</span> Add Fiscal Year
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Year Code</th>
+                  <th class="p-4">Title Description</th>
+                  <th class="p-4">Start Date</th>
+                  <th class="p-4">End Date</th>
+                  <th class="p-4">Default</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fy of financialYears(); track fy.code) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ fy.code }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ fy.name }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-350">{{ fy.startDate }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-350">{{ fy.endDate }}</td>
+                    <td class="p-4">
+                      @if (fy.isDefault) {
+                        <span class="px-2 py-0.5 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-400 text-[10px] font-bold rounded border border-blue-200 dark:border-blue-900">DEFAULT</span>
+                      } @else {
+                        <span class="text-slate-600 dark:text-slate-400 text-[10px]">-</span>
+                      }
+                    </td>
+                    <td class="p-4">
+                      <span [class.bg-emerald-50]="fy.status === 'ACTIVE'" [class.dark:bg-emerald-950]="fy.status === 'ACTIVE'" [class.text-emerald-700]="fy.status === 'ACTIVE'" [class.dark:text-emerald-400]="fy.status === 'ACTIVE'"
+                            [class.bg-slate-100]="fy.status === 'INACTIVE'" [class.dark:bg-slate-950]="fy.status === 'INACTIVE'" [class.text-slate-600]="fy.status === 'INACTIVE'" [class.dark:text-slate-400]="fy.status === 'INACTIVE'"
+                            class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-850">
+                        {{ fy.status }}
+                      </span>
+                    </td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button (click)="openEditYear(fy)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- 4. System Settings Viewport -->
+        @if (activeTab() === 'settings') {
+          <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="flex flex-col gap-6 max-w-4xl">
+            
+            <!-- Number sequence section -->
+            <div class="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="material-icons text-blue-600 dark:text-blue-500 text-sm">tag</span>
+                Entity Number Sequences (Number Series)
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ff-textbox formControlName="vehicleSeries" label="Vehicle Number prefix" prefixIcon="tag" />
+                <ff-textbox formControlName="customerSeries" label="Customer Number prefix" prefixIcon="tag" />
+                <ff-textbox formControlName="driverSeries" label="Driver Number prefix" prefixIcon="tag" />
+                <ff-textbox formControlName="tripSeries" label="Trip Number prefix" prefixIcon="tag" />
+                <ff-textbox formControlName="invoiceSeries" label="Invoice Number prefix" prefixIcon="tag" />
+              </div>
+            </div>
+
+            <!-- Tax configurations section -->
+            <div class="flex flex-col gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="material-icons text-emerald-600 dark:text-emerald-500 text-sm">percent</span>
+                Tax & GST Settings (GST settings)
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ff-textbox formControlName="taxType" label="Default Tax Type" />
+                <ff-number formControlName="gstPercentage" label="Default GST Rate (%)" [min]="0" [max]="100" />
+                <ff-textbox formControlName="defaultCurrency" label="Base Currency" />
+              </div>
+            </div>
+
+            <!-- Email settings section -->
+            <div class="flex flex-col gap-4">
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="material-icons text-purple-600 dark:text-purple-500 text-sm">alternate_email</span>
+                SMTP Email Configurations
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ff-textbox formControlName="smtpHost" label="SMTP Host Server" prefixIcon="dns" />
+                <ff-number formControlName="smtpPort" label="SMTP Port" [min]="0" />
+                <ff-textbox formControlName="smtpUser" label="Sender Username" prefixIcon="person" />
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-800">
+              <ff-button type="submit" label="Save Preferences" icon="save" variant="primary" [disabled]="settingsForm.invalid || loading()" />
+            </div>
+
+          </form>
+        }
+
+      }
+
+    </div>
+  </main>
+
+  <!-- Centered Branch Popup -->
+  @if (showBranchEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showBranchEditor.set(false)">
+      <div class="w-full max-w-3xl max-h-[90vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">add_location_alt</span>
+            {{ editingBranch() ? 'Edit Branch details' : 'Register New Branch' }}
+          </h2>
+          <button type="button" (click)="showBranchEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="branchForm" (ngSubmit)="saveBranch()" class="flex flex-col max-h-[calc(90vh-4rem)]">
+          <div class="px-5 py-5 flex flex-col gap-4 overflow-y-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-textbox formControlName="code" label="Branch Code" placeholder="E.g., BR-101" prefixIcon="tag" [required]="true" />
+              <ff-textbox formControlName="name" label="Branch Name" placeholder="Branch Name" prefixIcon="corporate_fare" [required]="true" />
+            </div>
+
+            <ff-textbox formControlName="manager" label="Branch Manager" placeholder="Manager Name" prefixIcon="person" [required]="true" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-textbox formControlName="phone" label="Phone number" placeholder="Phone" prefixIcon="call" [digitsOnly]="true" [required]="true" />
+              <ff-textbox formControlName="email" label="Email Address" type="email" placeholder="email@branch.com" prefixIcon="mail" [required]="true" />
+            </div>
+
+            <ff-textbox formControlName="gstNumber" label="Branch GSTIN" placeholder="27AAAAA1111A1Z1" prefixIcon="badge" />
+            <ff-textarea formControlName="address" label="Branch Address" placeholder="Physical location details" [rows]="2" [required]="true" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <ff-number formControlName="latitude" label="Latitude Coord" placeholder="12.971598" [allowNegative]="true" />
+              <ff-number formControlName="longitude" label="Longitude Coord" placeholder="77.594562" [allowNegative]="true" />
+              <ff-dropdown
+                formControlName="status"
+                label="Status"
+                [options]="statusOptions"
+                [required]="true"
+                [searchable]="false"
+                searchPlaceholder="Search status…" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showBranchEditor.set(false)" />
+            <ff-button type="submit" label="Save Branch" icon="save" variant="primary" [disabled]="branchForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Centered Financial Year Popup -->
+  @if (showYearEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showYearEditor.set(false)">
+      <div class="w-full max-w-2xl max-h-[90vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">add_chart</span>
+            {{ editingYear() ? 'Edit Fiscal Year' : 'Add Fiscal Financial Year' }}
+          </h2>
+          <button type="button" (click)="showYearEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="yearForm" (ngSubmit)="saveYear()" class="flex flex-col">
+          <div class="px-5 py-5 flex flex-col gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-textbox formControlName="code" label="Year Code" placeholder="E.g., FY2026" prefixIcon="tag" [required]="true" />
+              <ff-textbox formControlName="name" label="Title Name" placeholder="E.g., Fiscal Year 2025-26" prefixIcon="label" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-datepicker formControlName="startDate" label="Start Date" [required]="true" />
+              <ff-datepicker formControlName="endDate" label="End Date" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+              <ff-dropdown
+                formControlName="status"
+                label="Status"
+                [options]="statusOptions"
+                [required]="true"
+                [searchable]="false"
+                searchPlaceholder="Search status…" />
+              <ff-checkbox formControlName="isDefault" label="Set as active default fiscal year" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showYearEditor.set(false)" />
+            <ff-button type="submit" label="Save Fiscal Year" icon="save" variant="primary" [disabled]="yearForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

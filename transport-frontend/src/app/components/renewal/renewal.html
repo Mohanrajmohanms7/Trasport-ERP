@@ -1,0 +1,109 @@
+<div class="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-slate-100 font-sans">
+  <div class="w-full max-w-4xl bg-slate-800 border border-slate-700/60 rounded-xl shadow-2xl overflow-hidden p-6 md:p-8 space-y-6">
+    
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-700 pb-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="material-icons text-amber-500 font-bold">warning</span>
+          <h1 class="text-lg font-bold text-white tracking-wide">Subscription Period Expired</h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">
+          Your company SaaS ERP subscription has expired. Standard access is locked until a renewal plan is activated.
+        </p>
+      </div>
+      <button (click)="logout()" class="mt-3 md:mt-0 flex items-center gap-1 px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-xs font-semibold self-start md:self-auto transition">
+        <span class="material-icons text-xs">logout</span> Logout Session
+      </button>
+    </div>
+
+    <!-- Notifications -->
+    <div *ngIf="errorMessage()" class="p-3 bg-rose-950/30 border border-rose-900 text-rose-300 rounded text-xs">
+      {{ errorMessage() }}
+    </div>
+    <div *ngIf="successMessage()" class="p-3 bg-emerald-950/30 border border-emerald-900 text-emerald-300 rounded text-xs font-semibold">
+      {{ successMessage() }}
+    </div>
+
+    <!-- Plans Catalog Grid -->
+    <div class="space-y-3">
+      <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Available Renewal Plan</h2>
+      
+      <div *ngIf="loading() && plans().length === 0" class="text-center py-10 text-slate-450 text-xs">
+        Loading renewal plans catalog...
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div *ngFor="let plan of plans()" 
+             (click)="selectPlan(plan)"
+             [class.border-blue-500]="selectedPlan()?.id === plan.id" 
+             [class.bg-blue-950/10]="selectedPlan()?.id === plan.id"
+             [class.ring-2]="selectedPlan()?.id === plan.id"
+             [class.ring-blue-500/30]="selectedPlan()?.id === plan.id"
+             class="pricing-card cursor-pointer border border-slate-700 bg-slate-850 p-4 rounded-lg flex flex-col justify-between hover:border-slate-600 transition space-y-4">
+          
+          <div class="space-y-1">
+            <div class="flex justify-between items-start">
+              <span class="text-[9px] font-bold bg-slate-700 text-slate-300 px-2 py-0.5 rounded uppercase tracking-wider font-mono">{{ plan.code }}</span>
+              <span *ngIf="selectedPlan()?.id === plan.id" class="text-blue-400 font-bold text-xs flex items-center gap-0.5">
+                <span class="material-icons text-[10px]">check_circle</span> Selected
+              </span>
+            </div>
+            <h3 class="font-bold text-white text-sm pt-1">{{ plan.name }}</h3>
+            <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed" [title]="plan.description">{{ plan.description || 'No plan description provided.' }}</p>
+          </div>
+
+          <div class="space-y-3 pt-2">
+            <!-- Price -->
+            <div class="border-t border-slate-700/50 pt-2 flex items-baseline gap-1">
+              <span class="text-xl font-bold text-white">₹{{ plan.price | number:'1.2-2' }}</span>
+              <span class="text-[10px] text-slate-400">/ {{ plan.billingPeriod }}</span>
+            </div>
+
+            <!-- Limits List -->
+            <ul class="text-[10px] text-slate-350 space-y-1">
+              <li class="flex items-center gap-1">
+                <span class="material-icons text-[10px] text-slate-500">group</span>
+                <span>{{ plan.maxUsers }} Max Allowed Users</span>
+              </li>
+              <li class="flex items-center gap-1">
+                <span class="material-icons text-[10px] text-slate-500">local_shipping</span>
+                <span>{{ plan.maxVehicles }} Fleet Vehicles</span>
+              </li>
+              <li class="flex items-center gap-1">
+                <span class="material-icons text-[10px] text-slate-500">description</span>
+                <span>{{ plan.maxInvoices }} Monthly Invoices</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Renewal Form Controls -->
+    <div *ngIf="selectedPlan()" class="bg-slate-850 border border-slate-700 p-4 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+      <div class="space-y-1.5">
+        <h3 class="text-xs font-bold text-white">Billing Configuration</h3>
+        <p class="text-[11px] text-slate-400">
+          Selected plan <strong>{{ selectedPlan()?.name }}</strong> will charge <strong>₹{{ selectedPlan()?.price | number:'1.2-2' }}</strong>. 
+          Re-activation takes effect instantly upon confirming payment.
+        </p>
+      </div>
+
+      <div class="flex flex-col md:flex-row gap-3 items-end md:justify-end">
+        <div class="flex flex-col gap-1 w-full md:w-56 text-left">
+          <label class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Payment Method</label>
+          <select [(ngModel)]="paymentMethod" class="px-2 py-1.5 bg-slate-900 border border-slate-700 rounded text-xs text-white w-full focus:border-blue-500 focus:outline-none">
+            <option *ngFor="let opt of paymentMethods" [value]="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+
+        <button (click)="renew()" [disabled]="loading()" class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center gap-1 transition shadow-lg shadow-blue-500/20 disabled:opacity-50">
+          <span *ngIf="loading()" class="material-icons animate-spin text-xs">sync</span>
+          <span>Renew & Reactivate Account</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

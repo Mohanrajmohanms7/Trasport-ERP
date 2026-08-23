@@ -1,0 +1,50 @@
+@if (isVisible()) {
+  <div
+    class="ff-field ff-image-upload"
+    [class.ff-field--error]="hasError() || !!error()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <span class="ff-field__label">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </span>
+    }
+
+    @if (previewUrl()) {
+      <div class="ff-image-upload__preview" [style.height]="previewHeight()">
+        <img [src]="previewUrl()!" [alt]="displayLabel() || 'Uploaded image'" />
+        <button type="button" class="ff-image-upload__remove" aria-label="Remove image" [disabled]="isDisabled()" (click)="remove()">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    } @else {
+      <div
+        class="ff-image-upload__dropzone"
+        [class.ff-image-upload__dropzone--disabled]="isDisabled()"
+        (drop)="onDrop($event)"
+        (dragover)="onDragOver($event)">
+        <span class="material-symbols-outlined">add_photo_alternate</span>
+        <p>Drop image or</p>
+        <label class="ff-image-upload__browse">
+          Choose image
+          <input
+            type="file"
+            [accept]="accept()"
+            [disabled]="isDisabled() || isReadonly()"
+            (change)="onFileSelected($event)" />
+        </label>
+        <p class="ff-image-upload__hint">Max {{ maxSizeMb() }} MB</p>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="ff-field__error" role="alert">{{ error() }}</p>
+    } @else if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

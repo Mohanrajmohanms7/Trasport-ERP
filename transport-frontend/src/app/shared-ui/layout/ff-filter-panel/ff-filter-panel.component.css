@@ -1,0 +1,30 @@
+.ff-filter {
+  background: var(--ff-surface-card);
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-xl);
+  padding: var(--ff-space-4) var(--ff-space-5);
+  margin-bottom: var(--ff-space-4);
+}
+
+.ff-filter__header {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  margin-bottom: var(--ff-space-4);
+  color: var(--ff-text-secondary);
+  font-weight: 600;
+  font-size: var(--ff-text-sm);
+}
+
+.ff-filter__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--ff-space-5) var(--ff-space-4);
+  margin-bottom: var(--ff-space-4);
+  align-items: start;
+}
+
+.ff-filter__actions {
+  display: flex;
+  gap: var(--ff-space-2);
+}

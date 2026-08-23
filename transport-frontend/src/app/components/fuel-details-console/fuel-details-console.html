@@ -1,0 +1,251 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">local_gas_station</span>
+        Fuel Management
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Monitor fuel allocations entries, verify odometer mileage calculations, and audit fuel requests</p>
+    </div>
+  </header>
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Controls selector -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+      <button (click)="activeTab.set('entries')" [class.border-b-2]="activeTab() === 'entries'" [class.border-blue-600]="activeTab() === 'entries'" [class.text-slate-900]="activeTab() === 'entries'" [class.dark:text-white]="activeTab() === 'entries'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Fuel Entry Logs
+      </button>
+      <button (click)="activeTab.set('requests')" [class.border-b-2]="activeTab() === 'requests'" [class.border-blue-600]="activeTab() === 'requests'" [class.text-slate-900]="activeTab() === 'requests'" [class.dark:text-white]="activeTab() === 'requests'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Fuel Request Workflows
+      </button>
+    </div>
+
+    <!-- Tab Viewports -->
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+      
+      <!-- 1. Fuel Entries Viewport -->
+      @if (activeTab() === 'entries') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Refueling Logs</span>
+          <button (click)="openAddEntry()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">local_gas_station</span> Add Fuel Entry
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Entry Number</th>
+                <th class="p-4">Vehicle</th>
+                <th class="p-4">Driver</th>
+                <th class="p-4">Fuel Station</th>
+                <th class="p-4 text-right">Quantity (Ltrs)</th>
+                <th class="p-4 text-right">Total Amount</th>
+                <th class="p-4">Odometer (Prev &rarr; Cur)</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of fuelEntries(); track entry.fuelEntryNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ entry.fuelEntryNumber }}</td>
+                  <td class="p-4 font-mono text-slate-900 dark:text-white font-semibold">{{ entry.vehicle?.registrationNumber }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ entry.driver?.name }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ entry.fuelStation }}</td>
+                  <td class="p-4 text-right font-mono text-slate-900 dark:text-white">{{ entry.fuelQuantity }} L</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ entry.totalAmount | number }}</td>
+                  <td class="p-4 font-mono text-[10px] text-slate-500">
+                    {{ entry.previousOdometer }} km &rarr; {{ entry.currentOdometer }} km
+                  </td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <button (click)="openEditEntry(entry)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Log">
+                        <span class="material-icons text-sm">edit</span>
+                      </button>
+                      <button (click)="deleteEntry(entry)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Log">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No recorded fuel logs.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- 2. Fuel Requests Viewport -->
+      @if (activeTab() === 'requests') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Pending Fuel Approvals</span>
+          <button (click)="showRequestForm.set(true)" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">request_quote</span> Submit Fuel Request
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Request Number</th>
+                <th class="p-4">Trip Number</th>
+                <th class="p-4 text-right">Requested Quantity</th>
+                <th class="p-4 text-right">Requested Amount</th>
+                <th class="p-4">Requested By</th>
+                <th class="p-4">Status</th>
+                <th class="p-4 text-center">Workflow Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (req of fuelRequests(); track req.requestNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ req.requestNumber }}</td>
+                  <td class="p-4 font-mono text-slate-900 dark:text-white font-semibold">{{ req.trip?.tripNumber }}</td>
+                  <td class="p-4 text-right font-mono text-slate-900 dark:text-white">{{ req.requestedQuantity }} L</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ req.requestedAmount | number }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ req.requestedBy }}</td>
+                  <td class="p-4">
+                    <span [class.bg-blue-50]="req.status === 'PENDING'" [class.dark:bg-blue-950]="req.status === 'PENDING'" [class.text-blue-700]="req.status === 'PENDING'" [class.dark:text-blue-400]="req.status === 'PENDING'"
+                          [class.bg-emerald-50]="req.status === 'APPROVED'" [class.dark:bg-emerald-950]="req.status === 'APPROVED'" [class.text-emerald-700]="req.status === 'APPROVED'" [class.dark:text-emerald-400]="req.status === 'APPROVED'"
+                          [class.bg-rose-50]="req.status === 'REJECTED'" [class.dark:bg-rose-950]="req.status === 'REJECTED'" [class.text-rose-700]="req.status === 'REJECTED'" [class.dark:text-rose-400]="req.status === 'REJECTED'"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                      {{ req.status }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-3">
+                      @if (req.status === 'PENDING') {
+                        <button (click)="approveRequest(req)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve Request">
+                          <span class="material-icons text-sm">check_circle</span>
+                        </button>
+                        <button (click)="rejectRequest(req)" class="p-1 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Reject Request">
+                          <span class="material-icons text-sm">cancel</span>
+                        </button>
+                      } @else {
+                        <span class="text-slate-600 dark:text-slate-400 font-semibold text-[10px] uppercase">Processed</span>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No pending fuel requests.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    </div>
+  </main>
+
+  <!-- Centered Add/Edit Fuel Entry Popup -->
+  @if (showEntryForm()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showEntryForm.set(false)">
+      <div class="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">local_gas_station</span>
+            {{ editingEntry() ? 'Edit Fuel Entry' : 'Add Fuel Entry' }}
+          </h2>
+          <button type="button" (click)="showEntryForm.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="entryForm" (ngSubmit)="saveEntry()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div formGroupName="vehicle">
+                <ff-dropdown formControlName="id" label="Select Vehicle" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <div formGroupName="driver">
+                <ff-dropdown formControlName="id" label="Select Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div formGroupName="trip">
+                <ff-dropdown formControlName="id" label="Link Active Trip" [options]="tripOptions" searchPlaceholder="Search options..." />
+              </div>
+              <ff-textbox formControlName="fuelStation" label="Fuel Station Name" placeholder="Station name" prefixIcon="local_gas_station" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-number formControlName="fuelQuantity" label="Quantity (Litres)" placeholder="0.00" [min]="0" [required]="true" />
+              <ff-number formControlName="ratePerLitre" label="Rate Per Litre" placeholder="0.00" [min]="0" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-number formControlName="previousOdometer" label="Previous Odometer" placeholder="0.00" [min]="0" [required]="true" />
+              <ff-number formControlName="currentOdometer" label="Current Odometer" placeholder="0.00" [min]="0" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
+              <ff-textbox formControlName="invoiceNumber" label="Invoice / Receipt Number" placeholder="Bill Reference" prefixIcon="receipt" />
+            </div>
+
+            <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Dispensation notes or fueling details" prefixIcon="notes" />
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEntryForm.set(false)" />
+            <ff-button type="submit" label="Save Entry" icon="save" variant="primary" [disabled]="entryForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Centered Fuel Request Popup -->
+  @if (showRequestForm()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showRequestForm.set(false)">
+      <div class="w-full max-w-xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">request_quote</span>
+            Submit Fuel Request
+          </h2>
+          <button type="button" (click)="showRequestForm.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="requestForm" (ngSubmit)="saveRequest()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            <div formGroupName="trip">
+              <ff-dropdown formControlName="id" label="Link Active Trip" [options]="requestTripOptions" [required]="true" searchPlaceholder="Search options..." />
+            </div>
+            <ff-number formControlName="requestedQuantity" label="Requested Quantity (Litres)" placeholder="E.g. 150" [min]="0" [required]="true" />
+            <ff-number formControlName="requestedAmount" label="Requested Budget Amount" placeholder="E.g. 15000" [min]="0" [required]="true" />
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showRequestForm.set(false)" />
+            <ff-button type="submit" label="Submit Request" icon="save" variant="primary" [disabled]="requestForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

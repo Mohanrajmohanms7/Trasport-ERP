@@ -1,0 +1,255 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  <ff-toast />
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">assessment</span>
+        Dashboards & BI Analytics
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Monitor executive revenue KPIs, design custom reports layouts, and configure scheduled cron triggers</p>
+    </div>
+  </header>
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Controls selector -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+      <button (click)="activeTab.set('bi')" [class.border-b-2]="activeTab() === 'bi'" [class.border-blue-600]="activeTab() === 'bi'" [class.text-slate-900]="activeTab() === 'bi'" [class.dark:text-white]="activeTab() === 'bi'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Executive BI Viewport
+      </button>
+      <button (click)="activeTab.set('templates')" [class.border-b-2]="activeTab() === 'templates'" [class.border-blue-600]="activeTab() === 'templates'" [class.text-slate-900]="activeTab() === 'templates'" [class.dark:text-white]="activeTab() === 'templates'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Report Templates
+      </button>
+      <button (click)="activeTab.set('schedules')" [class.border-b-2]="activeTab() === 'schedules'" [class.border-blue-600]="activeTab() === 'schedules'" [class.text-slate-900]="activeTab() === 'schedules'" [class.dark:text-white]="activeTab() === 'schedules'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Scheduled Triggers
+      </button>
+    </div>
+
+    <!-- Tab Viewports -->
+    <div class="flex-1 p-6 overflow-y-auto flex flex-col gap-6">
+      
+      <!-- 1. Executive BI Viewport -->
+      @if (activeTab() === 'bi') {
+        @if (biLoading()) {
+          <div class="p-8 text-center text-xs text-slate-500">Loading live BI metrics…</div>
+        }
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+          
+          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Today's Revenue</span>
+            <div class="text-2xl font-black text-emerald-700 dark:text-emerald-450">₹{{ todayRevenue() | number }}</div>
+            <p class="text-[10px] text-slate-500 mt-1">Invoice net amount for today</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Today's Expenses</span>
+            <div class="text-2xl font-black text-rose-700 dark:text-rose-450">₹{{ todayExpenses() | number }}</div>
+            <p class="text-[10px] text-slate-500 mt-1">Expense entries for today</p>
+          </div>
+
+          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Net Operating Profit</span>
+            <div class="text-2xl font-black text-blue-700 dark:text-blue-450">₹{{ todayProfit() | number }}</div>
+            <p class="text-[10px] text-slate-500 mt-1">Today revenue minus expenses</p>
+          </div>
+
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col gap-4">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Operational Revenue Line Trend</span>
+            <span class="text-[10px] text-slate-500 font-mono">Last {{ revenueTrend().length || 0 }} months</span>
+          </div>
+
+          <div class="relative w-full h-44 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden flex items-center justify-center">
+            @if (revenueTrend().length) {
+              <svg class="w-full h-full" viewBox="0 0 600 150" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="gradientRev" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"></stop>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"></stop>
+                  </linearGradient>
+                </defs>
+                <path [attr.d]="chartPath()" fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"></path>
+                <path [attr.d]="chartAreaPath()" fill="url(#gradientRev)"></path>
+                <line x1="0" y1="40" x2="600" y2="40" stroke="#1e293b" stroke-dasharray="4"></line>
+                <line x1="0" y1="90" x2="600" y2="90" stroke="#1e293b" stroke-dasharray="4"></line>
+              </svg>
+              <div class="absolute bottom-2 left-4 text-[10px] text-slate-500 font-mono">{{ trendLabels()[0] }}</div>
+              <div class="absolute bottom-2 right-4 text-[10px] text-slate-500 font-mono">{{ trendLabels()[trendLabels().length - 1] }}</div>
+            } @else {
+              <span class="text-xs text-slate-500">No revenue history for this company yet.</span>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 2. Report Templates Viewport -->
+      @if (activeTab() === 'templates') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Saved Templates</span>
+          <button (click)="openAddTemplate()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">tune</span> Build Report Layout
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Template Name</th>
+                <th class="p-4">Report Type</th>
+                <th class="p-4">Selected Columns List</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (tpl of templates(); track tpl.templateName) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ tpl.templateName }}</td>
+                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350">{{ tpl.reportType }}</span></td>
+                  <td class="p-4 text-slate-700 dark:text-slate-300 font-mono text-[10px]">{{ tpl.columnsList }}</td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-3">
+                      <button (click)="exportXlsx(tpl)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Export Excel (BI-294)">
+                        <span class="material-icons text-sm">file_download</span>
+                      </button>
+                      <button (click)="deleteTemplate(tpl)" class="p-1 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Template">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="p-8 text-center text-slate-500 font-semibold">No report templates created.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- 3. Scheduled Triggers Viewport -->
+      @if (activeTab() === 'schedules') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Scheduled Triggers</span>
+          <button (click)="openAddSchedule()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">schedule</span> Configure Scheduled Trigger
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Template Target</th>
+                <th class="p-4">Cron Expression</th>
+                <th class="p-4">Recipient Email</th>
+                <th class="p-4">Status</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sch of schedules(); track sch.id) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ sch.reportTemplate?.templateName }}</td>
+                  <td class="p-4 font-mono text-slate-600 dark:text-slate-350">{{ sch.cronExpression }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-300 font-mono">{{ sch.recipientEmail }}</td>
+                  <td class="p-4">
+                    <span [class.bg-emerald-50]="sch.status === 'ACTIVE'" [class.dark:bg-emerald-950]="sch.status === 'ACTIVE'" [class.text-emerald-700]="sch.status === 'ACTIVE'" [class.dark:text-emerald-400]="sch.status === 'ACTIVE'"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                      {{ sch.status }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-center">
+                    <button (click)="deleteSchedule(sch)" class="p-1 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Schedule">
+                      <span class="material-icons text-sm">delete</span>
+                    </button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No report triggers scheduled.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    </div>
+  </main>
+
+  <!-- Slide-out Sidebar Form Editor for Template -->
+  @if (showTemplateEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-500">tune</span>
+            Build Report Layout
+          </h2>
+          <button (click)="showTemplateEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+          
+          <ff-textbox formControlName="templateName" label="Template Title Name" placeholder="e.g. Monthly Revenue Summary" prefixIcon="tune" [required]="true" />
+
+          <ff-dropdown formControlName="reportType" label="Report Category Type" [options]="reportTypeOptions" [required]="true" searchPlaceholder="Search options..." />
+
+          <ff-textbox formControlName="columnsList" label="Selected Columns List" placeholder="e.g. id,invoiceNumber,customerName,netAmount" prefixIcon="view_column" [required]="true" />
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showTemplateEditor.set(false)" />
+            <ff-button type="submit" label="Save Template" icon="save" variant="primary" [disabled]="templateForm.invalid" />
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Slide-out Sidebar Form Editor for Schedule -->
+  @if (showScheduleEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-500">schedule</span>
+            Configure Scheduled Trigger
+          </h2>
+          <button (click)="showScheduleEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="scheduleForm" (ngSubmit)="saveSchedule()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+          
+          <div formGroupName="reportTemplate">
+            <ff-dropdown formControlName="id" label="Select Report Template" [options]="reportTemplateOptions" [required]="true" searchPlaceholder="Search options..." />
+          </div>
+
+          <ff-textbox formControlName="cronExpression" label="Cron Schedule Pattern" placeholder="e.g. 0 0 12 * * ?" prefixIcon="schedule" [required]="true" />
+
+          <ff-textbox formControlName="recipientEmail" label="Recipient Email Address" type="email" placeholder="e.g. manager@company.com" prefixIcon="mail" [required]="true" />
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showScheduleEditor.set(false)" />
+            <ff-button type="submit" label="Save Schedule" icon="save" variant="primary" [disabled]="scheduleForm.invalid" />
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

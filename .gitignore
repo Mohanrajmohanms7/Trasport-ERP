@@ -1,0 +1,31 @@
+.env
+.env.prod
+.env.*.local
+*.pem
+*.key
+
+# Ignore auxiliary folders
+/database
+/deployment
+/design
+/docs
+/portfolio
+/postman
+/prompts
+/scripts
+/tools
+/transport-deploy
+
+# Ignore local Java scrap files
+*.class
+*.jpg
+HelloWorld.java
+Main.java
+Student.java
+TestBuffer.java
+TestBuilder.java
+
+# Ignore local workspace settings
+.idea/
+.vscode/
+*.log

@@ -1,0 +1,5 @@
+@import '../_base/ff-control.styles.css';
+
+input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}

@@ -1,0 +1,16 @@
+<div class="ff-kpi" [attr.data-color]="color()">
+  <div class="ff-kpi__icon-wrap">
+    @if (icon()) {
+      <span class="material-symbols-outlined">{{ icon() }}</span>
+    }
+  </div>
+  <div class="ff-kpi__content">
+    <p class="ff-kpi__label">{{ label() }}</p>
+    <p class="ff-kpi__value">{{ value() }}</p>
+    @if (trend()) {
+      <p class="ff-kpi__trend" [class.ff-kpi__trend--up]="trendUp() === true" [class.ff-kpi__trend--down]="trendUp() === false">
+        {{ trend() }}
+      </p>
+    }
+  </div>
+</div>

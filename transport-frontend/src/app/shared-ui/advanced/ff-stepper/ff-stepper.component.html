@@ -1,0 +1,32 @@
+<div class="ff-stepper">
+  <div class="ff-stepper__track">
+    <div class="ff-stepper__progress" [style.width.%]="progress()"></div>
+  </div>
+  <ol class="ff-stepper__steps">
+    @for (step of steps(); track step.id; let i = $index) {
+      <li
+        class="ff-stepper__step"
+        [class.ff-stepper__step--done]="stepState(i) === 'done'"
+        [class.ff-stepper__step--active]="stepState(i) === 'active'">
+        <button type="button" class="ff-stepper__btn" (click)="goTo(i)">
+          <span class="ff-stepper__index">
+            @if (stepState(i) === 'done') {
+              <span class="material-symbols-outlined">check</span>
+            } @else {
+              {{ i + 1 }}
+            }
+          </span>
+          <span class="ff-stepper__label">
+            {{ step.label }}
+            @if (step.optional) {
+              <span class="ff-stepper__optional">(optional)</span>
+            }
+          </span>
+        </button>
+      </li>
+    }
+  </ol>
+  <div class="ff-stepper__content">
+    <ng-content />
+  </div>
+</div>

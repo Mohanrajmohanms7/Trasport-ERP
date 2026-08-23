@@ -1,0 +1,75 @@
+.ff-stepper__track {
+  height: 4px;
+  background: var(--ff-surface-hover);
+  border-radius: var(--ff-radius-full);
+  margin-bottom: var(--ff-space-6);
+  overflow: hidden;
+}
+
+.ff-stepper__progress {
+  height: 100%;
+  background: var(--ff-color-primary-600);
+  transition: width var(--ff-duration-normal);
+}
+
+.ff-stepper__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ff-space-4);
+  list-style: none;
+  margin: 0 0 var(--ff-space-6);
+  padding: 0;
+}
+
+.ff-stepper__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.ff-stepper__index {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--ff-text-xs);
+  font-weight: 700;
+  background: var(--ff-surface-hover);
+  color: var(--ff-text-muted);
+  border: 2px solid var(--ff-border-default);
+}
+
+.ff-stepper__step--active .ff-stepper__index {
+  background: var(--ff-color-primary-600);
+  border-color: var(--ff-color-primary-600);
+  color: #fff;
+}
+
+.ff-stepper__step--done .ff-stepper__index {
+  background: var(--ff-color-success-50);
+  border-color: var(--ff-color-success-500);
+  color: var(--ff-color-success-700);
+}
+
+.ff-stepper__label {
+  font-size: var(--ff-text-sm);
+  font-weight: 600;
+  color: var(--ff-text-secondary);
+}
+
+.ff-stepper__step--active .ff-stepper__label {
+  color: var(--ff-text-primary);
+}
+
+.ff-stepper__optional {
+  font-weight: 400;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-xs);
+}

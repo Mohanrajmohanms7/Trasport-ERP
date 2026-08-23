@@ -1,0 +1,26 @@
+<div class="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between mb-6 select-none">
+  <!-- Left Side Title Stack -->
+  <div class="flex flex-col">
+    <!-- Breadcrumb Indicator -->
+    @if (breadcrumbs && breadcrumbs.length > 0) {
+      <div class="flex items-center gap-1 text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
+        @for (bc of breadcrumbs; track bc; let last = $last) {
+          <span [class.text-blue-600]="last" [class.font-bold]="last">{{ bc }}</span>
+          @if (!last) {
+            <span class="material-symbols-outlined text-[10px] text-slate-350">chevron_right</span>
+          }
+        }
+      </div>
+    }
+    
+    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 leading-none">{{ title }}</h1>
+    @if (subtitle) {
+      <p class="text-xs font-medium text-slate-450 mt-1.5">{{ subtitle }}</p>
+    }
+  </div>
+
+  <!-- Right Side Content Projection Actions -->
+  <div class="flex items-center gap-3 mt-3 md:mt-0 shrink-0">
+    <ng-content select="[actions]"></ng-content>
+  </div>
+</div>

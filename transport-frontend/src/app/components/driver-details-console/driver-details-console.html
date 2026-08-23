@@ -1,0 +1,167 @@
+<ff-loading-overlay />
+<ff-toast />
+
+<ff-page-container>
+  <ff-page-header
+    title="Driver Master"
+    subtitle="Manage driver profiles, licenses, documents, attendance, and payroll"
+    [breadcrumbs]="[
+      { label: 'Dashboard', route: '/dashboard' },
+      { label: 'Masters' },
+      { label: 'Driver Master' }
+    ]"
+    [actions]="headerActions"
+    (actionClick)="onHeaderAction($event)" />
+
+  <div class="driver-kpis">
+    <ff-dashboard-card label="Total Drivers" [value]="totalElements()" icon="people" color="primary" />
+    <ff-dashboard-card label="Active" [value]="activeCount()" icon="check_circle" color="success" />
+    <ff-dashboard-card label="Inactive" [value]="inactiveCount()" icon="person_off" color="danger" />
+  </div>
+
+  <ff-toolbar title="Driver List">
+    <div ffToolbarActions class="driver-toolbar-search">
+      <ff-searchbox
+        placeholder="Search by name, code, license…"
+        (ffSearch)="onSearch($event)" />
+    </div>
+  </ff-toolbar>
+
+  @if (!loading() && !drivers().length && !searchQuery()) {
+    <ff-empty-state
+      icon="badge"
+      title="No drivers yet"
+      message="Add your first driver to start managing licenses, attendance, and payroll."
+      actionLabel="Add Driver"
+      actionIcon="person_add"
+      (action)="openAddForm()" />
+  } @else {
+    <ff-card [padding]="'none'">
+      <ff-grid
+        [config]="gridConfig()"
+        [data]="drivers()"
+        [loading]="loading()"
+        (pageChange)="onPageChange($event)"
+        (action)="onGridAction($event)" />
+    </ff-card>
+  }
+</ff-page-container>
+
+<!-- Add / Edit Driver Sidebar -->
+<ff-sidebar
+  [open]="showEditor()"
+  [title]="isEditMode() ? 'Edit Driver' : 'Add Driver'"
+  width="440px"
+  (closed)="showEditor.set(false)">
+
+  <form [formGroup]="editorForm" class="driver-form">
+    <ff-textbox formControlName="code" label="Driver Code" placeholder="DR00001" prefixIcon="tag" [required]="true" />
+    <ff-textbox formControlName="name" label="Driver Name" placeholder="Full name" prefixIcon="person" [required]="true" />
+    <ff-textbox formControlName="phoneNumber" label="Mobile Number" placeholder="98765 43210" prefixIcon="call" [digitsOnly]="true" />
+    <ff-textbox formControlName="licenseNumber" label="License Number" placeholder="TN12 2018 1234567" prefixIcon="badge" [required]="true" />
+    <ff-datepicker formControlName="licenseExpiryDate" label="License Expiry" />
+    <ff-dropdown formControlName="status" label="Status" [options]="statusOptions" [required]="true" />
+    <ff-textarea formControlName="description" label="Notes" placeholder="Optional notes" [rows]="3" />
+  </form>
+
+  <div ffSidebarFooter class="driver-form__footer">
+    <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
+    <ff-button type="button" [label]="isEditMode() ? 'Update' : 'Create'" icon="save" variant="primary" [loading]="saving()" (ffClick)="saveDriver()" />
+  </div>
+</ff-sidebar>
+
+<!-- Operations Sidebar (documents / attendance / salary) -->
+<ff-sidebar
+  [open]="showOps()"
+  [title]="selectedDriver() ? selectedDriver()!.name + ' — Operations' : 'Driver Operations'"
+  width="520px"
+  (closed)="closeOps()">
+
+  @if (selectedDriver(); as driver) {
+    <div class="driver-ops-meta">
+      <ff-status-badge [label]="driver.status" [color]="driver.status === 'ACTIVE' ? 'success' : 'danger'" />
+      <span class="driver-ops-meta__code">{{ driver.code }} · {{ driver.licenseNumber }}</span>
+    </div>
+
+    <ff-tabs [tabs]="opsTabs" [activeTab]="opsTab()" (tabChange)="opsTab.set($event)" />
+
+    @if (opsTab() === 'documents') {
+      <div class="driver-ops-actions">
+        <ff-button label="Register Document" icon="upload_file" variant="primary" size="sm" (ffClick)="showDocEditor.set(true)" />
+      </div>
+
+      @if (showDocEditor()) {
+        <ff-card title="New Document" class="driver-ops-editor">
+          <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="driver-form">
+            <ff-dropdown formControlName="docType" label="Document Type" [options]="docTypeOptions" [required]="true" />
+            <ff-textbox formControlName="docNumber" label="Document Number" [required]="true" />
+            <ff-textbox formControlName="filePath" label="File Path / URL" placeholder="Optional reference" />
+            <div class="driver-form__footer">
+              <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showDocEditor.set(false)" />
+              <ff-button type="submit" label="Save" icon="save" variant="primary" />
+            </div>
+          </form>
+        </ff-card>
+      }
+
+      <ff-grid [config]="docGridConfig()" [data]="documents()" (action)="onDocAction($event)" />
+    }
+
+    @if (opsTab() === 'attendance') {
+      <div class="driver-ops-actions">
+        <ff-button label="Log Attendance" icon="event_available" variant="primary" size="sm" (ffClick)="showAttendanceEditor.set(true)" />
+      </div>
+
+      @if (showAttendanceEditor()) {
+        <ff-card title="Log Daily Status" class="driver-ops-editor">
+          <form [formGroup]="attendanceForm" (ngSubmit)="saveAttendance()" class="driver-form">
+            <ff-datepicker formControlName="attendanceDate" label="Duty Date" [required]="true" />
+            <ff-dropdown formControlName="status" label="Status" [options]="attendanceStatusOptions" [required]="true" />
+            <ff-textarea formControlName="description" label="Remarks" [rows]="2" />
+            <div class="driver-form__footer">
+              <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showAttendanceEditor.set(false)" />
+              <ff-button type="submit" label="Save" icon="save" variant="primary" />
+            </div>
+          </form>
+        </ff-card>
+      }
+
+      <ff-grid [config]="attendanceGridConfig()" [data]="attendanceLogs()" />
+    }
+
+    @if (opsTab() === 'salary') {
+      <div class="driver-ops-actions">
+        <ff-button label="Edit Payroll" icon="payments" variant="primary" size="sm" (ffClick)="showSalaryEditor.set(true)" />
+      </div>
+
+      @if (salaryConfig(); as salary) {
+        <div class="driver-salary-cards">
+          <ff-dashboard-card label="Basic Salary" [value]="'₹' + salary.basicSalary" icon="payments" color="primary" />
+          <ff-dashboard-card label="OT Rate" [value]="'₹' + salary.overtimeRate" icon="schedule" color="info" />
+          <ff-dashboard-card label="Advance" [value]="'₹' + salary.advanceTaken" icon="money_off" color="danger" />
+        </div>
+      } @else if (!showSalaryEditor()) {
+        <ff-empty-state
+          icon="payments"
+          title="No payroll configured"
+          message="Set basic salary, overtime rate, and advances for this driver."
+          actionLabel="Configure"
+          (action)="showSalaryEditor.set(true)" />
+      }
+
+      @if (showSalaryEditor()) {
+        <ff-card title="Payroll Configuration" class="driver-ops-editor">
+          <form [formGroup]="salaryForm" (ngSubmit)="saveSalary()" class="driver-form">
+            <ff-number formControlName="basicSalary" label="Basic Salary (Monthly)" [min]="0" [required]="true" />
+            <ff-number formControlName="overtimeRate" label="Daily Overtime Rate" [min]="0" [required]="true" />
+            <ff-number formControlName="advanceTaken" label="Advance Taken" [min]="0" [required]="true" />
+            <div class="driver-form__footer">
+              <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showSalaryEditor.set(false)" />
+              <ff-button type="submit" label="Save Payroll" icon="save" variant="primary" />
+            </div>
+          </form>
+        </ff-card>
+      }
+    }
+  }
+</ff-sidebar>

@@ -1,0 +1,14 @@
+<nav class="ff-breadcrumb" aria-label="Breadcrumb">
+  @for (item of items(); track $index; let last = $last) {
+    @if (!last && item.route) {
+      <a [routerLink]="item.route" class="ff-breadcrumb__link">{{ item.label }}</a>
+    } @else if (!last) {
+      <span class="ff-breadcrumb__item">{{ item.label }}</span>
+    } @else {
+      <span class="ff-breadcrumb__item ff-breadcrumb__item--current" aria-current="page">{{ item.label }}</span>
+    }
+    @if (!last) {
+      <span class="ff-breadcrumb__sep" aria-hidden="true">/</span>
+    }
+  }
+</nav>

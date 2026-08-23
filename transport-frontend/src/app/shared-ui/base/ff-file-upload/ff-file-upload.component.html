@@ -1,0 +1,61 @@
+@if (isVisible()) {
+  <div
+    class="ff-field ff-upload"
+    [class.ff-field--error]="hasError() || !!error()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <span class="ff-field__label">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </span>
+    }
+
+    <div
+      class="ff-upload__dropzone"
+      [class.ff-upload__dropzone--active]="dragOver()"
+      [class.ff-upload__dropzone--disabled]="isDisabled()"
+      (drop)="onDrop($event)"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()">
+      <span class="material-symbols-outlined ff-upload__icon">upload_file</span>
+      <p class="ff-upload__text">Drag &amp; drop files here, or</p>
+      <label class="ff-upload__browse">
+        Browse files
+        <input
+          type="file"
+          class="ff-upload__input"
+          [accept]="accept()"
+          [multiple]="multiple()"
+          [disabled]="isDisabled() || isReadonly()"
+          (change)="onFilesSelected($event)" />
+      </label>
+      @if (hint()) {
+        <p class="ff-upload__hint">{{ hint() }} · Max {{ maxSizeMb() }} MB</p>
+      }
+    </div>
+
+    @if (filesList().length) {
+      <ul class="ff-upload__list">
+        @for (file of filesList(); track file.name + file.size; let i = $index) {
+          <li class="ff-upload__item">
+            <span class="material-symbols-outlined">description</span>
+            <span class="ff-upload__name">{{ fileLabel(file) }}</span>
+            <button type="button" class="ff-upload__remove" aria-label="Remove file" (click)="removeFile(i)">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (error()) {
+      <p class="ff-field__error" role="alert">{{ error() }}</p>
+    } @else if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

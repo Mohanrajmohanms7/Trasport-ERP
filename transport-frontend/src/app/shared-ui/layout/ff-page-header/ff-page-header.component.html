@@ -1,0 +1,41 @@
+<header class="ff-page-header">
+  @if (breadcrumbs().length) {
+    <nav class="ff-page-header__crumbs" aria-label="Breadcrumb">
+      @for (crumb of breadcrumbs(); track $index; let last = $last) {
+        @if (!last && crumb.route) {
+          <a [routerLink]="crumb.route" class="ff-page-header__crumb-link">{{ crumb.label }}</a>
+          <span class="ff-page-header__crumb-sep" aria-hidden="true">/</span>
+        } @else if (!last) {
+          <span class="ff-page-header__crumb">{{ crumb.label }}</span>
+          <span class="ff-page-header__crumb-sep" aria-hidden="true">/</span>
+        } @else {
+          <span class="ff-page-header__crumb ff-page-header__crumb--current" aria-current="page">
+            {{ crumb.label }}
+          </span>
+        }
+      }
+    </nav>
+  }
+
+  <div class="ff-page-header__row">
+    <div class="ff-page-header__titles">
+      <h1 class="ff-page-header__title">{{ title() }}</h1>
+      @if (subtitle()) {
+        <p class="ff-page-header__subtitle">{{ subtitle() }}</p>
+      }
+    </div>
+
+    <div class="ff-page-header__actions">
+      <ng-content select="[ffActions]" />
+      @for (action of actions(); track action.id) {
+        <ff-button
+          [label]="action.label"
+          [icon]="action.icon || ''"
+          [variant]="action.variant || 'outline'"
+          [permission]="action.permission || ''"
+          [disabled]="!!action.disabled"
+          (ffClick)="onAction(action)" />
+      }
+    </div>
+  </div>
+</header>

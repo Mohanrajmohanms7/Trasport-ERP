@@ -1,0 +1,15 @@
+@import '../_base/ff-control.styles.css';
+
+.ff-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--ff-border-default);
+  border-top-color: var(--ff-color-primary-600);
+  border-radius: 50%;
+  display: inline-block;
+  animation: ff-spin 0.7s linear infinite;
+}
+
+@keyframes ff-spin {
+  to { transform: rotate(360deg); }
+}

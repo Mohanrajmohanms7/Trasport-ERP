@@ -1,0 +1,122 @@
+@if (isVisible()) {
+  <div
+    class="ff-dd"
+    [class]="sizeClass()"
+    [class.ff-dd--open]="panelOpen()"
+    [class.ff-dd--error]="hasError()"
+    [class.ff-dd--disabled]="isDisabled()"
+    [class.ff-dd--outlined]="outlined()"
+    [class.ff-dd--filled]="hasValue() || panelOpen() || focused()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <!-- Trigger -->
+      <button
+        type="button"
+        class="ff-dd__trigger"
+        [id]="inputId()"
+        [disabled]="isDisabled()"
+        [attr.aria-haspopup]="'listbox'"
+        [attr.aria-expanded]="panelOpen()"
+        [attr.aria-invalid]="hasError()"
+        [attr.aria-required]="isRequired()"
+        [attr.aria-label]="displayLabel() || emptyLabel()"
+        (click)="togglePanel()"
+        (keydown)="onTriggerKeydown($event)">
+
+        @if (prefixIcon()) {
+          <span class="ff-dd__prefix material-symbols-outlined" aria-hidden="true">{{ prefixIcon() }}</span>
+        }
+
+        <span class="ff-dd__value" [class.ff-dd__value--placeholder]="!hasValue()">
+          {{ hasValue() ? displayText() : emptyLabel() }}
+        </span>
+
+        <span class="ff-dd__actions">
+          @if (clearable() && hasValue() && !isDisabled() && !isReadonly()) {
+            <span
+              class="ff-dd__clear material-symbols-outlined"
+              role="button"
+              tabindex="-1"
+              aria-label="Clear"
+              (click)="clear($event)">
+              close
+            </span>
+          }
+          <span
+            class="ff-dd__chevron material-symbols-outlined"
+            [class.ff-dd__chevron--open]="panelOpen()"
+            aria-hidden="true">
+            expand_more
+          </span>
+        </span>
+      </button>
+
+      @if (displayLabel()) {
+        <label class="ff-dd__label" [attr.for]="inputId()">
+          {{ displayLabel() }}
+          @if (isRequired()) {
+            <span class="ff-dd__required" aria-hidden="true">*</span>
+          }
+        </label>
+      }
+
+      <!-- Panel -->
+      @if (panelOpen()) {
+        <div
+          class="ff-dd__panel"
+          role="listbox"
+          [ngStyle]="panelStyle()"
+          (keydown)="onPanelKeydown($event)">
+          @if (searchable()) {
+            <div class="ff-dd__search">
+              <span class="material-symbols-outlined ff-dd__search-icon" aria-hidden="true">search</span>
+              <input
+                type="text"
+                class="ff-dd__search-input"
+                [placeholder]="searchPlaceholder()"
+                [value]="query()"
+                (input)="onSearchInput($event)"
+                (click)="$event.stopPropagation()" />
+              <button
+                type="button"
+                class="ff-dd__refresh"
+                aria-label="Refresh options"
+                title="Refresh"
+                (click)="refresh($event)">
+                <span class="material-symbols-outlined">sync</span>
+              </button>
+            </div>
+          }
+
+          <ul class="ff-dd__list">
+            @for (opt of filteredOptions(); track $index) {
+              <li
+                role="option"
+                class="ff-dd__option"
+                [class.ff-dd__option--selected]="isSelected(opt)"
+                [class.ff-dd__option--active]="$index === activeIndex()"
+                [class.ff-dd__option--disabled]="opt.disabled"
+                [attr.aria-selected]="isSelected(opt)"
+                (click)="selectOption(opt)"
+                (mouseenter)="activeIndex.set($index)">
+                {{ opt.label }}
+              </li>
+            } @empty {
+              <li class="ff-dd__empty">No options found</li>
+            }
+          </ul>
+        </div>
+      }
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-dd__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-dd__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

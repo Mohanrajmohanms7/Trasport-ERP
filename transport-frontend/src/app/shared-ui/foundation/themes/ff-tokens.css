@@ -1,0 +1,122 @@
+/**
+ * FleetFlow Foundation — CSS Design Tokens & Theme Variables
+ * Imported from styles.css. Applied via data-ff-theme on <html>.
+ */
+
+:root,
+[data-ff-theme='light'] {
+  /* Colors — Primary */
+  --ff-color-primary-50: #eff6ff;
+  --ff-color-primary-100: #dbeafe;
+  --ff-color-primary-500: #3b82f6;
+  --ff-color-primary-600: #2563eb;
+  --ff-color-primary-700: #1d4ed8;
+  --ff-color-primary-900: #1e3a8a;
+
+  /* Semantic */
+  --ff-color-success-50: #ecfdf5;
+  --ff-color-success-500: #10b981;
+  --ff-color-success-700: #047857;
+  --ff-color-danger-50: #fef2f2;
+  --ff-color-danger-500: #ef4444;
+  --ff-color-danger-700: #b91c1c;
+  --ff-color-warning-50: #fffbeb;
+  --ff-color-warning-500: #f59e0b;
+  --ff-color-warning-700: #b45309;
+  --ff-color-info-50: #ecfeff;
+  --ff-color-info-500: #06b6d4;
+  --ff-color-info-700: #0e7490;
+
+  /* Surfaces */
+  --ff-surface-page: #f8fafc;
+  --ff-surface-card: #ffffff;
+  --ff-surface-sidebar: #ffffff;
+  --ff-surface-input: #ffffff;
+  --ff-surface-hover: #f1f5f9;
+  --ff-surface-toolbar: #ffffff;
+
+  /* Text */
+  --ff-text-primary: #0f172a;
+  --ff-text-secondary: #475569;
+  --ff-text-muted: #64748b;
+  --ff-text-inverse: #ffffff;
+  --ff-text-link: #2563eb;
+  --ff-text-error: #ef4444;
+
+  /* Borders */
+  --ff-border-default: #e2e8f0;
+  --ff-border-strong: #cbd5e1;
+  --ff-border-focus: #2563eb;
+
+  /* Typography */
+  --ff-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --ff-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --ff-text-xs: 0.75rem;
+  --ff-text-sm: 0.875rem;
+  --ff-text-base: 1rem;
+  --ff-text-lg: 1.125rem;
+  --ff-text-xl: 1.25rem;
+  --ff-text-2xl: 1.5rem;
+
+  /* Spacing */
+  --ff-space-1: 0.25rem;
+  --ff-space-2: 0.5rem;
+  --ff-space-3: 0.75rem;
+  --ff-space-4: 1rem;
+  --ff-space-5: 1.25rem;
+  --ff-space-6: 1.5rem;
+  --ff-space-8: 2rem;
+
+  /* Radius */
+  --ff-radius-sm: 0.25rem;
+  --ff-radius-md: 0.5rem;
+  --ff-radius-lg: 0.75rem;
+  --ff-radius-xl: 1rem;
+  --ff-radius-full: 9999px;
+
+  /* Elevation */
+  --ff-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --ff-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --ff-shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.08);
+
+  /* Animation */
+  --ff-duration-fast: 150ms;
+  --ff-duration-normal: 250ms;
+  --ff-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Control heights */
+  --ff-control-h-sm: 2rem;
+  --ff-control-h-md: 2.75rem;
+  --ff-control-h-lg: 3rem;
+}
+
+[data-ff-theme='dark'],
+.dark {
+  --ff-surface-page: #0f172a;
+  --ff-surface-card: #1e293b;
+  --ff-surface-sidebar: #1e293b;
+  --ff-surface-input: #0f172a;
+  --ff-surface-hover: #334155;
+  --ff-surface-toolbar: #1e293b;
+
+  --ff-text-primary: #f8fafc;
+  --ff-text-secondary: #cbd5e1;
+  --ff-text-muted: #94a3b8;
+  --ff-text-inverse: #0f172a;
+  --ff-text-link: #60a5fa;
+  --ff-text-error: #f87171;
+
+  --ff-border-default: #334155;
+  --ff-border-strong: #475569;
+  --ff-border-focus: #3b82f6;
+
+  --ff-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --ff-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --ff-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+[data-ff-contrast='high'] {
+  --ff-border-default: #0f172a;
+  --ff-border-strong: #000000;
+  --ff-text-muted: #334155;
+}

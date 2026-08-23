@@ -1,0 +1,31 @@
+<div class="ff-filter" [formGroup]="form">
+  <div class="ff-filter__header">
+    <span class="material-symbols-outlined">filter_list</span>
+    <span class="ff-filter__title">Filters</span>
+  </div>
+  <div class="ff-filter__grid">
+    @for (field of fields(); track field.id) {
+      @if (field.type === 'select') {
+        <ff-dropdown
+          [formControlName]="field.id"
+          [label]="field.label"
+          [options]="toSelectOptions(field)"
+          [clearable]="true"
+          emptyLabel="All"
+          searchPlaceholder="Search options..." />
+      } @else if (field.type === 'date') {
+        <ff-datepicker
+          [formControlName]="field.id"
+          [label]="field.label" />
+      } @else {
+        <ff-textbox
+          [formControlName]="field.id"
+          [label]="field.label" />
+      }
+    }
+  </div>
+  <div class="ff-filter__actions">
+    <ff-button label="Apply" icon="check" variant="primary" (ffClick)="apply()" />
+    <ff-button label="Reset" variant="ghost" (ffClick)="reset()" />
+  </div>
+</div>

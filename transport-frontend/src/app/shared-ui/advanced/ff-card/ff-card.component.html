@@ -1,0 +1,21 @@
+<article class="ff-card" [class.ff-card--hover]="hoverable()" [attr.data-padding]="padding()">
+  @if (title() || subtitle()) {
+    <header class="ff-card__header">
+      @if (title()) {
+        <h3 class="ff-card__title">{{ title() }}</h3>
+      }
+      @if (subtitle()) {
+        <p class="ff-card__subtitle">{{ subtitle() }}</p>
+      }
+      <div class="ff-card__actions">
+        <ng-content select="[ffCardActions]" />
+      </div>
+    </header>
+  }
+  <div class="ff-card__body">
+    <ng-content />
+  </div>
+  <footer class="ff-card__footer">
+    <ng-content select="[ffCardFooter]" />
+  </footer>
+</article>

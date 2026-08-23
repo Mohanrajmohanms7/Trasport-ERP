@@ -1,0 +1,44 @@
+@if (isVisible()) {
+  <div
+    class="ff-field"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <label class="ff-field__label" [attr.for]="inputId()">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </label>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" style="height: 6rem" aria-hidden="true"></div>
+    } @else {
+      <textarea
+        class="ff-field__input ff-field__textarea"
+        [id]="inputId()"
+        [attr.placeholder]="placeholder() || null"
+        [attr.rows]="rows()"
+        [attr.maxlength]="maxLength()"
+        [attr.aria-invalid]="hasError()"
+        [attr.aria-required]="isRequired()"
+        [value]="value() ?? ''"
+        [disabled]="isDisabled()"
+        [readOnly]="isReadonly()"
+        (input)="onInput($event)"
+        (focus)="onFocus()"
+        (blur)="onBlur()"></textarea>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

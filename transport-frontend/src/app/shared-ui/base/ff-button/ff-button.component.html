@@ -1,0 +1,21 @@
+@if (visible()) {
+  <button
+    [attr.type]="type()"
+    [class]="classes()"
+    [disabled]="isDisabled()"
+    [attr.aria-busy]="loading()"
+    (click)="onClick($event)">
+    @if (loading()) {
+      <span class="ff-btn__spinner" aria-hidden="true"></span>
+    } @else if (icon() && iconPosition() === 'start') {
+      <span class="material-symbols-outlined ff-btn__icon" aria-hidden="true">{{ icon() }}</span>
+    }
+    @if (label()) {
+      <span class="ff-btn__label">{{ label() }}</span>
+    }
+    <ng-content />
+    @if (!loading() && icon() && iconPosition() === 'end') {
+      <span class="material-symbols-outlined ff-btn__icon" aria-hidden="true">{{ icon() }}</span>
+    }
+  </button>
+}

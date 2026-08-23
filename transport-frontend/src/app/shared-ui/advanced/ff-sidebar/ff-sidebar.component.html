@@ -1,0 +1,24 @@
+@if (open()) {
+  <div class="ff-sidebar__backdrop" (click)="onBackdropClick()" aria-hidden="true"></div>
+  <aside
+    class="ff-sidebar"
+    [class.ff-sidebar--left]="position() === 'left'"
+    [style.width]="width()"
+    role="dialog"
+    [attr.aria-label]="title() || 'Sidebar'">
+    <header class="ff-sidebar__header">
+      @if (title()) {
+        <h2 class="ff-sidebar__title">{{ title() }}</h2>
+      }
+      <button type="button" class="ff-sidebar__close" aria-label="Close" (click)="onCloseClick()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </header>
+    <div class="ff-sidebar__body">
+      <ng-content />
+    </div>
+    <footer class="ff-sidebar__footer">
+      <ng-content select="[ffSidebarFooter]" />
+    </footer>
+  </aside>
+}

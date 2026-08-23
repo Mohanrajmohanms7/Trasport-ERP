@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: transport-backend
+  profiles:
+    active: dev
+  jackson:
+    time-zone: UTC
+    date-format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+
+# First-run bootstrap. Creates company, branch, SUPER_ADMIN, admin user,
+# financial year, and reference lookups. Never creates business transactions.
+app:
+  bootstrap:
+    enabled: false
+    admin-password: Admin@123
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha

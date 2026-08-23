@@ -1,0 +1,361 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 overflow-y-auto overscroll-contain pr-1">
+
+  <!-- Header Dashboard Switcher toolbar -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">dashboard</span>
+        Enterprise Dashboard
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Real-time logistics statistics, fleet utilization metrics, and financial summaries</p>
+    </div>
+
+    <!-- Active Viewport Swapper -->
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Role View:</span>
+      <button [matMenuTriggerFor]="roleMenu" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition duration-150">
+        <span class="material-icons text-sm text-blue-600 dark:text-blue-500">account_circle</span>
+        {{ activeRole() }} VIEW
+        <span class="material-icons text-xs">arrow_drop_down</span>
+      </button>
+
+      <mat-menu #roleMenu="matMenu" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+        <button mat-menu-item (click)="changeViewRole('ADMIN')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">ADMIN VIEW</button>
+        <button mat-menu-item (click)="changeViewRole('OWNER')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">OWNER VIEW</button>
+        <button mat-menu-item (click)="changeViewRole('OPERATIONS')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">OPERATIONS VIEW</button>
+        <button mat-menu-item (click)="changeViewRole('VEHICLE')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">VEHICLE MANAGER VIEW</button>
+        <button mat-menu-item (click)="changeViewRole('ACCOUNTANT')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">ACCOUNTANT VIEW</button>
+        <button mat-menu-item (click)="changeViewRole('DRIVER')" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">DRIVER VIEW</button>
+      </mat-menu>
+    </div>
+  </header>
+
+  <!-- Loading State placeholder -->
+  @if (loading()) {
+    <div class="flex-1 flex flex-col items-center justify-center p-12 gap-3 text-center">
+      <span class="w-10 h-10 border-4 border-slate-200 dark:border-slate-800 border-t-blue-500 rounded-full animate-spin"></span>
+      <span class="text-xs text-slate-600 dark:text-slate-450">Loading dashboard telemetry...</span>
+    </div>
+  } @else {
+
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      
+      @if (activeRole() === 'ADMIN') {
+        <!-- Admin metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">local_shipping</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Today's Total Trips</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.todayTrips || 0 }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Trips dated today</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-amber-600 dark:text-amber-500 text-2xl absolute right-4 top-4 opacity-30">cached</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Trips In Progress</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.runningTrips }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Active dispatch status</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-emerald-600 dark:text-emerald-500 text-2xl absolute right-4 top-4 opacity-30">monetization_on</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Revenue Today</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.revenueToday | number }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Invoice net amount today</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-rose-600 dark:text-rose-500 text-2xl absolute right-4 top-4 opacity-30">account_balance_wallet</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Outstanding Collection</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.outstandingAmount | number }}</span>
+          <span class="text-[10px] text-rose-700 dark:text-rose-400 font-semibold">Requires follow up</span>
+        </div>
+      }
+
+      @if (activeRole() === 'OWNER') {
+        <!-- Owner metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-emerald-600 dark:text-emerald-500 text-2xl absolute right-4 top-4 opacity-30">payments</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Net Profit (Month)</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.monthlyProfit | number }}</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Margin ratio: 26.6%</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">monetization_on</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Gross Income</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.income | number }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Target limit ₹5,000,000</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-rose-600 dark:text-rose-500 text-2xl absolute right-4 top-4 opacity-30">receipt_long</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Total Expenses</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.expense | number }}</span>
+          <span class="text-[10px] text-rose-700 dark:text-rose-450 font-semibold">Includes salary & fuel cost</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-2xl absolute right-4 top-4 opacity-30">query_stats</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Fleet Utilization</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.vehicleUtilization }}%</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Peak efficiency limit</span>
+        </div>
+      }
+
+      @if (activeRole() === 'OPERATIONS') {
+        <!-- Operations metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">departure_board</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Today's Dispatch</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.todayDispatch }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Scheduled loading queues</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-amber-600 dark:text-amber-500 text-2xl absolute right-4 top-4 opacity-30">schedule</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Trips Delayed</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.tripsDelayed }}</span>
+          <span class="text-[10px] text-rose-700 dark:text-rose-400 font-semibold">Requires routing checks</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-2xl absolute right-4 top-4 opacity-30">pending_actions</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Pending Dispatch</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.pendingDispatch }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Awaiting invoice release</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-emerald-600 dark:text-emerald-500 text-2xl absolute right-4 top-4 opacity-30">hourglass_top</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Loading Queue</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.loadingQueueCount }} Vehicles</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Quarry arrival queue status</span>
+        </div>
+      }
+
+      @if (activeRole() === 'VEHICLE') {
+        <!-- Vehicle metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">check_circle</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Available Fleet</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.availableVehicles }}</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Ready for scheduling</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-amber-600 dark:text-amber-500 text-2xl absolute right-4 top-4 opacity-30">build</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Vehicles In Service</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.vehiclesInService }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Active workshop repairs</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-rose-600 dark:text-rose-500 text-2xl absolute right-4 top-4 opacity-30">card_membership</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Permit Expiry (<30d)</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.permitExpiryCount }}</span>
+          <span class="text-[10px] text-rose-700 dark:text-rose-400 font-semibold">Action required</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-2xl absolute right-4 top-4 opacity-30">handyman</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Maintenance Due</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.maintenanceDueCount }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Engine lube change cycle</span>
+        </div>
+      }
+
+      @if (activeRole() === 'ACCOUNTANT') {
+        <!-- Accountant metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-emerald-600 dark:text-emerald-500 text-2xl absolute right-4 top-4 opacity-30">savings</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Collections Today</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.collectionsToday | number }}</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Cash + Bank receipts</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-rose-600 dark:text-rose-500 text-2xl absolute right-4 top-4 opacity-30">report</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Outstanding Total</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.outstandingTotal | number }}</span>
+          <span class="text-[10px] text-rose-700 dark:text-rose-455 font-semibold">Overdue collection limits</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">receipt_long</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Pending Invoice Payments</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.pendingPayments | number }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Awaiting customer validation</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-2xl absolute right-4 top-4 opacity-30">query_stats</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Income This Month</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">₹{{ metrics()?.incomeThisMonth | number }}</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Ledger summary update</span>
+        </div>
+      }
+
+      @if (activeRole() === 'DRIVER') {
+        <!-- Driver metrics -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl absolute right-4 top-4 opacity-30">local_shipping</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Assigned Trips</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.assignedTrips }}</span>
+          <span class="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">Active routes</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-emerald-600 dark:text-emerald-500 text-2xl absolute right-4 top-4 opacity-30">task_alt</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Completed Trips</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.completedTrips }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Total history records</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-amber-600 dark:text-amber-500 text-2xl absolute right-4 top-4 opacity-30">update</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Upcoming Schedule</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.upcomingTrips }}</span>
+          <span class="text-[10px] text-slate-600 dark:text-slate-450 font-semibold">Loading queue next</span>
+        </div>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col gap-2 relative overflow-hidden shadow">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-2xl absolute right-4 top-4 opacity-30">fact_check</span>
+          <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Attendance Percentage</span>
+          <span class="text-2xl font-extrabold text-slate-900 dark:text-white">{{ metrics()?.attendancePercentage }}%</span>
+          <span class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Duty compliance rating</span>
+        </div>
+      }
+
+    </div>
+
+    <!-- Quick Actions Panel -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow">
+      <h3 class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">Quick Task Actions</h3>
+      <div class="flex flex-wrap gap-3">
+        @if (activeRole() === 'ADMIN' || activeRole() === 'OWNER') {
+          <button (click)="executeAction('Add Vehicle')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-blue-600 dark:text-blue-500">add_circle</span> Add Vehicle
+          </button>
+          <button (click)="executeAction('New Customer')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-emerald-600 dark:text-emerald-500">person_add</span> New Customer
+          </button>
+        }
+        @if (activeRole() === 'ADMIN' || activeRole() === 'OPERATIONS') {
+          <button (click)="executeAction('Create Booking')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-purple-600 dark:text-purple-500">book</span> Create Booking
+          </button>
+          <button (click)="executeAction('Create Trip')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-indigo-600 dark:text-indigo-500">explore</span> Create Trip
+          </button>
+        }
+        @if (activeRole() === 'ADMIN' || activeRole() === 'ACCOUNTANT') {
+          <button (click)="executeAction('Receive Payment')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-emerald-600 dark:text-emerald-500">payments</span> Receive Payment
+          </button>
+          <button (click)="executeAction('Expense Entry')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-rose-600 dark:text-rose-500">receipt_long</span> Expense Entry
+          </button>
+        }
+        @if (activeRole() === 'DRIVER') {
+          <button (click)="executeAction('Fuel Entry')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+            <span class="material-icons text-sm text-amber-600 dark:text-amber-500">local_gas_station</span> Fuel Entry
+          </button>
+        }
+        <button (click)="executeAction('Generate Report')" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-900 dark:text-white px-3.5 py-2 rounded-lg text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
+          <span class="material-icons text-sm text-slate-600 dark:text-slate-400">assessment</span> Generate Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Charts & Analytics Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Custom SVG Chart Panel -->
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-500 text-sm">bar_chart</span>
+            Monthly Operations Trend Analysis
+          </h3>
+          <span class="text-[10px] text-slate-500">Last 5 Months</span>
+        </div>
+
+        <!-- Custom SVG Line Chart widget -->
+        <div class="relative w-full h-48 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-slate-200 dark:border-slate-850 p-2 overflow-hidden flex items-end">
+          @if (trendValues().length) {
+            <svg viewBox="0 0 500 150" class="w-full h-full text-blue-600 dark:text-blue-500 select-none">
+              <line x1="0" y1="30" x2="500" y2="30" stroke="#1e293b" stroke-width="1" stroke-dasharray="4" />
+              <line x1="0" y1="75" x2="500" y2="75" stroke="#1e293b" stroke-width="1" stroke-dasharray="4" />
+              <line x1="0" y1="120" x2="500" y2="120" stroke="#1e293b" stroke-width="1" stroke-dasharray="4" />
+              <path [attr.d]="chartAreaPath()" fill="rgba(59, 130, 246, 0.05)" />
+              <path [attr.d]="chartPath()" fill="none" stroke="currentColor" stroke-width="3" class="transition-all duration-700" />
+              @for (dot of chartDots(); track $index) {
+                <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="5" fill="#1e293b" stroke="currentColor" stroke-width="2" />
+              }
+              <text x="45" y="145" fill="#64748b" font-size="9" font-family="sans-serif">{{ trendLabels()[0] }}</text>
+              <text x="445" y="145" fill="#64748b" font-size="9" font-family="sans-serif">{{ trendLabels()[trendLabels().length - 1] }}</text>
+            </svg>
+          } @else {
+            <div class="w-full h-full flex items-center justify-center text-xs text-slate-500">No trend data for this company yet.</div>
+          }
+        </div>
+      </div>
+
+      <!-- Capacity gauge donut chart -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center gap-2">
+          <span class="material-icons text-purple-600 dark:text-purple-500 text-sm">donut_large</span>
+          Fleet Active Utilization
+        </h3>
+        
+        <div class="flex-1 flex flex-col items-center justify-center gap-3">
+          <div class="relative w-28 h-28 flex items-center justify-center">
+            <!-- SVG utilization Circle ring gauge -->
+            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+              <path class="text-slate-200 dark:text-slate-800" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="text-blue-600 dark:text-blue-500 transition-all duration-1000" stroke="currentColor" stroke-width="3" [attr.stroke-dasharray]="(metrics()?.vehicleUtilization || 0) + ', 100'" stroke-linecap="round" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span class="absolute text-xl font-black text-slate-900 dark:text-white">{{ metrics()?.vehicleUtilization || 0 }}%</span>
+          </div>
+          <span class="text-xs text-slate-600 dark:text-slate-450 text-center">{{ metrics()?.vehicleUtilization || 0 }}% of registered vehicles are currently on active trips.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Notifications & Activities Details Panel -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- System Alerts Column -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow">
+        <h3 class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">Critical Expiry & Status Alarms</h3>
+        <div class="flex flex-col gap-3">
+          @for (alarm of notifications(); track alarm.title) {
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl flex items-start gap-3 transition hover:border-slate-300 dark:hover:border-slate-700">
+              <span class="material-icons text-lg" 
+                    [class.text-rose-600]="alarm.type === 'danger'" [class.dark:text-rose-500]="alarm.type === 'danger'"
+                    [class.text-amber-600]="alarm.type === 'warning'" [class.dark:text-amber-500]="alarm.type === 'warning'"
+                    [class.text-blue-600]="alarm.type === 'info'" [class.dark:text-blue-500]="alarm.type === 'info'">
+                @if (alarm.type === 'danger') { report_problem } @else if (alarm.type === 'warning') { warning } @else { info }
+              </span>
+              <div class="flex-1 flex flex-col gap-0.5">
+                <span class="text-xs font-bold text-slate-900 dark:text-white">{{ alarm.title }}</span>
+                <span class="text-[11px] text-slate-600 dark:text-slate-450 leading-relaxed">{{ alarm.message }}</span>
+              </div>
+              <span class="text-[10px] text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">{{ alarm.time }}</span>
+            </div>
+          } @empty {
+            <div class="p-4 text-center text-xs text-slate-500">No critical alerts for this company.</div>
+          }
+        </div>
+      </div>
+
+      <!-- Recent Log Activities Column -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow">
+        <h3 class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">Live Operation Audits Logs</h3>
+        <div class="flex flex-col gap-3">
+          @for (log of activities(); track log.details) {
+            <div class="p-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl flex items-start gap-3 transition hover:border-slate-300 dark:hover:border-slate-700">
+              <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+                <span class="material-icons text-xs text-slate-600 dark:text-slate-400">history</span>
+              </div>
+              <div class="flex-1 flex flex-col gap-0.5">
+                <span class="text-xs font-bold text-slate-900 dark:text-white">{{ log.action }}</span>
+                <span class="text-[11px] text-slate-600 dark:text-slate-450 leading-relaxed">{{ log.details }}</span>
+                <span class="text-[10px] text-slate-500">By: <span class="font-semibold">{{ log.user }}</span></span>
+              </div>
+              <span class="text-[10px] text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">{{ log.time }}</span>
+            </div>
+          } @empty {
+            <div class="p-4 text-center text-xs text-slate-500">No recent trip/booking activity yet.</div>
+          }
+        </div>
+      </div>
+
+    </div>
+
+  }
+</div>

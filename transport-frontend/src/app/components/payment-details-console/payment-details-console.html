@@ -1,0 +1,179 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">account_balance</span>
+        Payments & Ledger
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Record customer deposits receipts, reconcile outstanding invoice balances, and audit running ledgers</p>
+    </div>
+  </header>
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Controls selector -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+      <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Receipts Registry
+      </button>
+      <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Customer Ledger running balance
+      </button>
+    </div>
+
+    <!-- Tab Viewports -->
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+      
+      <!-- 1. Customer Receipts Viewport -->
+      @if (activeTab() === 'receipts') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Deposited Receipts</span>
+          <button (click)="openAddReceipt()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">payment</span> Record Payment Receipt
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Receipt Number</th>
+                <th class="p-4">Receipt Date</th>
+                <th class="p-4">Customer</th>
+                <th class="p-4">Booking Number</th>
+                <th class="p-4 text-right">Amount Received</th>
+                <th class="p-4 text-right">Advance Portion</th>
+                <th class="p-4">Payment Method</th>
+                <th class="p-4">Reference Reference</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rct of receipts(); track rct.receiptNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ rct.receiptNumber }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ rct.receiptDate }}</td>
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ rct.customer?.name }}</td>
+                  <td class="p-4 font-mono text-slate-700 dark:text-slate-300">{{ rct.booking?.bookingNumber || '-' }}</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ rct.amountReceived | number }}</td>
+                  <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ rct.advanceAmount | number }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350 font-semibold">{{ rct.paymentMethod }}</td>
+                  <td class="p-4 text-slate-500 font-mono text-[10px]">{{ rct.referenceNumber || 'N/A' }}</td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <button (click)="openEditReceipt(rct)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Voucher">
+                        <span class="material-icons text-sm">edit</span>
+                      </button>
+                      <button (click)="deleteReceipt(rct)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Voucher">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="9" class="p-8 text-center text-slate-500 font-semibold">No customer receipts registered.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- 2. Customer Ledgers Viewport -->
+      @if (activeTab() === 'ledger') {
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-3 shrink-0">
+          <div class="w-64">
+            <ff-dropdown [formControl]="selectedCustomerControl" label="Choose Customer Profile" [options]="ledgerCustomerOptions" searchPlaceholder="Search options..." />
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono">Real-time Outstanding Balance ledger summaries</span>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Transaction Date</th>
+                <th class="p-4">Adjustment Description / remarks</th>
+                <th class="p-4 text-right">Debit (Owed)</th>
+                <th class="p-4 text-right">Credit (Paid)</th>
+                <th class="p-4 text-right">Outstanding Running Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of ledgerEntries(); track entry.id) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ entry.createdDate | date:'mediumDate' }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ entry.remarks }}</td>
+                  <td class="p-4 text-right font-mono text-rose-700 dark:text-rose-400">₹{{ entry.debitAmount | number }}</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400">₹{{ entry.creditAmount | number }}</td>
+                  <td class="p-4 text-right font-mono text-slate-900 dark:text-white font-bold">₹{{ entry.runningBalance | number }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No transactions posted to customer ledger.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+    </div>
+  </main>
+
+  <!-- Centered Add/Edit Receipt Popup -->
+  @if (showEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showEditor.set(false)">
+      <div class="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">payment</span>
+            {{ editingReceipt() ? 'Edit Receipt Voucher' : 'Record Payment Receipt' }}
+          </h2>
+          <button type="button" (click)="showEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="receiptForm" (ngSubmit)="saveReceipt()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div formGroupName="customer">
+                <ff-dropdown formControlName="id" label="Select Customer Profile" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <div formGroupName="booking">
+                <ff-dropdown formControlName="id" label="Link Active Booking Request" [options]="bookingOptions" searchPlaceholder="Search options..." />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-number formControlName="amountReceived" label="Amount Received" placeholder="0.00" [min]="0" [required]="true" />
+              <ff-number formControlName="advanceAmount" label="Advance Allocation" placeholder="0.00" [min]="0" [required]="true" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
+              <ff-textbox formControlName="referenceNumber" label="Reference Transaction Number" placeholder="UPI txn or Cheque Ref" prefixIcon="tag" />
+            </div>
+
+            <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Reconciliation remarks details" prefixIcon="notes" />
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
+            <ff-button type="submit" label="Save Receipt" icon="save" variant="primary" [disabled]="receiptForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,150 @@
+<div class="ff-grid" [class.ff-grid--loading]="loading()">
+  <div class="ff-grid__scroll">
+    <table class="ff-grid__table">
+      <thead [class.ff-grid__thead--sticky]="config().stickyHeader !== false">
+        <tr>
+          @if (config().selectable) {
+            <th class="ff-grid__th ff-grid__th--check" scope="col">
+              <span class="ff-sr-only">Select</span>
+            </th>
+          }
+          @for (col of columns(); track col.field) {
+            <th
+              class="ff-grid__th"
+              [class.ff-grid__th--sortable]="config().sortable && col.sortable !== false"
+              [style.width]="col.width || null"
+              [style.text-align]="col.align || 'left'"
+              scope="col"
+              (click)="onSort(col)">
+              <span class="ff-grid__th-label">{{ col.header }}</span>
+              @if (config().sortable && col.sortable !== false && sortField() === col.field && sortDir()) {
+                <span class="material-symbols-outlined ff-grid__sort-icon" aria-hidden="true">
+                  {{ sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+              }
+            </th>
+          }
+          @if (rowActions().length) {
+            <th class="ff-grid__th ff-grid__th--actions" scope="col">Actions</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          @for (_ of [1, 2, 3, 4, 5]; track $index) {
+            <tr>
+              <td [attr.colspan]="columns().length + (config().selectable ? 1 : 0) + (rowActions().length ? 1 : 0)">
+                <div class="ff-skeleton ff-grid__row-skeleton"></div>
+              </td>
+            </tr>
+          }
+        } @else if (!data().length) {
+          <tr>
+            <td
+              class="ff-grid__empty"
+              [attr.colspan]="columns().length + (config().selectable ? 1 : 0) + (rowActions().length ? 1 : 0)">
+              {{ config().emptyMessage || 'No data available' }}
+            </td>
+          </tr>
+        } @else {
+          @for (row of data(); track trackBy()($index, row)) {
+            <tr class="ff-grid__row" (click)="onRowClick(row)">
+              @if (config().selectable) {
+                <td class="ff-grid__td ff-grid__td--check" (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(row)"
+                    (change)="toggleSelect(row, $event)"
+                    [attr.aria-label]="'Select row'" />
+                </td>
+              }
+              @for (col of columns(); track col.field) {
+                <td class="ff-grid__td" [style.text-align]="col.align || 'left'">
+                  @switch (col.type) {
+                    @case ('currency') {
+                      {{ asCurrency(cellValue(row, col)) | ffCurrency }}
+                    }
+                    @case ('date') {
+                      {{ asDate(cellValue(row, col)) | ffDateFormat }}
+                    }
+                    @case ('badge') {
+                      @let meta = badgeMeta(col, cellValue(row, col));
+                      <span class="ff-grid__badge" [attr.data-color]="meta.color">{{ meta.label }}</span>
+                    }
+                    @case ('avatar') {
+                      <span class="ff-grid__avatar-cell">
+                        <span class="ff-grid__avatar">{{ asText(cellValue(row, col)).charAt(0) }}</span>
+                        <span>{{ asText(cellValue(row, col)) }}</span>
+                      </span>
+                    }
+                    @default {
+                      {{ asText(cellValue(row, col)) }}
+                    }
+                  }
+                </td>
+              }
+              @if (rowActions().length) {
+                <td class="ff-grid__td ff-grid__td--actions">
+                  @for (act of rowActions(); track act.id) {
+                    <button
+                      type="button"
+                      class="ff-grid__action"
+                      [attr.title]="act.label"
+                      [attr.aria-label]="act.label"
+                      (click)="onAction(act.id, row, $event)">
+                      <span class="material-symbols-outlined">{{ act.icon }}</span>
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (config().paginated !== false) {
+    <footer class="ff-grid__footer">
+      <div class="ff-grid__meta">
+        Showing {{ showingStart() }} to {{ showingEnd() }} of {{ totalRecords() }} entries
+      </div>
+      <div class="ff-grid__pager">
+        <select
+          class="ff-grid__page-size"
+          [value]="pageSize()"
+          (change)="onPageSizeChange($event)"
+          aria-label="Rows per page">
+          @for (size of pageSizeOptions; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+        <button
+          type="button"
+          class="ff-grid__page-btn"
+          [disabled]="pageIndex() === 0"
+          (click)="goToPage(pageIndex() - 1)"
+          aria-label="Previous page">
+          <span class="material-symbols-outlined">chevron_left</span>
+        </button>
+        @for (p of pages(); track p) {
+          <button
+            type="button"
+            class="ff-grid__page-btn"
+            [class.ff-grid__page-btn--active]="p === pageIndex()"
+            (click)="goToPage(p)">
+            {{ p + 1 }}
+          </button>
+        }
+        <button
+          type="button"
+          class="ff-grid__page-btn"
+          [disabled]="pageIndex() >= totalPages() - 1"
+          (click)="goToPage(pageIndex() + 1)"
+          aria-label="Next page">
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+    </footer>
+  }
+</div>

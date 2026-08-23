@@ -1,0 +1,50 @@
+@if (isVisible()) {
+  <div
+    class="ff-field"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <label class="ff-field__label" [attr.for]="inputId()">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </label>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <div class="ff-field__control">
+        <span class="ff-field__icon ff-field__icon--prefix material-symbols-outlined" aria-hidden="true">
+          {{ prefixIcon() || 'access_time' }}
+        </span>
+        <input
+          class="ff-field__input ff-field__input--with-prefix"
+          [id]="inputId()"
+          type="time"
+          [attr.min]="min() || null"
+          [attr.max]="max() || null"
+          [attr.step]="step()"
+          [attr.aria-invalid]="hasError()"
+          [attr.aria-required]="isRequired()"
+          [value]="value() ?? ''"
+          [disabled]="isDisabled()"
+          [readOnly]="isReadonly()"
+          (input)="onInput($event)"
+          (focus)="onFocus()"
+          (blur)="onBlur()" />
+      </div>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

@@ -1,0 +1,1857 @@
+<div class="pa-shell flex flex-col h-full min-h-0 text-slate-800 dark:text-slate-100 font-sans p-3 md:p-4 gap-4 overflow-y-auto">
+  <!-- Page Header -->
+  <div class="pa-hero flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-4 md:p-5 rounded-2xl shrink-0">
+    <div class="relative z-10 pl-2 min-w-0">
+      <p class="pa-hero-kicker text-[10px] font-bold tracking-[0.14em] uppercase mb-1">SaaS Control Center</p>
+      <h1 class="pa-hero-title text-lg md:text-xl font-bold tracking-tight flex items-center gap-2 leading-snug m-0">
+        <span class="material-icons shrink-0">admin_panel_settings</span>
+        <span>Platform Administration</span>
+      </h1>
+      <p class="pa-hero-sub text-xs mt-1.5 max-w-xl leading-relaxed m-0">
+        Manage tenants, subscriptions, licenses, support, audits, and billing — your global SaaS operations desk.
+      </p>
+    </div>
+    
+    <div class="relative z-10 flex items-center gap-2 shrink-0 self-start sm:self-center">
+      <button (click)="loadDashboardData()" class="pa-sync-btn flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition">
+        <span class="material-icons text-sm">sync</span> Sync Metrics
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages feedback -->
+  <div *ngIf="successMsg()" class="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 p-3 rounded-xl text-xs font-medium shadow-sm">
+    {{ successMsg() }}
+  </div>
+  <div *ngIf="errorMsg()" class="bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800 p-3 rounded-xl text-xs font-medium shadow-sm">
+    {{ errorMsg() }}
+  </div>
+
+  <!-- Main Navigation Tabs Layout Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+    
+    <!-- Left Navigation Bar -->
+    <div class="lg:col-span-3 flex flex-col pa-panel p-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-0.5 sticky top-2">
+      <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-[0.12em] px-2.5 pb-2.5 pt-1 uppercase">Platform Modules</p>
+      
+      <button (click)="switchTab('dashboard')" [class.is-active]="activeTab() === 'dashboard'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">dashboard</span> Dashboard & Analytics
+      </button>
+
+      <button (click)="switchTab('companies')" [class.is-active]="activeTab() === 'companies'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">business</span> Clients & Companies
+      </button>
+
+      <button (click)="switchTab('subscriptions')" [class.is-active]="activeTab() === 'subscriptions'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">card_membership</span> Subscriptions
+      </button>
+
+      <button (click)="switchTab('licenses')" [class.is-active]="activeTab() === 'licenses'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">vpn_key</span> Licenses
+      </button>
+
+      <button (click)="switchTab('users')" [class.is-active]="activeTab() === 'users'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">people</span> Users & Sessions
+      </button>
+
+      <button (click)="switchTab('settings')" [class.is-active]="activeTab() === 'settings'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">settings_suggest</span> System Settings
+      </button>
+
+      <button (click)="switchTab('audit')" [class.is-active]="activeTab() === 'audit'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">history_toggle_off</span> Audit Logs
+      </button>
+
+      <button (click)="switchTab('backups')" [class.is-active]="activeTab() === 'backups'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">backup</span> Backup & Restore
+      </button>
+
+      <button (click)="switchTab('tickets')" [class.is-active]="activeTab() === 'tickets'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full flex-row justify-between pr-2">
+        <span class="flex items-center gap-3">
+          <span class="material-icons text-sm">contact_support</span> Support Tickets
+        </span>
+        <span *ngIf="stats()?.openSupportTickets" class="bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">
+          {{ stats()?.openSupportTickets }}
+        </span>
+      </button>
+
+      <button (click)="switchTab('announcements')" [class.is-active]="activeTab() === 'announcements'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">campaign</span> Announcements
+      </button>
+
+      <button (click)="switchTab('billing')" [class.is-active]="activeTab() === 'billing'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+        <span class="material-icons text-sm">receipt</span> Billing Invoices
+      </button>
+    </div>
+
+    <!-- Right Workspace Dashboard Panel -->
+    <div class="lg:col-span-9 pa-panel p-4 md:p-5 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 min-h-[500px]">
+      
+      <!-- 1. DASHBOARD & SYSTEM METRICS -->
+      <div *ngIf="activeTab() === 'dashboard'" class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Platform Dashboard</h2>
+          <span *ngIf="loading()" class="text-[10px] text-slate-400 flex items-center gap-1">
+            <span class="material-icons text-xs animate-spin">sync</span> Loading metrics…
+          </span>
+        </div>
+
+        <!-- Primary KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_clients')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Clients</p>
+              <span class="material-icons text-blue-500 text-lg opacity-40">business</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.totalClients ?? stats()?.totalCompanies ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('active_clients')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Active Clients</p>
+              <span class="material-icons text-emerald-500 text-lg opacity-40">check_circle</span>
+            </div>
+            <h3 class="text-xl font-black text-emerald-700 dark:text-emerald-400 mt-1">{{ analytics()?.activeClients ?? stats()?.activeCompanies ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('trial_clients')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Trial Clients</p>
+              <span class="material-icons text-amber-500 text-lg opacity-40">hourglass_top</span>
+            </div>
+            <h3 class="text-xl font-black text-amber-700 dark:text-amber-400 mt-1">{{ analytics()?.trialClients ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('expired_clients')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expired Clients</p>
+              <span class="material-icons text-rose-500 text-lg opacity-40">event_busy</span>
+            </div>
+            <h3 class="text-xl font-black text-rose-700 dark:text-rose-400 mt-1">{{ analytics()?.expiredClients ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('monthly_revenue')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Monthly Revenue</p>
+              <span class="material-icons text-emerald-500 text-lg opacity-40">payments</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">₹{{ (analytics()?.monthlyRevenue ?? stats()?.monthToDateRevenue ?? 0) | number:'1.0-0' }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('yearly_revenue')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Yearly Revenue</p>
+              <span class="material-icons text-teal-500 text-lg opacity-40">account_balance</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">₹{{ (analytics()?.yearlyRevenue ?? 0) | number:'1.0-0' }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_users')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Users</p>
+              <span class="material-icons text-indigo-500 text-lg opacity-40">people</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.totalUsers ?? stats()?.totalUsers ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_vehicles')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Vehicles</p>
+              <span class="material-icons text-sky-500 text-lg opacity-40">local_shipping</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.totalVehicles ?? stats()?.totalVehicles ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_trips')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Trips</p>
+              <span class="material-icons text-cyan-500 text-lg opacity-40">map</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.totalTrips ?? stats()?.totalTrips ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_storage')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Storage</p>
+              <span class="material-icons text-slate-500 text-lg opacity-40">storage</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ (analytics()?.totalStorage ?? 0) | number:'1.0-1' }} <span class="text-xs font-semibold text-slate-400">GB</span></h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('total_apicalls')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total API Calls</p>
+              <span class="material-icons text-violet-500 text-lg opacity-40">api</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ (analytics()?.totalApiCalls ?? stats()?.totalAuditLogs ?? 0) | number:'1.0-0' }}</h3>
+          </div>
+          <div class="kpi-card p-3.5 rounded-xl border border-slate-100 dark:border-slate-700 bg-gradient-to-br from-white to-slate-50 dark:from-slate-900/80 dark:to-slate-900/40 shadow-sm cursor-pointer hover:border-blue-200 dark:hover:border-blue-800 transition" (click)="openCardDetails('today_login')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Today's Login</p>
+              <span class="material-icons text-blue-500 text-lg opacity-40">login</span>
+            </div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.todaysLogin ?? 0 }}</h3>
+          </div>
+          <div class="kpi-card p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 cursor-pointer hover:border-blue-200 dark:hover:border-blue-700 transition" (click)="switchTab('tickets')">
+            <div class="flex items-start justify-between">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Support Tickets</p>
+              <span class="material-icons text-rose-500 text-lg opacity-40">contact_support</span>
+            </div>
+            <h3 class="text-xl font-black text-rose-700 dark:text-rose-400 mt-1">{{ analytics()?.supportTickets ?? stats()?.openSupportTickets ?? 0 }}</h3>
+            <p class="text-[9px] text-slate-400 mt-0.5">Open / in progress</p>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <!-- Client Growth -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-blue-500">show_chart</span> Client Growth
+            </h3>
+            <div class="h-40 flex items-end justify-between gap-1 px-2 pb-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded">
+              <div *ngIf="!clientGrowth().length" class="w-full text-center text-[10px] text-slate-400 self-center">No data</div>
+              <div *ngFor="let item of clientGrowth()" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
+                <span class="text-[8px] font-semibold text-slate-500 truncate max-w-full">{{ item.count }}</span>
+                <div class="w-full max-w-[28px] bg-blue-500 dark:bg-blue-600 rounded-t transition-all" [style.height.px]="chartBarHeight(item.count, maxOf(clientGrowth(), 'count'))"></div>
+                <span class="text-[7px] font-bold text-slate-400 truncate max-w-full">{{ item.month }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-emerald-500">trending_up</span> Revenue
+            </h3>
+            <div class="h-40 flex items-end justify-between gap-1 px-2 pb-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded">
+              <div *ngIf="!revenueGrowth().length" class="w-full text-center text-[10px] text-slate-400 self-center">No data</div>
+              <div *ngFor="let item of revenueGrowth()" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
+                <span class="text-[8px] font-semibold text-slate-500 truncate max-w-full">₹{{ item.revenue | number:'1.0-0' }}</span>
+                <div class="w-full max-w-[28px] bg-emerald-500 dark:bg-emerald-600 rounded-t transition-all" [style.height.px]="chartBarHeight(item.revenue, maxOf(revenueGrowth(), 'revenue'))"></div>
+                <span class="text-[7px] font-bold text-slate-400 truncate max-w-full">{{ item.month }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscriptions -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-indigo-500">pie_chart</span> Subscriptions
+            </h3>
+            <div class="h-40 flex flex-col justify-center gap-2.5 px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded overflow-y-auto">
+              <div *ngIf="!planDistribution().length" class="text-center text-[10px] text-slate-400">No plans</div>
+              <div *ngFor="let item of planDistribution()" class="space-y-1">
+                <div class="flex justify-between text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                  <span class="truncate">{{ item.planName }}</span>
+                  <span class="shrink-0 ml-2">{{ item.count }}</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                  <div class="bg-indigo-500 h-1.5 rounded-full transition-all" [style.width.%]="(item.count / maxOf(planDistribution(), 'count')) * 100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Count -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-sky-500">local_shipping</span> Vehicle Count
+            </h3>
+            <div class="h-40 flex flex-col justify-center gap-2.5 px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded overflow-y-auto">
+              <div *ngIf="!vehicleDistribution().length" class="text-center text-[10px] text-slate-400">No data</div>
+              <div *ngFor="let item of vehicleDistribution()" class="space-y-1">
+                <div class="flex justify-between text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                  <span class="truncate">{{ item.companyName }}</span>
+                  <span class="shrink-0 ml-2">{{ item.count }}</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                  <div class="bg-sky-500 h-1.5 rounded-full transition-all" [style.width.%]="(item.count / maxOf(vehicleDistribution(), 'count')) * 100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trip Count -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-cyan-500">route</span> Trip Count
+            </h3>
+            <div class="h-40 flex items-end justify-between gap-1 px-2 pb-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded">
+              <div *ngIf="!tripGrowth().length" class="w-full text-center text-[10px] text-slate-400 self-center">No data</div>
+              <div *ngFor="let item of tripGrowth()" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
+                <span class="text-[8px] font-semibold text-slate-500 truncate max-w-full">{{ item.count }}</span>
+                <div class="w-full max-w-[28px] bg-cyan-500 dark:bg-cyan-600 rounded-t transition-all" [style.height.px]="chartBarHeight(item.count, maxOf(tripGrowth(), 'count'))"></div>
+                <span class="text-[7px] font-bold text-slate-400 truncate max-w-full">{{ item.month }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Growth -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1">
+              <span class="material-icons text-xs text-indigo-500">person_add</span> User Growth
+            </h3>
+            <div class="h-40 flex items-end justify-between gap-1 px-2 pb-1 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded">
+              <div *ngIf="!userGrowth().length" class="w-full text-center text-[10px] text-slate-400 self-center">No data</div>
+              <div *ngFor="let item of userGrowth()" class="flex-1 flex flex-col items-center justify-end gap-1 min-w-0">
+                <span class="text-[8px] font-semibold text-slate-500 truncate max-w-full">{{ item.count }}</span>
+                <div class="w-full max-w-[28px] bg-indigo-500 dark:bg-indigo-600 rounded-t transition-all" [style.height.px]="chartBarHeight(item.count, maxOf(userGrowth(), 'count'))"></div>
+                <span class="text-[7px] font-bold text-slate-400 truncate max-w-full">{{ item.month }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lists + System Health -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+          <!-- Recent Clients -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg flex flex-col min-h-[200px]">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+              <span class="material-icons text-xs text-blue-500">group_add</span> Recent Clients
+            </h3>
+            <div class="flex-1 space-y-1.5 overflow-y-auto">
+              <div *ngIf="!recentClients().length" class="text-[10px] text-slate-400 py-6 text-center">No recent clients</div>
+              <div *ngFor="let c of recentClients()" class="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{{ c.name }}</p>
+                  <p class="text-[9px] text-slate-400 truncate">{{ c.code }} · {{ c.planName }}</p>
+                </div>
+                <span class="shrink-0 text-[8px] font-bold uppercase px-1.5 py-0.5 rounded"
+                  [class.bg-emerald-100]="c.status === 'ACTIVE'" [class.text-emerald-700]="c.status === 'ACTIVE'"
+                  [class.bg-slate-100]="c.status !== 'ACTIVE'" [class.text-slate-600]="c.status !== 'ACTIVE'">{{ c.status }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Renewal Due -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg flex flex-col min-h-[200px]">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+              <span class="material-icons text-xs text-amber-500">event</span> Renewal Due
+            </h3>
+            <div class="flex-1 space-y-1.5 overflow-y-auto">
+              <div *ngIf="!renewalDue().length" class="text-[10px] text-slate-400 py-6 text-center">No renewals in 30 days</div>
+              <div *ngFor="let c of renewalDue()" class="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-amber-50/80 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{{ c.name }}</p>
+                  <p class="text-[9px] text-slate-400 truncate">{{ c.code }}</p>
+                </div>
+                <span class="shrink-0 text-[9px] font-semibold text-amber-700 dark:text-amber-400">{{ c.endDate }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Latest Payments -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg flex flex-col min-h-[200px]">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+              <span class="material-icons text-xs text-emerald-500">receipt_long</span> Latest Payments
+            </h3>
+            <div class="flex-1 space-y-1.5 overflow-y-auto">
+              <div *ngIf="!latestPayments().length" class="text-[10px] text-slate-400 py-6 text-center">No payments yet</div>
+              <div *ngFor="let p of latestPayments()" class="flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{{ p.invoiceNumber }}</p>
+                  <p class="text-[9px] text-slate-400 truncate">{{ p.invoiceDate }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <p class="text-[11px] font-bold text-slate-800 dark:text-slate-200">₹{{ p.amount | number:'1.0-0' }}</p>
+                  <p class="text-[8px] font-bold uppercase"
+                    [class.text-emerald-600]="p.status === 'PAID'"
+                    [class.text-amber-600]="p.status !== 'PAID'">{{ p.status }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Health -->
+          <div class="p-3 border border-slate-100 dark:border-slate-700 rounded-lg flex flex-col min-h-[200px]">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+              <span class="material-icons text-xs text-teal-500">monitor_heart</span> System Health
+            </h3>
+            <div class="flex-1 flex flex-col justify-center gap-3 px-1" *ngIf="systemHealth(); else noHealth">
+              <div>
+                <div class="flex justify-between text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  <span>CPU Usage</span>
+                  <span>{{ systemHealth()?.cpuUsage }}%</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                  <div class="bg-teal-500 h-1.5 rounded-full" [style.width.%]="systemHealth()?.cpuUsage"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  <span>Memory</span>
+                  <span>{{ systemHealth()?.memoryUsedGB }} / {{ systemHealth()?.memoryTotalGB }} GB</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                  <div class="bg-blue-500 h-1.5 rounded-full"
+                    [style.width.%]="(systemHealth()?.memoryUsedGB / systemHealth()?.memoryTotalGB) * 100"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-semibold px-2 py-1.5 rounded bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                <span class="text-slate-500">Database</span>
+                <span class="flex items-center gap-1"
+                  [class.text-emerald-600]="systemHealth()?.dbStatus === 'UP'"
+                  [class.text-rose-600]="systemHealth()?.dbStatus !== 'UP'">
+                  <span class="w-1.5 h-1.5 rounded-full"
+                    [class.bg-emerald-500]="systemHealth()?.dbStatus === 'UP'"
+                    [class.bg-rose-500]="systemHealth()?.dbStatus !== 'UP'"></span>
+                  {{ systemHealth()?.dbStatus }}
+                </span>
+              </div>
+            </div>
+            <ng-template #noHealth>
+              <div class="flex-1 flex items-center justify-center text-[10px] text-slate-400">Health data unavailable</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CLIENT MANAGEMENT CONSOLE -->
+      <div *ngIf="activeTab() === 'companies'" class="space-y-4">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100">Clients & Companies</h2>
+            <p class="text-[10px] text-slate-400 mt-0.5">Onboard tenants and manage subscription lifecycle</p>
+          </div>
+        </div>
+
+        <!-- Dashboard Sub-stats Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="pa-stat flex items-center gap-3 p-3.5 rounded-xl">
+            <span class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <span class="material-icons text-lg">domain</span>
+            </span>
+            <div>
+              <p class="pa-stat-label text-[9px] uppercase tracking-wide font-semibold">Total Clients</p>
+              <h4 class="pa-stat-value font-bold text-base">{{ companyTotal() }} <span class="pa-stat-meta text-[10px] font-semibold">Tenants</span></h4>
+            </div>
+          </div>
+          <div class="pa-stat flex items-center gap-3 p-3.5 rounded-xl">
+            <span class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <span class="material-icons text-lg">task_alt</span>
+            </span>
+            <div>
+              <p class="pa-stat-label text-[9px] uppercase tracking-wide font-semibold">Active Tenants</p>
+              <h4 class="pa-stat-value font-bold text-base">{{ stats()?.activeCompanies || 0 }} <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">Live</span></h4>
+            </div>
+          </div>
+          <div class="pa-stat flex items-center gap-3 p-3.5 rounded-xl">
+            <span class="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 flex items-center justify-center shrink-0">
+              <span class="material-icons text-lg">block</span>
+            </span>
+            <div>
+              <p class="pa-stat-label text-[9px] uppercase tracking-wide font-semibold">Suspended</p>
+              <h4 class="pa-stat-value font-bold text-base">{{ companyTotal() - (stats()?.activeCompanies || 0) }} <span class="text-[10px] font-semibold text-rose-600 dark:text-rose-400">Inactive</span></h4>
+            </div>
+          </div>
+          <div class="pa-stat flex items-center gap-3 p-3.5 rounded-xl">
+            <span class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-300 flex items-center justify-center shrink-0">
+              <span class="material-icons text-lg">cloud</span>
+            </span>
+            <div>
+              <p class="pa-stat-label text-[9px] uppercase tracking-wide font-semibold">Storage Pool</p>
+              <h4 class="pa-stat-value font-bold text-sm">Multi-Tenant</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search, Filter & Action Toolbar -->
+        <div class="pa-toolbar flex flex-col md:flex-row md:justify-between md:items-center gap-3 p-3 rounded-xl">
+          <div class="flex flex-wrap gap-2">
+            <input type="text" [(ngModel)]="companySearch" (keyup.enter)="onClientSearch()" placeholder="Search company code / name…" class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs w-52 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500">
+            
+            <select [(ngModel)]="clientFilterStatus" (change)="onClientSearch()" class="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs text-slate-800 dark:text-slate-100">
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+            
+            <button (click)="onClientSearch()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold transition">Search</button>
+          </div>
+          
+          <div class="flex gap-2">
+            <button (click)="exportClientsCsv()" class="pa-btn-success flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold">
+              <span class="material-icons text-xs">file_download</span> Export CSV
+            </button>
+            <button (click)="openOnboardingWizard()" class="pa-btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold">
+              <span class="material-icons text-xs">rocket_launch</span> Onboard New Client
+            </button>
+          </div>
+        </div>
+
+        <!-- Phase 29: Client Onboarding Wizard -->
+        <div *ngIf="showOnboardingWizard()" class="border border-blue-200/80 dark:border-blue-900/50 rounded-2xl overflow-hidden bg-white dark:bg-slate-900/40 shadow-lg shadow-blue-500/5">
+          <div class="px-4 py-3.5 bg-gradient-to-r from-blue-600 to-sky-600 text-white flex items-center justify-between">
+            <div>
+              <h3 class="text-xs font-bold flex items-center gap-1.5">
+                <span class="material-icons text-sm">rocket_launch</span>
+                Client Onboarding
+              </h3>
+              <p class="text-[10px] text-blue-100 mt-0.5">Company → Head Office → Admin → Subscription → Masters → Client Ready</p>
+            </div>
+            <button type="button" (click)="closeOnboardingWizard()" class="text-white/70 hover:text-white">
+              <span class="material-icons text-base">close</span>
+            </button>
+          </div>
+
+          <!-- Step indicator -->
+          <div class="px-4 py-3 flex flex-wrap gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50">
+            <div *ngFor="let s of onboardingStepsMeta"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold border"
+              [class.bg-blue-600]="onboardingStep() === s.n"
+              [class.text-white]="onboardingStep() === s.n"
+              [class.border-blue-600]="onboardingStep() === s.n"
+              [class.bg-emerald-50]="onboardingStep() > s.n"
+              [class.text-emerald-700]="onboardingStep() > s.n"
+              [class.border-emerald-200]="onboardingStep() > s.n"
+              [class.bg-white]="onboardingStep() < s.n"
+              [class.text-slate-400]="onboardingStep() < s.n"
+              [class.border-slate-200]="onboardingStep() < s.n"
+              [class.dark:bg-slate-800]="onboardingStep() < s.n"
+              [class.dark:border-slate-700]="onboardingStep() < s.n">
+              <span class="w-4 h-4 rounded-full flex items-center justify-center text-[9px]"
+                [class.bg-white]="onboardingStep() === s.n"
+                [class.text-blue-700]="onboardingStep() === s.n"
+                [class.bg-emerald-600]="onboardingStep() > s.n"
+                [class.text-white]="onboardingStep() > s.n"
+                [class.bg-slate-200]="onboardingStep() < s.n"
+                [class.dark:bg-slate-700]="onboardingStep() < s.n">
+                <span *ngIf="onboardingStep() > s.n">✓</span>
+                <span *ngIf="onboardingStep() <= s.n">{{ s.n }}</span>
+              </span>
+              {{ s.label }}
+            </div>
+          </div>
+
+          <div class="p-4" [formGroup]="companyForm">
+            <div *ngIf="errorMsg()" class="mb-3 flex items-start gap-2 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 p-3 rounded-xl text-xs font-medium">
+              <span class="material-icons text-sm shrink-0">error</span>
+              <span>{{ errorMsg() }}</span>
+            </div>
+
+            <!-- Step 1: Company Details -->
+            <div *ngIf="onboardingStep() === 1" class="space-y-3">
+              <p class="text-[11px] text-slate-500">Enter company details. Fields marked <span class="text-rose-600 font-bold">*</span> are required. Company code is generated automatically.</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="ABC Logistics Pvt Ltd"></ff-textbox>
+                <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Mohan Raj"></ff-textbox>
+                <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Logistics / Fleet Operator"></ff-textbox>
+                <ff-textbox label="Phone" [required]="true" formControlName="phone" placeholder="+91 9999988888"></ff-textbox>
+                <ff-textbox label="Email" [required]="true" type="email" formControlName="email" placeholder="admin@abclogistics.com"
+                  [errorMessages]="{ email: 'Enter a valid email address (example@company.com)' }"></ff-textbox>
+                <ff-textbox label="GSTIN" [required]="true" formControlName="gstNumber" placeholder="09AAAAA1111A1Z1"
+                  [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
+                <ff-textbox label="PAN (Optional)" formControlName="panNumber" placeholder="Optional PAN"></ff-textbox>
+                <ff-textbox label="Address" [required]="true" formControlName="address" placeholder="HQ Address"></ff-textbox>
+                <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Chennai"></ff-textbox>
+                <ff-textbox label="State" [required]="true" formControlName="state" placeholder="Tamil Nadu"></ff-textbox>
+                <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="600001"></ff-textbox>
+                <ff-textbox label="Website" formControlName="website" placeholder="www.example.com"></ff-textbox>
+                <ff-textbox label="Storage Limit" formControlName="storage" placeholder="10 GB"></ff-textbox>
+                <ff-textbox label="Logo URL" formControlName="logo" placeholder="https://..."></ff-textbox>
+                <ff-textbox label="Admin Username (Optional)" formControlName="adminUsername" placeholder="Auto-generated if blank"></ff-textbox>
+                <ff-textbox label="Admin Password (Optional)" formControlName="adminPassword" placeholder="Auto-generated if blank"></ff-textbox>
+              </div>
+            </div>
+
+            <!-- Step 2: Head Office preview -->
+            <div *ngIf="onboardingStep() === 2" class="space-y-3">
+              <p class="text-[11px] text-slate-500">Head Office branch is created automatically from company details.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 rounded border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 space-y-2">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase">Company</p>
+                  <p class="font-semibold text-slate-800 dark:text-slate-100">{{ companyForm.value.name || '—' }}</p>
+                  <p class="text-slate-500">Code preview: <span class="font-mono font-bold text-blue-600">{{ previewCompanyCode() }}</span></p>
+                  <p class="text-slate-500">{{ companyForm.value.email }} · {{ companyForm.value.phone }}</p>
+                </div>
+                <div class="p-3 rounded border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2">
+                  <p class="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1">
+                    <span class="material-icons text-xs">apartment</span> Head Office (auto)
+                  </p>
+                  <p class="font-semibold text-slate-800 dark:text-slate-100">Head Office</p>
+                  <p class="text-slate-500">Branch code: <span class="font-mono font-bold">HO_{{ previewCompanyCode() }}</span></p>
+                  <p class="text-slate-500">Manager: {{ companyForm.value.ownerName || 'Administrator' }}</p>
+                  <p class="text-slate-500">{{ companyForm.value.address }}, {{ companyForm.value.city }}, {{ companyForm.value.state }} {{ companyForm.value.pincode }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Subscription -->
+            <div *ngIf="onboardingStep() === 3" class="space-y-3">
+              <p class="text-[11px] text-slate-500">Assign a SaaS subscription plan for this client. Fields marked <span class="text-rose-600 font-bold">*</span> are required.</p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="flex flex-col gap-1 text-xs md:col-span-1">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase">Subscription Plan <span class="text-rose-600">*</span></label>
+                  <select formControlName="subscriptionPlanId"
+                    class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border rounded text-xs text-slate-800 dark:text-slate-200"
+                    [class.border-rose-500]="!companyForm.value.subscriptionPlanId && errorMsg()"
+                    [class.border-slate-250]="companyForm.value.subscriptionPlanId || !errorMsg()"
+                    [class.dark:border-slate-700]="companyForm.value.subscriptionPlanId || !errorMsg()">
+                    <option [ngValue]="null">-- Select Plan --</option>
+                    <option *ngFor="let p of plans()" [ngValue]="p.id">{{ p.name }} · {{ p.billingPeriod }} · ₹{{ p.price }}</option>
+                  </select>
+                  <p *ngIf="!companyForm.value.subscriptionPlanId && errorMsg()" class="text-[10px] text-rose-600">Please select a subscription plan</p>
+                </div>
+                <ff-datepicker label="Start Date (optional)" formControlName="subscriptionStartDate"></ff-datepicker>
+                <ff-datepicker label="End Date (optional)" formControlName="subscriptionEndDate"></ff-datepicker>
+                <ff-number label="Billing Months" formControlName="billingMonths"></ff-number>
+                <ff-number label="Max Users" formControlName="maxUsers"></ff-number>
+                <ff-number label="Max Vehicles" formControlName="maxVehicles"></ff-number>
+                <label class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 md:col-span-3 mt-1">
+                  <input type="checkbox" formControlName="sendWelcomeEmail" class="rounded border-slate-300">
+                  Queue welcome email (future-ready SMTP)
+                </label>
+              </div>
+            </div>
+
+            <!-- Step 4: Review & Provision -->
+            <div *ngIf="onboardingStep() === 4" class="space-y-3">
+              <p class="text-[11px] text-slate-500">Review and run full provisioning. Company Admin can login immediately after this.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 rounded border border-slate-100 dark:border-slate-700 space-y-1.5">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Summary</p>
+                  <p><span class="text-slate-400">Company:</span> <strong>{{ companyForm.value.name }}</strong></p>
+                  <p><span class="text-slate-400">Owner:</span> {{ companyForm.value.ownerName }}</p>
+                  <p><span class="text-slate-400">Email:</span> {{ companyForm.value.email }}</p>
+                  <p><span class="text-slate-400">GSTIN:</span> {{ companyForm.value.gstNumber }}</p>
+                  <p><span class="text-slate-400">Plan:</span> <strong>{{ selectedPlanLabel() }}</strong></p>
+                  <p><span class="text-slate-400">Limits:</span> {{ companyForm.value.maxUsers }} users · {{ companyForm.value.maxVehicles }} vehicles</p>
+                </div>
+                <div class="p-3 rounded border border-slate-100 dark:border-slate-700">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Provisioning checklist</p>
+                  <ul class="space-y-1">
+                    <li *ngFor="let item of provisionChecklist" class="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                      <span class="material-icons text-[12px] text-blue-500">check_circle_outline</span> {{ item }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Client Ready -->
+            <div *ngIf="onboardingStep() === 5 && onboardingResult()" class="space-y-4">
+              <div class="flex items-start gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <span class="material-icons text-emerald-600">verified</span>
+                <div>
+                  <h4 class="text-sm font-bold text-emerald-800 dark:text-emerald-300">Client Ready</h4>
+                  <p class="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-0.5">
+                    {{ onboardingResult().companyName }} ({{ onboardingResult().companyCode }}) is provisioned.
+                    Share these credentials with the Company Admin so they can login and start using the ERP.
+                  </p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="p-3 rounded border border-slate-100 dark:border-slate-700 space-y-2 text-xs">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase">Login Credentials</p>
+                  <div class="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-900/50 px-2.5 py-2 rounded">
+                    <div>
+                      <p class="text-[9px] text-slate-400 uppercase">Username</p>
+                      <p class="font-mono font-bold text-slate-800 dark:text-slate-100">{{ onboardingResult().adminUsername }}</p>
+                    </div>
+                    <button type="button" (click)="copyCredential(onboardingResult().adminUsername, 'user')" class="text-[10px] font-semibold text-blue-600 hover:underline">
+                      {{ copiedField() === 'user' ? 'Copied' : 'Copy' }}
+                    </button>
+                  </div>
+                  <div class="flex items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-2 rounded border border-amber-100 dark:border-amber-900/40">
+                    <div>
+                      <p class="text-[9px] text-amber-600 uppercase">Temporary Password</p>
+                      <p class="font-mono font-bold text-slate-800 dark:text-slate-100">{{ onboardingResult().temporaryPassword }}</p>
+                    </div>
+                    <button type="button" (click)="copyCredential(onboardingResult().temporaryPassword, 'pass')" class="text-[10px] font-semibold text-blue-600 hover:underline">
+                      {{ copiedField() === 'pass' ? 'Copied' : 'Copy' }}
+                    </button>
+                  </div>
+                  <p class="text-[10px] text-slate-400">Password change is forced on first login.</p>
+                </div>
+
+                <div class="p-3 rounded border border-slate-100 dark:border-slate-700 space-y-1.5 text-xs">
+                  <p class="text-[10px] font-bold text-slate-400 uppercase">Tenant Summary</p>
+                  <p><span class="text-slate-400">Branch:</span> {{ onboardingResult().branchName }} ({{ onboardingResult().branchCode }})</p>
+                  <p><span class="text-slate-400">Plan:</span> {{ onboardingResult().planName }} · {{ onboardingResult().subscriptionStartDate }} → {{ onboardingResult().subscriptionEndDate }}</p>
+                  <p><span class="text-slate-400">License:</span> <span class="font-mono text-[10px]">{{ onboardingResult().licenseKey }}</span></p>
+                  <p><span class="text-slate-400">Welcome email:</span> {{ onboardingResult().welcomeEmailStatus }} — {{ onboardingResult().welcomeEmailNote }}</p>
+                </div>
+              </div>
+
+              <div class="p-3 rounded border border-slate-100 dark:border-slate-700">
+                <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Completed steps</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div *ngFor="let st of onboardingResult().steps" class="flex items-start gap-1.5 text-[11px]">
+                    <span class="material-icons text-[14px] mt-0.5"
+                      [class.text-emerald-500]="st.status === 'DONE'"
+                      [class.text-slate-400]="st.status !== 'DONE'">{{ st.status === 'DONE' ? 'check_circle' : 'remove_circle' }}</span>
+                    <div>
+                      <p class="font-semibold text-slate-700 dark:text-slate-200">{{ st.label }}</p>
+                      <p class="text-[10px] text-slate-400">{{ st.detail }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Wizard footer -->
+            <div class="flex justify-between items-center gap-2 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800">
+              <button type="button" *ngIf="onboardingStep() > 1 && onboardingStep() < 5" (click)="onboardingBack()"
+                class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded text-xs font-semibold">
+                Back
+              </button>
+              <div *ngIf="onboardingStep() === 1 || onboardingStep() === 5"></div>
+
+              <div class="flex gap-2 ml-auto">
+                <button type="button" *ngIf="onboardingStep() < 5" (click)="closeOnboardingWizard()"
+                  class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded text-xs font-semibold">Cancel</button>
+
+                <button type="button" *ngIf="onboardingStep() < 4" (click)="onboardingNext()"
+                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Continue</button>
+
+                <button type="button" *ngIf="onboardingStep() === 4" (click)="runOnboarding()" [disabled]="onboardingBusy()"
+                  class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded text-xs font-semibold flex items-center gap-1">
+                  <span class="material-icons text-xs" [class.animate-spin]="onboardingBusy()">{{ onboardingBusy() ? 'sync' : 'play_arrow' }}</span>
+                  {{ onboardingBusy() ? 'Provisioning…' : 'Run Onboarding' }}
+                </button>
+
+                <button type="button" *ngIf="onboardingStep() === 5" (click)="finishOnboarding()"
+                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Done</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client edit form (edit only) -->
+        <div *ngIf="showCompanyForm() && isEditMode()" class="p-4 border border-blue-100 dark:border-slate-750 bg-blue-50/20 dark:bg-slate-900/30 rounded-lg space-y-3">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-250 flex items-center gap-1">
+            <span class="material-icons text-xs text-blue-500 font-bold">domain</span>
+            Edit SaaS B2B Client Profile Details
+          </h3>
+          
+          <form [formGroup]="companyForm" (ngSubmit)="saveCompany()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="ABC Logistics Pvt Ltd"></ff-textbox>
+            <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Mohan Raj"></ff-textbox>
+            
+            <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="E.g., Logistics, Fleet Operator"></ff-textbox>
+            <ff-textbox label="Contact Phone Number" [required]="true" formControlName="phone" placeholder="+91 9999988888"></ff-textbox>
+            <ff-textbox label="Official Contact Email" [required]="true" type="email" formControlName="email" placeholder="admin@abclogistics.com"></ff-textbox>
+            <ff-textbox label="GSTIN Number" [required]="true" formControlName="gstNumber" placeholder="09AAAAA1111A1Z1"
+              [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
+            <ff-textbox label="PAN Number (Optional)" formControlName="panNumber" placeholder="Optional PAN"></ff-textbox>
+            <ff-textbox label="Headquarters Address" [required]="true" formControlName="address" placeholder="HQ Address details"></ff-textbox>
+            <ff-textbox label="City" [required]="true" formControlName="city" placeholder="E.g., Chennai"></ff-textbox>
+            <ff-textbox label="State" [required]="true" formControlName="state" placeholder="E.g., Tamil Nadu"></ff-textbox>
+            <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="600001"></ff-textbox>
+            <ff-textbox label="Website URL" formControlName="website" placeholder="www.abclogistics.com"></ff-textbox>
+            <ff-textbox label="Storage Space Limit" formControlName="storage" placeholder="E.g., 20 GB"></ff-textbox>
+            <ff-textbox label="Company Logo URL" formControlName="logo" placeholder="Logo image link"></ff-textbox>
+
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">Subscription Plan</label>
+              <select formControlName="subscriptionPlanId" class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option [ngValue]="null">-- Select Plan --</option>
+                <option *ngFor="let p of plans()" [ngValue]="p.id">{{ p.name }} (₹{{ p.price }})</option>
+              </select>
+            </div>
+
+            <ff-datepicker label="Subscription Start Date" formControlName="subscriptionStartDate"></ff-datepicker>
+            <ff-datepicker label="Subscription End Date" formControlName="subscriptionEndDate"></ff-datepicker>
+            <ff-datepicker label="Subscription Renewal Date" formControlName="subscriptionRenewalDate"></ff-datepicker>
+
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">Subscription Status</label>
+              <select formControlName="subscriptionStatus" class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option value="ACTIVE">Active</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="SUSPENDED">Suspended</option>
+                <option value="PENDING">Pending</option>
+              </select>
+            </div>
+
+            <ff-number label="Maximum Users Limit" formControlName="maxUsers"></ff-number>
+            <ff-number label="Maximum Vehicles Limit" formControlName="maxVehicles"></ff-number>
+
+            <div class="md:col-span-3 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="showCompanyForm.set(false); isEditMode.set(false)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-350 rounded text-xs font-semibold">Cancel</button>
+              <button type="submit" [disabled]="companyForm.invalid" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
+                Update Client Profile
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SaaS Clients Data Grid -->
+        <div class="pa-table-wrap overflow-x-auto border border-slate-200/80 dark:border-slate-700/70">
+          <table class="w-full text-[11px] text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-700 text-slate-500 font-bold uppercase tracking-wide text-[9px]">
+                <th class="p-2.5">Code</th>
+                <th class="p-2.5">Company Name</th>
+                <th class="p-2.5">Owner & Type</th>
+                <th class="p-2.5">Phone / Email</th>
+                <th class="p-2.5">GSTIN</th>
+                <th class="p-2.5">Plan / Licences</th>
+                <th class="p-2.5">Storage</th>
+                <th class="p-2.5">Expiry Date</th>
+                <th class="p-2.5">Status</th>
+                <th class="p-2.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of companies()" class="border-b border-slate-100 dark:border-slate-800">
+                <td class="p-2.5 font-mono font-bold">{{ item.code }}</td>
+                <td class="p-2.5 font-semibold">
+                  <div class="flex items-center gap-1.5">
+                    <img *ngIf="item.logo" [src]="item.logo" class="w-5 h-5 rounded-full object-cover ring-1 ring-slate-200">
+                    <span *ngIf="!item.logo" class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] font-bold">{{ (item.name || '?').charAt(0) }}</span>
+                    <span>{{ item.name }}</span>
+                  </div>
+                </td>
+                <td class="p-2.5">
+                  <div class="flex flex-col">
+                    <span class="font-semibold">{{ item.ownerName || 'N/A' }}</span>
+                    <span class="pa-muted text-[10px]">{{ item.businessType || 'N/A' }}</span>
+                  </div>
+                </td>
+                <td class="p-2.5">
+                  <div class="flex flex-col">
+                    <span class="font-medium">{{ item.phone }}</span>
+                    <span class="pa-muted text-[10px]">{{ item.email }}</span>
+                  </div>
+                </td>
+                <td class="p-2.5 font-mono text-[10px]">{{ item.gstNumber }}</td>
+                <td class="p-2.5">
+                  <div class="flex flex-col">
+                    <span class="font-bold text-blue-600 dark:text-blue-400 text-[10px]">{{ item.planName }}</span>
+                    <span class="pa-muted text-[10px]">{{ item.licenseCount }} Active Licenses</span>
+                  </div>
+                </td>
+                <td class="p-2.5 font-mono">{{ item.storage }}</td>
+                <td class="p-2.5 font-mono text-[10px]">{{ item.expiryDate || 'N/A' }}</td>
+                <td class="p-2.5">
+                  <span [class.bg-emerald-100]="item.status === 'ACTIVE'" [class.text-emerald-800]="item.status === 'ACTIVE'" [class.bg-rose-100]="item.status === 'SUSPENDED'" [class.text-rose-800]="item.status === 'SUSPENDED'" class="px-1.5 py-0.5 rounded text-[9px] font-bold">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="p-2.5 text-right whitespace-nowrap">
+                  <div class="inline-flex items-center gap-1.5 justify-end">
+                    <!-- View -->
+                    <button type="button" (click)="viewClientDetails(item)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-[11px] font-bold shadow-sm cursor-pointer">
+                      <span class="material-icons text-sm">visibility</span> View
+                    </button>
+                    <!-- Edit -->
+                    <button type="button" (click)="editClientDetails(item)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition text-[11px] font-bold shadow-sm cursor-pointer">
+                      <span class="material-icons text-sm">edit</span> Edit
+                    </button>
+                    
+                    <!-- Actions Menu Dropdown -->
+                    <button type="button" [matMenuTriggerFor]="clientActionMenu" class="inline-flex items-center justify-center p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-350 transition cursor-pointer">
+                      <span class="material-icons text-base">more_vert</span>
+                    </button>
+
+                    <mat-menu #clientActionMenu="matMenu" xPosition="before">
+                      <!-- Toggle Status -->
+                      <button mat-menu-item (click)="toggleCompanyStatus(item)">
+                        <span class="material-icons text-slate-500 mr-2 text-base">{{ item.status === 'ACTIVE' ? 'block' : 'check_circle' }}</span>
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ item.status === 'ACTIVE' ? 'Suspend Company' : 'Activate Company' }}</span>
+                      </button>
+
+                      <!-- Seed Demo Data -->
+                      <button mat-menu-item (click)="triggerSeedDemoData(item)">
+                        <span class="material-icons text-amber-500 mr-2 text-base">playlist_add_check</span>
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Seed Demo Data</span>
+                      </button>
+
+                      <!-- Delete -->
+                      <button mat-menu-item (click)="deleteClient(item)">
+                        <span class="material-icons text-rose-500 mr-2 text-base">delete</span>
+                        <span class="text-xs font-semibold text-rose-600 dark:text-rose-455">Delete Client</span>
+                      </button>
+                    </mat-menu>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- SaaS Client View Details Modal Overlay -->
+        <div *ngIf="showClientViewModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-11/12 md:w-2/5 max-h-[85vh] overflow-y-auto space-y-4">
+            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-2">
+              <div class="flex items-center gap-2">
+                <img *ngIf="selectedClient()?.logo" [src]="selectedClient()?.logo" class="w-6 h-6 rounded-full object-cover">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedClient()?.name }}</h3>
+                  <span class="text-[9px] text-slate-400 font-mono">Tenant Code: {{ selectedClient()?.code }}</span>
+                </div>
+              </div>
+              <button (click)="showClientViewModal.set(false)" class="text-slate-400 hover:text-slate-600"><span class="material-icons">close</span></button>
+            </div>
+
+            <!-- Client detailed attributes -->
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="col-span-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded border border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2">
+                <div>
+                  <p class="text-[9px] text-slate-400 uppercase">Subscription Plan</p>
+                  <h4 class="font-bold text-blue-600 dark:text-blue-400">{{ selectedClient()?.planName }}</h4>
+                </div>
+                <div>
+                  <p class="text-[9px] text-slate-400 uppercase">Subscription Expiry</p>
+                  <h4 class="font-bold text-slate-700 dark:text-slate-350">{{ selectedClient()?.expiryDate || 'N/A' }}</h4>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Owner / CEO Name</p>
+                <p class="font-semibold">{{ selectedClient()?.ownerName || 'N/A' }}</p>
+              </div>
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Business Category</p>
+                <p class="font-semibold">{{ selectedClient()?.businessType || 'N/A' }}</p>
+              </div>
+
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Contact Phone</p>
+                <p class="font-semibold font-mono">{{ selectedClient()?.phone }}</p>
+              </div>
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Official Email</p>
+                <p class="font-semibold">{{ selectedClient()?.email }}</p>
+              </div>
+
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">GSTIN Details</p>
+                <p class="font-semibold font-mono">{{ selectedClient()?.gstNumber }}</p>
+              </div>
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Storage Limit</p>
+                <p class="font-semibold font-mono">{{ selectedClient()?.storage }}</p>
+              </div>
+
+              <div class="col-span-2">
+                <p class="text-[9px] text-slate-400 uppercase">Headquarters Address</p>
+                <p class="font-semibold text-slate-750 dark:text-slate-300">{{ selectedClient()?.address }}, {{ selectedClient()?.city }}, {{ selectedClient()?.state }} - {{ selectedClient()?.pincode }}</p>
+              </div>
+
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Website Portal</p>
+                <a *ngIf="selectedClient()?.website" [href]="'http://' + selectedClient()?.website" target="_blank" class="text-blue-500 font-semibold hover:underline">{{ selectedClient()?.website }}</a>
+                <span *ngIf="!selectedClient()?.website" class="font-semibold text-slate-400">N/A</span>
+              </div>
+              <div>
+                <p class="text-[9px] text-slate-400 uppercase">Created On Date</p>
+                <p class="font-semibold font-mono text-[10px]">{{ selectedClient()?.createdDate | date:'mediumDate' }}</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end border-t border-slate-100 dark:border-slate-700 pt-3">
+              <button (click)="showClientViewModal.set(false)" class="px-4 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs font-semibold">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. SUBSCRIPTIONS MANAGEMENT -->
+      <div *ngIf="activeTab() === 'subscriptions'" class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">SaaS Billing Plans</h2>
+          <button (click)="openCreatePlanForm()" class="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">add</span> Create SaaS Plan
+          </button>
+        </div>
+
+        <!-- Plan editor drawer Form -->
+        <div *ngIf="showPlanForm()" class="p-4 border border-blue-100 dark:border-slate-700 bg-blue-50/30 dark:bg-slate-900/30 rounded-lg space-y-3">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">SaaS Plan Setup</h3>
+          
+          <form [formGroup]="planForm" (ngSubmit)="savePlan()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ff-textbox label="Plan Code" formControlName="code" placeholder="E.g., PRO_ENTERPRISE"></ff-textbox>
+            <ff-textbox label="Plan Name" formControlName="name" placeholder="Pro Enterprise Tier"></ff-textbox>
+            <ff-number label="Billing Price (INR)" formControlName="price"></ff-number>
+            <ff-dropdown label="Billing Frequency" formControlName="billingPeriod" [options]="billingPeriodOptions"></ff-dropdown>
+            <ff-number label="Max Allowed Users" formControlName="maxUsers"></ff-number>
+            <ff-number label="Max Fleet Vehicles" formControlName="maxVehicles"></ff-number>
+            <ff-number label="Max Monthly Invoices" formControlName="maxInvoices"></ff-number>
+            <ff-textarea label="Plan Description" formControlName="description" class="md:col-span-3"></ff-textarea>
+
+            <div class="md:col-span-3 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="showPlanForm.set(false); editingPlan.set(null)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 rounded text-xs font-semibold">Cancel</button>
+              <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Save Subscription Plan</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Plans Table List -->
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Plan Code</th>
+                <th class="p-2">Plan Name</th>
+                <th class="p-2">Monthly Fee</th>
+                <th class="p-2">Users Limit</th>
+                <th class="p-2">Vehicles Limit</th>
+                <th class="p-2">Invoices Limit</th>
+                <th class="p-2">Status</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of plans()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono font-bold">{{ item.code }}</td>
+                <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">{{ item.name }}</td>
+                <td class="p-2 font-bold text-slate-950 dark:text-white">₹{{ item.price | number:'1.2-2' }}</td>
+                <td class="p-2 font-mono">{{ item.maxUsers }} Max</td>
+                <td class="p-2 font-mono">{{ item.maxVehicles }} Max</td>
+                <td class="p-2 font-mono">{{ item.maxInvoices }} Max</td>
+                <td class="p-2">
+                  <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
+                </td>
+                <td class="p-2 text-right">
+                  <button (click)="editPlan(item)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400 hover:bg-indigo-100 transition text-[10px] font-bold shadow-sm">
+                    <span class="material-icons text-[12px]">edit</span> Edit
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 5. LICENSE MANAGEMENT -->
+      <div *ngIf="activeTab() === 'licenses'" class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Active Software Licenses keys</h2>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Tenant Company ID</th>
+                <th class="p-2">License Key</th>
+                <th class="p-2">Activation Date</th>
+                <th class="p-2">Expiry Date</th>
+                <th class="p-2">Allowed Users</th>
+                <th class="p-2">Allowed Vehicles</th>
+                <th class="p-2">Status</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of licenses()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono">Company ID: {{ item.companyId }}</td>
+                <td class="p-2 font-mono font-bold text-slate-800 dark:text-slate-200">{{ item.licenseKey }}</td>
+                <td class="p-2">{{ item.activationDate }}</td>
+                <td class="p-2">{{ item.expiryDate }}</td>
+                <td class="p-2 font-mono">{{ item.maxUsers }}</td>
+                <td class="p-2 font-mono">{{ item.maxVehicles }}</td>
+                <td class="p-2">
+                  <span [class.bg-emerald-50]="item.status === 'ACTIVE'" [class.text-emerald-700]="item.status === 'ACTIVE'" [class.dark:bg-emerald-950/20]="item.status === 'ACTIVE'" [class.bg-rose-50]="item.status === 'REVOKED'" [class.text-rose-700]="item.status === 'REVOKED'" [class.dark:bg-rose-950/20]="item.status === 'REVOKED'" class="px-2 py-0.5 rounded text-[10px] font-bold">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="p-2 text-right">
+                  <button *ngIf="item.status === 'ACTIVE'" (click)="revokeLicense(item.id!)" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 hover:bg-rose-100 transition text-[10px] font-bold shadow-sm">
+                    <span class="material-icons text-[12px]">cancel</span> Revoke Key
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 6 & 7. USER & AUTHENTICATION MANAGEMENT -->
+      <div *ngIf="activeTab() === 'users'" class="space-y-4">
+        <!-- Top Toolbar -->
+        <div class="flex justify-between items-center">
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="userSearch" (keyup.enter)="loadUsersAndSessions()" placeholder="Search username / email..." class="px-2.5 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs w-52">
+            <button (click)="loadUsersAndSessions()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded text-xs font-semibold">Search</button>
+          </div>
+          
+          <button (click)="openCreateUserForm()" class="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">add</span> Create Login User
+          </button>
+        </div>
+
+        <!-- Create / Edit User Form Container -->
+        <div *ngIf="showUserForm()" class="p-4 border border-blue-100 dark:border-slate-750 bg-blue-50/20 dark:bg-slate-900/30 rounded-lg space-y-3">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-255 flex items-center gap-1">
+            <span class="material-icons text-xs text-blue-500 font-bold">person_add</span> 
+            {{ isUserEditMode() ? 'Edit User Credentials & Scope' : 'Register New User Login Profile' }}
+          </h3>
+          
+          <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ff-textbox label="Username" formControlName="username" placeholder="E.g., mohan_admin"></ff-textbox>
+            <ff-password *ngIf="!isUserEditMode()" label="Password" formControlName="password" placeholder="BCrypt Password"></ff-password>
+            <ff-textbox label="Full Name" formControlName="name" placeholder="Mohan Raj"></ff-textbox>
+            <ff-textbox label="Email Address" formControlName="email" placeholder="mohan@transport.com"></ff-textbox>
+            <ff-textbox label="Phone Number" formControlName="phone" placeholder="+91 9876543210"></ff-textbox>
+            
+            <!-- Role selection -->
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">User Role Authority</label>
+              <select formControlName="roleCode" class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option *ngFor="let role of roleOptions" [value]="role">{{ role }}</option>
+              </select>
+            </div>
+
+            <!-- Company selector -->
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">Tenant Scope (Company)</label>
+              <select formControlName="companyId" (change)="onUserCompanyChange(userForm.value.companyId)" class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option [value]="null">-- Select B2B Company --</option>
+                <option *ngFor="let comp of companiesList()" [value]="comp.id">{{ comp.name }} ({{ comp.code }})</option>
+              </select>
+            </div>
+
+            <!-- Branch selector -->
+            <ff-textbox label="Assigned Branch ID" formControlName="branchId" placeholder="Automatic HQ Branch"></ff-textbox>
+
+            <!-- Status selector -->
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">User Account Status</label>
+              <select formControlName="status" class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive (Disabled)</option>
+                <option value="LOCKED">Locked</option>
+                <option value="SUSPENDED">Suspended</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-3 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="showUserForm.set(false)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-350 rounded text-xs font-semibold">Cancel</button>
+              <button type="submit" [disabled]="userForm.invalid" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Save User Profile</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="space-y-6">
+          <!-- Global User Directory Section (Full Width) -->
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span class="material-icons text-xs text-blue-500">group</span> Global User Accounts directory
+            </h3>
+            
+            <div class="overflow-x-auto border border-slate-150 dark:border-slate-750 rounded h-[460px] overflow-y-auto">
+              <table class="w-full text-[11px] text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10 font-bold border-b border-slate-200 dark:border-slate-700 text-slate-500">
+                  <tr>
+                    <th class="p-2">Username</th>
+                    <th class="p-2">Full Name</th>
+                    <th class="p-2">Role</th>
+                    <th class="p-2">Company / Branch Scope</th>
+                    <th class="p-2">Email / Phone</th>
+                    <th class="p-2">Expiry / Change</th>
+                    <th class="p-2">Status</th>
+                    <th class="p-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of users()" class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                    <td class="p-2 font-mono font-bold">{{ item.username }}</td>
+                    <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">{{ item.name }}</td>
+                    <td class="p-2">
+                      <span *ngFor="let r of item.roles" class="bg-blue-50 text-blue-700 dark:bg-blue-950/20 px-1.5 py-0.5 rounded text-[9px] font-bold">{{ r.code }}</span>
+                    </td>
+                    <td class="p-2 font-mono text-[9px] text-slate-500">
+                      Co ID: {{ item.companyId }} / Br ID: {{ item.branchId }}
+                    </td>
+                    <td class="p-2">
+                      <div class="flex flex-col">
+                        <span>{{ item.email }}</span>
+                        <span class="text-[9px] text-slate-400">{{ item.phone }}</span>
+                      </div>
+                    </td>
+                    <td class="p-2">
+                      <div class="flex flex-col">
+                        <span class="font-mono text-[9px] text-slate-400">Exp: {{ item.passwordExpiry | date:'shortDate' }}</span>
+                        <span *ngIf="item.forcePasswordChange" class="text-rose-600 font-bold text-[9px] uppercase">Force Change active</span>
+                      </div>
+                    </td>
+                    <td class="p-2">
+                      <span [class.bg-emerald-50]="item.status === 'ACTIVE'" [class.text-emerald-700]="item.status === 'ACTIVE'" [class.dark:bg-emerald-950/20]="item.status === 'ACTIVE'" [class.bg-rose-50]="item.status === 'LOCKED'" [class.text-rose-700]="item.status === 'LOCKED'" [class.dark:bg-rose-950/20]="item.status === 'LOCKED'" [class.bg-slate-100]="item.status === 'INACTIVE'" [class.text-slate-600]="item.status === 'INACTIVE'" class="px-1.5 py-0.5 rounded text-[9px] font-bold">
+                        {{ item.status }}
+                      </span>
+                    </td>
+                    <td class="p-2 text-right whitespace-nowrap">
+                      <div class="inline-flex items-center gap-1.5 justify-end">
+                        <!-- Primary Edit Button -->
+                        <button type="button" (click)="openEditUserForm(item)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition text-[11px] font-bold shadow-sm cursor-pointer" title="Edit Profile">
+                          <span class="material-icons text-sm">edit</span> Edit
+                        </button>
+
+                        <!-- Actions Dropdown Trigger -->
+                        <button type="button" [matMenuTriggerFor]="userActionMenu" class="inline-flex items-center justify-center p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-350 transition cursor-pointer">
+                          <span class="material-icons text-base">more_vert</span>
+                        </button>
+
+                        <mat-menu #userActionMenu="matMenu" xPosition="before">
+                          <!-- Reset Password -->
+                          <button mat-menu-item (click)="triggerPasswordReset(item.id)">
+                            <span class="material-icons text-amber-500 mr-2 text-base">lock_reset</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Reset Password</span>
+                          </button>
+
+                          <!-- Lock / Unlock -->
+                          <button mat-menu-item (click)="toggleUserLock(item)">
+                            <span class="material-icons text-slate-500 mr-2 text-base">{{ item.status === 'LOCKED' ? 'lock_open' : 'lock' }}</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ item.status === 'LOCKED' ? 'Unlock Account' : 'Lock Account' }}</span>
+                          </button>
+
+                          <!-- Enable / Disable -->
+                          <button mat-menu-item (click)="toggleUserDisable(item)">
+                            <span class="material-icons text-slate-500 mr-2 text-base">{{ item.status === 'INACTIVE' ? 'check_circle' : 'block' }}</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">{{ item.status === 'INACTIVE' ? 'Enable Account' : 'Disable Account' }}</span>
+                          </button>
+
+                          <!-- Expire Pass -->
+                          <button mat-menu-item (click)="expirePassword(item)">
+                            <span class="material-icons text-orange-500 mr-2 text-base">history</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Expire Password</span>
+                          </button>
+
+                          <!-- Force Change -->
+                          <button mat-menu-item (click)="forcePasswordChange(item)">
+                            <span class="material-icons text-purple-500 mr-2 text-base">published_with_changes</span>
+                            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Force Password Change</span>
+                          </button>
+                        </mat-menu>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Password Reset Modal Overlay -->
+          <div *ngIf="showPasswordResetModal()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-80 space-y-3 animate-in fade-in zoom-in duration-200">
+              <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">Force User Password Reset</h3>
+              <form [formGroup]="passwordForm" (ngSubmit)="submitPasswordReset()" class="space-y-3">
+                <ff-password label="New Password String" formControlName="newPassword" placeholder="Minimum 6 characters"></ff-password>
+                <div class="flex justify-end gap-2">
+                  <button type="button" (click)="showPasswordResetModal.set(false)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 rounded text-xs font-semibold">Cancel</button>
+                  <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Reset Password</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Authentication Audits Logs & Active Sessions Console (Full Width Stack) -->
+          <div class="space-y-3 pt-6 border-t border-slate-150 dark:border-slate-800">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-750 pb-2">
+              <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300">7. Authentication Management</h3>
+            </div>
+
+            <!-- Audit sub-tab selectors -->
+            <div class="flex border-b border-slate-200 dark:border-slate-750 text-[10px] font-semibold gap-2 mb-2">
+              <button (click)="authTab.set('sessions')" [class.border-blue-500]="authTab() === 'sessions'" [class.text-blue-600]="authTab() === 'sessions'" class="pb-1 border-b-2 border-transparent text-slate-500">Sessions</button>
+              <button (click)="authTab.set('logins')" [class.border-blue-500]="authTab() === 'logins'" [class.text-blue-600]="authTab() === 'logins'" class="pb-1 border-b-2 border-transparent text-slate-500">Login History</button>
+              <button (click)="authTab.set('logouts')" [class.border-blue-500]="authTab() === 'logouts'" [class.text-blue-600]="authTab() === 'logouts'" class="pb-1 border-b-2 border-transparent text-slate-500">Logouts</button>
+              <button (click)="authTab.set('failed')" [class.border-blue-500]="authTab() === 'failed'" [class.text-blue-600]="authTab() === 'failed'" class="pb-1 border-b-2 border-transparent text-slate-500">Failed attempts</button>
+            </div>
+
+            <!-- Tab content: Active Sessions -->
+            <div *ngIf="authTab() === 'sessions'" class="space-y-2 h-[410px] overflow-y-auto">
+              <div *ngIf="activeSessions().length === 0" class="text-center p-6 text-[10px] text-slate-400">No active login sessions logged.</div>
+              <div *ngFor="let s of activeSessions()" class="p-2 border border-slate-100 dark:border-slate-750 rounded bg-slate-50/20 space-y-1.5 text-[10px]">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-700 dark:text-slate-200">{{ s.username }}</span>
+                  <button (click)="terminateSession(s)" class="text-[9px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-1 py-0.5 rounded hover:bg-rose-100">Kill</button>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>IP: {{ s.ipAddress || '127.0.0.1' }}</span>
+                  <span>{{ s.loginTime | date:'short' }}</span>
+                </div>
+                <p class="text-[8px] text-slate-400 break-words line-clamp-1" [title]="s.userAgent">{{ s.userAgent }}</p>
+              </div>
+            </div>
+
+            <!-- Tab content: Login Logs -->
+            <div *ngIf="authTab() === 'logins'" class="space-y-2 h-[410px] overflow-y-auto">
+              <div *ngFor="let log of loginHistory()" class="p-2 border border-slate-100 dark:border-slate-750 rounded space-y-1 text-[10px]">
+                <div class="flex justify-between">
+                  <span class="font-bold text-slate-700 dark:text-slate-250">{{ log.username }}</span>
+                  <span [class.text-emerald-600]="log.status === 'SUCCESS'" [class.text-rose-600]="log.status === 'FAILED'" class="font-bold">{{ log.status }}</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>IP: {{ log.ipAddress || '127.0.0.1' }}</span>
+                  <span>{{ log.loginTime | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab content: Logout Logs -->
+            <div *ngIf="authTab() === 'logouts'" class="space-y-2 h-[410px] overflow-y-auto">
+              <div *ngFor="let out of logoutHistory()" class="p-2 border border-slate-100 dark:border-slate-750 rounded space-y-1 text-[10px]">
+                <div class="flex justify-between">
+                  <span class="font-bold text-slate-700 dark:text-slate-250">{{ out.username }}</span>
+                  <span class="text-slate-400 text-[9px]">Logged Out</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>IP: {{ out.ipAddress || '127.0.0.1' }}</span>
+                  <span>Out: {{ out.logoutTime | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab content: Failed Attempts -->
+            <div *ngIf="authTab() === 'failed'" class="space-y-2 h-[410px] overflow-y-auto">
+              <div *ngIf="failedLogins().length === 0" class="text-center p-6 text-[10px] text-slate-400">No failed login attempts audited!</div>
+              <div *ngFor="let f of failedLogins()" class="p-2 border border-rose-100 dark:border-rose-950/20 bg-rose-50/10 rounded space-y-1 text-[10px]">
+                <div class="flex justify-between">
+                  <span class="font-bold text-rose-700 dark:text-rose-400">{{ f.username }}</span>
+                  <span class="text-rose-600 font-bold uppercase">FAILED</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>IP: {{ f.ipAddress || '127.0.0.1' }}</span>
+                  <span>{{ f.loginTime | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. SYSTEM SETTINGS -->
+      <div *ngIf="activeTab() === 'settings'" class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">SaaS platform global configurations</h2>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2 w-1/4">Setting Key</th>
+                <th class="p-2 w-1/3">Description</th>
+                <th class="p-2 w-1/4">Value Data</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of systemSettings()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono font-bold text-slate-800 dark:text-slate-200">{{ item.keyName }}</td>
+                <td class="p-2 text-slate-400 text-[11px]">{{ item.description }}</td>
+                <td class="p-2">
+                  <input type="text" #settingInput [value]="item.valueData" class="px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs w-full">
+                </td>
+                <td class="p-2 text-right">
+                  <button (click)="saveSetting(item, settingInput.value)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white transition text-[10px] font-bold shadow-sm">
+                    <span class="material-icons text-[12px]">save</span> Update
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 9. GLOBAL AUDIT LOGS -->
+      <div *ngIf="activeTab() === 'audit'" class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Global Audit Trails Registry</h2>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded h-96 overflow-y-auto">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900 z-10 font-bold border-b border-slate-100 dark:border-slate-700 text-slate-500">
+              <tr>
+                <th class="p-2">Timestamp</th>
+                <th class="p-2">User</th>
+                <th class="p-2">Action</th>
+                <th class="p-2">Entity Context</th>
+                <th class="p-2">Details / Context</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of auditLogsList()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 text-[10px] text-slate-400 font-mono">{{ item.actionTime }}</td>
+                <td class="p-2 font-bold font-mono">{{ item.username }}</td>
+                <td class="p-2">
+                  <span class="bg-blue-50 text-blue-700 dark:bg-blue-950/20 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase">{{ item.action }}</span>
+                </td>
+                <td class="p-2 font-mono text-[10px]">{{ item.entityName }}</td>
+                <td class="p-2 text-slate-500">{{ item.details }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 10. BACKUP & RESTORE -->
+      <div *ngIf="activeTab() === 'backups'" class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Database snapshot registries</h2>
+          <button (click)="runManualBackup()" class="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">settings_backup_restore</span> Trigger Database Dump
+          </button>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Snapshot Date</th>
+                <th class="p-2">SQL Filename</th>
+                <th class="p-2">File Size</th>
+                <th class="p-2">Backup Method</th>
+                <th class="p-2">Triggered By</th>
+                <th class="p-2">Status</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of backups()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono text-slate-400">{{ item.backupDate | date:'short' }}</td>
+                <td class="p-2 font-mono font-bold text-slate-800 dark:text-slate-200">{{ item.filename }}</td>
+                <td class="p-2 font-mono text-slate-600">{{ item.fileSize }}</td>
+                <td class="p-2 font-mono text-[10px]">{{ item.triggerType }}</td>
+                <td class="p-2">{{ item.createdBy }}</td>
+                <td class="p-2">
+                  <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
+                </td>
+                <td class="p-2 text-right">
+                  <button class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-205 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-[10px] font-bold shadow-sm">
+                    <span class="material-icons text-[12px]">download</span> Download
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 11. SUPPORT TICKETS -->
+      <div *ngIf="activeTab() === 'tickets'" class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Tenant Support Threads</h2>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Ticket ID</th>
+                <th class="p-2">Tenant ID</th>
+                <th class="p-2">Subject</th>
+                <th class="p-2">Priority</th>
+                <th class="p-2">Status</th>
+                <th class="p-2">Date Raised</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of tickets()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono font-bold">{{ item.ticketNumber }}</td>
+                <td class="p-2 font-mono text-slate-500">Company ID: {{ item.companyId }} ({{ item.username }})</td>
+                <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">{{ item.subject }}</td>
+                <td class="p-2 font-mono uppercase">{{ item.priority }}</td>
+                <td class="p-2">
+                  <span [class.bg-rose-50]="item.status === 'OPEN'" [class.text-rose-700]="item.status === 'OPEN'" [class.bg-blue-50]="item.status === 'IN_PROGRESS'" [class.text-blue-700]="item.status === 'IN_PROGRESS'" [class.bg-slate-100]="item.status === 'CLOSED'" [class.text-slate-700]="item.status === 'CLOSED'" class="px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
+                </td>
+                <td class="p-2 text-slate-400 text-[10px]">{{ item.createdDate | date:'short' }}</td>
+                <td class="p-2 text-right">
+                  <div class="inline-flex gap-1.5">
+                    <button (click)="viewTicket(item.id!)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400 hover:bg-blue-100 transition text-[10px] font-bold shadow-sm">
+                      <span class="material-icons text-[12px]">forum</span> Interact Thread
+                    </button>
+                    <button *ngIf="item.status !== 'CLOSED'" (click)="closeTicket(item)" class="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-205 dark:hover:bg-slate-700 transition text-[10px] font-bold shadow-sm">
+                      <span class="material-icons text-[12px]">check_circle</span> Close
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Ticket Thread Dialog Overlay -->
+        <div *ngIf="showTicketThread()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div class="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-11/12 md:w-3/5 max-h-[85vh] flex flex-col space-y-3">
+            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-700 pb-2">
+              <div>
+                <span class="bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded font-mono">{{ selectedTicket()?.ticketNumber }}</span>
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white mt-1">{{ selectedTicket()?.subject }}</h3>
+              </div>
+              <button (click)="showTicketThread.set(false)" class="text-slate-400 hover:text-slate-600"><span class="material-icons">close</span></button>
+            </div>
+
+            <!-- Thread Messages -->
+            <div class="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded min-h-[250px] max-h-[350px]">
+              <!-- Initial Ticket Description -->
+              <div class="p-3 bg-white dark:bg-slate-800 rounded shadow-sm border border-slate-100 dark:border-slate-700">
+                <div class="flex justify-between text-[9px] text-slate-400 mb-1 font-bold">
+                  <span>{{ selectedTicket()?.username }} (Client)</span>
+                  <span>{{ selectedTicket()?.createdDate | date:'short' }}</span>
+                </div>
+                <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{{ selectedTicket()?.description }}</p>
+              </div>
+
+              <!-- Replies -->
+              <div *ngFor="let reply of selectedTicket()?.replies" [class.items-end]="reply.isAdminReply" class="flex flex-col space-y-1">
+                <div [class.bg-blue-50]="reply.isAdminReply" [class.dark:bg-slate-800]="reply.isAdminReply" class="p-2.5 bg-white dark:bg-slate-800/80 rounded border max-w-[85%] border-slate-100 dark:border-slate-700">
+                  <div class="flex justify-between text-[8px] text-slate-400 gap-6 mb-1 font-bold">
+                    <span>{{ reply.username }} {{ reply.isAdminReply ? '(Staff)' : '(Client)' }}</span>
+                    <span>{{ reply.createdDate | date:'short' }}</span>
+                  </div>
+                  <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">{{ reply.message }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Reply -->
+            <div class="flex gap-2">
+              <input type="text" [(ngModel)]="replyMessage" placeholder="Type staff response message here..." class="flex-1 px-3 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-xs">
+              <button (click)="submitTicketReply()" class="px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Post Response</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12. ANNOUNCEMENTS -->
+      <div *ngIf="activeTab() === 'announcements'" class="space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">SaaS Maintenance Announcements</h2>
+          <button (click)="showAnnouncementForm.set(true)" class="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">campaign</span> New Announcement
+          </button>
+        </div>
+
+        <!-- Announcement Form drawer Form -->
+        <div *ngIf="showAnnouncementForm()" class="p-4 border border-blue-100 dark:border-slate-700 bg-blue-50/30 dark:bg-slate-900/30 rounded-lg space-y-3">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">SaaS Announcement parameters</h3>
+          
+          <form [formGroup]="announcementForm" (ngSubmit)="saveAnnouncement()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <ff-textbox label="Announcement Title" formControlName="title" placeholder="Broadcast alert title"></ff-textbox>
+            <div class="grid grid-cols-2 gap-2">
+              <ff-datepicker label="Start Display Date" formControlName="startDate"></ff-datepicker>
+              <ff-datepicker label="End Display Date" formControlName="endDate"></ff-datepicker>
+            </div>
+            <ff-textarea label="Notification Message Body" formControlName="message" class="md:col-span-2"></ff-textarea>
+
+            <div class="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <button type="button" (click)="showAnnouncementForm.set(false)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 rounded text-xs font-semibold">Cancel</button>
+              <button type="submit" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">Broadcast Announcement</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Announcements Table List -->
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Title</th>
+                <th class="p-2">Message Body</th>
+                <th class="p-2">Display Start</th>
+                <th class="p-2">Display End</th>
+                <th class="p-2">Status</th>
+                <th class="p-2 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of announcements()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-semibold text-slate-850 dark:text-slate-200">{{ item.title }}</td>
+                <td class="p-2 text-slate-500 truncate max-w-xs">{{ item.message }}</td>
+                <td class="p-2 font-mono text-[10px]">{{ item.startDate }}</td>
+                <td class="p-2 font-mono text-[10px]">{{ item.endDate }}</td>
+                <td class="p-2">
+                  <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
+                </td>
+                <td class="p-2 text-right">
+                  <button (click)="deleteAnnouncement(item.id!)" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 hover:bg-rose-100 transition text-[10px] font-bold shadow-sm">
+                    <span class="material-icons text-[12px]">delete</span> Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 14. BILLING INVOICES -->
+      <div *ngIf="activeTab() === 'billing'" class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">SaaS billing invoices list</h2>
+
+        <div class="overflow-x-auto border border-slate-100 dark:border-slate-700 rounded">
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
+                <th class="p-2">Invoice Number</th>
+                <th class="p-2">Tenant Company ID</th>
+                <th class="p-2">Invoice Date</th>
+                <th class="p-2">Amount Paid</th>
+                <th class="p-2">Billing Period</th>
+                <th class="p-2">Method</th>
+                <th class="p-2">Txn Reference</th>
+                <th class="p-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of invoices()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
+                <td class="p-2 font-mono font-bold">{{ item.invoiceNumber }}</td>
+                <td class="p-2 font-mono text-slate-500">Company ID: {{ item.companyId }}</td>
+                <td class="p-2">{{ item.invoiceDate }}</td>
+                <td class="p-2 font-bold text-slate-900 dark:text-white">₹{{ item.amount | number:'1.2-2' }}</td>
+                <td class="p-2 text-slate-500 text-[10px]">{{ item.billingPeriodStart }} to {{ item.billingPeriodEnd }}</td>
+                <td class="p-2 font-mono text-[10px]">{{ item.paymentMethod }}</td>
+                <td class="p-2 font-mono text-slate-400 text-[10px]">{{ item.transactionReference || 'N/A' }}</td>
+                <td class="p-2">
+                  <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Metrics Breakdown Modal -->
+  @if (showDetailModal()) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-[4px]">
+      <div class="w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
+          <div class="flex items-center gap-3">
+            <span class="material-icons text-blue-600 dark:text-blue-400 text-2xl">insights</span>
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white leading-none">{{ detailModalTitle() }}</h2>
+              <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Detailed database record breakdown analysis for your SaaS cluster platform.</p>
+            </div>
+          </div>
+          <button (click)="closeCardDetails()" class="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <!-- Table Content Grid -->
+        <div class="flex-1 overflow-y-auto p-6 min-h-0 bg-slate-50/50 dark:bg-slate-950/20">
+          @if (loading()) {
+            <div class="flex flex-col items-center justify-center py-20 gap-3">
+              <span class="material-icons text-4xl text-blue-500 animate-spin">sync</span>
+              <p class="text-xs text-slate-400">Fetching detailed record breakdown from SaaS repositories...</p>
+            </div>
+          } @else if (detailModalData().length === 0) {
+            <div class="flex flex-col items-center justify-center py-20 gap-2">
+              <span class="material-icons text-5xl text-slate-300 dark:text-slate-700">info_outline</span>
+              <p class="text-xs text-slate-500 font-medium">No records found matching this metric context</p>
+              <p class="text-[10px] text-slate-400 text-center max-w-sm">No transaction details or tenant metrics are currently registered under this category in your database.</p>
+            </div>
+          } @else {
+            <div class="pa-table-wrap overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[10px]">
+                    
+                    <!-- Clients Columns -->
+                    @if (detailModalType() === 'total_clients' || detailModalType() === 'active_clients' || detailModalType() === 'trial_clients' || detailModalType() === 'expired_clients') {
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Company Name</th>
+                      <th class="p-3">Owner / Contact</th>
+                      <th class="p-3">Plan Info</th>
+                      <th class="p-3">Renewal Expiry</th>
+                      <th class="p-3">Status</th>
+                    }
+
+                    <!-- Users Columns -->
+                    @if (detailModalType() === 'total_users') {
+                      <th class="p-3">Username</th>
+                      <th class="p-3">Full Name</th>
+                      <th class="p-3">Email Address</th>
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">User Role</th>
+                      <th class="p-3">Account Status</th>
+                    }
+
+                    <!-- Vehicles Columns -->
+                    @if (detailModalType() === 'total_vehicles') {
+                      <th class="p-3">Plate No / Code</th>
+                      <th class="p-3">Brand / Model</th>
+                      <th class="p-3">Vehicle Type</th>
+                      <th class="p-3">Owner Type</th>
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Status</th>
+                    }
+
+                    <!-- Trips Columns -->
+                    @if (detailModalType() === 'total_trips') {
+                      <th class="p-3">Trip Number</th>
+                      <th class="p-3">Booking Code</th>
+                      <th class="p-3">Vehicle Plate No</th>
+                      <th class="p-3">Driver Name</th>
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Status</th>
+                    }
+
+                    <!-- Revenue Columns -->
+                    @if (detailModalType() === 'monthly_revenue' || detailModalType() === 'yearly_revenue') {
+                      <th class="p-3">Invoice No</th>
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Invoice Date</th>
+                      <th class="p-3">Amount Paid</th>
+                      <th class="p-3">Billing Period</th>
+                      <th class="p-3">Payment Method</th>
+                      <th class="p-3">Status</th>
+                    }
+
+                    <!-- Logins Columns -->
+                    @if (detailModalType() === 'today_login') {
+                      <th class="p-3">Username</th>
+                      <th class="p-3">Email</th>
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Login Timestamp</th>
+                      <th class="p-3">IP Address</th>
+                      <th class="p-3">Browser / Platform</th>
+                    }
+
+                    <!-- Storage Columns -->
+                    @if (detailModalType() === 'total_storage') {
+                      <th class="p-3">Company Code</th>
+                      <th class="p-3">Company Name</th>
+                      <th class="p-3">Subscription Plan</th>
+                      <th class="p-3">Limits (Users/Vehs)</th>
+                      <th class="p-3">Allocated Storage</th>
+                      <th class="p-3">Active Status</th>
+                    }
+
+                    <!-- API Calls / Audits Columns -->
+                    @if (detailModalType() === 'total_apicalls') {
+                      <th class="p-3">Timestamp</th>
+                      <th class="p-3">Actor / Username</th>
+                      <th class="p-3">Action Type</th>
+                      <th class="p-3">Database Target</th>
+                      <th class="p-3">Description Details</th>
+                      <th class="p-3">IP Address</th>
+                    }
+
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of detailModalData()" class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition duration-150">
+                    
+                    <!-- Clients Row -->
+                    @if (detailModalType() === 'total_clients' || detailModalType() === 'active_clients' || detailModalType() === 'trial_clients' || detailModalType() === 'expired_clients') {
+                      <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.code }}</td>
+                      <td class="p-3 font-bold text-slate-800 dark:text-white">{{ row.name }}</td>
+                      <td class="p-3">
+                        <div class="font-semibold">{{ row.ownerName }}</div>
+                        <div class="text-[10px] text-slate-400">{{ row.phone }} · {{ row.email }}</div>
+                      </td>
+                      <td class="p-3">
+                        <span class="font-semibold">{{ row.plan?.name || 'N/A' }}</span>
+                      </td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.subscriptionEndDate || 'N/A' }}</td>
+                      <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                              [ngClass]="{
+                                'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20': row.status === 'ACTIVE',
+                                'bg-amber-50 text-amber-700 dark:bg-amber-950/20': row.status === 'SUSPENDED',
+                                'bg-rose-50 text-rose-700 dark:bg-rose-950/20': row.status === 'EXPIRED'
+                              }">{{ row.status }}</span>
+                      </td>
+                    }
+
+                    <!-- Users Row -->
+                    @if (detailModalType() === 'total_users') {
+                      <td class="p-3 font-semibold text-slate-800 dark:text-white">{{ row.username }}</td>
+                      <td class="p-3 font-bold">{{ row.name }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.email || 'N/A' }}</td>
+                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3">
+                        <span class="bg-blue-50 text-blue-700 dark:bg-blue-950/20 px-2 py-0.5 rounded text-[10px] font-semibold">{{ row.roleCode || 'OPERATOR' }}</span>
+                      </td>
+                      <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                              [ngClass]="{
+                                'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20': row.status === 'ACTIVE',
+                                'bg-rose-50 text-rose-700 dark:bg-rose-950/20': row.status === 'SUSPENDED'
+                              }">{{ row.status }}</span>
+                      </td>
+                    }
+
+                    <!-- Vehicles Row -->
+                    @if (detailModalType() === 'total_vehicles') {
+                      <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.code }}</td>
+                      <td class="p-3 font-semibold">{{ row.brand }} {{ row.model }}</td>
+                      <td class="p-3">{{ row.type?.name || 'Tipper' }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.ownerType }}</td>
+                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3">
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20">{{ row.status }}</span>
+                      </td>
+                    }
+
+                    <!-- Trips Row -->
+                    @if (detailModalType() === 'total_trips') {
+                      <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.code }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ row.bookingCode || 'BKG-001' }}</td>
+                      <td class="p-3 font-mono font-semibold">{{ row.vehicleCode || 'MH-12-PQ-4567' }}</td>
+                      <td class="p-3 font-bold">{{ row.driverName || 'Ramesh Kumar' }}</td>
+                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3">
+                        <span class="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ row.status }}</span>
+                      </td>
+                    }
+
+                    <!-- Revenue Row -->
+                    @if (detailModalType() === 'monthly_revenue' || detailModalType() === 'yearly_revenue') {
+                      <td class="p-3 font-mono font-bold text-slate-800 dark:text-white">{{ row.invoiceNumber }}</td>
+                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.invoiceDate }}</td>
+                      <td class="p-3 font-bold text-emerald-600 dark:text-emerald-400">₹{{ row.amount | number:'1.2-2' }}</td>
+                      <td class="p-3 text-[10px]">{{ row.billingPeriodStart }} to {{ row.billingPeriodEnd }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.paymentMethod }}</td>
+                      <td class="p-3">
+                        <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[9px] font-bold">PAID</span>
+                      </td>
+                    }
+
+                    <!-- Logins Row -->
+                    @if (detailModalType() === 'today_login') {
+                      <td class="p-3 font-semibold text-slate-800 dark:text-white">{{ row.username }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.user?.email || 'N/A' }}</td>
+                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.user?.companyId }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.loginTime }}</td>
+                      <td class="p-3 font-mono text-[10px]">{{ row.ipAddress }}</td>
+                      <td class="p-3 text-slate-400 text-[10px] truncate max-w-xs" [title]="row.userAgent">{{ row.userAgent }}</td>
+                    }
+
+                    <!-- Storage Row -->
+                    @if (detailModalType() === 'total_storage') {
+                      <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.code }}</td>
+                      <td class="p-3 font-bold text-slate-800 dark:text-white">{{ row.name }}</td>
+                      <td class="p-3 font-semibold">{{ row.plan?.name || 'TRIAL' }}</td>
+                      <td class="p-3 text-slate-500 text-[10px]">Max Users: {{ row.maxUsers }} · Vehicles: {{ row.maxVehicles }}</td>
+                      <td class="p-3 font-bold text-slate-900 dark:text-white font-mono">{{ row.storage }}</td>
+                      <td class="p-3">
+                        <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">ACTIVE</span>
+                      </td>
+                    }
+
+                    <!-- API Calls / Audits Row -->
+                    @if (detailModalType() === 'total_apicalls') {
+                      <td class="p-3 font-mono text-[10px] text-slate-450">{{ row.actionTime }}</td>
+                      <td class="p-3 font-bold">{{ row.username }}</td>
+                      <td class="p-3 font-mono text-[10px] font-bold text-indigo-600 dark:text-indigo-400">{{ row.action }}</td>
+                      <td class="p-3 font-mono text-slate-400 text-[10px]">{{ row.entityName }}</td>
+                      <td class="p-3 text-slate-700 dark:text-slate-300 font-semibold">{{ row.details }}</td>
+                      <td class="p-3 font-mono text-[10px] text-slate-500">{{ row.ipAddress || 'N/A' }}</td>
+                    }
+
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <!-- Footer / Pagination -->
+        @if (!loading() && detailModalTotal() > 20) {
+          <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between shrink-0">
+            <span class="text-[11px] text-slate-500">
+              Showing {{ detailModalPage() * 20 + 1 }} to {{ Math.min((detailModalPage() + 1) * 20, detailModalTotal()) }} of {{ detailModalTotal() }} records
+            </span>
+            <div class="flex items-center gap-2">
+              <button (click)="detailModalPrevPage()" [disabled]="detailModalPage() === 0" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer">
+                Previous
+              </button>
+              <button (click)="detailModalNextPage()" [disabled]="(detailModalPage() + 1) * 20 >= detailModalTotal()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 cursor-pointer">
+                Next
+              </button>
+            </div>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+</div>

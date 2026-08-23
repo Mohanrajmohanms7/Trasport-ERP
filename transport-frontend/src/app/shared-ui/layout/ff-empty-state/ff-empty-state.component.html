@@ -1,0 +1,9 @@
+<div class="ff-empty">
+  <span class="material-symbols-outlined ff-empty__icon">{{ icon() }}</span>
+  <h3 class="ff-empty__title">{{ title() }}</h3>
+  <p class="ff-empty__message">{{ message() }}</p>
+  @if (actionLabel()) {
+    <ff-button [label]="actionLabel()" [icon]="actionIcon()" variant="primary" (ffClick)="action.emit()" />
+  }
+  <ng-content />
+</div>

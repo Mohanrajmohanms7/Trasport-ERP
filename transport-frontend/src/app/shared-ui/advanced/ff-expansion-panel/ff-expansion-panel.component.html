@@ -1,0 +1,16 @@
+<div class="ff-expansion" [class.ff-expansion--open]="isOpen()" [class.ff-expansion--disabled]="disabled()">
+  <button type="button" class="ff-expansion__header" [disabled]="disabled()" (click)="toggle()">
+    <div class="ff-expansion__titles">
+      <span class="ff-expansion__title">{{ title() }}</span>
+      @if (subtitle()) {
+        <span class="ff-expansion__subtitle">{{ subtitle() }}</span>
+      }
+    </div>
+    <span class="material-symbols-outlined ff-expansion__chevron">expand_more</span>
+  </button>
+  @if (isOpen()) {
+    <div class="ff-expansion__body">
+      <ng-content />
+    </div>
+  }
+</div>

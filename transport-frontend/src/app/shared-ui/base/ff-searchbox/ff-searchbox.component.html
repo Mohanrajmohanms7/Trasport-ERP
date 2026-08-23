@@ -1,0 +1,60 @@
+@if (isVisible()) {
+  <div
+    class="ff-field"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <label class="ff-field__label" [attr.for]="inputId()">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </label>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <div class="ff-field__control">
+        <span class="ff-field__icon ff-field__icon--prefix material-symbols-outlined" aria-hidden="true">
+          {{ prefixIcon() || 'search' }}
+        </span>
+
+        <input
+          class="ff-field__input ff-field__input--with-prefix ff-field__input--with-suffix"
+          [id]="inputId()"
+          type="search"
+          [attr.placeholder]="placeholder() || 'Search…'"
+          [attr.aria-invalid]="hasError()"
+          [value]="value() ?? ''"
+          [disabled]="isDisabled()"
+          [readOnly]="isReadonly()"
+          (input)="onInput($event)"
+          (keydown)="onKeydown($event)"
+          (focus)="onFocus()"
+          (blur)="onBlur()" />
+
+        @if (value()) {
+          <button
+            type="button"
+            class="ff-field__icon ff-field__icon--suffix"
+            aria-label="Clear search"
+            [disabled]="isDisabled()"
+            (click)="clear()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        }
+      </div>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

@@ -1,0 +1,103 @@
+.ff-upload__dropzone {
+  border: 2px dashed var(--ff-border-default);
+  border-radius: var(--ff-radius-xl);
+  padding: var(--ff-space-6);
+  text-align: center;
+  background: var(--ff-surface-hover);
+  transition: border-color var(--ff-duration-fast), background var(--ff-duration-fast);
+}
+
+.ff-upload__dropzone--active {
+  border-color: var(--ff-color-primary-600);
+  background: var(--ff-color-primary-50);
+}
+
+.ff-upload__dropzone--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ff-upload__icon {
+  font-size: 2rem;
+  color: var(--ff-text-muted);
+}
+
+.ff-upload__text {
+  margin: var(--ff-space-2) 0;
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-secondary);
+}
+
+.ff-upload__browse {
+  display: inline-block;
+  padding: var(--ff-space-2) var(--ff-space-4);
+  background: var(--ff-color-primary-600);
+  color: #fff;
+  border-radius: var(--ff-radius-lg);
+  font-size: var(--ff-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ff-upload__input {
+  display: none;
+}
+
+.ff-upload__hint {
+  margin: var(--ff-space-2) 0 0;
+  font-size: var(--ff-text-xs);
+  color: var(--ff-text-muted);
+}
+
+.ff-upload__list {
+  list-style: none;
+  margin: var(--ff-space-3) 0 0;
+  padding: 0;
+}
+
+.ff-upload__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  padding: var(--ff-space-2) var(--ff-space-3);
+  background: var(--ff-surface-card);
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-md);
+  font-size: var(--ff-text-sm);
+  margin-bottom: var(--ff-space-2);
+}
+
+.ff-upload__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ff-upload__remove {
+  background: none;
+  border: none;
+  color: var(--ff-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+.ff-field__label {
+  display: block;
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-text-secondary);
+  margin-bottom: var(--ff-space-1);
+}
+
+.ff-field__required {
+  color: var(--ff-color-danger-500);
+}
+
+.ff-field__error {
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-color-danger-500);
+  margin: var(--ff-space-2) 0 0;
+}

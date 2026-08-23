@@ -1,0 +1,16 @@
+<span [class]="classes()">
+  @if (icon()) {
+    <span class="material-symbols-outlined ff-chip__icon" aria-hidden="true">{{ icon() }}</span>
+  }
+  <span class="ff-chip__label">{{ label() }}</span>
+  @if (removable()) {
+    <button
+      type="button"
+      class="ff-chip__remove"
+      aria-label="Remove"
+      [disabled]="disabled()"
+      (click)="remove($event)">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  }
+</span>

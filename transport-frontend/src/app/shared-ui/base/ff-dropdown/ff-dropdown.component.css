@@ -1,0 +1,314 @@
+.ff-dropdown-host {
+  display: block;
+  width: 100%;
+}
+
+.ff-dd {
+  position: relative;
+  width: 100%;
+  font-family: var(--ff-font-sans);
+}
+
+.ff-dd--outlined {
+  padding-top: 0.55rem;
+}
+
+/* ---- Outlined trigger (Material-like notch label) ---- */
+.ff-dd__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  height: var(--ff-control-h-md);
+  padding: 0 0.75rem 0 1rem;
+  background: var(--ff-surface-input);
+  border: 1.5px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-lg);
+  color: var(--ff-text-primary);
+  font-size: var(--ff-text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--ff-duration-fast) var(--ff-easing),
+    box-shadow var(--ff-duration-fast) var(--ff-easing);
+  outline: none;
+}
+
+.ff-control--sm .ff-dd__trigger {
+  height: var(--ff-control-h-sm);
+  font-size: var(--ff-text-xs);
+}
+
+.ff-control--lg .ff-dd__trigger {
+  height: var(--ff-control-h-lg);
+  font-size: var(--ff-text-base);
+}
+
+.ff-dd__trigger:hover:not(:disabled) {
+  border-color: var(--ff-border-strong);
+}
+
+.ff-dd--open .ff-dd__trigger,
+.ff-dd__trigger:focus-visible {
+  border-color: var(--ff-color-primary-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-color-primary-500) 22%, transparent);
+}
+
+.ff-dd--error .ff-dd__trigger {
+  border-color: var(--ff-color-danger-500);
+}
+
+.ff-dd--disabled .ff-dd__trigger {
+  background: var(--ff-surface-hover);
+  color: var(--ff-text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ff-dd__prefix {
+  font-size: 1.125rem;
+  color: var(--ff-text-muted);
+  flex-shrink: 0;
+}
+
+.ff-dd__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.ff-dd__value--placeholder {
+  color: var(--ff-text-muted);
+  font-weight: 400;
+}
+
+.ff-dd__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.ff-dd__clear {
+  font-size: 1rem !important;
+  color: var(--ff-text-muted);
+  border-radius: 50%;
+  padding: 2px;
+  line-height: 1;
+}
+
+.ff-dd__clear:hover {
+  color: var(--ff-text-primary);
+  background: var(--ff-surface-hover);
+}
+
+.ff-dd__chevron {
+  font-size: 1.35rem !important;
+  color: #16a34a;
+  transition: transform var(--ff-duration-fast) var(--ff-easing);
+  line-height: 1;
+}
+
+.ff-dd__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Floating / notch label */
+.ff-dd__label {
+  position: absolute;
+  left: 0.85rem;
+  top: 0.55rem;
+  transform: translateY(-50%);
+  padding: 0 0.35rem;
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-text-secondary);
+  background: var(--ff-surface-card);
+  line-height: 1;
+  pointer-events: none;
+  max-width: calc(100% - 5rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+}
+
+/* Match page/sidebar surfaces so the notch blends */
+.ff-page .ff-dd__label,
+.ff-sidebar__body .ff-dd__label {
+  background: var(--ff-surface-card);
+}
+
+.ff-filter .ff-dd__label {
+  background: var(--ff-surface-card);
+}
+
+.ff-dd--open .ff-dd__label,
+.ff-dd__trigger:focus-visible ~ .ff-dd__label {
+  color: var(--ff-color-primary-600);
+}
+
+.ff-dd--error .ff-dd__label {
+  color: var(--ff-color-danger-500);
+}
+
+.ff-dd__required {
+  color: var(--ff-color-danger-500);
+  margin-left: 2px;
+}
+
+/* When not outlined, use stacked label above */
+.ff-dd:not(.ff-dd--outlined) .ff-dd__label {
+  position: static;
+  transform: none;
+  display: block;
+  padding: 0;
+  margin-bottom: var(--ff-space-1);
+  background: transparent;
+  max-width: none;
+}
+
+.ff-dd:not(.ff-dd--outlined) .ff-dd__trigger {
+  margin-top: 0;
+}
+
+/* ---- Dropdown panel (fixed via [ngStyle] to escape modal overflow) ---- */
+.ff-dd__panel {
+  position: fixed;
+  z-index: 10050;
+  display: flex;
+  flex-direction: column;
+  background: var(--ff-surface-card);
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-lg);
+  box-shadow: var(--ff-shadow-lg);
+  overflow: hidden;
+  animation: ff-dd-in 120ms ease-out;
+}
+
+@keyframes ff-dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ff-dd__search {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  margin: var(--ff-space-3);
+  padding: 0 var(--ff-space-3);
+  height: 2.5rem;
+  border: 1.5px solid var(--ff-border-strong);
+  border-radius: var(--ff-radius-md);
+  background: var(--ff-surface-input);
+}
+
+.ff-dd__search-icon {
+  font-size: 1.125rem;
+  color: var(--ff-text-muted);
+  flex-shrink: 0;
+}
+
+.ff-dd__search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-primary);
+  height: 100%;
+}
+
+.ff-dd__search-input::placeholder {
+  color: var(--ff-text-muted);
+}
+
+.ff-dd__refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ff-text-muted);
+  border-radius: var(--ff-radius-sm);
+}
+
+.ff-dd__refresh:hover {
+  color: var(--ff-color-primary-600);
+}
+
+.ff-dd__refresh .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+.ff-dd__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 var(--ff-space-2);
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
+
+.ff-dd__option {
+  padding: 0.7rem 1rem;
+  font-size: var(--ff-text-sm);
+  font-weight: 500;
+  color: var(--ff-text-primary);
+  cursor: pointer;
+  transition: background var(--ff-duration-fast);
+}
+
+.ff-dd__option--active:not(.ff-dd__option--selected) {
+  background: var(--ff-surface-hover);
+}
+
+.ff-dd__option--selected {
+  background: var(--ff-color-primary-600);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.ff-dd__option--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ff-dd__empty {
+  padding: 1rem;
+  text-align: center;
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-muted);
+}
+
+.ff-dd__hint {
+  margin: var(--ff-space-1) 0 0;
+  font-size: var(--ff-text-xs);
+  color: var(--ff-text-muted);
+}
+
+.ff-dd__error {
+  margin: var(--ff-space-1) 0 0;
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-color-danger-500);
+}
+
+/* Keep panel above sibling cards in forms */
+.ff-dd--open {
+  z-index: 30;
+}

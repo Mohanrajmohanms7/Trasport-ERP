@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FleetFlow ERP - Transport Management System</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Theme Init Script (Prevents flash of wrong theme) -->
+  <script>
+    try {
+      const ff = localStorage.getItem('ff-theme');
+      const legacy = localStorage.getItem('theme');
+      const theme = (ff === 'light' || ff === 'dark')
+        ? ff
+        : (legacy === 'light' || legacy === 'dark')
+          ? legacy
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-ff-theme', theme);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      localStorage.setItem('ff-theme', theme);
+      localStorage.setItem('theme', theme);
+    } catch (_) {}
+  </script>
+  <!-- Typography & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <app-root></app-root>
+</body>
+
+</html>

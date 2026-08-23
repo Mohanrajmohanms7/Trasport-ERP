@@ -1,0 +1,277 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">account_balance</span>
+        Accounts & General Ledger
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Audit Chart of Accounts, record double-entry Journal Vouchers, and review Trial Balances sheet summaries</p>
+    </div>
+  </header>
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Controls selector -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+      <button (click)="activeTab.set('chart')" [class.border-b-2]="activeTab() === 'chart'" [class.border-blue-600]="activeTab() === 'chart'" [class.text-slate-900]="activeTab() === 'chart'" [class.dark:text-white]="activeTab() === 'chart'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Chart of Accounts
+      </button>
+      <button (click)="activeTab.set('journal')" [class.border-b-2]="activeTab() === 'journal'" [class.border-blue-600]="activeTab() === 'journal'" [class.text-slate-900]="activeTab() === 'journal'" [class.dark:text-white]="activeTab() === 'journal'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Journal Book
+      </button>
+      <button (click)="activeTab.set('trial')" [class.border-b-2]="activeTab() === 'trial'" [class.border-blue-600]="activeTab() === 'trial'" [class.text-slate-900]="activeTab() === 'trial'" [class.dark:text-white]="activeTab() === 'trial'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Trial Balance summary
+      </button>
+    </div>
+
+    <!-- Tab Viewports -->
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+      
+      <!-- 1. Chart of Accounts Viewport -->
+      @if (activeTab() === 'chart') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">General Ledger Accounts</span>
+          <button (click)="openAddAccount()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">add_box</span> Add Ledger Account
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Account Code</th>
+                <th class="p-4">Account Name</th>
+                <th class="p-4">Type</th>
+                <th class="p-4 text-right">Opening Balance</th>
+                <th class="p-4 text-right">Running Outstanding</th>
+                <th class="p-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (acc of accounts(); track acc.accountCode) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ acc.accountCode }}</td>
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ acc.accountName }}</td>
+                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350">{{ acc.accountType }}</span></td>
+                  <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ acc.openingBalance | number }}</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ acc.runningBalance | number }}</td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-2">
+                      <button (click)="openEditAccount(acc)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                        <span class="material-icons text-sm">edit</span>
+                      </button>
+                      <button (click)="deleteAccount(acc)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No ledger accounts created.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- 2. Journal Book Viewport -->
+      @if (activeTab() === 'journal') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Posted Journal Vouchers</span>
+          <button (click)="openAddJournal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">import_contacts</span> Record Double Entry
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Voucher Number</th>
+                <th class="p-4">Voucher Date</th>
+                <th class="p-4">Debit Ledger</th>
+                <th class="p-4">Credit Ledger</th>
+                <th class="p-4 text-right">Adjustment Amount</th>
+                <th class="p-4">Narrations / description</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (jv of vouchers(); track jv.voucherNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ jv.voucherNumber }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ jv.voucherDate }}</td>
+                  <td class="p-4 text-rose-700 dark:text-rose-400 font-semibold">Dr. {{ jv.debitAccount?.accountName }}</td>
+                  <td class="p-4 text-emerald-700 dark:text-emerald-400 font-semibold">Cr. {{ jv.creditAccount?.accountName }}</td>
+                  <td class="p-4 text-right font-mono text-slate-900 dark:text-white font-bold">₹{{ jv.amount | number }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-300">{{ jv.description }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No journal entries recorded.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- 3. Trial Balance Viewport -->
+      @if (activeTab() === 'trial') {
+        <div class="flex flex-col gap-4">
+          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Unadjusted Trial Balance Sheet</span>
+            <div class="flex items-center gap-2">
+              @if (totalAssetsExpenses === totalLiabilitiesEquityRevenue) {
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-450 flex items-center gap-1">
+                  <span class="material-icons text-[10px]">check_circle</span> BALANCED
+                </span>
+              } @else {
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-450 flex items-center gap-1">
+                  <span class="material-icons text-[10px]">warning</span> UNBALANCED
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Assets & Expenses Debits column -->
+            <div class="flex flex-col gap-3">
+              <h3 class="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">Debits (Assets & Expenses)</h3>
+              <div class="flex flex-col gap-2 font-mono text-xs">
+                @for (acc of accounts(); track acc.accountCode) {
+                  @if (acc.accountType === 'ASSET' || acc.accountType === 'EXPENSE') {
+                    <div class="flex justify-between py-1 border-b border-slate-200 dark:border-slate-850">
+                      <span class="text-slate-700 dark:text-slate-300">{{ acc.accountName }}</span>
+                      <span class="text-slate-900 dark:text-white font-bold">₹{{ acc.runningBalance | number }}</span>
+                    </div>
+                  }
+                }
+                <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold text-rose-700 dark:text-rose-400 mt-2">
+                  <span>Total Debit Balance</span>
+                  <span>₹{{ totalAssetsExpenses | number }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Liabilities & Equity & Income Credits column -->
+            <div class="flex flex-col gap-3">
+              <h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">Credits (Liabilities, Equity & Income)</h3>
+              <div class="flex flex-col gap-2 font-mono text-xs">
+                @for (acc of accounts(); track acc.accountCode) {
+                  @if (acc.accountType === 'LIABILITY' || acc.accountType === 'EQUITY' || acc.accountType === 'INCOME') {
+                    <div class="flex justify-between py-1 border-b border-slate-200 dark:border-slate-850">
+                      <span class="text-slate-700 dark:text-slate-300">{{ acc.accountName }}</span>
+                      <span class="text-slate-900 dark:text-white font-bold">₹{{ acc.runningBalance | number }}</span>
+                    </div>
+                  }
+                }
+                <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold text-emerald-700 dark:text-emerald-400 mt-2">
+                  <span>Total Credit Balance</span>
+                  <span>₹{{ totalLiabilitiesEquityRevenue | number }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      }
+
+    </div>
+  </main>
+
+  <!-- Centered Add/Edit Ledger Account Popup -->
+  @if (showAccountEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showAccountEditor.set(false)">
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">add_box</span>
+            {{ editingAccount() ? 'Edit Account Master' : 'Add Ledger Account' }}
+          </h2>
+          <button type="button" (click)="showAccountEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="accountForm" (ngSubmit)="saveAccount()" class="flex flex-col">
+          <div class="px-6 py-6 flex flex-col gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ff-textbox formControlName="accountCode" label="Account Code (Unique)" placeholder="e.g. 1001-CASH" prefixIcon="tag" [required]="true" />
+              <ff-textbox formControlName="accountName" label="Account Name" placeholder="e.g. Petty Cash Account" prefixIcon="account_balance" [required]="true" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <ff-dropdown
+                formControlName="accountType"
+                label="Account Category Type"
+                [options]="accountTypeOptions"
+                [required]="true"
+                [searchable]="false"
+                searchPlaceholder="Search options..." />
+              <ff-number formControlName="openingBalance" label="Opening Balance (INR)" placeholder="0.00" [min]="0" [required]="true" />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showAccountEditor.set(false)" />
+            <ff-button type="submit" label="Save Account" icon="save" variant="primary" [disabled]="accountForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Centered Journal Entry Popup -->
+  @if (showJournalEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showJournalEditor.set(false)">
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">import_contacts</span>
+            Post Journal Entry
+          </h2>
+          <button type="button" (click)="showJournalEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="journalForm" (ngSubmit)="saveJournal()" class="flex flex-col">
+          <div class="px-6 py-6 flex flex-col gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div formGroupName="debitAccount">
+                <ff-dropdown formControlName="id" label="Debit Account (Dr.)" [options]="accountOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <div formGroupName="creditAccount">
+                <ff-dropdown formControlName="id" label="Credit Account (Cr.)" [options]="accountOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+            </div>
+
+            <ff-number formControlName="amount" label="Adjustment Amount" placeholder="0.00" [min]="0" [required]="true" />
+            <ff-textbox formControlName="description" label="Narrations details" placeholder="Voucher Narrations context" prefixIcon="notes" [required]="true" />
+            <ff-textbox formControlName="referenceNumber" label="Reference Transaction Number" placeholder="Adjust txn Ref" prefixIcon="tag" />
+          </div>
+
+          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showJournalEditor.set(false)" />
+            <ff-button type="submit" label="Post Entry" icon="save" variant="primary" [disabled]="journalForm.invalid" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,166 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+  
+  <!-- Header Title -->
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">local_shipping</span>
+        Trip Planning & Dispatch
+      </h1>
+      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Manage dispatch fleet allocations, vehicle driver assignments, and transit delivery confirmations</p>
+    </div>
+  </header>
+
+  <!-- Main console layouts -->
+  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    
+    <!-- Tab Controls selector -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white border-b-2 border-blue-600">
+        Dispatch Board Registry
+      </button>
+    </div>
+
+    <!-- Tab Viewports -->
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+      
+      <!-- List View -->
+      <div class="flex justify-between items-center shrink-0">
+        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Planned Trips</span>
+        <button (click)="openAddTrip()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="material-icons text-sm">schedule_send</span> Plan Dispatch Trip
+        </button>
+      </div>
+
+      <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <th class="p-4">Trip Number</th>
+              <th class="p-4">Trip Date</th>
+              <th class="p-4">Booking Code</th>
+              <th class="p-4">Allocated Vehicle</th>
+              <th class="p-4">Allocated Driver</th>
+              <th class="p-4">Status</th>
+              <th class="p-4 text-center">Workflow Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (trip of trips(); track trip.tripNumber) {
+              <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ trip.tripNumber }}</td>
+                <td class="p-4 text-slate-600 dark:text-slate-350">{{ trip.tripDate }}</td>
+                <td class="p-4 font-mono text-slate-700 dark:text-slate-300 font-semibold">{{ trip.booking?.bookingNumber }}</td>
+                <td class="p-4 text-slate-700 dark:text-slate-300 font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
+                <td class="p-4 text-slate-700 dark:text-slate-300">{{ trip.driver?.name || 'Not Allocated' }}</td>
+                <td class="p-4">
+                  <span [class.bg-blue-50]="trip.status === 'PLANNED'" [class.dark:bg-blue-950]="trip.status === 'PLANNED'" [class.text-blue-700]="trip.status === 'PLANNED'" [class.dark:text-blue-400]="trip.status === 'PLANNED'"
+                        [class.bg-amber-50]="trip.status === 'DISPATCHED'" [class.dark:bg-amber-950]="trip.status === 'DISPATCHED'" [class.text-amber-700]="trip.status === 'DISPATCHED'" [class.dark:text-amber-400]="trip.status === 'DISPATCHED'"
+                        [class.bg-emerald-50]="trip.status === 'COMPLETED'" [class.dark:bg-emerald-950]="trip.status === 'COMPLETED'" [class.text-emerald-700]="trip.status === 'COMPLETED'" [class.dark:text-emerald-400]="trip.status === 'COMPLETED'"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                    {{ trip.status }}
+                  </span>
+                </td>
+                <td class="p-4 text-center">
+                  <div class="flex items-center justify-center gap-3">
+                    @if (trip.status === 'PLANNED') {
+                      <button (click)="dispatchTrip(trip)" class="p-1 hover:text-amber-600 dark:hover:text-amber-400 transition" title="Dispatch Vehicle">
+                        <span class="material-icons text-sm">departure_board</span>
+                      </button>
+                    } @else if (trip.status === 'DISPATCHED') {
+                      <button (click)="completeTrip(trip)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Complete Trip">
+                        <span class="material-icons text-sm">done_all</span>
+                      </button>
+                    }
+                    <button (click)="openEditTrip(trip)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Trip Allocations">
+                      <span class="material-icons text-sm">edit</span>
+                    </button>
+                    <button (click)="deleteTrip(trip)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Cancel Itinerary">
+                      <span class="material-icons text-sm">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No planned trips in transit.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Full-screen Add/Edit Trip Popup -->
+  @if (showEditor()) {
+    <div class="fixed inset-0 z-[90] flex p-2 sm:p-3 bg-slate-950/70 backdrop-blur-[2px]"
+         (click)="showEditor.set(false)">
+      <div class="flex-1 w-full h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+           (click)="$event.stopPropagation()">
+
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <span class="material-icons text-blue-600 dark:text-blue-400">schedule_send</span>
+            {{ editingTrip() ? 'Edit Trip Allocations' : 'Plan Dispatch Trip' }}
+          </h2>
+          <button type="button" (click)="showEditor.set(false)"
+                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="tripForm" (ngSubmit)="saveTrip()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div class="flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div formGroupName="booking">
+                <ff-dropdown formControlName="id" label="Select Approved Booking" [options]="bookingOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <div formGroupName="vehicle">
+                <ff-dropdown formControlName="id" label="Allocate Vehicle" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <div formGroupName="driver">
+                <ff-dropdown formControlName="id" label="Allocate Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+              </div>
+              <ff-textbox formControlName="remarks" label="Transit Instructions" placeholder="Unloading route tips, safety instructions" prefixIcon="notes" />
+            </div>
+
+            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+              <div class="flex justify-between items-center shrink-0">
+                <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Allocated Materials Payload details</span>
+                <button type="button" (click)="addDetail()" class="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold">
+                  <span class="material-icons text-sm">add</span> Add Material Detail
+                </button>
+              </div>
+
+              <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
+                @for (row of detailsArray.controls; track row; let idx = $index) {
+                  <div [formGroupName]="idx" class="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    <div class="lg:col-span-2" formGroupName="material">
+                      <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
+                    </div>
+                    <ff-number formControlName="quantity" label="Payload Quantity (Tons)" [min]="0" [required]="true" />
+                    <ff-number formControlName="loadingCharges" label="Loading Charges" [min]="0" [required]="true" />
+                    <div class="flex items-center justify-end gap-2 lg:pb-2">
+                      <button type="button" (click)="removeDetail(idx)" class="text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete Row">
+                        <span class="material-icons text-sm">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
+            <ff-button type="submit" label="Save Trip Plan" icon="save" variant="primary" [disabled]="tripForm.invalid || detailsArray.length === 0" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

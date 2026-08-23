@@ -1,0 +1,68 @@
+@if (isVisible()) {
+  <div
+    class="ff-field"
+    [class]="sizeClass()"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    @if (displayLabel()) {
+      <label class="ff-field__label" [attr.for]="inputId()">
+        {{ displayLabel() }}
+        @if (isRequired()) {
+          <span class="ff-field__required" aria-hidden="true">*</span>
+        }
+      </label>
+    }
+
+    @if (skeleton()) {
+      <div class="ff-field__skeleton ff-skeleton" aria-hidden="true"></div>
+    } @else {
+      <div class="ff-field__control">
+        @if (prefixIcon()) {
+          <span class="ff-field__icon ff-field__icon--prefix material-symbols-outlined" aria-hidden="true">
+            {{ prefixIcon() }}
+          </span>
+        }
+
+        <input
+          class="ff-field__input"
+          [class.ff-field__input--with-prefix]="!!prefixIcon()"
+          [class.ff-field__input--with-suffix]="!!suffixIcon() || loading()"
+          [id]="inputId()"
+          [type]="type()"
+          [attr.inputmode]="inputMode() || (digitsOnly() ? 'numeric' : null)"
+          [attr.maxlength]="maxlength()"
+          [attr.placeholder]="placeholder() || null"
+          [attr.aria-invalid]="hasError()"
+          [attr.aria-required]="isRequired()"
+          [attr.aria-describedby]="hasError() ? inputId() + '-error' : hint() ? inputId() + '-hint' : null"
+          [value]="value() ?? ''"
+          [disabled]="isDisabled()"
+          [readOnly]="isReadonly()"
+          (keydown)="onKeyDown($event)"
+          (paste)="onPaste($event)"
+          (input)="onInput($event)"
+          (focus)="onFocus()"
+          (blur)="onBlur()" />
+
+        @if (loading()) {
+          <span class="ff-field__icon ff-field__icon--suffix" aria-label="Loading">
+            <span class="ff-spinner"></span>
+          </span>
+        } @else if (suffixIcon()) {
+          <span class="ff-field__icon ff-field__icon--suffix material-symbols-outlined" aria-hidden="true">
+            {{ suffixIcon() }}
+          </span>
+        }
+      </div>
+    }
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint" [id]="inputId() + '-hint'">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" [id]="inputId() + '-error'" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

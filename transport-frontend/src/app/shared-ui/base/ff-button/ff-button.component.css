@@ -1,0 +1,106 @@
+.ff-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ff-space-2);
+  font-family: var(--ff-font-sans);
+  font-weight: 600;
+  border-radius: var(--ff-radius-lg);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--ff-duration-fast) var(--ff-easing),
+    border-color var(--ff-duration-fast) var(--ff-easing),
+    box-shadow var(--ff-duration-fast) var(--ff-easing);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ff-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ff-btn--sm {
+  height: var(--ff-control-h-sm);
+  padding: 0 var(--ff-space-3);
+  font-size: var(--ff-text-xs);
+}
+
+.ff-btn--md {
+  height: var(--ff-control-h-md);
+  padding: 0 var(--ff-space-5);
+  font-size: var(--ff-text-sm);
+}
+
+.ff-btn--lg {
+  height: var(--ff-control-h-lg);
+  padding: 0 var(--ff-space-6);
+  font-size: var(--ff-text-base);
+}
+
+.ff-btn--block {
+  width: 100%;
+}
+
+.ff-btn--primary {
+  background: var(--ff-color-primary-600);
+  color: #ffffff;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ff-color-primary-600) 25%, transparent);
+}
+
+.ff-btn--primary:hover:not(:disabled) {
+  background: var(--ff-color-primary-700);
+}
+
+.ff-btn--secondary {
+  background: var(--ff-surface-hover);
+  color: var(--ff-text-primary);
+  border-color: var(--ff-border-default);
+}
+
+.ff-btn--outline {
+  background: transparent;
+  color: var(--ff-color-primary-600);
+  border-color: var(--ff-color-primary-600);
+}
+
+.ff-btn--outline:hover:not(:disabled) {
+  background: var(--ff-color-primary-50);
+}
+
+.ff-btn--ghost {
+  background: transparent;
+  color: var(--ff-text-secondary);
+}
+
+.ff-btn--ghost:hover:not(:disabled) {
+  background: var(--ff-surface-hover);
+}
+
+.ff-btn--danger {
+  background: var(--ff-color-danger-500);
+  color: #ffffff;
+}
+
+.ff-btn--danger:hover:not(:disabled) {
+  background: var(--ff-color-danger-700);
+}
+
+.ff-btn__icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.ff-btn__spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: ff-spin 0.7s linear infinite;
+}
+
+@keyframes ff-spin {
+  to { transform: rotate(360deg); }
+}

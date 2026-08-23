@@ -1,0 +1,2 @@
+-- Initial schema baseline for Transport ERP
+-- To be populated with migration tables in subsequent phases

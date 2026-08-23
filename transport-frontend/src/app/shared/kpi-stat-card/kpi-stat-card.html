@@ -1,0 +1,15 @@
+<div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow duration-150 select-none">
+  <!-- Left Icon Circle -->
+  <div [class]="bgClass" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+    <span class="material-symbols-outlined text-2xl">{{ icon }}</span>
+  </div>
+  
+  <!-- Right Metric Stack -->
+  <div class="flex flex-col min-w-0">
+    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{{ label }}</span>
+    <span class="text-2xl font-bold text-slate-800 tracking-tight mt-0.5">{{ value }}</span>
+    @if (subLabel) {
+      <span class="text-[10px] text-slate-500 font-medium mt-1 truncate">{{ subLabel }}</span>
+    }
+  </div>
+</div>

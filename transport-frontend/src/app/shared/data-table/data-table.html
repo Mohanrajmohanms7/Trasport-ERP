@@ -1,0 +1,151 @@
+<div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col select-none">
+  
+  <!-- Responsive Table Wrapper -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+      
+      <!-- Table Header -->
+      <thead class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+        <tr>
+          <!-- Bulk Checkbox Column -->
+          <th class="w-12 py-3.5 px-4 text-center">
+            <input type="checkbox" 
+                   (change)="toggleAll($event)" 
+                   [checked]="isAllSelected()"
+                   class="rounded border-slate-350 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
+          </th>
+          
+          <!-- Dynamic Columns -->
+          @for (col of columns; track col.key) {
+            <th class="py-3.5 px-4 font-semibold">{{ col.label }}</th>
+          }
+        </tr>
+      </thead>
+      
+      <!-- Table Body -->
+      <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+        @for (row of data; track row.id) {
+          <tr (click)="rowClick(row, $event)" 
+              class="hover:bg-slate-50/70 transition duration-150 cursor-pointer">
+            
+            <!-- Row Checkbox -->
+            <td class="w-12 py-3 px-4 text-center">
+              <input type="checkbox" 
+                     (change)="toggleRow(row, $event)" 
+                     [checked]="isRowSelected(row)"
+                     class="rounded border-slate-350 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
+            </td>
+            
+            <!-- Dynamic Cells -->
+            @for (col of columns; track col.key) {
+              <td class="py-3 px-4 align-middle">
+                
+                <!-- 1. Text cell -->
+                @if (!col.type || col.type === 'text') {
+                  <span class="font-medium text-slate-800">{{ row[col.key] }}</span>
+                }
+                
+                <!-- 2. Badge Status cell -->
+                @if (col.type === 'badge') {
+                  <app-status-pill [status]="row[col.key]"></app-status-pill>
+                }
+                
+                <!-- 3. Avatar + Link Name cell -->
+                @if (col.type === 'avatar') {
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                      @if (col.avatarKey && row[col.avatarKey]) {
+                        <img [src]="row[col.avatarKey]" class="w-full h-full object-cover" />
+                      } @else {
+                        <span class="material-symbols-outlined text-blue-600 text-lg">person</span>
+                      }
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold text-blue-600 hover:underline truncate">{{ row[col.key] }}</span>
+                      @if (col.subtitleKey && row[col.subtitleKey]) {
+                        <span class="text-[10px] text-slate-400 font-semibold leading-none mt-0.5 truncate">{{ row[col.subtitleKey] }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- 4. Currency cell -->
+                @if (col.type === 'currency') {
+                  <span class="font-bold text-slate-800">₹{{ row[col.key] | number:'1.2-2' }}</span>
+                }
+                
+                <!-- 5. Actions group cell -->
+                @if (col.type === 'actions') {
+                  <div class="flex items-center gap-1.5">
+                    <button (click)="triggerAction('view', row)" 
+                            class="p-1 text-slate-450 hover:text-blue-600 hover:bg-blue-50 rounded transition duration-150 cursor-pointer" 
+                            title="View Details">
+                      <span class="material-symbols-outlined text-lg">visibility</span>
+                    </button>
+                    <button (click)="triggerAction('edit', row)" 
+                            class="p-1 text-slate-450 hover:text-amber-600 hover:bg-amber-50 rounded transition duration-150 cursor-pointer" 
+                            title="Edit">
+                      <span class="material-symbols-outlined text-lg">edit</span>
+                    </button>
+                    <button (click)="triggerAction('delete', row)" 
+                            class="p-1 text-slate-450 hover:text-rose-600 hover:bg-rose-50 rounded transition duration-150 cursor-pointer" 
+                            title="Delete">
+                      <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                  </div>
+                }
+
+              </td>
+            }
+
+          </tr>
+        } @empty {
+          <tr>
+            <td [attr.colspan]="columns.length + 1" class="py-10 text-center text-slate-400">
+              <span class="material-symbols-outlined text-4xl block mb-2">inbox</span>
+              No records found
+            </td>
+          </tr>
+        }
+      </tbody>
+
+    </table>
+  </div>
+  
+  <!-- Table Pagination Footer -->
+  <div class="bg-slate-50/50 border-t border-slate-200 px-6 py-3 flex items-center justify-between text-xs text-slate-500">
+    <div class="font-medium">
+      Showing <span class="font-bold text-slate-800">{{ showingStart }}</span> to <span class="font-bold text-slate-800">{{ showingEnd }}</span> of <span class="font-bold text-slate-800">{{ totalEntries }}</span> entries
+    </div>
+    
+    @if (totalPages > 1) {
+      <div class="flex items-center gap-1">
+        <!-- Previous button -->
+        <button (click)="changePage(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+                class="p-1 text-slate-450 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none rounded transition duration-150 cursor-pointer">
+          <span class="material-symbols-outlined text-base">chevron_left</span>
+        </button>
+        
+        <!-- Page Numbers -->
+        <div class="flex items-center gap-0.5">
+          @for (p of [].constructor(totalPages); track $index) {
+            <button (click)="changePage($index + 1)" 
+                    [class]="$index + 1 === currentPage ? 'bg-blue-600 text-white font-bold' : 'hover:bg-slate-100 text-slate-600 font-medium'"
+                    class="w-6 h-6 rounded flex items-center justify-center transition duration-150 cursor-pointer">
+              {{ $index + 1 }}
+            </button>
+          }
+        </div>
+        
+        <!-- Next button -->
+        <button (click)="changePage(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+                class="p-1 text-slate-450 hover:text-slate-800 disabled:opacity-30 disabled:pointer-events-none rounded transition duration-150 cursor-pointer">
+          <span class="material-symbols-outlined text-base">chevron_right</span>
+        </button>
+      </div>
+    }
+  </div>
+
+</div>

@@ -1,0 +1,53 @@
+@import '../_base/ff-control.styles.css';
+
+.ff-autocomplete .ff-field__control {
+  position: relative;
+}
+
+.ff-autocomplete__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin: 0;
+  padding: var(--ff-space-1);
+  list-style: none;
+  background: var(--ff-surface-card);
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-lg);
+  box-shadow: var(--ff-shadow-lg);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ff-autocomplete__option {
+  padding: var(--ff-space-2) var(--ff-space-3);
+  border-radius: var(--ff-radius-md);
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-primary);
+  cursor: pointer;
+}
+
+.ff-autocomplete__option--active,
+.ff-autocomplete__option:hover:not(.ff-autocomplete__option--disabled) {
+  background: var(--ff-surface-hover);
+}
+
+.ff-autocomplete__option--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ff-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--ff-border-default);
+  border-top-color: var(--ff-color-primary-600);
+  border-radius: 50%;
+  animation: ff-spin 0.7s linear infinite;
+}
+
+@keyframes ff-spin {
+  to { transform: rotate(360deg); }
+}

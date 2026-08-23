@@ -1,0 +1,47 @@
+@if (isVisible()) {
+  <div
+    class="ff-field"
+    [class.ff-field--error]="hasError()"
+    [class.ff-field--disabled]="isDisabled()"
+    [attr.title]="displayTooltip() || null">
+
+    <label
+      class="ff-switch"
+      [class.ff-switch--disabled]="isDisabled()"
+      [attr.for]="inputId()">
+      <input
+        class="ff-switch__input"
+        type="checkbox"
+        role="switch"
+        [id]="inputId()"
+        [checked]="!!value()"
+        [disabled]="isDisabled()"
+        [attr.aria-checked]="!!value()"
+        [attr.aria-invalid]="hasError()"
+        (change)="onSwitchChange($event)"
+        (keydown)="onKeydown($event)"
+        (blur)="onBlur()" />
+      <span
+        class="ff-switch__track"
+        [class.ff-switch__track--on]="!!value()"
+        aria-hidden="true">
+        <span class="ff-switch__thumb"></span>
+      </span>
+      @if (displayLabel()) {
+        <span class="ff-switch__label">
+          {{ displayLabel() }}
+          @if (isRequired()) {
+            <span class="ff-field__required" aria-hidden="true">*</span>
+          }
+        </span>
+      }
+    </label>
+
+    @if (hint() && !hasError()) {
+      <p class="ff-field__hint">{{ hint() }}</p>
+    }
+    @if (hasError()) {
+      <p class="ff-field__error" role="alert">{{ errorMessage() }}</p>
+    }
+  </div>
+}

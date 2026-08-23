@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/transport_erp}
+    username: ${DATABASE_USERNAME:transport_admin}
+    password: ${DATABASE_PASSWORD:AdminPass123}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+# Override via Docker / .env.prod — never ship real secrets in Git
+jwt:
+  secret: ${JWT_SECRET:dGhpc2lzYXZlcnlzZWN1cmVhbmRzdHJvbmdzZWNyZXRrZXlmb3J0cmFuc3BvcnRlcnBhY3RpdmVtb2RlcGhhc2U=}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+app:
+  bootstrap:
+    enabled: ${APP_BOOTSTRAP_ENABLED:false}
+    admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:ChangeMe@123}
+
+logging:
+  level:
+    root: WARN
+    com.transport.erp: INFO

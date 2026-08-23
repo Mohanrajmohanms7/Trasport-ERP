@@ -1,0 +1,12 @@
+@import '../_base/ff-control.styles.css';
+
+/* Hide native number spinners for cleaner ERP look */
+.ff-field__input[type='number']::-webkit-outer-spin-button,
+.ff-field__input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.ff-field__input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

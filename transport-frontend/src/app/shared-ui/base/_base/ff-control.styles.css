@@ -1,0 +1,236 @@
+/* Shared field chrome for all ff-* controls */
+
+.ff-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-1);
+  width: 100%;
+  font-family: var(--ff-font-sans);
+}
+
+.ff-field--hidden {
+  display: none !important;
+}
+
+.ff-field__label {
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-text-secondary);
+  line-height: 1.4;
+}
+
+.ff-field__required {
+  color: var(--ff-color-danger-500);
+  margin-left: 2px;
+}
+
+.ff-field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ff-field__input {
+  width: 100%;
+  border: 1px solid var(--ff-border-default);
+  border-radius: var(--ff-radius-lg);
+  background: var(--ff-surface-input);
+  color: var(--ff-text-primary);
+  font-size: var(--ff-text-sm);
+  padding: 0 var(--ff-space-3);
+  transition: border-color var(--ff-duration-fast) var(--ff-easing),
+    box-shadow var(--ff-duration-fast) var(--ff-easing);
+  outline: none;
+}
+
+.ff-control--sm .ff-field__input {
+  height: var(--ff-control-h-sm);
+  font-size: var(--ff-text-xs);
+}
+
+.ff-control--md .ff-field__input {
+  height: var(--ff-control-h-md);
+}
+
+.ff-control--lg .ff-field__input {
+  height: var(--ff-control-h-lg);
+  font-size: var(--ff-text-base);
+}
+
+.ff-field__input:focus {
+  border-color: var(--ff-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-color-primary-500) 20%, transparent);
+}
+
+.ff-field--error .ff-field__input {
+  border-color: var(--ff-color-danger-500);
+}
+
+.ff-field--error .ff-field__input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ff-color-danger-500) 20%, transparent);
+}
+
+.ff-field--disabled .ff-field__input {
+  background: var(--ff-surface-hover);
+  color: var(--ff-text-muted);
+  cursor: not-allowed;
+}
+
+.ff-field__input--with-prefix {
+  padding-left: 2.5rem;
+}
+
+.ff-field__input--with-suffix {
+  padding-right: 2.5rem;
+}
+
+.ff-field__icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ff-text-muted);
+  font-size: 1.25rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ff-field__icon--prefix {
+  left: 0.75rem;
+}
+
+.ff-field__icon--suffix {
+  right: 0.75rem;
+  pointer-events: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.ff-field__hint {
+  font-size: var(--ff-text-xs);
+  color: var(--ff-text-muted);
+  margin: 0;
+}
+
+.ff-field__error {
+  font-size: var(--ff-text-xs);
+  font-weight: 600;
+  color: var(--ff-color-danger-500);
+  margin: 0;
+}
+
+.ff-field__skeleton {
+  height: var(--ff-control-h-md);
+  border-radius: var(--ff-radius-lg);
+}
+
+/* Textarea */
+.ff-field__textarea {
+  min-height: 5rem;
+  padding: var(--ff-space-3);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ff-control--sm .ff-field__textarea {
+  min-height: 4rem;
+}
+
+.ff-control--lg .ff-field__textarea {
+  min-height: 6rem;
+}
+
+/* Inline toggle controls */
+.ff-field--inline {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--ff-space-3);
+}
+
+.ff-field--inline .ff-field__label {
+  margin-top: 0.125rem;
+}
+
+.ff-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ff-check--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ff-check__input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--ff-color-primary-600);
+  cursor: inherit;
+}
+
+.ff-check__label {
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-primary);
+  line-height: 1.4;
+}
+
+.ff-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ff-switch--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ff-switch__track {
+  width: 2.5rem;
+  height: 1.375rem;
+  border-radius: var(--ff-radius-full);
+  background: var(--ff-border-strong);
+  position: relative;
+  transition: background var(--ff-duration-fast) var(--ff-easing);
+  flex-shrink: 0;
+}
+
+.ff-switch__track--on {
+  background: var(--ff-color-primary-600);
+}
+
+.ff-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.125rem;
+  height: 1.125rem;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: var(--ff-shadow-sm);
+  transition: transform var(--ff-duration-fast) var(--ff-easing);
+}
+
+.ff-switch__track--on .ff-switch__thumb {
+  transform: translateX(1.125rem);
+}
+
+.ff-switch__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ff-switch__label {
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-primary);
+}

@@ -1,0 +1,169 @@
+package com.transport.erp.service;
+
+import com.transport.erp.security.TenantAccessService;
+
+import com.transport.erp.model.Trip;
+import com.transport.erp.model.TripDetail;
+import com.transport.erp.model.AppSetting;
+import com.transport.erp.repository.TripRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Service
+public class TripService {
+
+    @Autowired
+    private TripRepository tripRepository;
+
+    @Autowired
+    private TenantAccessService tenantAccess;
+
+
+    @Autowired
+    private AuditService auditService;
+
+
+
+
+    @Autowired
+    private AppSettingService settingService;
+
+
+
+
+    public Page<Trip> getTrips(Long companyId, String status, Pageable pageable) {
+        if (status != null && !status.trim().isEmpty()) {
+            return tripRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
+        }
+        return tripRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+    }
+
+    public Trip getTripById(Long id) {
+        Trip trip = tripRepository.findById(id)
+                .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + id));
+        tenantAccess.assertOwned(trip.getCompanyId());
+        return trip;
+    }
+
+    @Transactional
+    public Trip createTrip(Trip trip, String createdByUsername) {
+        String prefix = settingService.getByKey("PREFIX_TRIP").map(s -> s.getValueData()).orElse("TRIP-");
+        String defaultStatus = settingService.getByKey("DEFAULT_TRIP_STATUS").map(s -> s.getValueData()).orElse("PLANNED");
+        
+        trip.setTripNumber(prefix + System.currentTimeMillis());
+        trip.setTripDate(LocalDate.now());
+        trip.setStatus(defaultStatus);
+        trip.setIsDeleted(false);
+        trip.setCreatedBy(createdByUsername);
+        trip.setUpdatedBy(createdByUsername);
+
+        trip.setCompanyId(tenantAccess.resolveCompanyId(trip.getCompanyId()));
+        if (trip.getBranchId() == null) trip.setBranchId(1L);
+
+        if (trip.getDetails() != null) {
+            for (TripDetail detail : trip.getDetails()) {
+                detail.setTrip(trip);
+                detail.setIsDeleted(false);
+                detail.setCreatedBy(createdByUsername);
+                detail.setUpdatedBy(createdByUsername);
+                detail.setCompanyId(trip.getCompanyId());
+                detail.setBranchId(trip.getBranchId());
+            }
+        }
+
+        Trip saved = tripRepository.save(trip);
+
+        auditService.log(createdByUsername, "TRIP_PLANNED", "trips", saved.getId(), null,
+                "Planned dispatch trip number: " + saved.getTripNumber());
+
+        return saved;
+    }
+
+    @Transactional
+    public Trip updateTrip(Long id, Trip details, String updatedByUsername) {
+        Trip existing = getTripById(id);
+
+        existing.setVehicle(details.getVehicle());
+        existing.setDriver(details.getDriver());
+        existing.setRemarks(details.getRemarks());
+        existing.setUpdatedBy(updatedByUsername);
+
+        // Replace details
+        existing.getDetails().clear();
+        if (details.getDetails() != null) {
+            for (TripDetail d : details.getDetails()) {
+                d.setTrip(existing);
+                d.setIsDeleted(false);
+                d.setCreatedBy(updatedByUsername);
+                d.setUpdatedBy(updatedByUsername);
+                d.setCompanyId(existing.getCompanyId());
+                d.setBranchId(existing.getBranchId());
+                existing.getDetails().add(d);
+            }
+        }
+
+        Trip saved = tripRepository.save(existing);
+
+        auditService.log(updatedByUsername, "TRIP_UPDATED", "trips", saved.getId(), null,
+                "Updated allocations for trip: " + saved.getTripNumber());
+
+        return saved;
+    }
+
+    @Transactional
+    public Trip dispatchTrip(Long id, String dispatchedByUsername) {
+        Trip trip = getTripById(id);
+        trip.setStatus("DISPATCHED");
+        trip.setUpdatedBy(dispatchedByUsername);
+
+        if (trip.getDetails() != null) {
+            for (TripDetail detail : trip.getDetails()) {
+                detail.setDispatchTime(LocalDateTime.now());
+            }
+        }
+
+        Trip saved = tripRepository.save(trip);
+
+        auditService.log(dispatchedByUsername, "TRIP_DISPATCHED", "trips", saved.getId(), null,
+                "Dispatched vehicle transit for trip: " + saved.getTripNumber());
+
+        return saved;
+    }
+
+    @Transactional
+    public Trip completeTrip(Long id, String completedByUsername) {
+        Trip trip = getTripById(id);
+        trip.setStatus("COMPLETED");
+        trip.setUpdatedBy(completedByUsername);
+
+        if (trip.getDetails() != null) {
+            for (TripDetail detail : trip.getDetails()) {
+                detail.setArrivalTime(LocalDateTime.now());
+            }
+        }
+
+        Trip saved = tripRepository.save(trip);
+
+        auditService.log(completedByUsername, "TRIP_COMPLETED", "trips", saved.getId(), null,
+                "Completed customer delivery for trip: " + saved.getTripNumber());
+
+        return saved;
+    }
+
+    @Transactional
+    public void deleteTrip(Long id, String deletedByUsername) {
+        Trip trip = getTripById(id);
+        trip.setIsDeleted(true);
+        trip.setUpdatedBy(deletedByUsername);
+        tripRepository.save(trip);
+
+        auditService.log(deletedByUsername, "TRIP_CANCELLED", "trips", trip.getId(), null,
+                "Cancelled trip itinerary: " + trip.getTripNumber());
+    }
+}
