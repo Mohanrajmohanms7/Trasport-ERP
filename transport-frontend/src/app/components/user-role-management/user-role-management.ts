@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, Validators, ReactiveFormsModule } from '@angular/forms';
 import { UserRoleService, User, Role, Permission } from '../../services/user-role.service';
@@ -53,6 +53,15 @@ export class UserRoleManagementComponent implements OnInit {
     { label: 'Inactive', value: 'INACTIVE' }
   ];
 
+  roleOptions = computed<FfSelectOption[]>(() => {
+    return this.roles()
+      .filter(r => r.status === 'ACTIVE')
+      .map(r => ({
+        label: `${r.name} (${r.code})`,
+        value: r.id
+      }));
+  });
+
   // States
   activeTab = signal<string>('users'); // 'users' | 'roles'
   loading = signal<boolean>(false);
@@ -80,6 +89,7 @@ export class UserRoleManagementComponent implements OnInit {
       password: [''], // Required only for new users
       email: ['', [Validators.email]],
       phone: ['', [Validators.maxLength(20)]],
+      roleId: ['', Validators.required],
       status: ['ACTIVE', Validators.required],
       description: ['']
     });
@@ -99,7 +109,7 @@ export class UserRoleManagementComponent implements OnInit {
         this.users.set(res.data.content || res.data);
       }
       this.loading.set(false);
-    });
+    }, () => this.loading.set(false));
   }
 
   loadRoles() {
@@ -120,7 +130,7 @@ export class UserRoleManagementComponent implements OnInit {
 
   openAddUser() {
     this.editingUser.set(null);
-    this.userForm.reset({ status: 'ACTIVE' });
+    this.userForm.reset({ status: 'ACTIVE', roleId: '' });
     this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
     this.userForm.get('password')?.updateValueAndValidity();
     this.showUserEditor.set(true);
@@ -128,7 +138,11 @@ export class UserRoleManagementComponent implements OnInit {
 
   openEditUser(user: User) {
     this.editingUser.set(user);
-    this.userForm.patchValue(user);
+    const firstRoleId = user.roles && user.roles.length > 0 ? user.roles[0].id : '';
+    this.userForm.patchValue({
+      ...user,
+      roleId: firstRoleId
+    });
     this.userForm.get('password')?.clearValidators();
     this.userForm.get('password')?.updateValueAndValidity();
     this.showUserEditor.set(true);
@@ -138,14 +152,21 @@ export class UserRoleManagementComponent implements OnInit {
     if (this.userForm.invalid) return;
     const val = this.userForm.value;
     const userObj = this.editingUser();
+    const selectedRoleId = val.roleId;
+    const userRoles = selectedRoleId ? [{ id: Number(selectedRoleId) }] : [];
+
+    const payload = {
+      ...val,
+      roles: userRoles
+    };
 
     if (userObj && userObj.id) {
-      this.userRoleService.updateUser(userObj.id, val).subscribe(() => {
+      this.userRoleService.updateUser(userObj.id, payload).subscribe(() => {
         this.loadUsers();
         this.showUserEditor.set(false);
       });
     } else {
-      this.userRoleService.createUser(val).subscribe(() => {
+      this.userRoleService.createUser(payload).subscribe(() => {
         this.loadUsers();
         this.showUserEditor.set(false);
       });

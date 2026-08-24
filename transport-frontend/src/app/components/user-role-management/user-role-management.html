@@ -52,6 +52,7 @@
                   <th class="p-4">Emp Code</th>
                   <th class="p-4">Full Name</th>
                   <th class="p-4">Username</th>
+                  <th class="p-4">Security Role</th>
                   <th class="p-4">Email</th>
                   <th class="p-4">Phone</th>
                   <th class="p-4">Status</th>
@@ -64,6 +65,15 @@
                     <td class="p-4 font-mono text-slate-700 dark:text-slate-300 font-bold">{{ user.code }}</td>
                     <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ user.name }}</td>
                     <td class="p-4 font-mono text-blue-700 dark:text-blue-400">&#64;{{ user.username }}</td>
+                    <td class="p-4">
+                      @if (user.roles && user.roles.length > 0) {
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30 uppercase tracking-wide">
+                          {{ user.roles[0].name }}
+                        </span>
+                      } @else {
+                        <span class="text-slate-400 text-xs">-</span>
+                      }
+                    </td>
                     <td class="p-4 text-slate-600 dark:text-slate-350">{{ user.email || 'N/A' }}</td>
                     <td class="p-4 text-slate-600 dark:text-slate-350">{{ user.phone || 'N/A' }}</td>
                     <td class="p-4">
@@ -86,7 +96,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No registered users found.</td>
+                    <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No registered users found.</td>
                   </tr>
                 }
               </tbody>
@@ -219,14 +229,21 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ff-dropdown
+                formControlName="roleId"
+                label="Security Role Assignment"
+                [options]="roleOptions()"
+                [required]="true"
+                searchPlaceholder="Select role..." />
+              <ff-dropdown
                 formControlName="status"
                 label="Account Status"
                 [options]="statusOptions"
                 [required]="true"
                 [searchable]="false"
                 searchPlaceholder="Search status…" />
-              <ff-textarea formControlName="description" label="Profile Notes" placeholder="Department details or notes" [rows]="2" />
             </div>
+            
+            <ff-textarea formControlName="description" label="Profile Notes" placeholder="Department details or notes" [rows]="2" />
           </div>
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
