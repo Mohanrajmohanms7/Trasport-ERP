@@ -54,7 +54,6 @@ public class UserController {
         String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
         // Default company and branch ID if not set for dev stages
         user.setCompanyId(tenantAccess.resolveCompanyId(user.getCompanyId()));
-        if (user.getBranchId() == null) user.setBranchId(1L);
         
         AppUser created = userService.createUser(user, activeUser);
         return ApiResponse.success(created, "User account created successfully");

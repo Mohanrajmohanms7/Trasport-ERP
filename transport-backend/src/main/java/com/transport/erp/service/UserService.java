@@ -18,6 +18,9 @@ public class UserService {
 
     @Autowired
     private TenantAccessService tenantAccess;
+    
+    @Autowired
+    private com.transport.erp.repository.BranchRepository branchRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -50,6 +53,17 @@ public class UserService {
         if (user.getCode() != null
                 && userRepository.findByCompanyIdAndCodeAndIsDeletedFalse(user.getCompanyId(), user.getCode()).isPresent()) {
             throw new IllegalArgumentException("Employee Code is already taken in this company: " + user.getCode());
+        }
+
+        // Dynamically resolve branch ID if null
+        if (user.getBranchId() == null) {
+            org.springframework.data.domain.Page<com.transport.erp.model.Branch> branches = 
+                branchRepository.findByCompanyIdAndIsDeletedFalse(user.getCompanyId(), org.springframework.data.domain.PageRequest.of(0, 1));
+            if (branches.hasContent()) {
+                user.setBranchId(branches.getContent().get(0).getId());
+            } else {
+                user.setBranchId(1L); // absolute fallback
+            }
         }
 
         // Encode password
