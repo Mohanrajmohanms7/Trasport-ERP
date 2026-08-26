@@ -11,6 +11,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-booking-details-console',
@@ -36,6 +37,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
   private customerMgmtService = inject(CustomerMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -167,10 +169,10 @@ export class BookingDetailsConsoleComponent implements OnInit {
     const mat = this.materials().find(m => m.id === +matId);
     if (mat) {
       row.patchValue({
-        rate: mat.rate,
-        transportRate: mat.transportRate,
-        royaltyRate: mat.royaltyRate,
-        loadingCharge: mat.loadingCharge
+        rate: mat.defaultRate ?? 0,
+        transportRate: mat.transportRate ?? 0,
+        royaltyRate: mat.royaltyRate ?? 0,
+        loadingCharge: mat.loadingCharge ?? 0
       });
     }
   }
@@ -240,28 +242,54 @@ export class BookingDetailsConsoleComponent implements OnInit {
     const bkgObj = this.editingBooking();
 
     if (bkgObj && bkgObj.id) {
-      this.bookingMgmtService.updateBooking(bkgObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadBookings();
-        this.showEditor.set(false);
+      this.bookingMgmtService.updateBooking(bkgObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Booking updated successfully');
+          this.loadBookings();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update booking');
+        }
       });
     } else {
-      this.bookingMgmtService.createBooking(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadBookings();
-        this.showEditor.set(false);
+      this.bookingMgmtService.createBooking(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Booking registered successfully');
+          this.loadBookings();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to register booking');
+        }
       });
     }
   }
 
   approveBooking(bkg: Booking) {
     if (!bkg.id) return;
-    this.bookingMgmtService.approveBooking(bkg.id).subscribe(() => this.loadBookings());
+    this.bookingMgmtService.approveBooking(bkg.id).subscribe({
+      next: () => {
+        this.notify.success('Booking approved successfully');
+        this.loadBookings();
+      },
+      error: () => this.notify.error('Failed to approve booking')
+    });
   }
 
   rejectBooking(bkg: Booking) {
     if (!bkg.id) return;
-    this.bookingMgmtService.rejectBooking(bkg.id).subscribe(() => this.loadBookings());
+    this.bookingMgmtService.rejectBooking(bkg.id).subscribe({
+      next: () => {
+        this.notify.success('Booking rejected successfully');
+        this.loadBookings();
+      },
+      error: () => this.notify.error('Failed to reject booking')
+    });
   }
 
   deleteBooking(bkg: Booking) {
@@ -277,7 +305,13 @@ export class BookingDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && bkg.id) {
-        this.bookingMgmtService.deleteBooking(bkg.id).subscribe(() => this.loadBookings());
+        this.bookingMgmtService.deleteBooking(bkg.id).subscribe({
+          next: () => {
+            this.notify.success('Booking cancelled successfully');
+            this.loadBookings();
+          },
+          error: () => this.notify.error('Failed to cancel booking')
+        });
       }
     });
   }

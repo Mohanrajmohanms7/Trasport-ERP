@@ -127,7 +127,9 @@
                 <ff-dropdown formControlName="id" label="Delivery Site Location" [options]="siteOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-dropdown formControlName="priority" label="Priority Classification" [options]="priorityOptions" [required]="true" searchPlaceholder="Search options..." />
-              <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Dispatch guidelines or billing instructions" prefixIcon="notes" />
+              <div class="pt-[9px]">
+                <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Dispatch guidelines or billing instructions" prefixIcon="notes" />
+              </div>
             </div>
 
             <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">

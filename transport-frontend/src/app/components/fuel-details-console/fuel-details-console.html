@@ -182,7 +182,9 @@
               <div formGroupName="trip">
                 <ff-dropdown formControlName="id" label="Link Active Trip" [options]="tripOptions" searchPlaceholder="Search options..." />
               </div>
-              <ff-textbox formControlName="fuelStation" label="Fuel Station Name" placeholder="Station name" prefixIcon="local_gas_station" [required]="true" />
+              <div class="pt-[9px]">
+                <ff-textbox formControlName="fuelStation" label="Fuel Station Name" placeholder="Station name" prefixIcon="local_gas_station" [required]="true" />
+              </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -197,7 +199,9 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
-              <ff-textbox formControlName="invoiceNumber" label="Invoice / Receipt Number" placeholder="Bill Reference" prefixIcon="receipt" />
+              <div class="pt-[9px]">
+                <ff-textbox formControlName="invoiceNumber" label="Invoice / Receipt Number" placeholder="Bill Reference" prefixIcon="receipt" />
+              </div>
             </div>
 
             <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Dispensation notes or fueling details" prefixIcon="notes" />
