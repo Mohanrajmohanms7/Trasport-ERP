@@ -1,70 +1,99 @@
 <div class="min-h-screen flex font-sans bg-slate-50 dark:bg-slate-950">
   
-  <!-- Left Side: Illustrative Panel (hidden on mobile/tablet) -->
-  <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-blue-700 to-slate-900 text-white p-12 flex-col justify-between relative overflow-hidden">
-    <!-- Abstract background grid & glow -->
-    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-    <div class="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-indigo-500/20 blur-3xl"></div>
+  <!-- Left Side: Immersive Dashboard Preview (hidden on mobile/tablet) -->
+  <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-12 flex-col justify-between relative overflow-hidden">
+    <!-- Grid pattern & glowing spotlights -->
+    <div class="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] [background-size:24px_24px]"></div>
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl"></div>
     
-    <!-- Top Brand Logo -->
+    <!-- Top Brand Header -->
     <div class="flex items-center gap-3 relative z-10 select-none">
-      <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-        <span class="material-symbols-outlined text-white text-[24px]">local_shipping</span>
+      <div class="w-10 h-10 rounded-xl bg-blue-600/25 border border-blue-500/30 flex items-center justify-center backdrop-blur-md">
+        <span class="material-symbols-outlined text-blue-400 text-[24px]">local_shipping</span>
       </div>
-      <span class="text-xl font-bold tracking-wider">TRANSAFLOW</span>
+      <span class="text-xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-blue-400">TRANSAFLOW</span>
     </div>
 
-    <!-- Center Network Diagram: Fleet Support types -->
-    <div class="relative flex items-center justify-center my-auto min-h-[380px]">
+    <!-- Center: Styled Mockup ERP Dashboard Panels -->
+    <div class="relative flex flex-col gap-6 w-full max-w-lg mx-auto z-10 select-none">
       
-      <!-- Central Hub Node -->
-      <div class="relative w-28 h-28 rounded-full bg-white text-blue-700 flex flex-col items-center justify-center shadow-2xl z-20 animate-pulse border border-white/20 select-none">
-        <span class="material-symbols-outlined text-[36px] font-bold">hub</span>
-        <span class="text-[11px] font-black tracking-widest mt-1">TRANSAFLOW</span>
+      <!-- Panel 1: Live Transit Route Tracker -->
+      <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.5)]">
+        <div class="flex justify-between items-center mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Live Transit Feed</span>
+          </div>
+          <span class="text-[10px] text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">Active</span>
+        </div>
+        
+        <div class="flex items-center gap-4 py-2">
+          <div class="flex flex-col items-center">
+            <span class="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500 flex items-center justify-center text-[10px] text-blue-300 font-bold">A</span>
+            <div class="w-0.5 h-10 border-l border-dashed border-slate-700 my-1"></div>
+            <span class="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500 flex items-center justify-center text-[10px] text-indigo-300 font-bold">B</span>
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="text-xs font-bold text-white">TN-37-AB-1234 (Kumar)</h4>
+                <p class="text-[10px] text-slate-400">En Route: Chennai → Coimbatore</p>
+              </div>
+              <span class="text-xs font-bold text-white">82%</span>
+            </div>
+            <!-- Route Progress Bar -->
+            <div class="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
+              <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full w-[82%]" style="transition: width 1s ease-out"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Orbital Rings -->
-      <div class="absolute w-80 h-80 border border-dashed border-white/20 rounded-full animate-[spin_60s_linear_infinite]"></div>
-      <div class="absolute w-[360px] h-[360px] border border-dashed border-white/10 rounded-full animate-[spin_100s_linear_infinite]"></div>
-      
-      <!-- Lorry Node -->
-      <div class="absolute -top-8 left-16 w-18 h-18 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg hover:scale-110 transition z-20 select-none" title="Lorry / Truck Support">
-        <span class="material-symbols-outlined text-[22px]">local_shipping</span>
-        <span class="text-[9px] font-bold tracking-wider mt-0.5 uppercase text-white/90">Lorry</span>
-      </div>
-      
-      <!-- Dumper Node -->
-      <div class="absolute top-12 -right-8 w-18 h-18 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg hover:scale-110 transition z-20 select-none" title="Dumper / Tipper Support">
-        <span class="material-symbols-outlined text-[22px]">engineering</span>
-        <span class="text-[9px] font-bold tracking-wider mt-0.5 uppercase text-white/90">Dumper</span>
-      </div>
-      
-      <!-- Tanker Node -->
-      <div class="absolute bottom-12 -right-6 w-18 h-18 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg hover:scale-110 transition z-20 select-none" title="Chemical / Oil Tanker Support">
-        <span class="material-symbols-outlined text-[22px]">oil_barrel</span>
-        <span class="text-[9px] font-bold tracking-wider mt-0.5 uppercase text-white/90">Tanker</span>
-      </div>
-      
-      <!-- Trailer Node -->
-      <div class="absolute -bottom-8 left-20 w-18 h-18 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg hover:scale-110 transition z-20 select-none" title="Trailer Support">
-        <span class="material-symbols-outlined text-[22px]">rv_hookup</span>
-        <span class="text-[9px] font-bold tracking-wider mt-0.5 uppercase text-white/90">Trailer</span>
-      </div>
-      
-      <!-- Container Node -->
-      <div class="absolute top-28 -left-8 w-18 h-18 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-white shadow-lg hover:scale-110 transition z-20 select-none" title="Container Cargo Support">
-        <span class="material-symbols-outlined text-[22px]">package_2</span>
-        <span class="text-[9px] font-bold tracking-wider mt-0.5 uppercase text-white/90">Container</span>
+      <!-- Grid of Stats & Fleet Categories -->
+      <div class="grid grid-cols-2 gap-4">
+        
+        <!-- Fleet Active Statuses -->
+        <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-3">Fleet Utilization</span>
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Lorry</span>
+              <span class="font-bold">2 / 3 Active</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>Dumper</span>
+              <span class="font-bold">1 / 2 Active</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>Tanker</span>
+              <span class="font-bold">1 / 1 Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit/Efficiency Index -->
+        <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Efficiency Rating</span>
+          <div class="flex items-baseline gap-2">
+            <span class="text-3xl font-extrabold tracking-tight text-white">+18.4%</span>
+            <span class="text-[10px] text-emerald-400 font-bold flex items-center">▲ Weekly</span>
+          </div>
+          <!-- Sparkline representation -->
+          <svg class="w-full h-8 mt-4 text-blue-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M0 25 C10 20, 20 28, 30 15 C40 10, 50 18, 60 5 C70 0, 80 12, 100 2" stroke-linecap="round"/>
+          </svg>
+        </div>
+
       </div>
 
     </div>
 
     <!-- Bottom Instructions Footer -->
     <div class="relative z-10 select-none">
-      <h2 class="text-2xl font-extrabold tracking-tight mb-2">Multi-Fleet Business Support</h2>
-      <p class="text-xs text-white/70 leading-relaxed max-w-md">
-        An all-in-one logistics solution built to manage Lorry, Dumper, Tanker, Trailer, and Container transport operations with streamlined dispatch workflows.
+      <h2 class="text-xl font-bold tracking-tight mb-2 text-white/95">Next-Gen Multi-Fleet Operations</h2>
+      <p class="text-xs text-slate-450 leading-relaxed max-w-sm">
+        An all-in-one logistics solution designed to optimize dispatch workloads, track active cargo transit, manage drivers, and analyze profit sheets.
       </p>
     </div>
 
