@@ -382,7 +382,7 @@ export class AppShellComponent implements OnDestroy {
       width: '380px',
       data: {
         title: 'Sign Out Confirm',
-        message: 'Are you sure you want to end your current session and sign out of FleetFlow ERP?',
+        message: 'Are you sure you want to end your current session and sign out of TransaFlow?',
         confirmText: 'Sign Out',
         cancelText: 'Cancel',
         type: 'danger'
