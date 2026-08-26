@@ -26,8 +26,46 @@ public class ChartOfAccountService {
 
 
 
+    @Transactional
     public Page<ChartOfAccount> getAccounts(Long companyId, Pageable pageable) {
-        return accountRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        Page<ChartOfAccount> accounts = accountRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        if (accounts.isEmpty()) {
+            seedDefaultAccounts(companyId);
+            accounts = accountRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        }
+        return accounts;
+    }
+
+    private void seedDefaultAccounts(Long companyId) {
+        String[][] defaultAccounts = {
+            {"1000", "Cash on Hand", "ASSET", "50000.0", "Cash"},
+            {"1010", "Bank - Current A/c", "ASSET", "350000.0", "Bank"},
+            {"1100", "Customer Receivables", "ASSET", "0.0", "AR"},
+            {"2000", "Supplier Payables", "LIABILITY", "0.0", "AP"},
+            {"3000", "Owner Capital", "EQUITY", "400000.0", "Equity"},
+            {"4000", "Transport Freight Income", "INCOME", "0.0", "Income"},
+            {"5000", "Fuel Expense", "EXPENSE", "0.0", "Expense"},
+            {"5100", "Driver Bata & Trip Expense", "EXPENSE", "0.0", "Expense"},
+            {"5200", "Vehicle Maintenance", "EXPENSE", "0.0", "Expense"},
+            {"5300", "Toll & Parking", "EXPENSE", "0.0", "Expense"}
+        };
+
+        for (String[] acc : defaultAccounts) {
+            ChartOfAccount coa = new ChartOfAccount();
+            coa.setAccountCode(acc[0]);
+            coa.setAccountName(acc[1]);
+            coa.setAccountType(acc[2]);
+            java.math.BigDecimal bal = new java.math.BigDecimal(acc[3]);
+            coa.setOpeningBalance(bal);
+            coa.setRunningBalance(bal);
+            coa.setCode(acc[0]);
+            coa.setName(acc[1]);
+            coa.setDescription(acc[4]);
+            coa.setStatus("ACTIVE");
+            coa.setCompanyId(companyId);
+            coa.setBranchId(companyId);
+            accountRepository.save(coa);
+        }
     }
 
     public ChartOfAccount getAccountById(Long id) {
