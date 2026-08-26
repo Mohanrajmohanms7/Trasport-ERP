@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-invoice-details-console',
@@ -33,6 +34,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -218,28 +220,54 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     }
 
     if (invObj && invObj.id) {
-      this.invoiceMgmtService.updateInvoice(invObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadInvoices();
-        this.showEditor.set(false);
+      this.invoiceMgmtService.updateInvoice(invObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Invoice updated successfully');
+          this.loadInvoices();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update invoice');
+        }
       });
     } else {
-      this.invoiceMgmtService.createInvoice(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadInvoices();
-        this.showEditor.set(false);
+      this.invoiceMgmtService.createInvoice(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Invoice generated successfully');
+          this.loadInvoices();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to generate invoice');
+        }
       });
     }
   }
 
   approveInvoice(inv: SalesInvoice) {
     if (!inv.id) return;
-    this.invoiceMgmtService.approveInvoice(inv.id).subscribe(() => this.loadInvoices());
+    this.invoiceMgmtService.approveInvoice(inv.id).subscribe({
+      next: () => {
+        this.notify.success('Invoice approved successfully');
+        this.loadInvoices();
+      },
+      error: () => this.notify.error('Failed to approve invoice')
+    });
   }
 
   cancelInvoice(inv: SalesInvoice) {
     if (!inv.id) return;
-    this.invoiceMgmtService.cancelInvoice(inv.id).subscribe(() => this.loadInvoices());
+    this.invoiceMgmtService.cancelInvoice(inv.id).subscribe({
+      next: () => {
+        this.notify.success('Invoice cancelled successfully');
+        this.loadInvoices();
+      },
+      error: () => this.notify.error('Failed to cancel invoice')
+    });
   }
 
   deleteInvoice(inv: SalesInvoice) {
@@ -255,8 +283,12 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && inv.id) {
-        this.invoiceMgmtService.deleteInvoice(inv.id).subscribe(() => {
-          this.loadInvoices();
+        this.invoiceMgmtService.deleteInvoice(inv.id).subscribe({
+          next: () => {
+            this.notify.success('Invoice record deleted successfully');
+            this.loadInvoices();
+          },
+          error: () => this.notify.error('Failed to delete invoice record')
         });
       }
     });

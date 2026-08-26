@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-fuel-details-console',
@@ -34,6 +35,7 @@ export class FuelDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -53,7 +55,10 @@ export class FuelDetailsConsoleComponent implements OnInit {
   paymentMethods = signal<any[]>([]);
 
   get vehicleOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Vehicle --', value: '' }, ...this.vehicles().map(vehicle => ({ label: vehicle.registrationNumber || vehicle.name, value: vehicle.id }))];
+    return [{ label: '-- Choose Vehicle --', value: '' }, ...this.vehicles().map(v => ({
+      label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
+      value: v.id
+    }))];
   }
   get driverOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Driver --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
@@ -185,16 +190,30 @@ export class FuelDetailsConsoleComponent implements OnInit {
     const entryObj = this.editingEntry();
 
     if (entryObj && entryObj.id) {
-      this.fuelMgmtService.updateFuelEntry(entryObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadFuelEntries();
-        this.showEntryForm.set(false);
+      this.fuelMgmtService.updateFuelEntry(entryObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Fuel entry updated successfully');
+          this.loadFuelEntries();
+          this.showEntryForm.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update fuel entry');
+        }
       });
     } else {
-      this.fuelMgmtService.createFuelEntry(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadFuelEntries();
-        this.showEntryForm.set(false);
+      this.fuelMgmtService.createFuelEntry(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Fuel entry logged successfully');
+          this.loadFuelEntries();
+          this.showEntryForm.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to log fuel entry');
+        }
       });
     }
   }
@@ -212,8 +231,12 @@ export class FuelDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && entry.id) {
-        this.fuelMgmtService.deleteFuelEntry(entry.id).subscribe(() => {
-          this.loadFuelEntries();
+        this.fuelMgmtService.deleteFuelEntry(entry.id).subscribe({
+          next: () => {
+            this.notify.success('Fuel entry deleted successfully');
+            this.loadFuelEntries();
+          },
+          error: () => this.notify.error('Failed to delete fuel entry')
         });
       }
     });
@@ -225,21 +248,40 @@ export class FuelDetailsConsoleComponent implements OnInit {
     this.loading.set(true);
     const val = this.requestForm.getRawValue();
 
-    this.fuelMgmtService.createFuelRequest(val).subscribe(() => {
-      this.loading.set(false);
-      this.loadFuelRequests();
-      this.showRequestForm.set(false);
-      this.requestForm.reset();
+    this.fuelMgmtService.createFuelRequest(val).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.notify.success('Fuel request submitted successfully');
+        this.loadFuelRequests();
+        this.showRequestForm.set(false);
+        this.requestForm.reset();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to submit fuel request');
+      }
     });
   }
 
   approveRequest(req: FuelRequest) {
     if (!req.id) return;
-    this.fuelMgmtService.approveFuelRequest(req.id).subscribe(() => this.loadFuelRequests());
+    this.fuelMgmtService.approveFuelRequest(req.id).subscribe({
+      next: () => {
+        this.notify.success('Fuel request approved successfully');
+        this.loadFuelRequests();
+      },
+      error: () => this.notify.error('Failed to approve fuel request')
+    });
   }
 
   rejectRequest(req: FuelRequest) {
     if (!req.id) return;
-    this.fuelMgmtService.rejectFuelRequest(req.id).subscribe(() => this.loadFuelRequests());
+    this.fuelMgmtService.rejectFuelRequest(req.id).subscribe({
+      next: () => {
+        this.notify.success('Fuel request rejected successfully');
+        this.loadFuelRequests();
+      },
+      error: () => this.notify.error('Failed to reject fuel request')
+    });
   }
 }

@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfTextareaComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-customer-details-console',
@@ -34,6 +35,7 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -195,11 +197,15 @@ export class CustomerDetailsConsoleComponent implements OnInit {
     this.customerMgmtService.addContact(id, this.contactForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Contact person saved successfully');
         this.loadContacts();
         this.showContactEditor.set(false);
         this.contactForm.reset();
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to save contact person');
+      }
     });
   }
 
@@ -217,8 +223,12 @@ export class CustomerDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && contact.id) {
-        this.customerMgmtService.deleteContact(id, contact.id).subscribe(() => {
-          this.loadContacts();
+        this.customerMgmtService.deleteContact(id, contact.id).subscribe({
+          next: () => {
+            this.notify.success('Contact person removed successfully');
+            this.loadContacts();
+          },
+          error: () => this.notify.error('Failed to remove contact person')
         });
       }
     });
@@ -232,11 +242,15 @@ export class CustomerDetailsConsoleComponent implements OnInit {
     this.customerMgmtService.addSite(id, this.siteForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Delivery site saved successfully');
         this.loadSites();
         this.showSiteEditor.set(false);
         this.siteForm.reset();
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to save delivery site');
+      }
     });
   }
 
@@ -254,8 +268,12 @@ export class CustomerDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && site.id) {
-        this.customerMgmtService.deleteSite(id, site.id).subscribe(() => {
-          this.loadSites();
+        this.customerMgmtService.deleteSite(id, site.id).subscribe({
+          next: () => {
+            this.notify.success('Delivery site deleted successfully');
+            this.loadSites();
+          },
+          error: () => this.notify.error('Failed to delete delivery site')
         });
       }
     });
@@ -269,11 +287,15 @@ export class CustomerDetailsConsoleComponent implements OnInit {
     this.customerMgmtService.addDocument(id, this.documentForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Document saved successfully');
         this.loadDocuments();
         this.showDocEditor.set(false);
         this.documentForm.reset({ docType: 'GST_CERT' });
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to save document');
+      }
     });
   }
 
@@ -291,8 +313,12 @@ export class CustomerDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && doc.id) {
-        this.customerMgmtService.deleteDocument(id, doc.id).subscribe(() => {
-          this.loadDocuments();
+        this.customerMgmtService.deleteDocument(id, doc.id).subscribe({
+          next: () => {
+            this.notify.success('Document deleted successfully');
+            this.loadDocuments();
+          },
+          error: () => this.notify.error('Failed to delete document')
         });
       }
     });

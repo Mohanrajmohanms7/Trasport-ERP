@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-trip-details-console',
@@ -34,6 +35,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -48,7 +50,10 @@ export class TripDetailsConsoleComponent implements OnInit {
     return [{ label: '-- Choose Booking Reference --', value: '' }, ...this.bookings().map(booking => ({ label: booking.bookingNumber || booking.code, value: booking.id }))];
   }
   get vehicleOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Transit Vehicle --', value: '' }, ...this.vehicles().map(vehicle => ({ label: vehicle.registrationNumber || vehicle.name, value: vehicle.id }))];
+    return [{ label: '-- Choose Transit Vehicle --', value: '' }, ...this.vehicles().map(v => ({
+      label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
+      value: v.id
+    }))];
   }
   get driverOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Driver Assignment --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
@@ -202,28 +207,54 @@ export class TripDetailsConsoleComponent implements OnInit {
     const tripObj = this.editingTrip();
 
     if (tripObj && tripObj.id) {
-      this.tripMgmtService.updateTrip(tripObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadTrips();
-        this.showEditor.set(false);
+      this.tripMgmtService.updateTrip(tripObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Trip updated successfully');
+          this.loadTrips();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update trip');
+        }
       });
     } else {
-      this.tripMgmtService.createTrip(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadTrips();
-        this.showEditor.set(false);
+      this.tripMgmtService.createTrip(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Trip created successfully');
+          this.loadTrips();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to create trip');
+        }
       });
     }
   }
 
   dispatchTrip(trip: Trip) {
     if (!trip.id) return;
-    this.tripMgmtService.dispatchTrip(trip.id).subscribe(() => this.loadTrips());
+    this.tripMgmtService.dispatchTrip(trip.id).subscribe({
+      next: () => {
+        this.notify.success('Trip dispatched successfully');
+        this.loadTrips();
+      },
+      error: () => this.notify.error('Failed to dispatch trip')
+    });
   }
 
   completeTrip(trip: Trip) {
     if (!trip.id) return;
-    this.tripMgmtService.completeTrip(trip.id).subscribe(() => this.loadTrips());
+    this.tripMgmtService.completeTrip(trip.id).subscribe({
+      next: () => {
+        this.notify.success('Trip completed successfully');
+        this.loadTrips();
+      },
+      error: () => this.notify.error('Failed to complete trip')
+    });
   }
 
   deleteTrip(trip: Trip) {
@@ -239,7 +270,13 @@ export class TripDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && trip.id) {
-        this.tripMgmtService.deleteTrip(trip.id).subscribe(() => this.loadTrips());
+        this.tripMgmtService.deleteTrip(trip.id).subscribe({
+          next: () => {
+            this.notify.success('Trip canceled successfully');
+            this.loadTrips();
+          },
+          error: () => this.notify.error('Failed to cancel trip')
+        });
       }
     });
   }

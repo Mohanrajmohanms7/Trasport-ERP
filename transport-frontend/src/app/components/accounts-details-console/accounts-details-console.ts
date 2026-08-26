@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-accounts-details-console',
@@ -31,6 +32,7 @@ export class AccountsDetailsConsoleComponent implements OnInit {
   private accountsMgmtService = inject(AccountsMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   // States
   activeTab = signal<string>('chart'); // 'chart' | 'journal' | 'trial'
@@ -134,16 +136,30 @@ export class AccountsDetailsConsoleComponent implements OnInit {
     const accObj = this.editingAccount();
 
     if (accObj && accObj.id) {
-      this.accountsMgmtService.updateAccount(accObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadAccounts();
-        this.showAccountEditor.set(false);
+      this.accountsMgmtService.updateAccount(accObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Account ledger updated successfully');
+          this.loadAccounts();
+          this.showAccountEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update account ledger');
+        }
       });
     } else {
-      this.accountsMgmtService.createAccount(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadAccounts();
-        this.showAccountEditor.set(false);
+      this.accountsMgmtService.createAccount(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Account ledger created successfully');
+          this.loadAccounts();
+          this.showAccountEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to create account ledger');
+        }
       });
     }
   }
@@ -154,11 +170,18 @@ export class AccountsDetailsConsoleComponent implements OnInit {
     this.loading.set(true);
     const val = this.journalForm.getRawValue();
 
-    this.accountsMgmtService.createVoucher(val).subscribe(() => {
-      this.loading.set(false);
-      this.loadVouchers();
-      this.loadAccounts();
-      this.showJournalEditor.set(false);
+    this.accountsMgmtService.createVoucher(val).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.notify.success('Journal voucher posted successfully');
+        this.loadVouchers();
+        this.loadAccounts();
+        this.showJournalEditor.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to post journal voucher');
+      }
     });
   }
 
@@ -175,8 +198,12 @@ export class AccountsDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && acc.id) {
-        this.accountsMgmtService.deleteAccount(acc.id).subscribe(() => {
-          this.loadAccounts();
+        this.accountsMgmtService.deleteAccount(acc.id).subscribe({
+          next: () => {
+            this.notify.success('Account ledger removed successfully');
+            this.loadAccounts();
+          },
+          error: () => this.notify.error('Failed to remove account ledger')
         });
       }
     });

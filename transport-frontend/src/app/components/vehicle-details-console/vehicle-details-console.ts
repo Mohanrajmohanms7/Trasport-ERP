@@ -11,6 +11,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfTextareaComponent, FfDatepickerComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-vehicle-details-console',
@@ -38,6 +39,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -68,7 +70,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     return [
       { label: '-- Select Vehicle --', value: '' },
       ...this.vehicles().map(v => ({
-        label: `${v.code || ''} ${v.name || ''}`.trim(),
+        label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
         value: v.id
       }))
     ];
@@ -224,11 +226,15 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.vehicleMgmtService.addDocument(id, this.documentForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Document uploaded successfully');
         this.loadDocuments();
         this.showDocEditor.set(false);
         this.documentForm.reset({ docType: 'INSURANCE' });
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to upload document');
+      }
     });
   }
 
@@ -246,8 +252,12 @@ export class VehicleDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && doc.id) {
-        this.vehicleMgmtService.deleteDocument(id, doc.id).subscribe(() => {
-          this.loadDocuments();
+        this.vehicleMgmtService.deleteDocument(id, doc.id).subscribe({
+          next: () => {
+            this.notify.success('Document deleted successfully');
+            this.loadDocuments();
+          },
+          error: () => this.notify.error('Failed to delete document')
         });
       }
     });
@@ -261,19 +271,27 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.vehicleMgmtService.addServiceLog(id, this.maintenanceForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Maintenance log recorded successfully');
         this.loadMaintenanceHistory();
         this.showMaintenanceEditor.set(false);
         this.maintenanceForm.reset({ serviceType: 'OIL_CHANGE', cost: 0 });
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to record maintenance log');
+      }
     });
   }
 
   assignDriver(driverId: number) {
     const id = this.vehicleId();
     if (id == null) return;
-    this.vehicleMgmtService.assignDriver(id, driverId).subscribe(() => {
-      this.loadDriverAssignments();
+    this.vehicleMgmtService.assignDriver(id, driverId).subscribe({
+      next: () => {
+        this.notify.success('Driver assigned successfully');
+        this.loadDriverAssignments();
+      },
+      error: () => this.notify.error('Failed to assign driver')
     });
   }
 
@@ -291,8 +309,12 @@ export class VehicleDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
-        this.vehicleMgmtService.unassignDriver(id).subscribe(() => {
-          this.loadDriverAssignments();
+        this.vehicleMgmtService.unassignDriver(id).subscribe({
+          next: () => {
+            this.notify.success('Driver unassigned successfully');
+            this.loadDriverAssignments();
+          },
+          error: () => this.notify.error('Failed to unassign driver')
         });
       }
     });

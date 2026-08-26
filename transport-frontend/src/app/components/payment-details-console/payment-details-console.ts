@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-payment-details-console',
@@ -34,6 +35,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -175,18 +177,32 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     if (!val.booking?.id) val.booking = null;
 
     if (receiptObj && receiptObj.id) {
-      this.paymentMgmtService.updateReceipt(receiptObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadReceipts();
-        this.loadLedger();
-        this.showEditor.set(false);
+      this.paymentMgmtService.updateReceipt(receiptObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Receipt voucher updated successfully');
+          this.loadReceipts();
+          this.loadLedger();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update receipt voucher');
+        }
       });
     } else {
-      this.paymentMgmtService.createReceipt(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadReceipts();
-        this.loadLedger();
-        this.showEditor.set(false);
+      this.paymentMgmtService.createReceipt(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Receipt voucher recorded successfully');
+          this.loadReceipts();
+          this.loadLedger();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to record receipt voucher');
+        }
       });
     }
   }
@@ -204,9 +220,13 @@ export class PaymentDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && receipt.id) {
-        this.paymentMgmtService.deleteReceipt(receipt.id).subscribe(() => {
-          this.loadReceipts();
-          this.loadLedger();
+        this.paymentMgmtService.deleteReceipt(receipt.id).subscribe({
+          next: () => {
+            this.notify.success('Receipt voucher deleted successfully');
+            this.loadReceipts();
+            this.loadLedger();
+          },
+          error: () => this.notify.error('Failed to delete receipt voucher')
         });
       }
     });

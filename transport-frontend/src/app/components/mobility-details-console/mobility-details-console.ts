@@ -34,9 +34,9 @@ export class MobilityDetailsConsoleComponent implements OnInit {
   selectedVehicleId = signal<number | null>(null);
   selectedVehicleControl = new FormControl<number | null>(null);
   get vehicleOptions(): FfSelectOption[] {
-    return this.vehicles().map(vehicle => ({
-      label: vehicle.registrationNumber || vehicle.code || vehicle.name || `Vehicle #${vehicle.id}`,
-      value: vehicle.id
+    return this.vehicles().map(v => ({
+      label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || `Vehicle #${v.id}`,
+      value: v.id
     }));
   }
 

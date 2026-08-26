@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-expense-details-console',
@@ -34,6 +35,7 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -57,7 +59,10 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
       : [{ label: 'TOLL', value: 'TOLL' }, { label: 'DRIVER BATA', value: 'DRIVER_BATA' }, { label: 'PARKING', value: 'PARKING' }, { label: 'VEHICLE REPAIR', value: 'VEHICLE_REPAIR' }, { label: 'INSURANCE', value: 'INSURANCE' }, { label: 'OFFICE', value: 'OFFICE' }, { label: 'MISCELLANEOUS', value: 'MISCELLANEOUS' }];
   }
   get vehicleOptions(): FfSelectOption[] {
-    return [{ label: '-- General / Optional --', value: '' }, ...this.vehicles().map(vehicle => ({ label: vehicle.registrationNumber || vehicle.name, value: vehicle.id }))];
+    return [{ label: '-- General / Optional --', value: '' }, ...this.vehicles().map(v => ({
+      label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
+      value: v.id
+    }))];
   }
   get driverOptions(): FfSelectOption[] {
     return [{ label: '-- General / Optional --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
@@ -178,28 +183,54 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
     if (!val.trip?.id) val.trip = null;
 
     if (expObj && expObj.id) {
-      this.expenseMgmtService.updateExpense(expObj.id, val).subscribe(() => {
-        this.loading.set(false);
-        this.loadExpenses();
-        this.showEditor.set(false);
+      this.expenseMgmtService.updateExpense(expObj.id, val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Expense entry updated successfully');
+          this.loadExpenses();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update expense entry');
+        }
       });
     } else {
-      this.expenseMgmtService.createExpense(val).subscribe(() => {
-        this.loading.set(false);
-        this.loadExpenses();
-        this.showEditor.set(false);
+      this.expenseMgmtService.createExpense(val).subscribe({
+        next: () => {
+          this.loading.set(false);
+          this.notify.success('Expense logged successfully');
+          this.loadExpenses();
+          this.showEditor.set(false);
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to log expense');
+        }
       });
     }
   }
 
   approveExpense(exp: Expense) {
     if (!exp.id) return;
-    this.expenseMgmtService.approveExpense(exp.id).subscribe(() => this.loadExpenses());
+    this.expenseMgmtService.approveExpense(exp.id).subscribe({
+      next: () => {
+        this.notify.success('Expense approved successfully');
+        this.loadExpenses();
+      },
+      error: () => this.notify.error('Failed to approve expense')
+    });
   }
 
   rejectExpense(exp: Expense) {
     if (!exp.id) return;
-    this.expenseMgmtService.rejectExpense(exp.id).subscribe(() => this.loadExpenses());
+    this.expenseMgmtService.rejectExpense(exp.id).subscribe({
+      next: () => {
+        this.notify.success('Expense rejected successfully');
+        this.loadExpenses();
+      },
+      error: () => this.notify.error('Failed to reject expense')
+    });
   }
 
   deleteExpense(exp: Expense) {
@@ -215,8 +246,12 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && exp.id) {
-        this.expenseMgmtService.deleteExpense(exp.id).subscribe(() => {
-          this.loadExpenses();
+        this.expenseMgmtService.deleteExpense(exp.id).subscribe({
+          next: () => {
+            this.notify.success('Expense entry canceled successfully');
+            this.loadExpenses();
+          },
+          error: () => this.notify.error('Failed to cancel expense entry')
         });
       }
     });
