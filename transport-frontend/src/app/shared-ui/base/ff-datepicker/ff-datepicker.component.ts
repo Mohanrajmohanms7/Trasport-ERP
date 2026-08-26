@@ -22,4 +22,16 @@ export class FfDatepickerComponent extends FfControlBase<string> {
   onInput(event: Event): void {
     this.emitValue((event.target as HTMLInputElement).value);
   }
+
+  onPickerClick(event: MouseEvent): void {
+    const target = event.target as HTMLInputElement;
+    if (this.isDisabled() || this.isReadonly()) return;
+    try {
+      if (typeof target.showPicker === 'function') {
+        target.showPicker();
+      }
+    } catch (e) {
+      // Ignore or log fallback
+    }
+  }
 }

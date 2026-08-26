@@ -10,6 +10,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfDatepickerComponent, FfButtonComponent, FfTextareaComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 @Component({
   selector: 'app-material-quarry-console',
@@ -36,6 +37,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
+  private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -222,15 +224,20 @@ export class MaterialQuarryConsoleComponent implements OnInit {
       next: (res) => {
         this.loading.set(false);
         if (res.success) {
+          this.notify.success(existing?.id ? 'Material updated successfully' : 'Material created successfully');
           this.showMaterialEditor.set(false);
           this.loadMaterials();
         } else {
-          this.saveError.set(res.errors?.[0] || res.message || 'Failed to save material');
+          const errMsg = res.errors?.[0] || res.message || 'Failed to save material';
+          this.saveError.set(errMsg);
+          this.notify.error(errMsg);
         }
       },
       error: (err) => {
         this.loading.set(false);
-        this.saveError.set(err.error?.errors?.[0] || err.error?.message || 'Failed to save material');
+        const errMsg = err.error?.errors?.[0] || err.error?.message || 'Failed to save material';
+        this.saveError.set(errMsg);
+        this.notify.error(errMsg);
       }
     });
   }
@@ -247,7 +254,13 @@ export class MaterialQuarryConsoleComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (!confirmed) return;
-      this.masterService.deleteMaster('materials', row.id).subscribe(() => this.loadMaterials());
+      this.masterService.deleteMaster('materials', row.id).subscribe({
+        next: () => {
+          this.notify.success('Material deleted successfully');
+          this.loadMaterials();
+        },
+        error: () => this.notify.error('Failed to delete material')
+      });
     });
   }
 
@@ -290,15 +303,20 @@ export class MaterialQuarryConsoleComponent implements OnInit {
       next: (res) => {
         this.loading.set(false);
         if (res.success) {
+          this.notify.success(existing?.id ? 'Quarry updated successfully' : 'Quarry created successfully');
           this.showQuarryEditor.set(false);
           this.loadQuarries();
         } else {
-          this.saveError.set(res.errors?.[0] || res.message || 'Failed to save quarry');
+          const errMsg = res.errors?.[0] || res.message || 'Failed to save quarry';
+          this.saveError.set(errMsg);
+          this.notify.error(errMsg);
         }
       },
       error: (err) => {
         this.loading.set(false);
-        this.saveError.set(err.error?.errors?.[0] || err.error?.message || 'Failed to save quarry');
+        const errMsg = err.error?.errors?.[0] || err.error?.message || 'Failed to save quarry';
+        this.saveError.set(errMsg);
+        this.notify.error(errMsg);
       }
     });
   }
@@ -315,7 +333,13 @@ export class MaterialQuarryConsoleComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe(confirmed => {
       if (!confirmed) return;
-      this.masterService.deleteMaster('quarries', row.id).subscribe(() => this.loadQuarries());
+      this.masterService.deleteMaster('quarries', row.id).subscribe({
+        next: () => {
+          this.notify.success('Quarry deleted successfully');
+          this.loadQuarries();
+        },
+        error: () => this.notify.error('Failed to delete quarry')
+      });
     });
   }
 
@@ -347,20 +371,28 @@ export class MaterialQuarryConsoleComponent implements OnInit {
       this.materialMgmtService.updateLocation(locObj.id, val).subscribe({
         next: () => {
           this.loading.set(false);
+          this.notify.success('Loading location updated successfully');
           this.loadLocations();
           this.showLocationEditor.set(false);
         },
-        error: () => this.loading.set(false)
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to update loading location');
+        }
       });
     } else {
       this.materialMgmtService.createLocation(val).subscribe({
         next: () => {
           this.loading.set(false);
+          this.notify.success('Loading location created successfully');
           this.loadLocations();
           this.showLocationEditor.set(false);
           this.locationForm.reset({ loadingCharges: 0 });
         },
-        error: () => this.loading.set(false)
+        error: (err) => {
+          this.loading.set(false);
+          this.notify.error(err.error?.message || 'Failed to create loading location');
+        }
       });
     }
   }
@@ -379,8 +411,12 @@ export class MaterialQuarryConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && loc.id) {
-        this.materialMgmtService.deleteLocation(loc.id).subscribe(() => {
-          this.loadLocations();
+        this.materialMgmtService.deleteLocation(loc.id).subscribe({
+          next: () => {
+            this.notify.success('Loading location deleted successfully');
+            this.loadLocations();
+          },
+          error: () => this.notify.error('Failed to delete loading location')
         });
       }
     });
@@ -394,6 +430,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
     this.materialMgmtService.createPrice(id, this.priceForm.value).subscribe({
       next: () => {
         this.loading.set(false);
+        this.notify.success('Pricing rule saved successfully');
         this.loadPrices();
         this.showPriceEditor.set(false);
         this.priceForm.reset({
@@ -403,7 +440,10 @@ export class MaterialQuarryConsoleComponent implements OnInit {
           loadingCharge: 0
         });
       },
-      error: () => this.loading.set(false)
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to save pricing rule');
+      }
     });
   }
 
@@ -421,8 +461,12 @@ export class MaterialQuarryConsoleComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed && price.id) {
-        this.materialMgmtService.deletePrice(price.id).subscribe(() => {
-          this.loadPrices();
+        this.materialMgmtService.deletePrice(price.id).subscribe({
+          next: () => {
+            this.notify.success('Pricing rule deleted successfully');
+            this.loadPrices();
+          },
+          error: () => this.notify.error('Failed to delete pricing rule')
         });
       }
     });

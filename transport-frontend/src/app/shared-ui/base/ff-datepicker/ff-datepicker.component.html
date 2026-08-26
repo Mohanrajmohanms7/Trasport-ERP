@@ -38,6 +38,7 @@
           [value]="value() ?? ''"
           [disabled]="isDisabled()"
           [readOnly]="isReadonly()"
+          (click)="onPickerClick($event)"
           (input)="onInput($event)"
           (focus)="onFocus()"
           (blur)="onBlur()" />

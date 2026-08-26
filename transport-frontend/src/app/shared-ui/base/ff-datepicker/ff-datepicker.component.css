@@ -1,5 +1,9 @@
 @import '../_base/ff-control.styles.css';
 
+input[type='date'] {
+  cursor: pointer;
+}
+
 input[type='date']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   opacity: 0.6;

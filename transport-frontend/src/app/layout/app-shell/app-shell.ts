@@ -34,10 +34,12 @@ interface SearchHit {
   route: string;
 }
 
+import { FfToastComponent } from '@ff/ui';
+
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule],
+  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule, FfToastComponent],
   templateUrl: './app-shell.html',
   styles: [`
     :host { display: block; height: 100%; }
