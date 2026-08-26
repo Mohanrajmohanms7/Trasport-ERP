@@ -1,100 +1,49 @@
 <div class="min-h-screen flex font-sans bg-slate-50 dark:bg-slate-950">
   
-  <!-- Left Side: Immersive Dashboard Preview (hidden on mobile/tablet) -->
-  <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white p-12 flex-col justify-between relative overflow-hidden">
-    <!-- Grid pattern & glowing spotlights -->
-    <div class="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#808080_1px,transparent_1px),linear-gradient(to_bottom,#808080_1px,transparent_1px)] [background-size:24px_24px]"></div>
-    <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl"></div>
-    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl"></div>
+  <!-- Left Side: Clean Brand Presentation (hidden on mobile/tablet) -->
+  <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-indigo-700 to-slate-900 text-white p-12 flex-col justify-between relative overflow-hidden">
+    <!-- Abstract background dot grid & glow -->
+    <div class="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+    <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-blue-500/20 blur-3xl"></div>
+    <div class="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-indigo-500/20 blur-3xl"></div>
     
-    <!-- Top Brand Header -->
+    <!-- Top Brand Logo -->
     <div class="flex items-center gap-3 relative z-10 select-none">
-      <div class="w-10 h-10 rounded-xl bg-blue-600/25 border border-blue-500/30 flex items-center justify-center backdrop-blur-md">
-        <span class="material-symbols-outlined text-blue-400 text-[24px]">local_shipping</span>
+      <div class="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+        <span class="material-symbols-outlined text-white text-[24px]">local_shipping</span>
       </div>
-      <span class="text-xl font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-blue-400">TRANSAFLOW</span>
+      <span class="text-xl font-bold tracking-wider uppercase text-white/90">TRANSAFLOW</span>
     </div>
 
-    <!-- Center: Styled Mockup ERP Dashboard Panels -->
-    <div class="relative flex flex-col gap-6 w-full max-w-lg mx-auto z-10 select-none">
-      
-      <!-- Panel 1: Live Transit Route Tracker -->
-      <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.5)]">
-        <div class="flex justify-between items-center mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Live Transit Feed</span>
-          </div>
-          <span class="text-[10px] text-blue-400 font-semibold bg-blue-500/10 px-2 py-0.5 rounded-full">Active</span>
-        </div>
+    <!-- Center: Elegant Showcase Card -->
+    <div class="relative w-full max-w-sm mx-auto my-auto z-10 select-none">
+      <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 text-center shadow-2xl flex flex-col items-center gap-6">
         
-        <div class="flex items-center gap-4 py-2">
-          <div class="flex flex-col items-center">
-            <span class="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500 flex items-center justify-center text-[10px] text-blue-300 font-bold">A</span>
-            <div class="w-0.5 h-10 border-l border-dashed border-slate-700 my-1"></div>
-            <span class="w-5 h-5 rounded-full bg-indigo-500/20 border border-indigo-500 flex items-center justify-center text-[10px] text-indigo-300 font-bold">B</span>
-          </div>
-          <div class="flex-1">
-            <div class="flex justify-between items-start">
-              <div>
-                <h4 class="text-xs font-bold text-white">TN-37-AB-1234 (Kumar)</h4>
-                <p class="text-[10px] text-slate-400">En Route: Chennai → Coimbatore</p>
-              </div>
-              <span class="text-xs font-bold text-white">82%</span>
-            </div>
-            <!-- Route Progress Bar -->
-            <div class="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
-              <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full w-[82%]" style="transition: width 1s ease-out"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Grid of Stats & Fleet Categories -->
-      <div class="grid grid-cols-2 gap-4">
-        
-        <!-- Fleet Active Statuses -->
-        <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-3">Fleet Utilization</span>
-          <div class="flex flex-col gap-2">
-            <div class="flex justify-between text-[11px]">
-              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Lorry</span>
-              <span class="font-bold">2 / 3 Active</span>
-            </div>
-            <div class="flex justify-between text-[11px]">
-              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>Dumper</span>
-              <span class="font-bold">1 / 2 Active</span>
-            </div>
-            <div class="flex justify-between text-[11px]">
-              <span class="text-slate-300 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>Tanker</span>
-              <span class="font-bold">1 / 1 Active</span>
-            </div>
-          </div>
+        <!-- Big Glowing Logo Icon -->
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border border-white/20">
+          <span class="material-symbols-outlined text-white text-[44px]">local_shipping</span>
         </div>
 
-        <!-- Profit/Efficiency Index -->
-        <div class="bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Efficiency Rating</span>
-          <div class="flex items-baseline gap-2">
-            <span class="text-3xl font-extrabold tracking-tight text-white">+18.4%</span>
-            <span class="text-[10px] text-emerald-400 font-bold flex items-center">▲ Weekly</span>
-          </div>
-          <!-- Sparkline representation -->
-          <svg class="w-full h-8 mt-4 text-blue-500" viewBox="0 0 100 30" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M0 25 C10 20, 20 28, 30 15 C40 10, 50 18, 60 5 C70 0, 80 12, 100 2" stroke-linecap="round"/>
-          </svg>
+        <!-- Project Title & Tagline -->
+        <div>
+          <h2 class="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-blue-200">TRANSAFLOW</h2>
+          <p class="text-xs font-bold tracking-widest text-blue-300 uppercase mt-1">Multi-Fleet Transport ERP</p>
         </div>
+
+        <!-- Divider -->
+        <div class="w-12 h-1 bg-blue-400 rounded-full opacity-60"></div>
+
+        <!-- Brief System Explanation -->
+        <p class="text-xs leading-relaxed text-slate-200/90 max-w-xs">
+          A secure, end-to-end transport management platform built to optimize dispatch workflows, track active cargo transits, log fuel expenses, and manage company accounts in one place.
+        </p>
 
       </div>
-
     </div>
 
     <!-- Bottom Instructions Footer -->
     <div class="relative z-10 select-none">
-      <h2 class="text-xl font-bold tracking-tight mb-2 text-white/95">Next-Gen Multi-Fleet Operations</h2>
-      <p class="text-xs text-slate-450 leading-relaxed max-w-sm">
-        An all-in-one logistics solution designed to optimize dispatch workloads, track active cargo transit, manage drivers, and analyze profit sheets.
-      </p>
+      <p class="text-[10px] text-white/50 tracking-wider font-semibold">ENTERPRISE RESOURCE PLANNING SYSTEM</p>
     </div>
 
   </div>
