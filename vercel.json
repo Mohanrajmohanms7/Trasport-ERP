@@ -1,4 +1,6 @@
 {
+  "buildCommand": "cd transport-frontend && npm run build",
+  "outputDirectory": "transport-frontend/dist/transport-frontend",
   "rewrites": [
     {
       "source": "/((?!api/).*)",
