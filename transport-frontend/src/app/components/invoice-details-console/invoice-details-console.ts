@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { InvoiceMgmtService, SalesInvoice, SalesInvoiceDetail } from '../../services/invoice-mgmt.service';
 import { MasterService } from '../../services/master.service';
+import { TripMgmtService } from '../../services/trip-mgmt.service';
 import { MatTabsModule } from '@angular/material/tabs';
+
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -31,6 +33,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 })
 export class InvoiceDetailsConsoleComponent implements OnInit {
   private invoiceMgmtService = inject(InvoiceMgmtService);
+  private tripService = inject(TripMgmtService);
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
@@ -40,16 +43,19 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
 
   // States
   activeTab = signal<string>('list'); // 'list' | 'editor'
+  billingTab = signal<'ledger' | 'ready'>('ledger');
   loading = signal<boolean>(false);
   showEditor = signal<boolean>(false);
   editingInvoice = signal<SalesInvoice | null>(null);
 
   // Lists
   invoices = signal<SalesInvoice[]>([]);
+  readyTrips = signal<any[]>([]);
   customers = signal<any[]>([]);
   trips = signal<any[]>([]);
   materials = signal<any[]>([]);
   paymentTerms = signal<any[]>([]);
+
 
   get customerOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Customer --', value: '' }, ...this.customers().map(customer => ({ label: customer.name, value: customer.id }))];
@@ -76,8 +82,10 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   ngOnInit() {
     this.initForm();
     this.loadInvoices();
+    this.loadReadyTrips();
     this.loadDropdownData();
   }
+
 
   loadDropdownData() {
     this.masterService.getLookupList(this.companyId, 'PAYMENT_TERMS').subscribe(res => {
@@ -287,8 +295,66 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
           next: () => {
             this.notify.success('Invoice record deleted successfully');
             this.loadInvoices();
+            this.loadReadyTrips();
           },
           error: () => this.notify.error('Failed to delete invoice record')
+        });
+      }
+    });
+  }
+
+  setTab(tab: 'ledger' | 'ready') {
+    this.billingTab.set(tab);
+    if (tab === 'ready') {
+      this.loadReadyTrips();
+    } else {
+      this.loadInvoices();
+    }
+  }
+
+  loadReadyTrips() {
+    this.loading.set(true);
+    this.tripService.getTripsReadyForBilling().subscribe({
+      next: (res) => {
+        this.readyTrips.set(res.success && res.data ? (res.data.content || res.data) : []);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.readyTrips.set([]);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  generateInvoice(trip: any) {
+    if (!trip.id) return;
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Generate Invoice',
+        message: `Generate tax invoice draft for trip: ${trip.tripNumber}?`,
+        confirmText: 'Generate',
+        type: 'info'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.loading.set(true);
+        this.invoiceMgmtService.createInvoiceFromTrip(trip.id).subscribe({
+          next: (res) => {
+            this.loading.set(false);
+            this.notify.success(res.message || 'Invoice draft generated successfully');
+            this.loadReadyTrips();
+            this.loadInvoices();
+            this.billingTab.set('ledger');
+            if (res.data) {
+              this.openEditInvoice(res.data);
+            }
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.notify.error(err.error?.message || 'Failed to generate invoice');
+          }
         });
       }
     });

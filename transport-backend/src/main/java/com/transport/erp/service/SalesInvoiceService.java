@@ -6,13 +6,22 @@ import com.transport.erp.model.SalesInvoice;
 import com.transport.erp.model.SalesInvoiceDetail;
 import com.transport.erp.model.AppSetting;
 import com.transport.erp.repository.SalesInvoiceRepository;
+import com.transport.erp.model.Trip;
+import com.transport.erp.model.TripDetail;
+import com.transport.erp.model.BookingDetail;
+import com.transport.erp.repository.TripRepository;
+import com.transport.erp.model.AppUser;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.ArrayList;
+
 
 @Service
 public class SalesInvoiceService {
@@ -21,7 +30,11 @@ public class SalesInvoiceService {
     private SalesInvoiceRepository invoiceRepository;
 
     @Autowired
+    private TripRepository tripRepository;
+
+    @Autowired
     private TenantAccessService tenantAccess;
+
 
 
     @Autowired
@@ -205,4 +218,100 @@ public class SalesInvoiceService {
         auditService.log(username, "INVOICE_DELETED", "sales_invoices", invoice.getId(), null,
                 "Soft deleted invoice voucher: " + invoice.getInvoiceNumber());
     }
+
+    @Transactional
+    public SalesInvoice createInvoiceFromTrip(Long tripId, String username) {
+        // Concurrency duplicate prevention: lock the Trip record.
+        Trip trip = tripRepository.findAndLockById(tripId)
+                .orElseThrow(() -> new IllegalArgumentException("Trip not found or deleted with ID: " + tripId));
+
+        tenantAccess.assertOwned(trip.getCompanyId());
+
+        AppUser currentUser = tenantAccess.requireCurrentUser();
+        if (!tenantAccess.isSuperAdmin(currentUser)) {
+            if (currentUser.getBranchId() != null && trip.getBranchId() != null && !currentUser.getBranchId().equals(trip.getBranchId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Access denied: Trip belongs to another branch.");
+            }
+        }
+
+        if (!"COMPLETED".equals(trip.getStatus())) {
+
+            throw new IllegalArgumentException("Trip is not completed. Current status: " + trip.getStatus());
+        }
+
+        // Duplicate billing validation
+        List<SalesInvoice> existingInvoices = invoiceRepository.findInvoicesByTripId(tripId);
+        if (existingInvoices != null && !existingInvoices.isEmpty()) {
+            throw new IllegalArgumentException("This trip has already been invoiced under invoice number: " 
+                    + existingInvoices.get(0).getInvoiceNumber());
+        }
+
+        if (trip.getBooking() == null) {
+            throw new IllegalArgumentException("Booking is missing for this trip.");
+        }
+        if (trip.getBooking().getCustomer() == null) {
+            throw new IllegalArgumentException("Customer is missing from trip.");
+        }
+        if (trip.getDetails() == null || trip.getDetails().isEmpty()) {
+            throw new IllegalArgumentException("Billing information is incomplete. Trip has no payload details.");
+        }
+
+        SalesInvoice invoice = new SalesInvoice();
+        invoice.setCustomer(trip.getBooking().getCustomer());
+        invoice.setCompanyId(trip.getCompanyId());
+        invoice.setBranchId(trip.getBranchId() != null ? trip.getBranchId() : 1L);
+        invoice.setDiscount(BigDecimal.ZERO);
+        invoice.setStatus("DRAFT");
+        invoice.setPaymentTerms("NET_30");
+        invoice.setDetails(new ArrayList<>());
+
+        for (TripDetail td : trip.getDetails()) {
+            if (td.getMaterial() == null) {
+                throw new IllegalArgumentException("Material information is missing from trip details.");
+            }
+            if (td.getQuantity() == null || td.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Quantity is invalid for material: " + td.getMaterial().getName());
+            }
+            if (td.getRate() == null || td.getRate().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Rate/freight amount is invalid for material: " + td.getMaterial().getName());
+            }
+
+            // Find matching BookingDetail to fetch transport/freight rate and tax settings
+            BookingDetail bookingDetail = trip.getBooking().getDetails().stream()
+                    .filter(bd -> bd.getMaterial() != null && bd.getMaterial().getId().equals(td.getMaterial().getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (bookingDetail == null) {
+                throw new IllegalArgumentException("Booking detail is missing for material: " + td.getMaterial().getName());
+            }
+            if (bookingDetail.getGstPercentage() == null) {
+                throw new IllegalArgumentException("GST configuration is missing for this booking.");
+            }
+            if (bookingDetail.getTransportRate() == null) {
+                throw new IllegalArgumentException("Transport rate is missing for this booking detail.");
+            }
+
+            SalesInvoiceDetail detail = new SalesInvoiceDetail();
+            detail.setTrip(trip);
+            detail.setMaterial(td.getMaterial());
+            detail.setQuantity(td.getQuantity());
+            detail.setRate(td.getRate()); // Base rate
+            detail.setLoadingCharges(td.getLoadingCharges() != null ? td.getLoadingCharges() : BigDecimal.ZERO);
+            detail.setRoyalty(td.getRoyalty() != null ? td.getRoyalty() : BigDecimal.ZERO);
+            detail.setFreightCharges(bookingDetail.getTransportRate());
+            detail.setGstPercentage(bookingDetail.getGstPercentage());
+
+            invoice.getDetails().add(detail);
+        }
+
+        // Delegate to existing createInvoice to reuse calculation logic, save record, and write logs.
+        return createInvoice(invoice, username);
+    }
+
+    public List<SalesInvoice> getOutstandingInvoices(Long customerId, Long companyId, Long branchId) {
+        return invoiceRepository.findOutstandingInvoices(customerId, companyId, branchId);
+    }
 }
+
+

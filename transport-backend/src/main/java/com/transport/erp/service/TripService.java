@@ -5,7 +5,11 @@ import com.transport.erp.security.TenantAccessService;
 import com.transport.erp.model.Trip;
 import com.transport.erp.model.TripDetail;
 import com.transport.erp.model.AppSetting;
+import com.transport.erp.model.SalesInvoice;
+import com.transport.erp.model.AppUser;
+
 import com.transport.erp.repository.TripRepository;
+import com.transport.erp.repository.SalesInvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,12 +17,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 @Service
 public class TripService {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private SalesInvoiceRepository salesInvoiceRepository;
 
     @Autowired
     private TenantAccessService tenantAccess;
@@ -37,10 +46,14 @@ public class TripService {
 
 
     public Page<Trip> getTrips(Long companyId, String status, Pageable pageable) {
+        Page<Trip> trips;
         if (status != null && !status.trim().isEmpty()) {
-            return tripRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
+            trips = tripRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
+        } else {
+            trips = tripRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
         }
-        return tripRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        trips.forEach(this::populateBillingStatus);
+        return trips;
     }
 
     public Trip getTripById(Long id) {
@@ -48,8 +61,43 @@ public class TripService {
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + id));
         tenantAccess.assertOwned(trip.getCompanyId());
+        populateBillingStatus(trip);
         return trip;
     }
+
+    public Page<Trip> getTripsReadyForBilling(Long companyId, Pageable pageable) {
+        AppUser currentUser = tenantAccess.requireCurrentUser();
+        Long targetBranchId = null;
+        if (!tenantAccess.isSuperAdmin(currentUser)) {
+            targetBranchId = currentUser.getBranchId();
+        }
+        Page<Trip> trips = tripRepository.findCompletedTripsReadyForBilling(companyId, targetBranchId, pageable);
+        trips.forEach(this::populateBillingStatus);
+        return trips;
+    }
+
+
+    public void populateBillingStatus(Trip trip) {
+        if (trip == null) return;
+        List<SalesInvoice> invoices = salesInvoiceRepository.findInvoicesByTripId(trip.getId());
+        if (invoices != null && !invoices.isEmpty()) {
+            SalesInvoice inv = invoices.get(0);
+            if ("DRAFT".equals(inv.getStatus())) {
+                trip.setBillingStatus("INVOICE_DRAFT");
+            } else {
+                trip.setBillingStatus("INVOICED");
+            }
+            trip.setAssociatedInvoiceNumber(inv.getInvoiceNumber());
+            trip.setAssociatedInvoiceId(inv.getId());
+        } else {
+            if ("COMPLETED".equals(trip.getStatus())) {
+                trip.setBillingStatus("READY_FOR_BILLING");
+            } else {
+                trip.setBillingStatus("NOT_READY");
+            }
+        }
+    }
+
 
     @Transactional
     public Trip createTrip(Trip trip, String createdByUsername) {

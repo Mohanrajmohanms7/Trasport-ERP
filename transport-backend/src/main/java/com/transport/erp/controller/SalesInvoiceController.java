@@ -2,6 +2,7 @@ package com.transport.erp.controller;
 
 import com.transport.erp.dto.ApiResponse;
 import com.transport.erp.model.SalesInvoice;
+import com.transport.erp.model.AppUser;
 import com.transport.erp.security.TenantAccessService;
 import com.transport.erp.service.SalesInvoiceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/invoices")
@@ -76,4 +78,21 @@ public class SalesInvoiceController {
         SalesInvoice cancelled = invoiceService.cancelInvoice(id, activeUser);
         return ApiResponse.success(cancelled, "Invoice cancelled successfully");
     }
+
+    @PostMapping("/from-trip/{tripId}")
+    public ApiResponse<SalesInvoice> createFromTrip(@PathVariable Long tripId) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        SalesInvoice created = invoiceService.createInvoiceFromTrip(tripId, activeUser);
+        return ApiResponse.success(created, "Draft invoice generated from completed trip successfully");
+    }
+
+    @GetMapping("/customer/{customerId}/outstanding")
+    public ApiResponse<List<SalesInvoice>> getOutstandingInvoices(@PathVariable Long customerId) {
+        AppUser currentUser = tenantAccess.requireCurrentUser();
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        Long branchId = currentUser.getBranchId();
+        List<SalesInvoice> outstanding = invoiceService.getOutstandingInvoices(customerId, companyId, branchId);
+        return ApiResponse.success(outstanding, "Outstanding invoices fetched successfully");
+    }
 }
+

@@ -56,6 +56,11 @@ export class InvoiceMgmtService {
     return this.http.post<ApiResponse<SalesInvoice>>('/api/v1/invoices', invoice);
   }
 
+  createInvoiceFromTrip(tripId: number): Observable<ApiResponse<SalesInvoice>> {
+    return this.http.post<ApiResponse<SalesInvoice>>(`/api/v1/invoices/from-trip/${tripId}`, {});
+  }
+
+
   updateInvoice(id: number, invoice: SalesInvoice): Observable<ApiResponse<SalesInvoice>> {
     return this.http.put<ApiResponse<SalesInvoice>>(`/api/v1/invoices/${id}`, invoice);
   }

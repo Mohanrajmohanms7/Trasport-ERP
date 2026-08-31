@@ -39,6 +39,11 @@ public class CustomerLedgerService {
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String username) {
+        postToLedger(customerId, receipt, debit, credit, null, username);
+    }
+
+    @Transactional
+    public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String remarks, String username) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
         tenantAccess.assertCompanyAccess(customer.getCompanyId());
@@ -56,8 +61,9 @@ public class CustomerLedgerService {
         entry.setDebitAmount(debit);
         entry.setCreditAmount(credit);
         entry.setRunningBalance(newBal);
-        entry.setRemarks(receipt != null ? "Payment received via receipt " + receipt.getReceiptNumber() : "Manual ledger adjustment");
+        entry.setRemarks(remarks != null ? remarks : (receipt != null ? "Payment received via receipt " + receipt.getReceiptNumber() : "Manual ledger adjustment"));
         entry.setIsDeleted(false);
+
         entry.setCreatedBy(username);
         entry.setUpdatedBy(username);
         entry.setCompanyId(tenantAccess.resolveCompanyId(customer.getCompanyId()));

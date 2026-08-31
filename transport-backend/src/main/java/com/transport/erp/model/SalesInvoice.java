@@ -40,7 +40,14 @@ public class SalesInvoice extends BaseEntity {
     @Column(name = "net_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal netAmount = BigDecimal.ZERO;
 
+    @Column(name = "paid_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
+    @Column(name = "payment_status", nullable = false, length = 50)
+    private String paymentStatus = "UNPAID"; // UNPAID, PARTIALLY_PAID, PAID
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<SalesInvoiceDetail> details = new ArrayList<>();
 }
+

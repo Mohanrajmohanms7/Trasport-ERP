@@ -1,179 +1,872 @@
 <div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+
   
+
   <!-- Header Title -->
+
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+
     <div class="flex flex-col gap-1">
+
       <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+
         <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">account_balance</span>
+
         Payments & Ledger
+
       </h1>
+
       <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Record customer deposits receipts, reconcile outstanding invoice balances, and audit running ledgers</p>
+
     </div>
+
   </header>
 
+
+
   <!-- Main console layouts -->
+
   <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+
     
+
     <!-- Tab Controls selector -->
+
     <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+
       <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+
         Receipts Registry
+
       </button>
+
       <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+
         Customer Ledger running balance
+
       </button>
+
+      <button (click)="toggleDashboard()" [class.border-b-2]="activeTab() === 'dashboard'" [class.border-blue-600]="activeTab() === 'dashboard'" [class.text-slate-900]="activeTab() === 'dashboard'" [class.dark:text-white]="activeTab() === 'dashboard'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+
+        Settlement Dashboard
+
+      </button>
+
     </div>
+
+
 
     <!-- Tab Viewports -->
+
     <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+
       
+
       <!-- 1. Customer Receipts Viewport -->
+
       @if (activeTab() === 'receipts') {
+
         <div class="flex justify-between items-center shrink-0">
+
           <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Deposited Receipts</span>
+
           <button (click)="openAddReceipt()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+
             <span class="material-icons text-sm">payment</span> Record Payment Receipt
+
           </button>
+
         </div>
 
+
+
         <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+
           <table class="w-full text-left text-xs border-collapse">
+
             <thead>
+
               <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+
                 <th class="p-4">Receipt Number</th>
+
                 <th class="p-4">Receipt Date</th>
+
                 <th class="p-4">Customer</th>
+
                 <th class="p-4">Booking Number</th>
+
                 <th class="p-4 text-right">Amount Received</th>
+
                 <th class="p-4 text-right">Advance Portion</th>
+
                 <th class="p-4">Payment Method</th>
+
                 <th class="p-4">Reference Reference</th>
+
+                <th class="p-4 text-center">Status</th>
+
                 <th class="p-4 text-center">Actions</th>
+
               </tr>
+
             </thead>
+
             <tbody>
+
               @for (rct of receipts(); track rct.receiptNumber) {
+
                 <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+
                   <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ rct.receiptNumber }}</td>
+
                   <td class="p-4 text-slate-600 dark:text-slate-350">{{ rct.receiptDate }}</td>
+
                   <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ rct.customer?.name }}</td>
+
                   <td class="p-4 font-mono text-slate-700 dark:text-slate-300">{{ rct.booking?.bookingNumber || '-' }}</td>
+
                   <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ rct.amountReceived | number }}</td>
+
                   <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ rct.advanceAmount | number }}</td>
+
                   <td class="p-4 text-slate-600 dark:text-slate-350 font-semibold">{{ rct.paymentMethod }}</td>
+
                   <td class="p-4 text-slate-500 font-mono text-[10px]">{{ rct.referenceNumber || 'N/A' }}</td>
+
                   <td class="p-4 text-center">
-                    <div class="flex items-center justify-center gap-2">
-                      <button (click)="openEditReceipt(rct)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Voucher">
-                        <span class="material-icons text-sm">edit</span>
-                      </button>
-                      <button (click)="deleteReceipt(rct)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Voucher">
-                        <span class="material-icons text-sm">delete</span>
-                      </button>
-                    </div>
+
+                    @if (rct.status === 'DRAFT') {
+
+                      <span class="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-450 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+
+                        Draft
+
+                      </span>
+
+                    } @else if (rct.status === 'APPROVED') {
+
+                      <span class="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-450 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+
+                        Approved
+
+                      </span>
+
+                    } @else {
+
+                      <span class="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 font-bold px-2 py-0.5 rounded text-[10px] uppercase">
+
+                        Cancelled
+
+                      </span>
+
+                    }
+
                   </td>
+
+                  <td class="p-4 text-center">
+
+                    <div class="flex items-center justify-center gap-2">
+
+                      @if (rct.status === 'DRAFT') {
+
+                        <button (click)="openEditReceipt(rct)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Draft">
+
+                          <span class="material-icons text-sm">edit</span>
+
+                        </button>
+
+                        <button (click)="approveReceipt(rct)" class="p-1 text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-450 transition" title="Approve Receipt">
+
+                          <span class="material-icons text-sm">check_circle</span>
+
+                        </button>
+
+                        <button (click)="cancelReceipt(rct)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Cancel Draft">
+
+                          <span class="material-icons text-sm">block</span>
+
+                        </button>
+
+                        <button (click)="deleteReceipt(rct)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Delete Draft">
+
+                          <span class="material-icons text-sm">delete</span>
+
+                        </button>
+
+                      } @else if (rct.status === 'APPROVED') {
+
+                        <button (click)="cancelReceipt(rct)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Cancel & Reverse Receipt">
+
+                          <span class="material-icons text-sm">block</span>
+
+                        </button>
+
+                      }
+
+                    </div>
+
+                  </td>
+
                 </tr>
-              } @empty {
-                <tr>
-                  <td colspan="9" class="p-8 text-center text-slate-500 font-semibold">No customer receipts registered.</td>
-                </tr>
+
+
+
               }
+
+ @empty {
+
+                <tr>
+
+                  <td colspan="9" class="p-8 text-center text-slate-500 font-semibold">No customer receipts registered.</td>
+
+                </tr>
+
+              }
+
             </tbody>
+
           </table>
+
         </div>
+
       }
+
+
 
       <!-- 2. Customer Ledgers Viewport -->
+
       @if (activeTab() === 'ledger') {
+
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800/60 pb-3 shrink-0">
+
           <div class="w-64">
+
             <ff-dropdown [formControl]="selectedCustomerControl" label="Choose Customer Profile" [options]="ledgerCustomerOptions" searchPlaceholder="Search options..." />
+
           </div>
+
           <span class="text-[10px] text-slate-500 font-mono">Real-time Outstanding Balance ledger summaries</span>
+
         </div>
+
+
 
         <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+
           <table class="w-full text-left text-xs border-collapse">
+
             <thead>
+
               <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+
                 <th class="p-4">Transaction Date</th>
+
                 <th class="p-4">Adjustment Description / remarks</th>
+
                 <th class="p-4 text-right">Debit (Owed)</th>
+
                 <th class="p-4 text-right">Credit (Paid)</th>
+
                 <th class="p-4 text-right">Outstanding Running Balance</th>
+
               </tr>
+
             </thead>
+
             <tbody>
+
               @for (entry of ledgerEntries(); track entry.id) {
+
                 <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+
                   <td class="p-4 text-slate-600 dark:text-slate-350">{{ entry.createdDate | date:'mediumDate' }}</td>
+
                   <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ entry.remarks }}</td>
+
                   <td class="p-4 text-right font-mono text-rose-700 dark:text-rose-400">₹{{ entry.debitAmount | number }}</td>
+
                   <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400">₹{{ entry.creditAmount | number }}</td>
+
                   <td class="p-4 text-right font-mono text-slate-900 dark:text-white font-bold">₹{{ entry.runningBalance | number }}</td>
+
                 </tr>
+
               } @empty {
+
                 <tr>
+
                   <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No transactions posted to customer ledger.</td>
+
                 </tr>
+
               }
+
             </tbody>
+
           </table>
+
         </div>
+
       }
 
+      <!-- 3. Settlement Dashboard Viewport -->
+      @if (activeTab() === 'dashboard') {
+        @if (dashboardLoading()) {
+          <div class="flex-grow flex flex-col items-center justify-center p-8 text-slate-500">
+            <span class="material-icons animate-spin text-3xl text-blue-600">sync</span>
+            <span class="text-xs font-bold mt-2">Computing financial data analytics...</span>
+          </div>
+        } @else if (dashboardError()) {
+          <div class="flex-grow flex flex-col items-center justify-center p-8 text-rose-500">
+            <span class="material-icons text-3xl">error</span>
+            <span class="text-xs font-bold mt-2">{{ dashboardError() }}</span>
+            <button (click)="refreshDashboard()" class="mt-4 bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 px-3 rounded text-xs transition font-semibold">Retry</button>
+          </div>
+        } @else {
+          <!-- Dashboard Date Filter Bar -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 bg-slate-50 dark:bg-slate-950/20 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div class="flex flex-wrap gap-2.5 items-center">
+              <div class="flex flex-col">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">From Date</span>
+                <input type="date" [formControl]="dashboardFromDateControl" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2.5 py-1.5 focus:outline-none" />
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">To Date</span>
+                <input type="date" [formControl]="dashboardToDateControl" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2.5 py-1.5 focus:outline-none" />
+              </div>
+              <div class="flex items-end gap-1.5 mt-4">
+                <button (click)="applyDashboardFilters()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-3 rounded shadow-sm text-xs transition">Apply</button>
+                <button (click)="clearDashboardFilters()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-350 py-1.5 px-3 rounded text-xs transition font-semibold">Clear</button>
+              </div>
+            </div>
+            <button (click)="refreshDashboard()" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-350 py-1.5 px-3 rounded text-xs transition font-bold shadow-sm self-end">
+              <span class="material-icons text-sm">refresh</span> Refresh Dashboard
+            </button>
+          </div>
+
+          @if (settlementSummary()) {
+            <!-- Summary Metrics Grid Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-3 shrink-0 mt-3">
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Received</span>
+                <span class="text-sm font-extrabold text-slate-900 dark:text-white font-mono">₹{{ settlementSummary().totalReceived | number:'1.2-2' }}</span>
+              </div>
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Allocated Portion</span>
+                <span class="text-sm font-extrabold text-blue-650 dark:text-blue-450 font-mono">₹{{ settlementSummary().totalAllocated | number:'1.2-2' }}</span>
+              </div>
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Advance Held</span>
+                <span class="text-sm font-extrabold text-slate-700 dark:text-slate-350 font-mono">₹{{ settlementSummary().totalAdvance | number:'1.2-2' }}</span>
+              </div>
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Outstanding</span>
+                <span class="text-sm font-extrabold text-rose-600 dark:text-rose-450 font-mono">₹{{ settlementSummary().totalOutstanding | number:'1.2-2' }}</span>
+              </div>
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Total Cancelled</span>
+                <span class="text-sm font-extrabold text-slate-400 dark:text-slate-500 font-mono">₹{{ settlementSummary().totalCancelled | number:'1.2-2' }}</span>
+              </div>
+              <div class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 shadow-sm">
+                <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Approved Receipts</span>
+                <span class="text-sm font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">{{ settlementSummary().totalApprovedReceipts }}</span>
+              </div>
+            </div>
+
+            <!-- Invoices statuses stats sub-bar -->
+            <div class="text-[10px] text-slate-500 dark:text-slate-400 font-semibold px-1 shrink-0 flex gap-4 mt-2 mb-2">
+              <span>🧾 Outstanding Invoices: <span class="text-rose-600 font-bold">{{ settlementSummary().totalOutstandingInvoices }}</span></span>
+              <span>• Unpaid: <span class="text-slate-700 dark:text-slate-300 font-bold">{{ settlementSummary().totalUnpaidInvoices }}</span></span>
+              <span>• Partially Paid: <span class="text-blue-600 font-bold">{{ settlementSummary().totalPartiallyPaidInvoices }}</span></span>
+              <span>• Paid Invoices: <span class="text-emerald-600 font-bold">{{ settlementSummary().totalPaidInvoices }}</span></span>
+              <span>• Total Customers: <span class="text-slate-800 dark:text-white font-bold">{{ settlementSummary().totalCustomers }}</span></span>
+            </div>
+          }
+
+          <!-- Grid tab panels layout -->
+          <mat-tab-group class="flex-grow min-h-0 mt-2">
+            
+            <!-- Tab A: Customer Outstanding Summaries -->
+            <mat-tab label="Customer Outstanding balances">
+              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
+                <div class="flex justify-between items-center shrink-0">
+                  <span class="text-xs font-bold text-slate-650 dark:text-slate-400 uppercase tracking-wider">Top Customer Balances</span>
+                </div>
+
+                <div class="flex-grow min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                        <th class="p-3">Customer Code</th>
+                        <th class="p-3">Customer Name</th>
+                        <th class="p-3 text-right">Invoice Count</th>
+                        <th class="p-3 text-right">Total Invoice Amt</th>
+                        <th class="p-3 text-right">Paid Portion</th>
+                        <th class="p-3 text-right">Outstanding Balance</th>
+                        <th class="p-3 text-right">Advance Held</th>
+                        <th class="p-3 text-center">Unpaid / Partial / Paid</th>
+                        <th class="p-3 text-right">Last Payment Date</th>
+                        <th class="p-3 text-center">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (cust of customerOutstanding(); track cust.customerId) {
+                        <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/50 transition">
+                          <td class="p-3 font-mono text-slate-600 dark:text-slate-450">{{ cust.customerCode || 'N/A' }}</td>
+                          <td class="p-3 text-slate-900 dark:text-white font-bold">{{ cust.customerName }}</td>
+                          <td class="p-3 text-right font-mono">{{ cust.invoiceCount }}</td>
+                          <td class="p-3 text-right font-mono font-bold">₹{{ cust.totalInvoiceAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-slate-500">₹{{ cust.totalPaidAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-rose-600 font-bold">₹{{ cust.totalOutstanding | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-emerald-600 font-bold">₹{{ cust.totalAdvance | number:'1.2-2' }}</td>
+                          <td class="p-3 text-center text-[10px]">
+                            <span class="text-rose-600 font-bold">{{ cust.unpaidInvoiceCount }}</span> / 
+                            <span class="text-blue-600 font-bold">{{ cust.partiallyPaidInvoiceCount }}</span> / 
+                            <span class="text-emerald-600 font-bold">{{ cust.paidInvoiceCount }}</span>
+                          </td>
+                          <td class="p-3 text-right text-slate-500">{{ cust.lastPaymentDate ? (cust.lastPaymentDate | date:'mediumDate') : 'No Payments' }}</td>
+                          <td class="p-3 text-center">
+                            <button (click)="openCustomerOutstanding(cust.customerId)" class="bg-blue-600 text-white font-bold py-1 px-2.5 rounded text-[10px] hover:bg-blue-500 transition">Drill down</button>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="10" class="p-8 text-center text-slate-500 font-semibold">No customer outstanding summaries calculated.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Tab B: Invoice Aging & Buckets -->
+            <mat-tab label="Invoice Aging Analysis">
+              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
+                
+                @if (agingSummary()) {
+                  <!-- Aging Summary Buckets Bar -->
+                  <div class="grid grid-cols-7 gap-2 shrink-0 select-none">
+                    <div (click)="openAgingBucket('CURRENT')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === 'CURRENT'" [class.ring-blue-600]="selectedAgingBucket() === 'CURRENT'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">CURRENT</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().currentAmount | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('1_30')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === '1_30'" [class.ring-blue-600]="selectedAgingBucket() === '1_30'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">1-30 Days</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().days1To30 | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('31_60')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === '31_60'" [class.ring-blue-600]="selectedAgingBucket() === '31_60'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">31-60 Days</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().days31To60 | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('61_90')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === '61_90'" [class.ring-blue-600]="selectedAgingBucket() === '61_90'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">61-90 Days</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().days61To90 | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('91_180')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === '91_180'" [class.ring-blue-600]="selectedAgingBucket() === '91_180'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">91-180 Days</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().days91To180 | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('181_365')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === '181_365'" [class.ring-blue-600]="selectedAgingBucket() === '181_365'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">181-365 Days</span>
+                      <span class="text-xs font-black text-slate-900 dark:text-white font-mono">₹{{ agingSummary().days181To365 | number:'1.0-0' }}</span>
+                    </div>
+                    <div (click)="openAgingBucket('ABOVE_365')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
+                         [class.ring-2]="selectedAgingBucket() === 'ABOVE_365'" [class.ring-blue-600]="selectedAgingBucket() === 'ABOVE_365'">
+                      <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">Above 365 Days</span>
+                      <span class="text-xs font-black text-rose-600 dark:text-rose-400 font-mono">₹{{ agingSummary().above365 | number:'1.0-0' }}</span>
+                    </div>
+                  </div>
+                }
+
+                <div class="flex justify-between items-center shrink-0">
+                  <div class="flex gap-2 items-center text-xs font-bold text-slate-650 dark:text-slate-350">
+                    <span>Outstanding Invoices Aging List</span>
+                    @if (selectedAgingBucket()) {
+                      <span class="bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase font-mono">Bucket: {{ selectedAgingBucket() }}</span>
+                    }
+                  </div>
+                  @if (selectedAgingBucket() || selectedDashboardCustomer()) {
+                    <button (click)="selectedAgingBucket.set(''); selectedDashboardCustomer.set(''); loadAgingInvoices();" class="text-[10px] text-blue-600 hover:text-blue-500 font-semibold underline">Show All Invoices</button>
+                  }
+                </div>
+
+                <div class="flex-grow min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                        <th class="p-3">Invoice Number</th>
+                        <th class="p-3">Customer</th>
+                        <th class="p-3">Invoice Date</th>
+                        <th class="p-3">Due Date</th>
+                        <th class="p-3 text-right">Net Amount</th>
+                        <th class="p-3 text-right">Paid Amount</th>
+                        <th class="p-3 text-right">Outstanding</th>
+                        <th class="p-3 text-center">Payment Status</th>
+                        <th class="p-3 text-right">Aging Days</th>
+                        <th class="p-3">Aging Bucket</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (inv of agingInvoices(); track inv.invoiceId) {
+                        <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/50 transition">
+                          <td class="p-3 font-mono font-bold text-slate-850 dark:text-slate-200">{{ inv.invoiceNumber }}</td>
+                          <td class="p-3 text-slate-800 dark:text-slate-350">{{ inv.customerName }}</td>
+                          <td class="p-3 text-slate-500">{{ inv.invoiceDate | date:'mediumDate' }}</td>
+                          <td class="p-3 font-bold text-slate-700 dark:text-slate-300">{{ inv.dueDate | date:'mediumDate' }}</td>
+                          <td class="p-3 text-right font-mono font-bold">₹{{ inv.invoiceAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-slate-500">₹{{ inv.paidAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-rose-600 font-bold">₹{{ inv.outstandingAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                                  [class.bg-slate-100]="inv.paymentStatus === 'UNPAID'" [class.text-slate-800]="inv.paymentStatus === 'UNPAID'"
+                                  [class.bg-blue-100]="inv.paymentStatus === 'PARTIALLY_PAID'" [class.text-blue-800]="inv.paymentStatus === 'PARTIALLY_PAID'"
+                                  [class.bg-emerald-100]="inv.paymentStatus === 'PAID'" [class.text-emerald-800]="inv.paymentStatus === 'PAID'">{{ inv.paymentStatus }}</span>
+                          </td>
+                          <td class="p-3 text-right font-mono font-bold">{{ inv.agingDays }} Days</td>
+                          <td class="p-3 font-mono text-[10px] text-slate-500 uppercase">{{ inv.agingBucket }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="10" class="p-8 text-center text-slate-500 font-semibold">No outstanding invoices matching criteria.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Tab C: Receipt reconciliation -->
+            <mat-tab label="Receipt Allocations Audit">
+              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
+                <span class="text-xs font-bold text-slate-650 dark:text-slate-350 uppercase tracking-wider shrink-0">Allocations Reconciliation Sheet</span>
+                
+                <div class="flex-grow min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-105 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                        <th class="p-3">Receipt Number</th>
+                        <th class="p-3">Receipt Date</th>
+                        <th class="p-3">Customer</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3 text-right">Received Amount</th>
+                        <th class="p-3 text-right">Total Allocated</th>
+                        <th class="p-3 text-right">Advance Held</th>
+                        <th class="p-3 text-right">Difference</th>
+                        <th class="p-3 text-right">Allocations Count</th>
+                        <th class="p-3 text-center">Audit Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of reconciliationRows(); track row.receiptId) {
+                        <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/50 transition">
+                          <td class="p-3 font-mono font-bold text-slate-805 dark:text-slate-200">{{ row.receiptNumber }}</td>
+                          <td class="p-3 text-slate-500">{{ row.receiptDate | date:'mediumDate' }}</td>
+                          <td class="p-3 text-slate-850 dark:text-slate-200 font-semibold">{{ row.customerName }}</td>
+                          <td class="p-3 font-bold text-[10px] uppercase"
+                              [class.text-amber-500]="row.status === 'DRAFT'"
+                              [class.text-emerald-600]="row.status === 'APPROVED'"
+                              [class.text-rose-600]="row.status === 'CANCELLED'">{{ row.status }}</td>
+                          <td class="p-3 text-right font-mono font-bold">₹{{ row.amountReceived | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-blue-600">₹{{ row.totalAllocated | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-slate-600">₹{{ row.advanceAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono" [class.text-rose-600]="row.reconciliationDifference > 0" [class.font-bold]="row.reconciliationDifference > 0">₹{{ row.reconciliationDifference | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono">{{ row.allocationCount }}</td>
+                          <td class="p-3 text-center">
+                            <span class="px-2.5 py-0.5 rounded text-[9px] font-extrabold uppercase font-mono tracking-wide"
+                                  [class.bg-emerald-100]="row.reconciliationStatus === 'BALANCED'" [class.text-emerald-800]="row.reconciliationStatus === 'BALANCED'"
+                                  [class.bg-rose-100]="row.reconciliationStatus === 'MISMATCH'" [class.text-rose-800]="row.reconciliationStatus === 'MISMATCH'">
+                              {{ row.reconciliationStatus }}
+                            </span>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="10" class="p-8 text-center text-slate-500 font-semibold">No receipt reconciliation records available.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </mat-tab>
+
+            <!-- Tab D: Customer Payment Performance -->
+            <mat-tab label="Payment Performance Metrics">
+              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
+                <span class="text-xs font-bold text-slate-650 dark:text-slate-350 uppercase tracking-wider shrink-0">Customer Settlement Speed & Volume metrics</span>
+                
+                <div class="flex-grow min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold text-[10px]">
+                        <th class="p-3">Customer Name</th>
+                        <th class="p-3 text-right">Total Payments</th>
+                        <th class="p-3 text-right">Total Received</th>
+                        <th class="p-3 text-right">Allocated Amount</th>
+                        <th class="p-3 text-right">Advance Portions</th>
+                        <th class="p-3 text-right">Cancelled Vouchers</th>
+                        <th class="p-3 text-right">Avg Receipt Size</th>
+                        <th class="p-3 text-right">Last Payment</th>
+                        <th class="p-3 text-right">Current Outstanding</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (perf of paymentPerformance(); track perf.customerId) {
+                        <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/50 transition">
+                          <td class="p-3 text-slate-900 dark:text-white font-bold">{{ perf.customerName }}</td>
+                          <td class="p-3 text-right font-mono">{{ perf.paymentCount }}</td>
+                          <td class="p-3 text-right font-mono font-bold">₹{{ perf.totalReceived | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-blue-600">₹{{ perf.totalAllocated | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-emerald-600 font-bold font-bold font-bold font-bold">₹{{ perf.totalAdvance | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono text-slate-400 font-mono">₹{{ perf.totalCancelled | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right font-mono font-bold">₹{{ perf.averageReceiptAmount | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right text-slate-500">{{ perf.lastPaymentDate ? (perf.lastPaymentDate | date:'mediumDate') : 'No Payments' }}</td>
+                          <td class="p-3 text-right font-mono text-rose-600 font-bold font-bold font-bold">₹{{ perf.outstandingAmount | number:'1.2-2' }}</td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="9" class="p-8 text-center text-slate-500 font-semibold">No customer metrics computed.</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
+        }
+      }
+
+
+
     </div>
+
   </main>
 
+
+
   <!-- Centered Add/Edit Receipt Popup -->
+
   @if (showEditor()) {
+
     <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+
          (click)="showEditor.set(false)">
+
       <div class="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+
            (click)="$event.stopPropagation()">
 
+
+
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+
           <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+
             <span class="material-icons text-blue-600 dark:text-blue-400">payment</span>
+
             {{ editingReceipt() ? 'Edit Receipt Voucher' : 'Record Payment Receipt' }}
+
           </h2>
+
           <button type="button" (click)="showEditor.set(false)"
+
                   class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+
             <span class="material-icons">close</span>
+
           </button>
+
         </div>
 
+
+
         <form [formGroup]="receiptForm" (ngSubmit)="saveReceipt()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
+
           <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               <div formGroupName="customer">
+
                 <ff-dropdown formControlName="id" label="Select Customer Profile" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+
               </div>
+
               <div formGroupName="booking">
+
                 <ff-dropdown formControlName="id" label="Link Active Booking Request" [options]="bookingOptions" searchPlaceholder="Search options..." />
+
               </div>
+
             </div>
 
+
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               <ff-number formControlName="amountReceived" label="Amount Received" placeholder="0.00" [min]="0" [required]="true" />
+
               <ff-number formControlName="advanceAmount" label="Advance Allocation" placeholder="0.00" [min]="0" [required]="true" />
+
             </div>
 
+
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
               <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
+
               <ff-textbox formControlName="referenceNumber" label="Reference Transaction Number" placeholder="UPI txn or Cheque Ref" prefixIcon="tag" />
+
             </div>
+
+
 
             <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Reconciliation remarks details" prefixIcon="notes" />
+
+
+
+            @if (!editingReceipt() && outstandingInvoices().length > 0) {
+
+              <div class="border-t border-slate-200 dark:border-slate-800 pt-4 flex flex-col gap-2">
+
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">Reconcile / Allocate Outstanding Invoices</span>
+
+                <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20 max-h-60 overflow-y-auto">
+
+                  <table class="w-full text-left border-collapse text-xs">
+
+                    <thead>
+
+                      <tr class="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold">
+
+                        <th class="p-3 w-10 text-center">Select</th>
+
+                        <th class="p-3">Invoice Number</th>
+
+                        <th class="p-3">Net Amount</th>
+
+                        <th class="p-3">Outstanding</th>
+
+                        <th class="p-3 w-36">Allocation (₹)</th>
+
+                      </tr>
+
+                    </thead>
+
+                    <tbody formArrayName="allocations">
+
+                      @for (ctrl of allocationsFormArray.controls; track ctrl.value.invoiceId; let i = $index) {
+
+                        <tr [formGroupName]="i" class="border-b border-slate-100 dark:border-slate-900/60 hover:bg-slate-100/40 dark:hover:bg-slate-950/40">
+
+                          <td class="p-3 text-center">
+
+                            <input type="checkbox" formControlName="selected" (change)="toggleInvoiceSelection(i)" class="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+
+                          </td>
+
+                          <td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-300">{{ ctrl.value.invoiceNumber }}</td>
+
+                          <td class="p-3 text-slate-600 dark:text-slate-400">₹{{ ctrl.value.netAmount | number:'1.2-2' }}</td>
+
+                          <td class="p-3 font-semibold text-rose-600 dark:text-rose-450">₹{{ ctrl.value.outstandingAmount | number:'1.2-2' }}</td>
+
+                          <td class="p-3">
+
+                            <input type="number" formControlName="amount" [min]="0" [max]="ctrl.value.outstandingAmount" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none" />
+
+                          </td>
+
+                        </tr>
+
+                      }
+
+                    </tbody>
+
+                  </table>
+
+                </div>
+
+                <div class="flex flex-wrap justify-between items-center gap-4 mt-1 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100/60 dark:border-blue-900/40 rounded-xl p-3 text-xs">
+
+                  <div class="text-slate-600 dark:text-slate-400">
+
+                    Received Amount: <span class="font-bold text-slate-900 dark:text-white">₹{{ receiptForm.get('amountReceived')?.value || 0 | number:'1.2-2' }}</span>
+
+                  </div>
+
+                  <div class="text-slate-600 dark:text-slate-400">
+
+                    Allocated Amount: <span class="font-bold text-blue-700 dark:text-blue-400">₹{{ totalAllocated | number:'1.2-2' }}</span>
+
+                  </div>
+
+                  <div class="text-slate-600 dark:text-slate-400">
+
+                    Unallocated (Advance): <span class="font-bold text-emerald-600 dark:text-emerald-450">₹{{ remainingUnallocated | number:'1.2-2' }}</span>
+
+                  </div>
+
+                </div>
+
+                @if (remainingUnallocated < 0) {
+
+                  <div class="text-xs text-rose-600 dark:text-rose-450 font-semibold mt-1">
+
+                    ⚠️ Total allocated amount cannot exceed received amount.
+
+                  </div>
+
+                }
+
+              </div>
+
+            } @else if (!editingReceipt()) {
+
+              <div class="text-center p-4 border border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/20 text-slate-500 text-xs">
+
+                No outstanding invoices found for this customer profile. Payment will be treated as an advance/unallocated deposit.
+
+              </div>
+
+            }
+
           </div>
+
+
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
-            <ff-button type="submit" label="Save Receipt" icon="save" variant="primary" [disabled]="receiptForm.invalid" />
+
+            <ff-button type="submit" label="Save Receipt" icon="save" variant="primary" [disabled]="receiptForm.invalid || (!editingReceipt() && remainingUnallocated < 0)" />
+
           </div>
+
         </form>
+
+
+
       </div>
+
     </div>
+
   }
 
+
+
 </div>
+
+
+The above content shows the entire, complete file contents of the requested file.

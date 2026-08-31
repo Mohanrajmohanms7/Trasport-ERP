@@ -41,4 +41,14 @@ public class Trip extends BaseEntity {
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<TripDetail> details = new ArrayList<>();
+
+    @Transient
+    private String billingStatus;
+
+    @Transient
+    private String associatedInvoiceNumber;
+
+    @Transient
+    private Long associatedInvoiceId;
 }
+

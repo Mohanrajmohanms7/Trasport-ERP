@@ -76,4 +76,15 @@ public class TripController {
         Trip completed = tripService.completeTrip(id, activeUser);
         return ApiResponse.success(completed, "Trip completed successfully");
     }
+
+    @GetMapping("/ready-for-billing")
+    public ApiResponse<Page<Trip>> getReadyForBilling(
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Long targetCompanyId = tenantAccess.resolveCompanyId(companyId);
+        Page<Trip> data = tripService.getTripsReadyForBilling(targetCompanyId, pageable);
+        return ApiResponse.success(data, "Unbilled completed trips fetched successfully");
+    }
 }

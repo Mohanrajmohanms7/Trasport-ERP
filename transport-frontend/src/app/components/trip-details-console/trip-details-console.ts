@@ -1,7 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TripMgmtService, Trip, TripDetail } from '../../services/trip-mgmt.service';
+import { InvoiceMgmtService } from '../../services/invoice-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
@@ -11,6 +13,7 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+
 
 @Component({
   selector: 'app-trip-details-console',
@@ -32,12 +35,15 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 })
 export class TripDetailsConsoleComponent implements OnInit {
   private tripMgmtService = inject(TripMgmtService);
+  private invoiceMgmtService = inject(InvoiceMgmtService);
+  private router = inject(Router);
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
+
 
   // Lists
   trips = signal<Trip[]>([]);
@@ -279,5 +285,39 @@ export class TripDetailsConsoleComponent implements OnInit {
         });
       }
     });
+  }
+
+  generateInvoice(trip: any) {
+    if (!trip.id) return;
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Generate Invoice',
+        message: `Generate tax invoice draft for trip: ${trip.tripNumber}?`,
+        confirmText: 'Generate',
+        type: 'info'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.invoiceMgmtService.createInvoiceFromTrip(trip.id!).subscribe({
+          next: (res) => {
+            this.notify.success(res.message || 'Invoice draft generated successfully');
+            this.router.navigate(['/billing-invoices']);
+          },
+          error: (err) => {
+            this.notify.error(err.error?.message || 'Failed to generate invoice');
+          }
+        });
+      }
+    });
+  }
+
+  continueInvoice(trip: any) {
+    this.router.navigate(['/billing-invoices']);
+  }
+
+  viewInvoice(trip: any) {
+    this.router.navigate(['/billing-invoices']);
   }
 }

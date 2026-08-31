@@ -23,6 +23,9 @@ export interface Trip {
   status?: string; // PLANNED, DISPATCHED, COMPLETED, CANCELLED
   remarks?: string;
   details: TripDetail[];
+  billingStatus?: string;
+  associatedInvoiceNumber?: string;
+  associatedInvoiceId?: number;
 }
 
 export interface ApiResponse<T> {
@@ -41,6 +44,11 @@ export class TripMgmtService {
   getTrips(params?: any): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>('/api/v1/trips', { params });
   }
+
+  getTripsReadyForBilling(params?: any): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>('/api/v1/trips/ready-for-billing', { params });
+  }
+
 
   getTripById(id: number): Observable<ApiResponse<Trip>> {
     return this.http.get<ApiResponse<Trip>>(`/api/v1/trips/${id}`);

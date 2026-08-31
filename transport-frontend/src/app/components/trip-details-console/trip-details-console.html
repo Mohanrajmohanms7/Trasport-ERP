@@ -42,6 +42,7 @@
               <th class="p-4">Allocated Vehicle</th>
               <th class="p-4">Allocated Driver</th>
               <th class="p-4">Status</th>
+              <th class="p-4">Billing Status</th>
               <th class="p-4 text-center">Workflow Actions</th>
             </tr>
           </thead>
@@ -61,6 +62,15 @@
                     {{ trip.status }}
                   </span>
                 </td>
+                <td class="p-4">
+                  <span [class.bg-blue-50]="trip.billingStatus === 'READY_FOR_BILLING'" [class.dark:bg-blue-950]="trip.billingStatus === 'READY_FOR_BILLING'" [class.text-blue-700]="trip.billingStatus === 'READY_FOR_BILLING'" [class.dark:text-blue-400]="trip.billingStatus === 'READY_FOR_BILLING'"
+                        [class.bg-purple-50]="trip.billingStatus === 'INVOICE_DRAFT'" [class.dark:bg-purple-950]="trip.billingStatus === 'INVOICE_DRAFT'" [class.text-purple-700]="trip.billingStatus === 'INVOICE_DRAFT'" [class.dark:text-purple-400]="trip.billingStatus === 'INVOICE_DRAFT'"
+                        [class.bg-emerald-50]="trip.billingStatus === 'INVOICED'" [class.dark:bg-emerald-950]="trip.billingStatus === 'INVOICED'" [class.text-emerald-700]="trip.billingStatus === 'INVOICED'" [class.dark:text-emerald-400]="trip.billingStatus === 'INVOICED'"
+                        [class.bg-slate-100]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.dark:bg-slate-900]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.text-slate-650]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.dark:text-slate-400]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                    {{ trip.billingStatus === 'READY_FOR_BILLING' ? 'READY FOR BILLING' : (trip.billingStatus === 'INVOICE_DRAFT' ? 'INVOICE DRAFT' : (trip.billingStatus === 'INVOICED' ? 'INVOICED' : 'NOT READY')) }}
+                  </span>
+                </td>
                 <td class="p-4 text-center">
                   <div class="flex items-center justify-center gap-3">
                     @if (trip.status === 'PLANNED') {
@@ -70,6 +80,19 @@
                     } @else if (trip.status === 'DISPATCHED') {
                       <button (click)="completeTrip(trip)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Complete Trip">
                         <span class="material-icons text-sm">done_all</span>
+                      </button>
+                    }
+                    @if (trip.billingStatus === 'READY_FOR_BILLING') {
+                      <button (click)="generateInvoice(trip)" class="p-1 text-blue-600 hover:text-blue-500 transition" title="Generate Invoice">
+                        <span class="material-icons text-sm">post_add</span>
+                      </button>
+                    } @else if (trip.billingStatus === 'INVOICE_DRAFT') {
+                      <button (click)="continueInvoice(trip)" class="p-1 text-purple-650 hover:text-purple-500 transition" title="Continue Invoice">
+                        <span class="material-icons text-sm">edit_note</span>
+                      </button>
+                    } @else if (trip.billingStatus === 'INVOICED') {
+                      <button (click)="viewInvoice(trip)" class="p-1 text-emerald-600 hover:text-emerald-500 transition" title="View Invoice">
+                        <span class="material-icons text-sm">receipt</span>
                       </button>
                     }
                     <button (click)="openEditTrip(trip)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Trip Allocations">

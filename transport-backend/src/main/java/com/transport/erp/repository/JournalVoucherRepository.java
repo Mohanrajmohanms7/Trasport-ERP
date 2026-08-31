@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface JournalVoucherRepository extends JpaRepository<JournalVoucher, Long> {
     Page<JournalVoucher> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+    java.util.List<JournalVoucher> findByReferenceNumberAndIsDeletedFalse(String referenceNumber);
 }
+

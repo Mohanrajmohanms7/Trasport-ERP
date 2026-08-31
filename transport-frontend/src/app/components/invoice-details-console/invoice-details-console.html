@@ -15,81 +15,148 @@
   <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white border-b-2 border-blue-600">
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none gap-2">
+      <button (click)="setTab('ledger')"
+              [class.border-b-2]="billingTab() === 'ledger'" [class.border-blue-600]="billingTab() === 'ledger'"
+              [class.text-slate-900]="billingTab() === 'ledger'" [class.dark:text-white]="billingTab() === 'ledger'"
+              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
         Invoices Ledger
       </button>
+      <button (click)="setTab('ready')"
+              [class.border-b-2]="billingTab() === 'ready'" [class.border-blue-600]="billingTab() === 'ready'"
+              [class.text-slate-900]="billingTab() === 'ready'" [class.dark:text-white]="billingTab() === 'ready'"
+              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        Ready for Billing
+      </button>
+
     </div>
 
     <!-- Tab Viewports -->
     <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
       
       <!-- List View -->
-      <div class="flex justify-between items-center shrink-0">
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Generated Vouchers</span>
-        <button (click)="openAddInvoice()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-          <span class="material-icons text-sm">receipt</span> Generate Tax Invoice
-        </button>
-      </div>
+      @if (billingTab() === 'ledger') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Generated Vouchers</span>
+          <button (click)="openAddInvoice()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+            <span class="material-icons text-sm">receipt</span> Generate Tax Invoice
+          </button>
+        </div>
 
-      <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-        <table class="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-              <th class="p-4">Invoice Number</th>
-              <th class="p-4">Invoice Date</th>
-              <th class="p-4">Customer Name</th>
-              <th class="p-4 text-right">Subtotal</th>
-              <th class="p-4 text-right">Discount</th>
-              <th class="p-4 text-right">Net Billing Total</th>
-              <th class="p-4">Status</th>
-              <th class="p-4 text-center">Workflow Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (inv of invoices(); track inv.invoiceNumber) {
-              <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ inv.invoiceNumber }}</td>
-                <td class="p-4 text-slate-600 dark:text-slate-350">{{ inv.invoiceDate }}</td>
-                <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ inv.customer?.name }}</td>
-                <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ inv.subtotal | number }}</td>
-                <td class="p-4 text-right font-mono text-slate-500">₹{{ inv.discount | number }}</td>
-                <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ inv.netAmount | number }}</td>
-                <td class="p-4">
-                  <span [class.bg-blue-50]="inv.status === 'DRAFT'" [class.dark:bg-blue-950]="inv.status === 'DRAFT'" [class.text-blue-700]="inv.status === 'DRAFT'" [class.dark:text-blue-400]="inv.status === 'DRAFT'"
-                        [class.bg-emerald-50]="inv.status === 'APPROVED'" [class.dark:bg-emerald-950]="inv.status === 'APPROVED'" [class.text-emerald-700]="inv.status === 'APPROVED'" [class.dark:text-emerald-400]="inv.status === 'APPROVED'"
-                        [class.bg-rose-50]="inv.status === 'CANCELLED'" [class.dark:bg-rose-950]="inv.status === 'CANCELLED'" [class.text-rose-700]="inv.status === 'CANCELLED'" [class.dark:text-rose-400]="inv.status === 'CANCELLED'"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
-                    {{ inv.status }}
-                  </span>
-                </td>
-                <td class="p-4 text-center">
-                  <div class="flex items-center justify-center gap-3">
-                    @if (inv.status === 'DRAFT') {
-                      <button (click)="approveInvoice(inv)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve & Post Ledger">
-                        <span class="material-icons text-sm">check_circle</span>
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Invoice Number</th>
+                <th class="p-4">Invoice Date</th>
+                <th class="p-4">Customer Name</th>
+                <th class="p-4 text-right">Subtotal</th>
+                <th class="p-4 text-right">Discount</th>
+                <th class="p-4 text-right">Net Billing Total</th>
+                <th class="p-4">Status</th>
+                <th class="p-4 text-center">Workflow Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (inv of invoices(); track inv.invoiceNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ inv.invoiceNumber }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ inv.invoiceDate }}</td>
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ inv.customer?.name }}</td>
+                  <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ inv.subtotal | number }}</td>
+                  <td class="p-4 text-right font-mono text-slate-500">₹{{ inv.discount | number }}</td>
+                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ inv.netAmount | number }}</td>
+                  <td class="p-4">
+                    <span [class.bg-blue-50]="inv.status === 'DRAFT'" [class.dark:bg-blue-950]="inv.status === 'DRAFT'" [class.text-blue-700]="inv.status === 'DRAFT'" [class.dark:text-blue-400]="inv.status === 'DRAFT'"
+                          [class.bg-emerald-50]="inv.status === 'APPROVED'" [class.dark:bg-emerald-950]="inv.status === 'APPROVED'" [class.text-emerald-700]="inv.status === 'APPROVED'" [class.dark:text-emerald-400]="inv.status === 'APPROVED'"
+                          [class.bg-rose-50]="inv.status === 'CANCELLED'" [class.dark:bg-rose-950]="inv.status === 'CANCELLED'" [class.text-rose-700]="inv.status === 'CANCELLED'" [class.dark:text-rose-400]="inv.status === 'CANCELLED'"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                      {{ inv.status }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-center">
+                    <div class="flex items-center justify-center gap-3">
+                      @if (inv.status === 'DRAFT') {
+                        <button (click)="approveInvoice(inv)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve & Post Ledger">
+                          <span class="material-icons text-sm">check_circle</span>
+                        </button>
+                        <button (click)="cancelInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Cancel Invoice">
+                          <span class="material-icons text-sm">cancel</span>
+                        </button>
+                      }
+                      <button (click)="openEditInvoice(inv)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Billing Detail">
+                        <span class="material-icons text-sm">edit</span>
                       </button>
-                      <button (click)="cancelInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Cancel Invoice">
-                        <span class="material-icons text-sm">cancel</span>
+                      <button (click)="deleteInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Delete Record">
+                        <span class="material-icons text-sm">delete</span>
                       </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No tax invoices generated.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      <!-- Ready for Billing view -->
+      @if (billingTab() === 'ready') {
+        <div class="flex justify-between items-center shrink-0">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Completed Trips Ready for Invoicing</span>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                <th class="p-4">Trip Number</th>
+                <th class="p-4">Customer Name</th>
+                <th class="p-4">Allocated Payload Payload</th>
+                <th class="p-4">Allocated Vehicle</th>
+                <th class="p-4">Allocated Driver</th>
+                <th class="p-4">Trip Date</th>
+                <th class="p-4">Status</th>
+                <th class="p-4 text-center">Billing Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (trip of readyTrips(); track trip.tripNumber) {
+                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
+                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ trip.tripNumber }}</td>
+                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ trip.booking?.customer?.name }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-350">
+                    @for (dt of trip.details; track dt.id) {
+                      <div>{{ dt.material?.name }} — {{ dt.quantity }} Tons</div>
                     }
-                    <button (click)="openEditInvoice(inv)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Billing Detail">
-                      <span class="material-icons text-sm">edit</span>
+                  </td>
+                  <td class="p-4 text-slate-700 dark:text-slate-350 font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
+                  <td class="p-4 text-slate-700 dark:text-slate-350">{{ trip.driver?.name || 'Not Allocated' }}</td>
+                  <td class="p-4 text-slate-600 dark:text-slate-400">{{ trip.tripDate }}</td>
+                  <td class="p-4">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">
+                      {{ trip.status }}
+                    </span>
+                  </td>
+                  <td class="p-4 text-center">
+                    <button (click)="generateInvoice(trip)" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-3 rounded-lg shadow transition text-[11px] flex items-center gap-1.5 mx-auto">
+                      <span class="material-icons text-xs">receipt</span> Generate Invoice
                     </button>
-                    <button (click)="deleteInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Delete Record">
-                      <span class="material-icons text-sm">delete</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No tax invoices generated.</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No completed trips ready for billing.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
 
     </div>
   </main>
