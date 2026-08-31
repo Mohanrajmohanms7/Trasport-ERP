@@ -32,21 +32,21 @@
 
     <!-- Tab Controls selector -->
 
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
+    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none overflow-x-auto whitespace-nowrap scrollbar-none">
 
-      <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white shrink-0">
 
         Receipts Registry
 
       </button>
 
-      <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white shrink-0">
 
         Customer Ledger running balance
 
       </button>
 
-      <button (click)="toggleDashboard()" [class.border-b-2]="activeTab() === 'dashboard'" [class.border-blue-600]="activeTab() === 'dashboard'" [class.text-slate-900]="activeTab() === 'dashboard'" [class.dark:text-white]="activeTab() === 'dashboard'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="toggleDashboard()" [class.border-b-2]="activeTab() === 'dashboard'" [class.border-blue-600]="activeTab() === 'dashboard'" [class.text-slate-900]="activeTab() === 'dashboard'" [class.dark:text-white]="activeTab() === 'dashboard'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white shrink-0">
 
         Settlement Dashboard
 
@@ -447,7 +447,7 @@
                 
                 @if (agingSummary()) {
                   <!-- Aging Summary Buckets Bar -->
-                  <div class="grid grid-cols-7 gap-2 shrink-0 select-none">
+                  <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 shrink-0 select-none">
                     <div (click)="openAgingBucket('CURRENT')" class="p-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-white hover:bg-blue-50/20 dark:bg-slate-900 shadow-sm cursor-pointer transition text-center"
                          [class.ring-2]="selectedAgingBucket() === 'CURRENT'" [class.ring-blue-600]="selectedAgingBucket() === 'CURRENT'">
                       <span class="block text-[8px] font-bold text-slate-400 tracking-wider mb-0.5">CURRENT</span>
