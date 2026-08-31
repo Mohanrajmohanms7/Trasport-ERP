@@ -2,6 +2,7 @@ package com.transport.erp.service;
 
 import com.transport.erp.model.ReportTemplate;
 import com.transport.erp.repository.ReportTemplateRepository;
+import com.transport.erp.security.TenantAccessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +16,11 @@ public class ReportTemplateService {
     private ReportTemplateRepository templateRepository;
 
     @Autowired
+    private TenantAccessService tenantAccess;
+
+    @Autowired
     private AuditService auditService;
+
 
     public Page<ReportTemplate> getTemplates(Long companyId, Pageable pageable) {
         return templateRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
@@ -33,10 +38,9 @@ public class ReportTemplateService {
         template.setCreatedBy(username);
         template.setUpdatedBy(username);
 
-        if (template.getCompanyId() == null) {
-            throw new IllegalArgumentException("companyId is required");
-        }
-        if (template.getBranchId() == null) template.setBranchId(1L);
+        template.setCompanyId(tenantAccess.resolveCompanyId(template.getCompanyId()));
+        template.setBranchId(tenantAccess.resolveBranchId(template.getBranchId()));
+
         if (template.getCode() == null) template.setCode("REP-" + System.currentTimeMillis());
         if (template.getName() == null) template.setName(template.getTemplateName());
 

@@ -87,7 +87,41 @@ public class TenantAccessService {
         }
     }
 
+    /**
+     * Returns the branch id the caller is allowed to use for transaction creation.
+     * Non–super-admins are always bound to their own branchId (client value is ignored).
+     * If user has no branch context, creation is safely rejected instead of defaulting to 1L.
+     */
+    @Transactional(readOnly = true)
+    public Long resolveBranchId(Long requestedBranchId) {
+        AppUser user = requireCurrentUser();
+        if (isSuperAdmin(user)) {
+            if (requestedBranchId != null) return requestedBranchId;
+            if (user.getBranchId() != null) return user.getBranchId();
+            throw new AccessDeniedException("User branch context is required to create this transaction.");
+        }
+        if (user.getBranchId() == null) {
+            throw new AccessDeniedException("User branch context is required to create this transaction.");
+        }
+        return user.getBranchId();
+    }
+
+    @Transactional(readOnly = true)
+    public void assertBranchAccess(Long resourceBranchId) {
+        AppUser user = requireCurrentUser();
+        if (isSuperAdmin(user)) return;
+        if (resourceBranchId == null || user.getBranchId() == null
+                || !sameBranch(resourceBranchId, user.getBranchId())) {
+            throw new AccessDeniedException("Access denied: Trip belongs to another branch.");
+        }
+    }
+
     private static boolean sameCompany(Long a, Long b) {
         return a != null && b != null && a.longValue() == b.longValue();
     }
+
+    private static boolean sameBranch(Long a, Long b) {
+        return a != null && b != null && a.longValue() == b.longValue();
+    }
 }
+

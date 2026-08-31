@@ -89,9 +89,8 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/platform-admin/**").hasRole("SUPER_ADMIN")
-                // Full DB reset is SUPER_ADMIN only (prevents tenant wipe)
-                .requestMatchers(HttpMethod.POST, "/api/v1/setup/seed-demo").hasRole("SUPER_ADMIN")
                 .anyRequest().authenticated()
+
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

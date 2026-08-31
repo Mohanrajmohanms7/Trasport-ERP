@@ -1384,12 +1384,8 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     }
 
     @Override
-    public Map<String, Object> seedFullDemoData(Long companyId) {
-        return supportingDataService.seedFullDemoData(companyId);
-    }
-
-    @Override
     @Transactional(readOnly = true)
+
     public Page<Vehicle> getVehicles(Pageable pageable) {
         return vehicleRepository.findAll(pageable);
     }

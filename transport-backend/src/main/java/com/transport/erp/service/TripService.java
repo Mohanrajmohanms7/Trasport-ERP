@@ -8,6 +8,8 @@ import com.transport.erp.model.AppSetting;
 import com.transport.erp.model.SalesInvoice;
 import com.transport.erp.model.AppUser;
 
+import com.transport.erp.model.Booking;
+import com.transport.erp.repository.BookingRepository;
 import com.transport.erp.repository.TripRepository;
 import com.transport.erp.repository.SalesInvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ import java.util.List;
 @Service
 public class TripService {
 
+
     @Autowired
     private TripRepository tripRepository;
 
@@ -30,7 +33,11 @@ public class TripService {
     private SalesInvoiceRepository salesInvoiceRepository;
 
     @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
     private TenantAccessService tenantAccess;
+
 
 
     @Autowired
@@ -111,8 +118,20 @@ public class TripService {
         trip.setCreatedBy(createdByUsername);
         trip.setUpdatedBy(createdByUsername);
 
-        trip.setCompanyId(tenantAccess.resolveCompanyId(trip.getCompanyId()));
-        if (trip.getBranchId() == null) trip.setBranchId(1L);
+        if (trip.getBooking() != null && trip.getBooking().getId() != null) {
+            Booking booking = bookingRepository.findById(trip.getBooking().getId())
+                    .filter(b -> !Boolean.TRUE.equals(b.getIsDeleted()))
+                    .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + trip.getBooking().getId()));
+            tenantAccess.assertOwned(booking.getCompanyId());
+            tenantAccess.assertBranchAccess(booking.getBranchId());
+            trip.setBooking(booking);
+            trip.setCompanyId(booking.getCompanyId());
+            trip.setBranchId(booking.getBranchId());
+        } else {
+            trip.setCompanyId(tenantAccess.resolveCompanyId(trip.getCompanyId()));
+            trip.setBranchId(tenantAccess.resolveBranchId(trip.getBranchId()));
+        }
+
 
         if (trip.getDetails() != null) {
             for (TripDetail detail : trip.getDetails()) {

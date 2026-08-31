@@ -105,13 +105,8 @@ public class PlatformAdminController {
         return ApiResponse.success(null, "Tenant company soft deleted successfully");
     }
 
-    @PostMapping("/companies/{id}/seed-demo-data")
-    public ApiResponse<Map<String, Object>> seedDemoData(@PathVariable Long id) {
-        Map<String, Object> result = platformAdminService.seedFullDemoData(id);
-        return ApiResponse.success(result, "Full flow demo data generated successfully for tenant client");
-    }
-
     // 4. Subscription Plans Management
+
     @GetMapping("/plans")
     public ApiResponse<Page<SaaSPlan>> getPlans(
             @RequestParam(defaultValue = "0") int page,

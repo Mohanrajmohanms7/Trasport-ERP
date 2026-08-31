@@ -48,7 +48,8 @@ public class JournalVoucherService {
         voucher.setUpdatedBy(username);
 
         voucher.setCompanyId(tenantAccess.resolveCompanyId(voucher.getCompanyId()));
-        if (voucher.getBranchId() == null) voucher.setBranchId(1L);
+        voucher.setBranchId(tenantAccess.resolveBranchId(voucher.getBranchId()));
+
         if (voucher.getCode() == null) voucher.setCode(voucher.getVoucherNumber());
         if (voucher.getName() == null) voucher.setName("Journal Voucher Entry");
 

@@ -37,7 +37,8 @@ public class AiPredictionService {
         prediction.setUpdatedBy(username);
 
         prediction.setCompanyId(tenantAccess.resolveCompanyId(prediction.getCompanyId()));
-        if (prediction.getBranchId() == null) prediction.setBranchId(1L);
+        prediction.setBranchId(tenantAccess.resolveBranchId(prediction.getBranchId()));
+
         if (prediction.getCode() == null) prediction.setCode("AI-" + System.currentTimeMillis());
         if (prediction.getName() == null) prediction.setName("AI Telemetry Prediction");
 

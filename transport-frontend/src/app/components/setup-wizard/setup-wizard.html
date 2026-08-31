@@ -37,14 +37,9 @@
           <span class="material-symbols-outlined text-[16px]">{{ loading() ? 'sync' : 'playlist_add_check' }}</span>
           {{ loading() ? 'Loading…' : 'Load Example Lookups & Materials' }}
         </button>
-        <button type="button" (click)="seedDemoData()" [disabled]="loading()"
-                class="h-10 px-4 bg-white border border-slate-200 hover:bg-slate-50 disabled:bg-slate-100 disabled:text-slate-400 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-2 cursor-pointer"
-                title="Wipes the whole database — local AKS demo only">
-          <span class="material-symbols-outlined text-[16px]">warning</span>
-          Full DB reset (dev only)
-        </button>
       </div>
     </div>
+
 
     <!-- Wizard -->
     <div class="bg-white rounded-2xl border border-slate-200/70 shadow-[0_10px_40px_-12px_rgba(15,23,42,0.18)] p-6 sm:p-8">

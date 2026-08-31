@@ -62,7 +62,8 @@ public class ExpenseService {
         expense.setUpdatedBy(username);
 
         expense.setCompanyId(tenantAccess.resolveCompanyId(expense.getCompanyId()));
-        if (expense.getBranchId() == null) expense.setBranchId(1L);
+        expense.setBranchId(tenantAccess.resolveBranchId(expense.getBranchId()));
+
 
         // Calc totalAmount
         expense.setTotalAmount(expense.getAmount().add(expense.getGstAmount()));

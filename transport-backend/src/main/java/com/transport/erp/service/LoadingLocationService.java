@@ -31,8 +31,9 @@ public class LoadingLocationService {
             throw new IllegalArgumentException("Location code already exists in this company: " + loc.getLocationCode());
         }
         loc.setIsDeleted(false);
-        if (loc.getBranchId() == null) loc.setBranchId(1L);
+        loc.setBranchId(tenantAccess.resolveBranchId(loc.getBranchId()));
         return locationRepository.save(loc);
+
     }
 
     @Transactional

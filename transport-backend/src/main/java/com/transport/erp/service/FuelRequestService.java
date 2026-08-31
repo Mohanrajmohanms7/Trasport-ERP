@@ -51,7 +51,8 @@ public class FuelRequestService {
         req.setUpdatedBy(username);
 
         req.setCompanyId(tenantAccess.resolveCompanyId(req.getCompanyId()));
-        if (req.getBranchId() == null) req.setBranchId(1L);
+        req.setBranchId(tenantAccess.resolveBranchId(req.getBranchId()));
+
 
         FuelRequest saved = requestRepository.save(req);
 

@@ -80,8 +80,7 @@ public interface PlatformAdminService {
     // 14. Billing Invoices
     Page<SaaSBillingInvoice> getBillingInvoices(Long companyId, Pageable pageable);
 
-    Map<String, Object> seedFullDemoData(Long companyId);
-
     Page<Vehicle> getVehicles(Pageable pageable);
     Page<Trip> getTrips(Pageable pageable);
 }
+

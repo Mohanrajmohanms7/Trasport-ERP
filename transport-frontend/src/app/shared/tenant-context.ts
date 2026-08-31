@@ -44,3 +44,28 @@ export function tryResolveTenantCompanyId(): number | null {
     return null;
   }
 }
+
+export function resolveTenantBranchId(): number | null {
+  const token = localStorage.getItem('token');
+  const fromJwt = toPositiveId(readJwtPayload(token)?.['branchId']);
+  if (fromJwt != null) {
+    localStorage.setItem('branchId', String(fromJwt));
+    return fromJwt;
+  }
+
+  const fromStorage = toPositiveId(localStorage.getItem('branchId'));
+  if (fromStorage != null) {
+    return fromStorage;
+  }
+
+  return null;
+}
+
+export function tryResolveTenantBranchId(): number | null {
+  try {
+    return resolveTenantBranchId();
+  } catch {
+    return null;
+  }
+}
+

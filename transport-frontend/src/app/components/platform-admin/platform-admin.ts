@@ -981,30 +981,8 @@ export class PlatformAdminComponent implements OnInit {
     });
   }
 
-  triggerSeedDemoData(company: any): void {
-    if (confirm(`Are you sure you want to seed full flow ERP demonstration transactions for SaaS Client "${company.name}"? This populates Drivers, Vehicles, Bookings, Trips, Fuel, Expenses, and Invoices automatically.`)) {
-      this.loading.set(true);
-      this.platformService.seedDemoData(company.id).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.showSuccess(res.message || 'Demo transactions generated successfully!');
-            this.loadClients();
-            this.loadDashboardData();
-          } else {
-            this.errorMsg.set(res.message || 'Data generation failed.');
-            setTimeout(() => this.errorMsg.set(''), 5500);
-          }
-          this.loading.set(false);
-        },
-        error: (e) => {
-          this.handleError(e);
-          this.loading.set(false);
-        }
-      });
-    }
-  }
-
   saveCompany(): void {
+
     if (this.companyForm.invalid) return;
     this.loading.set(true);
 

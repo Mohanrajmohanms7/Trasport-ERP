@@ -45,8 +45,9 @@ public class GpsTrackingService {
 
         ping.setCompanyId(tenantAccess.resolveCompanyId(vehicle.getCompanyId()));
         if (ping.getBranchId() == null) {
-            ping.setBranchId(vehicle.getBranchId() != null ? vehicle.getBranchId() : 1L);
+            ping.setBranchId(vehicle.getBranchId() != null ? vehicle.getBranchId() : tenantAccess.resolveBranchId(null));
         }
+
         if (ping.getCode() == null) ping.setCode("GPS-" + System.currentTimeMillis());
         if (ping.getName() == null) ping.setName("GPS Ping Update");
 

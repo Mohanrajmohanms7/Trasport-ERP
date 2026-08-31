@@ -39,7 +39,8 @@ public class RoleController {
     public ApiResponse<AppRole> createRole(@Valid @RequestBody AppRole role) {
         String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
         role.setCompanyId(tenantAccess.resolveCompanyId(role.getCompanyId()));
-        if (role.getBranchId() == null) role.setBranchId(1L);
+        role.setBranchId(tenantAccess.resolveBranchId(role.getBranchId()));
+
 
         AppRole created = roleService.createRole(role, activeUser);
         return ApiResponse.success(created, "Role created successfully");

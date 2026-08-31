@@ -95,21 +95,8 @@ public class SetupService {
     public Map<String, Object> seedSupportingExampleData() {
         AppUser user = tenantAccess.requireCurrentUser();
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = user.getBranchId() != null ? user.getBranchId() : 1L;
+        Long branchId = tenantAccess.resolveBranchId(null);
         return supportingDataService.seedForCompany(companyId, branchId);
     }
-
-    @Transactional
-    public void seedDemoData() {
-        org.springframework.jdbc.datasource.init.ResourceDatabasePopulator populator =
-            new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator();
-        populator.addScript(new org.springframework.core.io.ClassPathResource("db/demo/reset_db.sql"));
-        populator.addScript(new org.springframework.core.io.ClassPathResource("db/demo/seed_demo_data.sql"));
-        populator.addScript(new org.springframework.core.io.ClassPathResource("db/demo/reset_sequences.sql"));
-        try (java.sql.Connection connection = dataSource.getConnection()) {
-            populator.populate(connection);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to seed demo database: " + e.getMessage(), e);
-        }
-    }
 }
+

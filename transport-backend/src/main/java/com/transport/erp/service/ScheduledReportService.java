@@ -43,7 +43,8 @@ public class ScheduledReportService {
         schedule.setUpdatedBy(username);
 
         schedule.setCompanyId(tenantAccess.resolveCompanyId(schedule.getCompanyId()));
-        if (schedule.getBranchId() == null) schedule.setBranchId(1L);
+        schedule.setBranchId(tenantAccess.resolveBranchId(schedule.getBranchId()));
+
         if (schedule.getCode() == null) schedule.setCode("SCH-" + System.currentTimeMillis());
         if (schedule.getName() == null) schedule.setName("Scheduled Report Trigger");
 

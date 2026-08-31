@@ -62,8 +62,9 @@ public class UserService {
             if (branches.hasContent()) {
                 user.setBranchId(branches.getContent().get(0).getId());
             } else {
-                user.setBranchId(1L); // absolute fallback
+                user.setBranchId(null);
             }
+
         }
 
         // Encode password

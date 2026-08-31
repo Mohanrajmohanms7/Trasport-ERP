@@ -240,27 +240,8 @@ export class SetupWizardComponent implements OnInit {
     });
   }
 
-  seedDemoData() {
-    this.loading.set(true);
-    this.errorMessage.set('');
-
-    this.setupService.seedDemoData().subscribe({
-      next: (res) => {
-        this.loading.set(false);
-        if (res.success) {
-          this.router.navigate(['/dashboard']);
-        } else {
-          this.errorMessage.set(res.message || 'Could not seed demo data.');
-        }
-      },
-      error: (err) => {
-        this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Could not seed demo data. Please check your connection.');
-      }
-    });
-  }
-
   skipSetup() {
+
     // Mark setup complete so setupGuard does not bounce the user back to /setup
     this.finishSetup();
   }

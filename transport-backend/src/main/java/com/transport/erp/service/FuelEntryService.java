@@ -57,7 +57,8 @@ public class FuelEntryService {
         entry.setUpdatedBy(username);
 
         entry.setCompanyId(tenantAccess.resolveCompanyId(entry.getCompanyId()));
-        if (entry.getBranchId() == null) entry.setBranchId(1L);
+        entry.setBranchId(tenantAccess.resolveBranchId(entry.getBranchId()));
+
 
         // Calc totalAmount
         entry.setTotalAmount(entry.getFuelQuantity().multiply(entry.getRatePerLitre()));

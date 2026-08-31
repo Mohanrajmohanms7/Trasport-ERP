@@ -138,7 +138,8 @@ public class CustomerReceiptService {
         receipt.setUpdatedBy(username);
 
         receipt.setCompanyId(tenantAccess.resolveCompanyId(receipt.getCompanyId()));
-        if (receipt.getBranchId() == null) receipt.setBranchId(1L);
+        receipt.setBranchId(tenantAccess.resolveBranchId(receipt.getBranchId()));
+
 
         CustomerReceipt saved = receiptRepository.save(receipt);
 
@@ -193,7 +194,8 @@ public class CustomerReceiptService {
     public CustomerReceiptResponseDTO createReceiptWithAllocations(CustomerReceiptDTO dto, String username) {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = currentUser.getBranchId() != null ? currentUser.getBranchId() : 1L;
+        Long branchId = tenantAccess.resolveBranchId(null);
+
 
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))

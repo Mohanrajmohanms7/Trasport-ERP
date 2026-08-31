@@ -162,9 +162,6 @@ export class PlatformAdminService {
     return this.http.delete<any>(`${this.baseUrl}/companies/${id}`);
   }
 
-  seedDemoData(id: number): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/companies/${id}/seed-demo-data`, {});
-  }
 
   getPlans(page = 0, size = 10): Observable<any> {
     const params = new HttpParams()

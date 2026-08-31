@@ -85,7 +85,8 @@ public class ChartOfAccountService {
 
         Long companyId = tenantAccess.resolveCompanyId(account.getCompanyId());
         account.setCompanyId(companyId);
-        if (account.getBranchId() == null) account.setBranchId(1L);
+        account.setBranchId(tenantAccess.resolveBranchId(account.getBranchId()));
+
         if (account.getCode() == null) account.setCode("ACC-" + System.currentTimeMillis());
         if (account.getName() == null) account.setName(account.getAccountName());
         if (account.getAccountCode() != null

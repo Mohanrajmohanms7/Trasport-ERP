@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.transport.erp.security.TenantParentAccess;
+
 @Service
 public class BookingService {
 
@@ -22,6 +24,10 @@ public class BookingService {
 
     @Autowired
     private TenantAccessService tenantAccess;
+
+    @Autowired
+    private TenantParentAccess tenantParentAccess;
+
 
 
     @Autowired
@@ -63,8 +69,13 @@ public class BookingService {
         booking.setCreatedBy(createdByUsername);
         booking.setUpdatedBy(createdByUsername);
 
+        if (booking.getCustomer() != null && booking.getCustomer().getId() != null) {
+            tenantParentAccess.requireCustomer(booking.getCustomer().getId());
+        }
+
         booking.setCompanyId(tenantAccess.resolveCompanyId(booking.getCompanyId()));
-        if (booking.getBranchId() == null) booking.setBranchId(1L);
+        booking.setBranchId(tenantAccess.resolveBranchId(booking.getBranchId()));
+
 
         // Map parent links and calculate totals
         if (booking.getDetails() != null) {

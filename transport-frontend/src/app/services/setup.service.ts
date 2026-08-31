@@ -49,15 +49,6 @@ export class SetupService {
     );
   }
 
-  seedDemoData(): Observable<ApiResponse<SetupStatus>> {
-    return this.http.post<ApiResponse<SetupStatus>>(`${this.apiUrl}/seed-demo`, {}).pipe(
-      tap(res => {
-        if (res.success && res.data) {
-          this.status.set(res.data);
-        }
-      })
-    );
-  }
 
   /** Lookups + sample materials/quarry only — you still create 1 customer / vehicle / driver. */
   seedSupportingExampleData(): Observable<ApiResponse<Record<string, unknown>>> {

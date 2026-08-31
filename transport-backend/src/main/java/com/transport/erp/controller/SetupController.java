@@ -39,12 +39,6 @@ public class SetupController {
         Map<String, Object> result = setupService.seedSupportingExampleData();
         return ApiResponse.success(result, String.valueOf(result.getOrDefault("message", "Supporting example data seeded")));
     }
-
-    @PostMapping("/seed-demo")
-    @Operation(summary = "Reset database and seed complete demo data")
-    public ApiResponse<SetupStatusResponse> seedDemoData() {
-        setupService.seedDemoData();
-        return ApiResponse.success(setupService.getStatus(), "Database reset and demo data seeded successfully");
-    }
 }
+
 

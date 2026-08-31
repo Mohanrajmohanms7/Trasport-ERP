@@ -83,7 +83,8 @@ public class SalesInvoiceService {
         invoice.setUpdatedBy(username);
 
         invoice.setCompanyId(tenantAccess.resolveCompanyId(invoice.getCompanyId()));
-        if (invoice.getBranchId() == null) invoice.setBranchId(1L);
+        invoice.setBranchId(tenantAccess.resolveBranchId(invoice.getBranchId()));
+
 
         BigDecimal subtotal = BigDecimal.ZERO;
 
@@ -259,7 +260,8 @@ public class SalesInvoiceService {
         SalesInvoice invoice = new SalesInvoice();
         invoice.setCustomer(trip.getBooking().getCustomer());
         invoice.setCompanyId(trip.getCompanyId());
-        invoice.setBranchId(trip.getBranchId() != null ? trip.getBranchId() : 1L);
+        invoice.setBranchId(tenantAccess.resolveBranchId(trip.getBranchId()));
+
         invoice.setDiscount(BigDecimal.ZERO);
         invoice.setStatus("DRAFT");
         invoice.setPaymentTerms("NET_30");

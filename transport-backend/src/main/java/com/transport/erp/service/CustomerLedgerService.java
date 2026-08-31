@@ -67,7 +67,12 @@ public class CustomerLedgerService {
         entry.setCreatedBy(username);
         entry.setUpdatedBy(username);
         entry.setCompanyId(tenantAccess.resolveCompanyId(customer.getCompanyId()));
-        entry.setBranchId(customer.getBranchId() != null ? customer.getBranchId() : 1L);
+        Long branchId = (receipt != null && receipt.getBranchId() != null) 
+                ? receipt.getBranchId() 
+                : (customer.getBranchId() != null ? customer.getBranchId() : tenantAccess.resolveBranchId(null));
+        entry.setBranchId(branchId);
+
+
         entry.setCode("LEDG_" + customerId + "_" + System.currentTimeMillis());
         entry.setName("Customer Ledger Entry");
 
