@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.ArrayList;
 
 
+import com.transport.erp.model.ChartOfAccount;
+import com.transport.erp.model.JournalVoucher;
+import com.transport.erp.service.ChartOfAccountService;
+import com.transport.erp.service.JournalVoucherService;
+
 @Service
 public class SalesInvoiceService {
 
@@ -35,22 +40,21 @@ public class SalesInvoiceService {
     @Autowired
     private TenantAccessService tenantAccess;
 
-
-
     @Autowired
     private CustomerLedgerService ledgerService;
 
+    @Autowired
+    private ChartOfAccountService coaService;
 
-
+    @Autowired
+    private JournalVoucherService jvService;
 
     @Autowired
     private AuditService auditService;
 
-
-
-
     @Autowired
     private AppSettingService settingService;
+
 
 
 
@@ -188,6 +192,58 @@ public class SalesInvoiceService {
 
         // Automatically post debit update to customer ledger (Invoice increases outstanding customer owed balance)
         ledgerService.postToLedger(saved.getCustomer().getId(), null, saved.getNetAmount(), BigDecimal.ZERO, username);
+
+        // Automatically post double-entry General Ledger posting
+        // Dr: 1100 Customer Receivables = netAmount (e.g. ₹11,800)
+        // Cr: 4000 Transport Freight Income = subtotal (e.g. ₹10,000)
+        // Cr: 2200 GST Liability = tax amount (e.g. ₹1,800)
+        try {
+            ChartOfAccount arAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "1100", "Customer Receivables", "ASSET");
+            ChartOfAccount incomeAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "4000", "Transport Freight Income", "INCOME");
+            
+            BigDecimal subtotal = saved.getSubtotal() != null ? saved.getSubtotal() : saved.getNetAmount();
+            if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+                JournalVoucher jvIncome = new JournalVoucher();
+                jvIncome.setVoucherNumber("JV-INV-" + saved.getId() + "-INC");
+                jvIncome.setVoucherDate(LocalDate.now());
+                jvIncome.setDebitAccount(arAcc);
+                jvIncome.setCreditAccount(incomeAcc);
+                jvIncome.setAmount(subtotal);
+                jvIncome.setReferenceNumber(saved.getInvoiceNumber());
+                jvIncome.setDescription("Auto-posted sales invoice revenue JV for " + saved.getInvoiceNumber());
+                jvIncome.setCompanyId(saved.getCompanyId());
+                jvIncome.setBranchId(saved.getBranchId());
+                jvIncome.setIsDeleted(false);
+                jvIncome.setCreatedBy(username);
+                jvIncome.setUpdatedBy(username);
+                jvIncome.setCode(jvIncome.getVoucherNumber());
+                jvIncome.setName("Sales Invoice Revenue Voucher");
+                jvService.createVoucher(jvIncome, username);
+            }
+
+            BigDecimal gstAmount = saved.getNetAmount().subtract(subtotal);
+            if (gstAmount.compareTo(BigDecimal.ZERO) > 0) {
+                ChartOfAccount gstAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "2200", "GST Liability", "LIABILITY");
+                JournalVoucher jvGst = new JournalVoucher();
+                jvGst.setVoucherNumber("JV-INV-" + saved.getId() + "-GST");
+                jvGst.setVoucherDate(LocalDate.now());
+                jvGst.setDebitAccount(arAcc);
+                jvGst.setCreditAccount(gstAcc);
+                jvGst.setAmount(gstAmount);
+                jvGst.setReferenceNumber(saved.getInvoiceNumber());
+                jvGst.setDescription("Auto-posted sales invoice GST liability JV for " + saved.getInvoiceNumber());
+                jvGst.setCompanyId(saved.getCompanyId());
+                jvGst.setBranchId(saved.getBranchId());
+                jvGst.setIsDeleted(false);
+                jvGst.setCreatedBy(username);
+                jvGst.setUpdatedBy(username);
+                jvGst.setCode(jvGst.getVoucherNumber());
+                jvGst.setName("Sales Invoice GST Liability Voucher");
+                jvService.createVoucher(jvGst, username);
+            }
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(SalesInvoiceService.class).warn("Failed to create automatic GL posting for invoice " + saved.getInvoiceNumber() + ": " + e.getMessage(), e);
+        }
 
         auditService.log(username, "INVOICE_APPROVED", "sales_invoices", saved.getId(), null,
                 "Approved invoice voucher & posted to ledger: " + saved.getInvoiceNumber());
