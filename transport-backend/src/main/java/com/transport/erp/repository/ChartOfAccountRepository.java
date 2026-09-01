@@ -14,4 +14,7 @@ public interface ChartOfAccountRepository extends JpaRepository<ChartOfAccount, 
     Optional<ChartOfAccount> findByCompanyIdAndAccountCodeAndIsDeletedFalse(Long companyId, String accountCode);
 
     Page<ChartOfAccount> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+
+    boolean existsByCompanyId(Long companyId);
 }
+

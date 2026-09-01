@@ -29,12 +29,13 @@ public class ChartOfAccountService {
     @Transactional
     public Page<ChartOfAccount> getAccounts(Long companyId, Pageable pageable) {
         Page<ChartOfAccount> accounts = accountRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
-        if (accounts.isEmpty()) {
+        if (accounts.isEmpty() && !accountRepository.existsByCompanyId(companyId)) {
             seedDefaultAccounts(companyId);
             accounts = accountRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
         }
         return accounts;
     }
+
 
     private void seedDefaultAccounts(Long companyId) {
         String[][] defaultAccounts = {
