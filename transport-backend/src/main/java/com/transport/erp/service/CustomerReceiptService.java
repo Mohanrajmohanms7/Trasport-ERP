@@ -709,8 +709,10 @@ public class CustomerReceiptService {
         Long companyId = tenantAccess.resolveCompanyId(null);
         Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
 
+        String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim().toLowerCase() + "%" : null;
+
         Page<CustomerReceipt> receipts = receiptRepository.findReceiptsWithFilters(
-                companyId, branchId, status, paymentMethod, customerId, fromDate, toDate, search, pageable);
+                companyId, branchId, status, paymentMethod, customerId, fromDate, toDate, searchParam, pageable);
 
         return receipts.map(r -> {
             CustomerReceiptListDTO dto = new CustomerReceiptListDTO();

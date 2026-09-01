@@ -55,9 +55,9 @@ public interface CustomerReceiptRepository extends JpaRepository<CustomerReceipt
           AND (:fromDate IS NULL OR r.receiptDate >= :fromDate)
           AND (:toDate IS NULL OR r.receiptDate <= :toDate)
           AND (:search IS NULL OR 
-               LOWER(r.receiptNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR 
-               LOWER(r.referenceNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR 
-               LOWER(r.customer.name) LIKE LOWER(CONCAT('%', :search, '%'))
+               LOWER(r.receiptNumber) LIKE :search OR 
+               LOWER(r.referenceNumber) LIKE :search OR 
+               LOWER(r.customer.name) LIKE :search
               )
           AND r.isDeleted = false
     """)
