@@ -235,7 +235,7 @@
 
         <form [formGroup]="contactForm" (ngSubmit)="saveContact()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
-          <ff-textbox formControlName="contactName" label="Full Name" placeholder="Full Name" prefixIcon="person" [required]="true" />
+          <ff-textbox formControlName="contactName" label="Full Name" placeholder="Enter Full Name" prefixIcon="person" [required]="true" />
 
           <ff-textbox formControlName="designation" label="Designation" placeholder="E.g., Site Accountant" prefixIcon="badge" [required]="true" />
 

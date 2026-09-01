@@ -950,8 +950,8 @@
           <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200">SaaS Plan Setup</h3>
           
           <form [formGroup]="planForm" (ngSubmit)="savePlan()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <ff-textbox label="Plan Code" formControlName="code" placeholder="E.g., PRO_ENTERPRISE"></ff-textbox>
-            <ff-textbox label="Plan Name" formControlName="name" placeholder="Pro Enterprise Tier"></ff-textbox>
+            <ff-textbox label="Plan Code" formControlName="code" placeholder="Enter Plan Code"></ff-textbox>
+            <ff-textbox label="Plan Name" formControlName="name" placeholder="Enter Plan Name"></ff-textbox>
             <ff-number label="Billing Price (INR)" formControlName="price"></ff-number>
             <ff-dropdown label="Billing Frequency" formControlName="billingPeriod" [options]="billingPeriodOptions"></ff-dropdown>
             <ff-number label="Max Allowed Users" formControlName="maxUsers"></ff-number>

@@ -213,18 +213,18 @@
           <div class="px-5 py-5 flex flex-col gap-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ff-textbox formControlName="code" label="Employee Code" placeholder="Enter Employee Code" prefixIcon="tag" [required]="true" />
-              <ff-textbox formControlName="username" label="Username" placeholder="Username" prefixIcon="person" [required]="true" />
+              <ff-textbox formControlName="username" label="Username" placeholder="Enter Username" prefixIcon="person" [required]="true" />
             </div>
 
             @if (!editingUser()) {
               <ff-password formControlName="password" label="Default Password" placeholder="Min 8 chars, 1 uppercase, 1 special" [required]="true" />
             }
 
-            <ff-textbox formControlName="name" label="Full Name" placeholder="Full Name" prefixIcon="badge" [required]="true" />
+            <ff-textbox formControlName="name" label="Full Name" placeholder="Enter Full Name" prefixIcon="badge" [required]="true" />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <ff-textbox formControlName="email" label="Email Address" type="email" placeholder="Enter Email Address" prefixIcon="mail" />
-              <ff-textbox formControlName="phone" label="Mobile Number" placeholder="Phone" prefixIcon="call" [digitsOnly]="true" />
+              <ff-textbox formControlName="phone" label="Mobile Number" placeholder="Enter Mobile Number" prefixIcon="call" [digitsOnly]="true" />
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
