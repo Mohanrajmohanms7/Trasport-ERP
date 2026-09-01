@@ -73,6 +73,9 @@ public class CustomerReceiptService {
     private ChartOfAccountRepository coaRepository;
 
     @Autowired
+    private ChartOfAccountService coaService;
+
+    @Autowired
     private JournalVoucherService jvService;
 
     @Autowired
@@ -625,11 +628,11 @@ public class CustomerReceiptService {
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(savedReceipt.getReceiptNumber());
         if (existingJvs.isEmpty()) {
             String debitAccountCode = "CASH".equalsIgnoreCase(savedReceipt.getPaymentMethod()) ? "1000" : "1010";
-            ChartOfAccount debitAcc = coaRepository.findByCompanyIdAndAccountCodeAndIsDeletedFalse(savedReceipt.getCompanyId(), debitAccountCode)
-                    .orElseThrow(() -> new IllegalArgumentException("Default debit account code '" + debitAccountCode + "' not found. Please configure Chart of Accounts."));
+            String debitAccountName = "CASH".equalsIgnoreCase(savedReceipt.getPaymentMethod()) ? "Cash on Hand" : "Bank - Current A/c";
+            ChartOfAccount debitAcc = coaService.getOrCreateAccount(savedReceipt.getCompanyId(), savedReceipt.getBranchId(), debitAccountCode, debitAccountName, "ASSET");
                     
-            ChartOfAccount creditAcc = coaRepository.findByCompanyIdAndAccountCodeAndIsDeletedFalse(savedReceipt.getCompanyId(), "1100")
-                    .orElseThrow(() -> new IllegalArgumentException("Default credit account code '1100' (Customer Receivables) not found. Please configure Chart of Accounts."));
+            ChartOfAccount creditAcc = coaService.getOrCreateAccount(savedReceipt.getCompanyId(), savedReceipt.getBranchId(), "1100", "Customer Receivables", "ASSET");
+
 
             JournalVoucher jv = new JournalVoucher();
             jv.setVoucherNumber("JV-" + System.currentTimeMillis());
