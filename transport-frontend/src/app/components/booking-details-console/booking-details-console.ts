@@ -130,6 +130,35 @@ export class BookingDetailsConsoleComponent implements OnInit {
     return this.bookingForm.get('details') as FormArray;
   }
 
+  getItemSubtotal(row: any): number {
+    const qty = Number(row.get('quantity')?.value || 0);
+    const rate = Number(row.get('rate')?.value || 0);
+    return qty * rate;
+  }
+
+  getItemGstAmount(row: any): number {
+    const subtotal = this.getItemSubtotal(row);
+    const gstPct = Number(row.get('gstPercentage')?.value || 0);
+    return (subtotal * gstPct) / 100;
+  }
+
+  getItemTotalAmount(row: any): number {
+    return this.getItemSubtotal(row) + this.getItemGstAmount(row);
+  }
+
+  get grandSubtotal(): number {
+    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemSubtotal(row), 0);
+  }
+
+  get grandGstTotal(): number {
+    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemGstAmount(row), 0);
+  }
+
+  get grandTotal(): number {
+    return this.grandSubtotal + this.grandGstTotal;
+  }
+
+
   addDetail() {
     const detailGroup = this.fb.group({
       material: this.fb.group({
