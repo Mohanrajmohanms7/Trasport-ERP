@@ -48,17 +48,16 @@ public class TenantSupportingDataService {
 
 
         int lookups = seedAllLookups(companyId, branch);
-        int materials = seedSampleMaterials(companyId, branch);
-        int quarries = seedSampleQuarry(companyId, branch);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("companyId", companyId);
         result.put("lookupsAdded", lookups);
-        result.put("materialsAdded", materials);
-        result.put("quarriesAdded", quarries);
-        result.put("message", "Supporting example data ready. Create 1 Customer, 1 Vehicle, 1 Driver manually, then run Booking → Trip → Invoice.");
+        result.put("materialsAdded", 0);
+        result.put("quarriesAdded", 0);
+        result.put("message", "Supporting system lookups ready for production onboarding.");
         return result;
     }
+
 
     private int seedAllLookups(Long companyId, Long branchId) {
         int added = 0;
