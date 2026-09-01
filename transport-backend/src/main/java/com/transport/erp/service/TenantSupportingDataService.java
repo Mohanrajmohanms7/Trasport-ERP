@@ -1,40 +1,23 @@
 package com.transport.erp.service;
 
-import com.transport.erp.model.*;
-import com.transport.erp.repository.*;
+import com.transport.erp.model.LookupValue;
+import com.transport.erp.repository.BranchRepository;
+import com.transport.erp.repository.LookupValueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Seeds supporting masters for a tenant so ops screens work,
- * without creating customers / vehicles / drivers (user enters those manually).
+ * Seeds supporting system lookups for a tenant so UI dropdown selectors function properly.
  */
 @Service
 @RequiredArgsConstructor
 public class TenantSupportingDataService {
 
     private final LookupValueRepository lookupValueRepository;
-    private final MaterialRepository materialRepository;
-    private final QuarryRepository quarryRepository;
-    private final DriverRepository driverRepository;
-    private final VehicleRepository vehicleRepository;
-    private final CustomerRepository customerRepository;
-    private final BookingRepository bookingRepository;
-    private final TripRepository tripRepository;
-    private final FuelEntryRepository fuelEntryRepository;
-    private final ExpenseRepository expenseRepository;
-    private final SalesInvoiceRepository salesInvoiceRepository;
-    private final CustomerLedgerRepository customerLedgerRepository;
     private final BranchRepository branchRepository;
 
     @Transactional
@@ -43,9 +26,7 @@ public class TenantSupportingDataService {
         if (branch == null) {
             branch = branchRepository.findByCompanyIdAndIsDeletedFalse(companyId, org.springframework.data.domain.PageRequest.of(0, 1))
                     .stream().findFirst().map(b -> b.getId()).orElse(null);
-
         }
-
 
         int lookups = seedAllLookups(companyId, branch);
 
@@ -54,10 +35,9 @@ public class TenantSupportingDataService {
         result.put("lookupsAdded", lookups);
         result.put("materialsAdded", 0);
         result.put("quarriesAdded", 0);
-        result.put("message", "Supporting system lookups ready for production onboarding.");
+        result.put("message", "Supporting system lookups ready for tenant onboarding.");
         return result;
     }
-
 
     private int seedAllLookups(Long companyId, Long branchId) {
         int added = 0;
@@ -123,68 +103,7 @@ public class TenantSupportingDataService {
                 "PRESENT", "Present", "ABSENT", "Absent", "LEAVE", "Leave", "HALF_DAY", "Half Day"));
         added += seedType(companyId, branchId, "ACCOUNT_TYPE", pairs(
                 "ASSET", "Asset", "LIABILITY", "Liability", "EQUITY", "Equity", "INCOME", "Income", "EXPENSE", "Expense"));
-        added += seedType(companyId, branchId, "DESTINATION_CITY", pairs(
-                "PERAMBALUR", "Perambalur", "ARIYALUR", "Ariyalur", "TRICHY", "Trichy"));
         return added;
-    }
-
-    private int seedSampleMaterials(Long companyId, Long branchId) {
-        LookupValue sand = requireLookup(companyId, "MATERIAL_CATEGORY", "SAND");
-        LookupValue aggregate = requireLookup(companyId, "MATERIAL_CATEGORY", "AGGREGATE");
-        LookupValue ton = requireLookup(companyId, "MATERIAL_UNIT", "TON");
-
-        int added = 0;
-        added += upsertMaterial(companyId, branchId, "MAT000001", "M Sand", "Construction sand — example rate", sand, ton, "850.00");
-        added += upsertMaterial(companyId, branchId, "MAT000002", "20 MM Jalli", "Aggregate — example rate", aggregate, ton, "920.00");
-        added += upsertMaterial(companyId, branchId, "MAT000003", "P Sand", "Plastering sand — example rate", sand, ton, "780.00");
-        return added;
-    }
-
-    private int seedSampleQuarry(Long companyId, Long branchId) {
-        if (quarryRepository.findByCompanyIdAndCodeAndIsDeletedFalse(companyId, "QRY000001").isPresent()) {
-            return 0;
-        }
-        Quarry q = new Quarry();
-        q.setCode("QRY000001");
-        q.setName("Example Quarry");
-        q.setDescription("Sample quarry for booking / trip flow testing");
-        q.setLocationAddress("Thannirpandhal, Perambalur, Tamil Nadu");
-        q.setOwnerName("Example Quarry Owner");
-        q.setContactNumber("9876500001");
-        q.setStatus("ACTIVE");
-        q.setCompanyId(companyId);
-        q.setBranchId(branchId);
-        q.setIsDeleted(false);
-        q.setCreatedBy("SYSTEM");
-        quarryRepository.save(q);
-        return 1;
-    }
-
-    private int upsertMaterial(Long companyId, Long branchId, String code, String name, String description,
-                               LookupValue category, LookupValue unit, String rate) {
-        if (materialRepository.findByCompanyIdAndCodeAndIsDeletedFalse(companyId, code).isPresent()) {
-            return 0;
-        }
-        Material m = new Material();
-        m.setCode(code);
-        m.setName(name);
-        m.setDescription(description);
-        m.setCategory(category);
-        m.setUnit(unit);
-        m.setDefaultRate(new BigDecimal(rate));
-        m.setDensity(new BigDecimal("1.500"));
-        m.setStatus("ACTIVE");
-        m.setCompanyId(companyId);
-        m.setBranchId(branchId);
-        m.setIsDeleted(false);
-        m.setCreatedBy("SYSTEM");
-        materialRepository.save(m);
-        return 1;
-    }
-
-    private LookupValue requireLookup(Long companyId, String type, String code) {
-        return lookupValueRepository.findByCompanyIdAndTypeAndCodeAndIsDeletedFalse(companyId, type, code)
-                .orElseThrow(() -> new IllegalStateException("Missing lookup " + type + "/" + code + " for company " + companyId));
     }
 
     private int seedType(Long companyId, Long branchId, String type, String[][] values) {
@@ -222,3 +141,4 @@ public class TenantSupportingDataService {
         return out;
     }
 }
+
