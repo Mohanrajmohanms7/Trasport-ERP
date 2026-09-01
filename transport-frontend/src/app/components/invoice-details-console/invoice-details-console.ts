@@ -125,6 +125,43 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     return this.invoiceForm.get('details') as FormArray;
   }
 
+  getItemSubtotal(row: any): number {
+    const qty = Number(row.get('quantity')?.value || 0);
+    const rate = Number(row.get('rate')?.value || 0);
+    return qty * rate;
+  }
+
+  getItemFreight(row: any): number {
+    return Number(row.get('freightCharges')?.value || 0);
+  }
+
+  getItemTotalAmount(row: any): number {
+    const subtotal = this.getItemSubtotal(row);
+    const freight = this.getItemFreight(row);
+    const gstPct = Number(row.get('gstPercentage')?.value || 18);
+    const lineNet = subtotal + freight;
+    const gstAmt = (lineNet * gstPct) / 100;
+    return lineNet + gstAmt;
+  }
+
+  get grandSubtotal(): number {
+    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemSubtotal(row), 0);
+  }
+
+  get grandFreight(): number {
+    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemFreight(row), 0);
+  }
+
+  get grandDiscount(): number {
+    return Number(this.invoiceForm.get('discount')?.value || 0);
+  }
+
+  get grandTotal(): number {
+    const itemsTotal = this.detailsArray.controls.reduce((sum, row) => sum + this.getItemTotalAmount(row), 0);
+    return Math.max(0, itemsTotal - this.grandDiscount);
+  }
+
+
   addDetail() {
     const detailGroup = this.fb.group({
       trip: this.fb.group({
