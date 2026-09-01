@@ -525,22 +525,22 @@
             <div *ngIf="onboardingStep() === 1" class="space-y-3">
               <p class="text-[11px] text-slate-500">Enter company details. Fields marked <span class="text-rose-600 font-bold">*</span> are required. Company code is generated automatically.</p>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="ABC Logistics Pvt Ltd"></ff-textbox>
-                <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Mohan Raj"></ff-textbox>
-                <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Logistics / Fleet Operator"></ff-textbox>
-                <ff-textbox label="Phone" [required]="true" formControlName="phone" placeholder="+91 9999988888"></ff-textbox>
-                <ff-textbox label="Email" [required]="true" type="email" formControlName="email" placeholder="admin@abclogistics.com"
+                <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="Enter Company Name"></ff-textbox>
+                <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Enter Owner / CEO Name"></ff-textbox>
+                <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Enter Industry / Description"></ff-textbox>
+                <ff-textbox label="Phone" [required]="true" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
+                <ff-textbox label="Email" [required]="true" type="email" formControlName="email" placeholder="Enter Email Address"
                   [errorMessages]="{ email: 'Enter a valid email address (example@company.com)' }"></ff-textbox>
-                <ff-textbox label="GSTIN" [required]="true" formControlName="gstNumber" placeholder="09AAAAA1111A1Z1"
+                <ff-textbox label="GSTIN" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
                   [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
-                <ff-textbox label="PAN (Optional)" formControlName="panNumber" placeholder="Optional PAN"></ff-textbox>
-                <ff-textbox label="Address" [required]="true" formControlName="address" placeholder="HQ Address"></ff-textbox>
-                <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Chennai"></ff-textbox>
-                <ff-textbox label="State" [required]="true" formControlName="state" placeholder="Tamil Nadu"></ff-textbox>
-                <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="600001"></ff-textbox>
-                <ff-textbox label="Website" formControlName="website" placeholder="www.example.com"></ff-textbox>
-                <ff-textbox label="Storage Limit" formControlName="storage" placeholder="10 GB"></ff-textbox>
-                <ff-textbox label="Logo URL" formControlName="logo" placeholder="https://..."></ff-textbox>
+                <ff-textbox label="PAN (Optional)" formControlName="panNumber" placeholder="Enter PAN Number"></ff-textbox>
+                <ff-textbox label="Address" [required]="true" formControlName="address" placeholder="Enter Address"></ff-textbox>
+                <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Enter City"></ff-textbox>
+                <ff-textbox label="State" [required]="true" formControlName="state" placeholder="Enter State"></ff-textbox>
+                <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="Enter Pincode"></ff-textbox>
+                <ff-textbox label="Website" formControlName="website" placeholder="Enter Website URL"></ff-textbox>
+                <ff-textbox label="Storage Limit" formControlName="storage" placeholder="Enter Storage Limit"></ff-textbox>
+                <ff-textbox label="Logo URL" formControlName="logo" placeholder="Enter Logo URL"></ff-textbox>
                 <ff-textbox label="Admin Username (Optional)" formControlName="adminUsername" placeholder="Auto-generated if blank"></ff-textbox>
                 <ff-textbox label="Admin Password (Optional)" formControlName="adminPassword" placeholder="Auto-generated if blank"></ff-textbox>
               </div>
@@ -718,22 +718,22 @@
           </h3>
           
           <form [formGroup]="companyForm" (ngSubmit)="saveCompany()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="ABC Logistics Pvt Ltd"></ff-textbox>
-            <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Mohan Raj"></ff-textbox>
+            <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="Enter Company Name"></ff-textbox>
+            <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Enter Owner / CEO Name"></ff-textbox>
             
-            <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="E.g., Logistics, Fleet Operator"></ff-textbox>
-            <ff-textbox label="Contact Phone Number" [required]="true" formControlName="phone" placeholder="+91 9999988888"></ff-textbox>
-            <ff-textbox label="Official Contact Email" [required]="true" type="email" formControlName="email" placeholder="admin@abclogistics.com"></ff-textbox>
-            <ff-textbox label="GSTIN Number" [required]="true" formControlName="gstNumber" placeholder="09AAAAA1111A1Z1"
+            <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Enter Industry"></ff-textbox>
+            <ff-textbox label="Contact Phone Number" [required]="true" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
+            <ff-textbox label="Official Contact Email" [required]="true" type="email" formControlName="email" placeholder="Enter Email Address"></ff-textbox>
+            <ff-textbox label="GSTIN Number" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
               [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
-            <ff-textbox label="PAN Number (Optional)" formControlName="panNumber" placeholder="Optional PAN"></ff-textbox>
-            <ff-textbox label="Headquarters Address" [required]="true" formControlName="address" placeholder="HQ Address details"></ff-textbox>
-            <ff-textbox label="City" [required]="true" formControlName="city" placeholder="E.g., Chennai"></ff-textbox>
-            <ff-textbox label="State" [required]="true" formControlName="state" placeholder="E.g., Tamil Nadu"></ff-textbox>
-            <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="600001"></ff-textbox>
-            <ff-textbox label="Website URL" formControlName="website" placeholder="www.abclogistics.com"></ff-textbox>
-            <ff-textbox label="Storage Space Limit" formControlName="storage" placeholder="E.g., 20 GB"></ff-textbox>
-            <ff-textbox label="Company Logo URL" formControlName="logo" placeholder="Logo image link"></ff-textbox>
+            <ff-textbox label="PAN Number (Optional)" formControlName="panNumber" placeholder="Enter PAN Number"></ff-textbox>
+            <ff-textbox label="Headquarters Address" [required]="true" formControlName="address" placeholder="Enter Address Details"></ff-textbox>
+            <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Enter City"></ff-textbox>
+            <ff-textbox label="State" [required]="true" formControlName="state" placeholder="Enter State"></ff-textbox>
+            <ff-textbox label="Pincode" [required]="true" formControlName="pincode" placeholder="Enter Pincode"></ff-textbox>
+            <ff-textbox label="Website URL" formControlName="website" placeholder="Enter Website URL"></ff-textbox>
+            <ff-textbox label="Storage Space Limit" formControlName="storage" placeholder="Enter Storage Quota"></ff-textbox>
+            <ff-textbox label="Company Logo URL" formControlName="logo" placeholder="Enter Logo URL"></ff-textbox>
 
             <div class="flex flex-col gap-1 text-xs">
               <label class="text-[10px] font-bold text-slate-400 uppercase">Subscription Plan</label>
@@ -1067,11 +1067,11 @@
           </h3>
           
           <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <ff-textbox label="Username" formControlName="username" placeholder="E.g., mohan_admin"></ff-textbox>
-            <ff-password *ngIf="!isUserEditMode()" label="Password" formControlName="password" placeholder="BCrypt Password"></ff-password>
-            <ff-textbox label="Full Name" formControlName="name" placeholder="Mohan Raj"></ff-textbox>
-            <ff-textbox label="Email Address" formControlName="email" placeholder="mohan@transport.com"></ff-textbox>
-            <ff-textbox label="Phone Number" formControlName="phone" placeholder="+91 9876543210"></ff-textbox>
+            <ff-textbox label="Username" formControlName="username" placeholder="Enter Username"></ff-textbox>
+            <ff-password *ngIf="!isUserEditMode()" label="Password" formControlName="password" placeholder="Enter Password"></ff-password>
+            <ff-textbox label="Full Name" formControlName="name" placeholder="Enter Owner / CEO Name"></ff-textbox>
+            <ff-textbox label="Email Address" formControlName="email" placeholder="Enter Email Address"></ff-textbox>
+            <ff-textbox label="Phone Number" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
             
             <!-- Role selection -->
             <div class="flex flex-col gap-1 text-xs">

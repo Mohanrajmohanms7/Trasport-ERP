@@ -201,11 +201,11 @@
 
         <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
-          <ff-textbox formControlName="templateName" label="Template Title Name" placeholder="e.g. Monthly Revenue Summary" prefixIcon="tune" [required]="true" />
+          <ff-textbox formControlName="templateName" label="Template Title Name" placeholder="Enter Report Title" prefixIcon="tune" [required]="true" />
 
           <ff-dropdown formControlName="reportType" label="Report Category Type" [options]="reportTypeOptions" [required]="true" searchPlaceholder="Search options..." />
 
-          <ff-textbox formControlName="columnsList" label="Selected Columns List" placeholder="e.g. id,invoiceNumber,customerName,netAmount" prefixIcon="view_column" [required]="true" />
+          <ff-textbox formControlName="columnsList" label="Selected Columns List" placeholder="Enter Fields List" prefixIcon="view_column" [required]="true" />
 
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showTemplateEditor.set(false)" />
@@ -238,9 +238,9 @@
             <ff-dropdown formControlName="id" label="Select Report Template" [options]="reportTemplateOptions" [required]="true" searchPlaceholder="Search options..." />
           </div>
 
-          <ff-textbox formControlName="cronExpression" label="Cron Schedule Pattern" placeholder="e.g. 0 0 12 * * ?" prefixIcon="schedule" [required]="true" />
+          <ff-textbox formControlName="cronExpression" label="Cron Schedule Pattern" placeholder="Enter Cron Expression" prefixIcon="schedule" [required]="true" />
 
-          <ff-textbox formControlName="recipientEmail" label="Recipient Email Address" type="email" placeholder="e.g. manager@company.com" prefixIcon="mail" [required]="true" />
+          <ff-textbox formControlName="recipientEmail" label="Recipient Email Address" type="email" placeholder="Enter Recipient Email" prefixIcon="mail" [required]="true" />
 
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showScheduleEditor.set(false)" />

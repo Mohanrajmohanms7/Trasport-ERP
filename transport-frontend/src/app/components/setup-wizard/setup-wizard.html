@@ -52,8 +52,8 @@
             @if (isSaved('company')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="companyForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Company Code" placeholder="DEMO" prefixIcon="tag" [required]="true" />
-            <ff-textbox formControlName="name" label="Company Name" placeholder="Demo Transport ERP" prefixIcon="corporate_fare" [required]="true" />
+            <ff-textbox formControlName="code" label="Company Code" placeholder="Enter Company Code" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Company Name" placeholder="Enter Company Name" prefixIcon="corporate_fare" [required]="true" />
             <ff-textbox formControlName="gstNumber" label="GST Number" prefixIcon="badge" />
             <ff-textbox formControlName="panNumber" label="PAN Number" prefixIcon="badge" />
             <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
@@ -78,8 +78,8 @@
             @if (isSaved('branch')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="branchForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Branch Code" placeholder="BR01" prefixIcon="tag" [required]="true" />
-            <ff-textbox formControlName="name" label="Branch Name" placeholder="Salem Branch" prefixIcon="corporate_fare" [required]="true" />
+            <ff-textbox formControlName="code" label="Branch Code" placeholder="Enter Branch Code" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Branch Name" placeholder="Enter Branch Name" prefixIcon="corporate_fare" [required]="true" />
             <ff-textbox formControlName="manager" label="Manager" prefixIcon="person" />
             <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
             <div class="sm:col-span-2">
@@ -100,8 +100,8 @@
             @if (isSaved('vehicle')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="vehicleForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Registration Number" placeholder="TN 37 AB 1234" prefixIcon="tag" [required]="true" />
-            <ff-textbox formControlName="name" label="Vehicle Name" placeholder="Tipper 01" prefixIcon="local_shipping" [required]="true" />
+            <ff-textbox formControlName="code" label="Registration Number" placeholder="Enter Registration Number" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Vehicle Name" placeholder="Enter Vehicle Name" prefixIcon="local_shipping" [required]="true" />
             <ff-textbox formControlName="brand" label="Brand" />
             <ff-textbox formControlName="model" label="Model" />
             <ff-textbox formControlName="ownerName" label="Owner Name" prefixIcon="person" />
@@ -126,7 +126,7 @@
             @if (isSaved('driver')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="driverForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Driver Code" placeholder="DR00001" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="code" label="Driver Code" placeholder="Enter Driver Code" prefixIcon="tag" [required]="true" />
             <ff-textbox formControlName="name" label="Driver Name" prefixIcon="person" [required]="true" />
             <ff-textbox formControlName="licenseNumber" label="License Number" prefixIcon="badge" [required]="true" />
             <ff-datepicker formControlName="licenseExpiryDate" label="License Expiry" />
@@ -146,7 +146,7 @@
             @if (isSaved('customer')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="customerForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Customer Code" placeholder="CUST001" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="code" label="Customer Code" placeholder="Enter Customer Code" prefixIcon="tag" [required]="true" />
             <ff-textbox formControlName="name" label="Customer Name" prefixIcon="person" [required]="true" />
             <ff-textbox formControlName="phone" label="Phone" prefixIcon="call" [digitsOnly]="true" />
             <ff-textbox formControlName="email" label="Email" type="email" prefixIcon="mail" />
@@ -170,8 +170,8 @@
             @if (isSaved('material')) { <span class="text-emerald-600 text-xs font-semibold ml-2">Saved</span> }
           </ng-template>
           <form [formGroup]="materialForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <ff-textbox formControlName="code" label="Material Code" placeholder="MSAND" prefixIcon="tag" [required]="true" />
-            <ff-textbox formControlName="name" label="Material Name" placeholder="M-Sand" prefixIcon="label" [required]="true" />
+            <ff-textbox formControlName="code" label="Material Code" placeholder="Enter Material Code" prefixIcon="tag" [required]="true" />
+            <ff-textbox formControlName="name" label="Material Name" placeholder="Enter Material Name" prefixIcon="label" [required]="true" />
             <ff-number formControlName="defaultRate" label="Default Rate" [min]="0" />
             <ff-number formControlName="density" label="Density" [min]="0" [step]="0.001" />
             <div class="sm:col-span-2">

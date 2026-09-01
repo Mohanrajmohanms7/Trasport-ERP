@@ -55,7 +55,7 @@
   (closed)="showEditor.set(false)">
 
   <form [formGroup]="editorForm" class="driver-form">
-    <ff-textbox formControlName="code" label="Driver Code" placeholder="DR00001" prefixIcon="tag" [required]="true" />
+    <ff-textbox formControlName="code" label="Driver Code" placeholder="Enter Driver Code" prefixIcon="tag" [required]="true" />
     <ff-textbox formControlName="name" label="Driver Name" placeholder="Full name" prefixIcon="person" [required]="true" />
     <ff-textbox formControlName="phoneNumber" label="Mobile Number" placeholder="98765 43210" prefixIcon="call" [digitsOnly]="true" />
     <ff-textbox formControlName="licenseNumber" label="License Number" placeholder="TN12 2018 1234567" prefixIcon="badge" [required]="true" />

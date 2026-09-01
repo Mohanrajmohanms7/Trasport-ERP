@@ -212,7 +212,7 @@
         <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="flex flex-col">
           <div class="px-5 py-5 flex flex-col gap-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ff-textbox formControlName="code" label="Employee Code" placeholder="E.g., EMP-101" prefixIcon="tag" [required]="true" />
+              <ff-textbox formControlName="code" label="Employee Code" placeholder="Enter Employee Code" prefixIcon="tag" [required]="true" />
               <ff-textbox formControlName="username" label="Username" placeholder="Username" prefixIcon="person" [required]="true" />
             </div>
 
@@ -223,7 +223,7 @@
             <ff-textbox formControlName="name" label="Full Name" placeholder="Full Name" prefixIcon="badge" [required]="true" />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ff-textbox formControlName="email" label="Email Address" type="email" placeholder="email@transport.com" prefixIcon="mail" />
+              <ff-textbox formControlName="email" label="Email Address" type="email" placeholder="Enter Email Address" prefixIcon="mail" />
               <ff-textbox formControlName="phone" label="Mobile Number" placeholder="Phone" prefixIcon="call" [digitsOnly]="true" />
             </div>
 
@@ -276,8 +276,8 @@
         <form [formGroup]="roleForm" (ngSubmit)="saveRole()" class="flex flex-col">
           <div class="px-5 py-5 flex flex-col gap-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ff-textbox formControlName="code" label="Role Code/Name" placeholder="E.g., FLEET_MGR" prefixIcon="tag" [required]="true" />
-              <ff-textbox formControlName="name" label="Full Description" placeholder="E.g., Fleet Operations Manager" prefixIcon="label" [required]="true" />
+              <ff-textbox formControlName="code" label="Role Code/Name" placeholder="Enter Role Code" prefixIcon="tag" [required]="true" />
+              <ff-textbox formControlName="name" label="Full Description" placeholder="Enter Role Description" prefixIcon="label" [required]="true" />
             </div>
 
             <ff-dropdown
