@@ -59,5 +59,11 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Trip t WHERE t.id = :id AND t.isDeleted = false")
     Optional<Trip> findAndLockById(@Param("id") Long id);
+
+    long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
+
+    long countByDriverIdAndIsDeletedFalse(Long driverId);
+
+    long countByBookingIdAndIsDeletedFalse(Long bookingId);
 }
 

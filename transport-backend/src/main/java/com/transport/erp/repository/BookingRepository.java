@@ -20,4 +20,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     long countByCompanyIdAndStatusAndIsDeletedFalse(Long companyId, String status);
 
     List<Booking> findTop5ByCompanyIdAndIsDeletedFalseOrderByIdDesc(Long companyId);
+
+    long countByCustomerIdAndIsDeletedFalse(Long customerId);
+
+    long countByDeliverySiteIdAndIsDeletedFalse(Long deliverySiteId);
 }

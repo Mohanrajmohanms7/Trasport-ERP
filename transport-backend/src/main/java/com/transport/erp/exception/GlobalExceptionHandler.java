@@ -16,6 +16,15 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessValidationException(BusinessValidationException ex) {
+        ApiResponse<Void> response = ApiResponse.error(
+                ex.getErrors(),
+                ex.getTitle() != null ? ex.getTitle() : ex.getMessage()
+        );
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         ApiResponse<Void> response = ApiResponse.error(

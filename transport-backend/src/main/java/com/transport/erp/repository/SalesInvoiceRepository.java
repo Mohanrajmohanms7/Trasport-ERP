@@ -179,6 +179,14 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
     List<Object[]> getCustomerOutstandingBalances(
             @Param("companyId") Long companyId,
             @Param("branchId") Long branchId);
+
+    long countByCustomerIdAndIsDeletedFalse(Long customerId);
+
+    @Query("SELECT COUNT(i) FROM SalesInvoice i JOIN i.details d WHERE d.trip.id = :tripId AND i.isDeleted = false AND i.status != 'CANCELLED'")
+    long countByTripIdAndIsDeletedFalse(@Param("tripId") Long tripId);
+
+    @Query("SELECT COUNT(i) FROM SalesInvoice i JOIN i.details d WHERE d.trip.booking.id = :bookingId AND i.isDeleted = false AND i.status != 'CANCELLED'")
+    long countByBookingIdAndIsDeletedFalse(@Param("bookingId") Long bookingId);
 }
 
 

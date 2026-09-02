@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByCompanyIdAndCodeAndIsDeletedFalse(Long companyId, String code);
     Page<Customer> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+    long countByCompanyIdAndIsDeletedFalse(Long companyId);
     Page<Customer> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(Long companyId, String name, String code, Pageable pageable);
 }

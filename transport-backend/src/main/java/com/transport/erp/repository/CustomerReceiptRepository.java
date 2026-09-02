@@ -22,6 +22,8 @@ public interface CustomerReceiptRepository extends JpaRepository<CustomerReceipt
 
     Page<CustomerReceipt> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
+    long countByCustomerIdAndIsDeletedFalse(Long customerId);
+
     @Query("""
             SELECT COALESCE(SUM(r.amountReceived), 0) FROM CustomerReceipt r
             WHERE r.companyId = :companyId AND r.isDeleted = false

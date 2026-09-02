@@ -29,4 +29,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     BigDecimal sumTotalAmountByCompanyAndDateRange(@Param("companyId") Long companyId,
                                                    @Param("from") LocalDate from,
                                                    @Param("to") LocalDate to);
+
+    long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
+
+    long countByDriverIdAndIsDeletedFalse(Long driverId);
 }

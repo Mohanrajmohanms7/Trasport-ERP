@@ -58,5 +58,11 @@ public interface CustomerReceiptAllocationRepository extends JpaRepository<Custo
             @Param("branchId") Long branchId,
             @Param("fromDate") java.time.LocalDate fromDate,
             @Param("toDate") java.time.LocalDate toDate);
+
+    @Query("SELECT COUNT(a) FROM CustomerReceiptAllocation a WHERE a.invoice.id = :invoiceId AND a.isDeleted = false AND a.receipt.isDeleted = false AND a.receipt.status != 'CANCELLED'")
+    long countByInvoiceIdAndIsDeletedFalse(@Param("invoiceId") Long invoiceId);
+
+    @Query("SELECT COALESCE(SUM(a.allocatedAmount), 0) FROM CustomerReceiptAllocation a WHERE a.invoice.id = :invoiceId AND a.isDeleted = false AND a.receipt.isDeleted = false AND a.receipt.status != 'CANCELLED'")
+    java.math.BigDecimal sumAllocatedAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
 }
 

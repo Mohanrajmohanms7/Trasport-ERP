@@ -28,4 +28,8 @@ public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     BigDecimal sumTotalAmountByCompanyAndDateRange(@Param("companyId") Long companyId,
                                                    @Param("from") LocalDate from,
                                                    @Param("to") LocalDate to);
+
+    long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
+
+    long countByDriverIdAndIsDeletedFalse(Long driverId);
 }
