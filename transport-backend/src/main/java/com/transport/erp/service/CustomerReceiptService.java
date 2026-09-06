@@ -601,7 +601,7 @@ public class CustomerReceiptService {
             jv.setUpdatedBy(username);
             jv.setCode(jv.getVoucherNumber());
             jv.setName("Journal Voucher Entry");
-            
+             
             jvService.createVoucher(jv, username);
         }
 

@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.transport.erp.model.SalesInvoice;
+
 @Service
 public class CustomerLedgerService {
 
@@ -22,12 +24,8 @@ public class CustomerLedgerService {
     @Autowired
     private TenantAccessService tenantAccess;
 
-
-
     @Autowired
     private CustomerRepository customerRepository;
-
-
 
     public List<CustomerLedger> getLedgerByCustomer(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
@@ -39,18 +37,25 @@ public class CustomerLedgerService {
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String username) {
-        postToLedger(customerId, receipt, debit, credit, null, username, null);
+        postToLedger(customerId, receipt, null, debit, credit, null, username, null);
     }
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String remarks, String username) {
-        postToLedger(customerId, receipt, debit, credit, remarks, username, null);
+        postToLedger(customerId, receipt, null, debit, credit, remarks, username, null);
     }
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String remarks, String username, Long explicitBranchId) {
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
+        postToLedger(customerId, receipt, null, debit, credit, remarks, username, explicitBranchId);
+    }
+
+    @Transactional
+    public void postToLedger(Long customerId, CustomerReceipt receipt, SalesInvoice invoice, BigDecimal debit, BigDecimal credit, String remarks, String username, Long explicitBranchId) {
+        // Concurrency protection: Lock customer row before calculating running balance
+        Customer customer = customerRepository.findAndLockById(customerId)
+                .orElseGet(() -> customerRepository.findById(customerId)
+                        .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId)));
         tenantAccess.assertCompanyAccess(customer.getCompanyId());
 
         // Get current running balance
@@ -63,10 +68,11 @@ public class CustomerLedgerService {
         CustomerLedger entry = new CustomerLedger();
         entry.setCustomer(customer);
         entry.setReceipt(receipt);
+        entry.setInvoice(invoice);
         entry.setDebitAmount(debit);
         entry.setCreditAmount(credit);
         entry.setRunningBalance(newBal);
-        entry.setRemarks(remarks != null ? remarks : (receipt != null ? "Payment received via receipt " + receipt.getReceiptNumber() : "Manual ledger adjustment"));
+        entry.setRemarks(remarks != null ? remarks : (receipt != null ? "Payment received via receipt " + receipt.getReceiptNumber() : (invoice != null ? "Sales invoice entry " + invoice.getInvoiceNumber() : "Manual ledger adjustment")));
         entry.setIsDeleted(false);
 
         entry.setCreatedBy(username);
@@ -76,6 +82,9 @@ public class CustomerLedgerService {
         Long targetBranchId = explicitBranchId;
         if (targetBranchId == null && receipt != null) {
             targetBranchId = receipt.getBranchId();
+        }
+        if (targetBranchId == null && invoice != null) {
+            targetBranchId = invoice.getBranchId();
         }
         if (targetBranchId == null && customer.getBranchId() != null) {
             targetBranchId = customer.getBranchId();

@@ -19,6 +19,10 @@ public class CustomerLedger extends BaseEntity {
     @JoinColumn(name = "receipt_id")
     private CustomerReceipt receipt;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "invoice_id")
+    private SalesInvoice invoice;
+
     @Column(name = "debit_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal debitAmount = BigDecimal.ZERO;
 

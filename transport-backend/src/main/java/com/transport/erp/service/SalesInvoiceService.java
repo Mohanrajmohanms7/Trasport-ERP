@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import com.transport.erp.model.ChartOfAccount;
 import com.transport.erp.model.JournalVoucher;
+import com.transport.erp.repository.JournalVoucherRepository;
 import com.transport.erp.service.ChartOfAccountService;
 import com.transport.erp.service.JournalVoucherService;
 
@@ -33,6 +34,9 @@ public class SalesInvoiceService {
 
     @Autowired
     private SalesInvoiceRepository invoiceRepository;
+
+    @Autowired
+    private JournalVoucherRepository jvRepository;
 
     @Autowired
     private TripRepository tripRepository;
@@ -188,65 +192,113 @@ public class SalesInvoiceService {
 
     @Transactional
     public SalesInvoice approveInvoice(Long id, String username) {
-        SalesInvoice invoice = getInvoiceById(id);
+        SalesInvoice invoice = invoiceRepository.findAndLockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + id));
+
+        tenantAccess.assertOwned(invoice.getCompanyId());
+        AppUser currentUser = tenantAccess.requireCurrentUser();
+        if (!tenantAccess.isSuperAdmin(currentUser)) {
+            if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
+            }
+        }
+
+        if ("APPROVED".equalsIgnoreCase(invoice.getStatus())) {
+            List<String> details = new java.util.ArrayList<>();
+            details.add(String.format("Invoice '%s' is already APPROVED.", invoice.getInvoiceNumber()));
+            throw new com.transport.erp.exception.BusinessValidationException(
+                    "Invoice Already Approved",
+                    "INVOICE_ALREADY_APPROVED",
+                    String.format("Invoice '%s' is already APPROVED.", invoice.getInvoiceNumber()),
+                    "No further approval action can be taken on an approved invoice.",
+                    details
+            );
+        }
+        if (!"DRAFT".equalsIgnoreCase(invoice.getStatus())) {
+            List<String> details = new java.util.ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be approved because its current status is %s.", invoice.getInvoiceNumber(), invoice.getStatus()));
+            throw new com.transport.erp.exception.BusinessValidationException(
+                    "Invoice Approval Blocked",
+                    "INVOICE_STATUS_APPROVAL_BLOCKED",
+                    String.format("Invoice '%s' cannot be approved because its current status is %s.", invoice.getInvoiceNumber(), invoice.getStatus()),
+                    "Only DRAFT invoices can be approved.",
+                    details
+            );
+        }
+
+        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(invoice.getInvoiceNumber());
+        if (existingJvs != null && !existingJvs.isEmpty()) {
+            List<String> details = new java.util.ArrayList<>();
+            details.add(String.format("Accounting vouchers already exist for invoice '%s'.", invoice.getInvoiceNumber()));
+            throw new com.transport.erp.exception.BusinessValidationException(
+                    "Duplicate Accounting Blocked",
+                    "INVOICE_ACCOUNTING_EXISTS",
+                    String.format("Accounting entry already exists for invoice '%s'.", invoice.getInvoiceNumber()),
+                    "Invoice accounting has already been posted.",
+                    details
+            );
+        }
+
         invoice.setStatus("APPROVED");
         invoice.setUpdatedBy(username);
 
         SalesInvoice saved = invoiceRepository.save(invoice);
 
         // Automatically post debit update to customer ledger (Invoice increases outstanding customer owed balance)
-        ledgerService.postToLedger(saved.getCustomer().getId(), null, saved.getNetAmount(), BigDecimal.ZERO, "Sales invoice approval for " + saved.getInvoiceNumber(), username, saved.getBranchId());
+        ledgerService.postToLedger(
+                saved.getCustomer().getId(),
+                null,
+                saved,
+                saved.getNetAmount(),
+                BigDecimal.ZERO,
+                "Sales invoice approval for " + saved.getInvoiceNumber(),
+                username,
+                saved.getBranchId()
+        );
 
-        // Automatically post double-entry General Ledger posting
-        // Dr: 1100 Customer Receivables = netAmount (e.g. ₹11,800)
-        // Cr: 4000 Transport Freight Income = subtotal (e.g. ₹10,000)
-        // Cr: 2200 GST Liability = tax amount (e.g. ₹1,800)
-        try {
-            ChartOfAccount arAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "1100", "Customer Receivables", "ASSET");
-            ChartOfAccount incomeAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "4000", "Transport Freight Income", "INCOME");
-            
-            BigDecimal subtotal = saved.getSubtotal() != null ? saved.getSubtotal() : saved.getNetAmount();
-            if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
-                JournalVoucher jvIncome = new JournalVoucher();
-                jvIncome.setVoucherNumber("JV-INV-" + saved.getId() + "-INC");
-                jvIncome.setVoucherDate(LocalDate.now());
-                jvIncome.setDebitAccount(arAcc);
-                jvIncome.setCreditAccount(incomeAcc);
-                jvIncome.setAmount(subtotal);
-                jvIncome.setReferenceNumber(saved.getInvoiceNumber());
-                jvIncome.setDescription("Auto-posted sales invoice revenue JV for " + saved.getInvoiceNumber());
-                jvIncome.setCompanyId(saved.getCompanyId());
-                jvIncome.setBranchId(saved.getBranchId());
-                jvIncome.setIsDeleted(false);
-                jvIncome.setCreatedBy(username);
-                jvIncome.setUpdatedBy(username);
-                jvIncome.setCode(jvIncome.getVoucherNumber());
-                jvIncome.setName("Sales Invoice Revenue Voucher");
-                jvService.createVoucher(jvIncome, username);
-            }
+        // Automatically post double-entry General Ledger posting (Exceptions propagate without try-catch to ensure atomicity!)
+        ChartOfAccount arAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "1100", "Customer Receivables", "ASSET");
+        ChartOfAccount incomeAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "4000", "Transport Freight Income", "INCOME");
 
-            BigDecimal gstAmount = saved.getNetAmount().subtract(subtotal);
-            if (gstAmount.compareTo(BigDecimal.ZERO) > 0) {
-                ChartOfAccount gstAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "2200", "GST Liability", "LIABILITY");
-                JournalVoucher jvGst = new JournalVoucher();
-                jvGst.setVoucherNumber("JV-INV-" + saved.getId() + "-GST");
-                jvGst.setVoucherDate(LocalDate.now());
-                jvGst.setDebitAccount(arAcc);
-                jvGst.setCreditAccount(gstAcc);
-                jvGst.setAmount(gstAmount);
-                jvGst.setReferenceNumber(saved.getInvoiceNumber());
-                jvGst.setDescription("Auto-posted sales invoice GST liability JV for " + saved.getInvoiceNumber());
-                jvGst.setCompanyId(saved.getCompanyId());
-                jvGst.setBranchId(saved.getBranchId());
-                jvGst.setIsDeleted(false);
-                jvGst.setCreatedBy(username);
-                jvGst.setUpdatedBy(username);
-                jvGst.setCode(jvGst.getVoucherNumber());
-                jvGst.setName("Sales Invoice GST Liability Voucher");
-                jvService.createVoucher(jvGst, username);
-            }
-        } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(SalesInvoiceService.class).warn("Failed to create automatic GL posting for invoice " + saved.getInvoiceNumber() + ": " + e.getMessage(), e);
+        BigDecimal subtotal = saved.getSubtotal() != null ? saved.getSubtotal() : saved.getNetAmount();
+        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+            JournalVoucher jvIncome = new JournalVoucher();
+            jvIncome.setVoucherNumber("JV-INV-" + saved.getId() + "-INC");
+            jvIncome.setVoucherDate(LocalDate.now());
+            jvIncome.setDebitAccount(arAcc);
+            jvIncome.setCreditAccount(incomeAcc);
+            jvIncome.setAmount(subtotal);
+            jvIncome.setReferenceNumber(saved.getInvoiceNumber());
+            jvIncome.setDescription("Auto-posted sales invoice revenue JV for " + saved.getInvoiceNumber());
+            jvIncome.setCompanyId(saved.getCompanyId());
+            jvIncome.setBranchId(saved.getBranchId());
+            jvIncome.setIsDeleted(false);
+            jvIncome.setCreatedBy(username);
+            jvIncome.setUpdatedBy(username);
+            jvIncome.setCode(jvIncome.getVoucherNumber());
+            jvIncome.setName("Sales Invoice Revenue Voucher");
+            jvService.createVoucher(jvIncome, username);
+        }
+
+        BigDecimal gstAmount = saved.getNetAmount().subtract(subtotal);
+        if (gstAmount.compareTo(BigDecimal.ZERO) > 0) {
+            ChartOfAccount gstAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "2200", "GST Liability", "LIABILITY");
+            JournalVoucher jvGst = new JournalVoucher();
+            jvGst.setVoucherNumber("JV-INV-" + saved.getId() + "-GST");
+            jvGst.setVoucherDate(LocalDate.now());
+            jvGst.setDebitAccount(arAcc);
+            jvGst.setCreditAccount(gstAcc);
+            jvGst.setAmount(gstAmount);
+            jvGst.setReferenceNumber(saved.getInvoiceNumber());
+            jvGst.setDescription("Auto-posted sales invoice GST liability JV for " + saved.getInvoiceNumber());
+            jvGst.setCompanyId(saved.getCompanyId());
+            jvGst.setBranchId(saved.getBranchId());
+            jvGst.setIsDeleted(false);
+            jvGst.setCreatedBy(username);
+            jvGst.setUpdatedBy(username);
+            jvGst.setCode(jvGst.getVoucherNumber());
+            jvGst.setName("Sales Invoice GST Liability Voucher");
+            jvService.createVoucher(jvGst, username);
         }
 
         auditService.log(username, "INVOICE_APPROVED", "sales_invoices", saved.getId(), null,
@@ -257,8 +309,53 @@ public class SalesInvoiceService {
 
     @Transactional
     public SalesInvoice cancelInvoice(Long id, String username) {
-        SalesInvoice invoice = getInvoiceById(id);
+        SalesInvoice invoice = invoiceRepository.findAndLockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + id));
+
         validationService.validateInvoiceCancel(invoice);
+
+        String previousStatus = invoice.getStatus();
+
+        // Perform accounting reversals for APPROVED invoices
+        if ("APPROVED".equalsIgnoreCase(previousStatus)) {
+            String reversalRef = "REV-" + invoice.getInvoiceNumber();
+            List<JournalVoucher> existingReversals = jvRepository.findByReferenceNumberAndIsDeletedFalse(reversalRef);
+
+            if (existingReversals.isEmpty()) {
+                // 1. Post Customer Ledger reversal (Credit entry = netAmount)
+                ledgerService.postToLedger(
+                        invoice.getCustomer().getId(),
+                        null,
+                        invoice,
+                        BigDecimal.ZERO,
+                        invoice.getNetAmount(),
+                        "Reversal of cancelled sales invoice " + invoice.getInvoiceNumber(),
+                        username,
+                        invoice.getBranchId()
+                );
+
+                // 2. Post Journal Voucher reversals
+                List<JournalVoucher> originalJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(invoice.getInvoiceNumber());
+                for (JournalVoucher origJv : originalJvs) {
+                    JournalVoucher revJv = new JournalVoucher();
+                    revJv.setVoucherNumber("JV-REV-" + origJv.getId() + "-" + System.currentTimeMillis());
+                    revJv.setVoucherDate(LocalDate.now());
+                    revJv.setDebitAccount(origJv.getCreditAccount());
+                    revJv.setCreditAccount(origJv.getDebitAccount());
+                    revJv.setAmount(origJv.getAmount());
+                    revJv.setReferenceNumber(reversalRef);
+                    revJv.setDescription("Auto-posted reversal JV for cancelled invoice " + invoice.getInvoiceNumber());
+                    revJv.setCompanyId(invoice.getCompanyId());
+                    revJv.setBranchId(invoice.getBranchId());
+                    revJv.setIsDeleted(false);
+                    revJv.setCreatedBy(username);
+                    revJv.setUpdatedBy(username);
+                    revJv.setCode(revJv.getVoucherNumber());
+                    revJv.setName("Journal Voucher Reversal Entry");
+                    jvService.createVoucher(revJv, username);
+                }
+            }
+        }
 
         invoice.setStatus("CANCELLED");
         invoice.setUpdatedBy(username);

@@ -53,6 +53,21 @@ public class JournalVoucherService {
         if (voucher.getCode() == null) voucher.setCode(voucher.getVoucherNumber());
         if (voucher.getName() == null) voucher.setName("Journal Voucher Entry");
 
+        if (voucher.getAmount() == null || voucher.getAmount().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Journal voucher amount must be greater than zero.");
+        }
+
+        if (voucher.getDebitAccount() == null || voucher.getDebitAccount().getId() == null) {
+            throw new IllegalArgumentException("Debit Account must be specified");
+        }
+        if (voucher.getCreditAccount() == null || voucher.getCreditAccount().getId() == null) {
+            throw new IllegalArgumentException("Credit Account must be specified");
+        }
+
+        if (voucher.getDebitAccount().getId().equals(voucher.getCreditAccount().getId())) {
+            throw new IllegalArgumentException("Debit account and credit account cannot be the same account.");
+        }
+
         // Load debit and credit accounts — must belong to caller's company
         ChartOfAccount debitAcc = accountRepository.findById(voucher.getDebitAccount().getId())
                 .orElseThrow(() -> new IllegalArgumentException("Debit Account not found"));
