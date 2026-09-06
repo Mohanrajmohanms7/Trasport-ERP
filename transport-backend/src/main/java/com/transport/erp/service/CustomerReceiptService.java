@@ -436,7 +436,8 @@ public class CustomerReceiptService {
             reversalJv.setDebitAccount(originalJv.getCreditAccount());
             reversalJv.setCreditAccount(originalJv.getDebitAccount());
             reversalJv.setAmount(savedReceipt.getAmountReceived());
-            reversalJv.setReferenceNumber(savedReceipt.getReceiptNumber());
+            String origRef = originalJv.getReferenceNumber() != null ? originalJv.getReferenceNumber() : savedReceipt.getReceiptNumber();
+            reversalJv.setReferenceNumber(origRef.startsWith("REV-") ? origRef : "REV-" + origRef);
             reversalJv.setDescription("Auto-posted reversal JV for " + savedReceipt.getReceiptNumber());
             reversalJv.setCompanyId(savedReceipt.getCompanyId());
             reversalJv.setBranchId(savedReceipt.getBranchId());
