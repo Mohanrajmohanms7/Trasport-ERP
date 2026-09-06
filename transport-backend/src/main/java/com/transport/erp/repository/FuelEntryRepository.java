@@ -16,6 +16,8 @@ import java.util.Optional;
 public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     Optional<FuelEntry> findByFuelEntryNumberAndIsDeletedFalse(String fuelEntryNumber);
 
+    Optional<FuelEntry> findByFuelRequestIdAndIsDeletedFalse(Long fuelRequestId);
+
     Page<FuelEntry> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
     long countByCompanyIdAndFuelDateAndIsDeletedFalse(Long companyId, LocalDate fuelDate);

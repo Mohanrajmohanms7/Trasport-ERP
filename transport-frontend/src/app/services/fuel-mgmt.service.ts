@@ -9,6 +9,7 @@ export interface FuelEntry {
   vehicle: { id: number; registrationNumber?: string };
   driver: { id: number; name?: string };
   trip?: { id: number; tripNumber?: string };
+  fuelRequest?: { id: number; requestNumber?: string };
   fuelStation: string;
   fuelQuantity: number;
   ratePerLitre: number;
@@ -18,6 +19,7 @@ export interface FuelEntry {
   currentOdometer: number;
   previousOdometer: number;
   remarks?: string;
+  status?: string;
 }
 
 export interface FuelRequest {
@@ -26,7 +28,9 @@ export interface FuelRequest {
   trip: { id: number; tripNumber?: string };
   requestedQuantity: number;
   requestedAmount: number;
-  status?: string; // PENDING, APPROVED, REJECTED
+  fulfilledQuantity?: number;
+  fulfilledAmount?: number;
+  status?: string; // PENDING, APPROVED, REJECTED, FULFILLED, CANCELLED
   requestedBy?: string;
   approvedBy?: string;
 }
@@ -49,6 +53,10 @@ export class FuelMgmtService {
     return this.http.get<ApiResponse<any>>('/api/v1/fuel', { params });
   }
 
+  getFuelEntryById(id: number): Observable<ApiResponse<FuelEntry>> {
+    return this.http.get<ApiResponse<FuelEntry>>(`/api/v1/fuel/${id}`);
+  }
+
   createFuelEntry(entry: FuelEntry): Observable<ApiResponse<FuelEntry>> {
     return this.http.post<ApiResponse<FuelEntry>>('/api/v1/fuel', entry);
   }
@@ -61,9 +69,21 @@ export class FuelMgmtService {
     return this.http.delete<ApiResponse<void>>(`/api/v1/fuel/${id}`);
   }
 
+  approveFuelEntry(id: number): Observable<ApiResponse<FuelEntry>> {
+    return this.http.post<ApiResponse<FuelEntry>>(`/api/v1/fuel/${id}/approve`, {});
+  }
+
+  cancelFuelEntry(id: number): Observable<ApiResponse<FuelEntry>> {
+    return this.http.post<ApiResponse<FuelEntry>>(`/api/v1/fuel/${id}/cancel`, {});
+  }
+
   // Fuel Requests APIs
   getFuelRequests(params?: any): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>('/api/v1/fuel/request', { params });
+  }
+
+  getFuelRequestById(id: number): Observable<ApiResponse<FuelRequest>> {
+    return this.http.get<ApiResponse<FuelRequest>>(`/api/v1/fuel/request/${id}`);
   }
 
   createFuelRequest(req: FuelRequest): Observable<ApiResponse<FuelRequest>> {
@@ -76,5 +96,9 @@ export class FuelMgmtService {
 
   rejectFuelRequest(id: number): Observable<ApiResponse<FuelRequest>> {
     return this.http.post<ApiResponse<FuelRequest>>(`/api/v1/fuel/request/${id}/reject`, {});
+  }
+
+  cancelFuelRequest(id: number): Observable<ApiResponse<FuelRequest>> {
+    return this.http.post<ApiResponse<FuelRequest>>(`/api/v1/fuel/request/${id}/cancel`, {});
   }
 }

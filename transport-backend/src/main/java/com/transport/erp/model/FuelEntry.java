@@ -1,5 +1,6 @@
 package com.transport.erp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(name = "fuel_entries")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FuelEntry extends BaseEntity {
 
     @Column(name = "fuel_entry_number", nullable = false, length = 100)
@@ -29,6 +31,11 @@ public class FuelEntry extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "trip_id")
     private Trip trip;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fuel_request_id")
+    @JsonIgnoreProperties({"fuelEntry", "hibernateLazyInitializer", "handler"})
+    private FuelRequest fuelRequest;
 
     @Column(name = "fuel_station", nullable = false, length = 150)
     private String fuelStation;

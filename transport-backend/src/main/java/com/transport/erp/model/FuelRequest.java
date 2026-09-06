@@ -1,5 +1,6 @@
 package com.transport.erp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +10,7 @@ import java.math.BigDecimal;
 @Setter
 @Entity
 @Table(name = "fuel_requests")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FuelRequest extends BaseEntity {
 
     @Column(name = "request_number", nullable = false, length = 100)
@@ -24,12 +26,23 @@ public class FuelRequest extends BaseEntity {
     @Column(name = "requested_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal requestedAmount = BigDecimal.ZERO;
 
+    @Column(name = "fulfilled_quantity", nullable = false, precision = 10, scale = 2)
+    private BigDecimal fulfilledQuantity = BigDecimal.ZERO;
+
+    @Column(name = "fulfilled_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal fulfilledAmount = BigDecimal.ZERO;
+
     @Column(nullable = false, length = 50)
-    private String status = "PENDING"; // PENDING, APPROVED, REJECTED
+    private String status = "PENDING"; // PENDING, APPROVED, REJECTED, FULFILLED, CANCELLED
 
     @Column(name = "requested_by", length = 100)
     private String requestedBy;
 
     @Column(name = "approved_by", length = 100)
     private String approvedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fuel_entry_id")
+    @JsonIgnoreProperties({"fuelRequest", "hibernateLazyInitializer", "handler"})
+    private FuelEntry fuelEntry;
 }
