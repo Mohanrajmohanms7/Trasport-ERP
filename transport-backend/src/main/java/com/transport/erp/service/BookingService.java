@@ -26,6 +26,9 @@ public class BookingService {
     private TenantAccessService tenantAccess;
 
     @Autowired
+    private BusinessDependencyValidationService validationService;
+
+    @Autowired
     private TenantParentAccess tenantParentAccess;
 
 
@@ -64,7 +67,9 @@ public class BookingService {
         
         booking.setBookingNumber(prefix + System.currentTimeMillis());
         booking.setBookingDate(LocalDate.now());
-        booking.setStatus(defaultStatus);
+        if (booking.getStatus() == null || booking.getStatus().trim().isEmpty()) {
+            booking.setStatus(defaultStatus);
+        }
         booking.setIsDeleted(false);
         booking.setCreatedBy(createdByUsername);
         booking.setUpdatedBy(createdByUsername);
@@ -175,6 +180,9 @@ public class BookingService {
     @Transactional
     public void deleteBooking(Long id, String deletedByUsername) {
         Booking booking = getBookingById(id);
+
+        validationService.validateBookingDelete(booking);
+
         booking.setIsDeleted(true);
         booking.setUpdatedBy(deletedByUsername);
         bookingRepository.save(booking);

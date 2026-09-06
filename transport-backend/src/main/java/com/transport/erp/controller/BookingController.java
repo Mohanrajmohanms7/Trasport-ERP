@@ -58,9 +58,15 @@ public class BookingController {
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
-        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        bookingService.deleteBooking(id, activeUser);
-        return ApiResponse.success(null, "Booking cancelled successfully");
+        try {
+            String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+            bookingService.deleteBooking(id, activeUser);
+            return ApiResponse.success(null, "Booking cancelled successfully");
+        } catch (com.transport.erp.exception.BusinessValidationException e) {
+            return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error(java.util.Collections.singletonList(e.getMessage()), "Failed to delete booking");
+        }
     }
 
     @PostMapping("/{id}/approve")

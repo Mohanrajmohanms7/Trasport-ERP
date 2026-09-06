@@ -242,19 +242,83 @@ public class BusinessDependencyValidationService {
 
         tenantAccess.assertOwned(booking.getCompanyId());
 
+        if (!"DRAFT".equalsIgnoreCase(booking.getStatus())) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Booking '%s' cannot be deleted because its current status is %s.",
+                    booking.getBookingNumber(), booking.getStatus()));
+            details.add("Only bookings in DRAFT status can be deleted.");
+
+            throw new BusinessValidationException(
+                    "Booking Cannot Be Deleted",
+                    "BOOKING_STATUS_DELETE_BLOCKED",
+                    String.format("Booking '%s' cannot be deleted because its current status is %s.", booking.getBookingNumber(), booking.getStatus()),
+                    "Cancel the booking using the supported cancellation workflow instead of deleting it.",
+                    details
+            );
+        }
+
         long tripCount = tripRepository.countByBookingIdAndIsDeletedFalse(bookingId);
         long invoiceCount = salesInvoiceRepository.countByBookingIdAndIsDeletedFalse(bookingId);
 
-        if (!"DRAFT".equalsIgnoreCase(booking.getStatus()) || tripCount > 0 || invoiceCount > 0) {
+        if (tripCount > 0 || invoiceCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (tripCount > 0) depParts.add(tripCount + " trip(s)");
+            if (invoiceCount > 0) depParts.add(invoiceCount + " sales invoice(s)");
+
+            String depSummary = String.join(" and ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Booking '%s' cannot be deleted because a trip or invoice (%s) has already been generated.",
-                    booking.getBookingNumber(), booking.getStatus()));
+            details.add(String.format("Booking '%s' cannot be deleted because it is referenced by %s.",
+                    booking.getBookingNumber(), depSummary));
+            details.add("Historical transaction records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Booking Cannot Be Deleted",
                     "BOOKING_HAS_DEPENDENCIES",
-                    String.format("Booking '%s' is in %s state with linked operational records.", booking.getBookingNumber(), booking.getStatus()),
-                    "Use the booking cancellation workflow instead of deleting.",
+                    String.format("Booking '%s' has active transaction dependencies.", booking.getBookingNumber()),
+                    "Cancel or resolve the dependent transaction using its supported business workflow before attempting deletion.",
+                    details
+            );
+        }
+    }
+
+    public void validateBookingDelete(Booking booking) {
+        if (booking == null) return;
+        tenantAccess.assertOwned(booking.getCompanyId());
+
+        if (!"DRAFT".equalsIgnoreCase(booking.getStatus())) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Booking '%s' cannot be deleted because its current status is %s.",
+                    booking.getBookingNumber(), booking.getStatus()));
+            details.add("Only bookings in DRAFT status can be deleted.");
+
+            throw new BusinessValidationException(
+                    "Booking Cannot Be Deleted",
+                    "BOOKING_STATUS_DELETE_BLOCKED",
+                    String.format("Booking '%s' cannot be deleted because its current status is %s.", booking.getBookingNumber(), booking.getStatus()),
+                    "Cancel the booking using the supported cancellation workflow instead of deleting it.",
+                    details
+            );
+        }
+
+        long tripCount = tripRepository.countByBookingIdAndIsDeletedFalse(booking.getId());
+        long invoiceCount = salesInvoiceRepository.countByBookingIdAndIsDeletedFalse(booking.getId());
+
+        if (tripCount > 0 || invoiceCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (tripCount > 0) depParts.add(tripCount + " trip(s)");
+            if (invoiceCount > 0) depParts.add(invoiceCount + " sales invoice(s)");
+
+            String depSummary = String.join(" and ", depParts);
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Booking '%s' cannot be deleted because it is referenced by %s.",
+                    booking.getBookingNumber(), depSummary));
+            details.add("Historical transaction records must not be automatically deleted or altered.");
+
+            throw new BusinessValidationException(
+                    "Booking Cannot Be Deleted",
+                    "BOOKING_HAS_DEPENDENCIES",
+                    String.format("Booking '%s' has active transaction dependencies.", booking.getBookingNumber()),
+                    "Cancel or resolve the dependent transaction using its supported business workflow before attempting deletion.",
                     details
             );
         }
@@ -267,18 +331,71 @@ public class BusinessDependencyValidationService {
 
         tenantAccess.assertOwned(trip.getCompanyId());
 
-        long invoiceCount = salesInvoiceRepository.countByTripIdAndIsDeletedFalse(tripId);
-
-        if ("COMPLETED".equalsIgnoreCase(trip.getStatus()) || invoiceCount > 0) {
+        String status = trip.getStatus();
+        if (!"PLANNED".equalsIgnoreCase(status) && !"SCHEDULED".equalsIgnoreCase(status)) {
             List<String> details = new ArrayList<>();
-            details.add(String.format("Trip '%s' cannot be deleted because a sales invoice has already been generated or trip is completed.",
-                    trip.getTripNumber()));
+            details.add(String.format("Trip '%s' cannot be deleted because its current status is %s.",
+                    trip.getTripNumber(), status));
+            details.add("Completed or dispatched trips cannot be deleted.");
+
+            throw new BusinessValidationException(
+                    "Trip Cannot Be Deleted",
+                    "TRIP_STATUS_DELETE_BLOCKED",
+                    String.format("Trip '%s' cannot be deleted because its current status is %s.", trip.getTripNumber(), status),
+                    "Use the supported Trip cancellation/correction workflow instead of deleting the completed Trip.",
+                    details
+            );
+        }
+
+        long invoiceCount = salesInvoiceRepository.countByTripIdAndIsDeletedFalse(tripId);
+        if (invoiceCount > 0) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Trip '%s' cannot be deleted because it is referenced by %d sales invoice(s).",
+                    trip.getTripNumber(), invoiceCount));
+            details.add("Financial and historical transaction records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Trip Cannot Be Deleted",
                     "TRIP_HAS_DEPENDENCIES",
-                    String.format("Trip '%s' is in %s state.", trip.getTripNumber(), trip.getStatus()),
-                    "Cancel or reverse the trip itinerary through controlled workflow.",
+                    String.format("Trip '%s' is referenced by %d sales invoice(s).", trip.getTripNumber(), invoiceCount),
+                    "Resolve the related invoice using its supported business workflow before attempting Trip deletion.",
+                    details
+            );
+        }
+    }
+
+    public void validateTripDelete(Trip trip) {
+        if (trip == null) return;
+        tenantAccess.assertOwned(trip.getCompanyId());
+
+        String status = trip.getStatus();
+        if (!"PLANNED".equalsIgnoreCase(status) && !"SCHEDULED".equalsIgnoreCase(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Trip '%s' cannot be deleted because its current status is %s.",
+                    trip.getTripNumber(), status));
+            details.add("Completed or dispatched trips cannot be deleted.");
+
+            throw new BusinessValidationException(
+                    "Trip Cannot Be Deleted",
+                    "TRIP_STATUS_DELETE_BLOCKED",
+                    String.format("Trip '%s' cannot be deleted because its current status is %s.", trip.getTripNumber(), status),
+                    "Use the supported Trip cancellation/correction workflow instead of deleting the completed Trip.",
+                    details
+            );
+        }
+
+        long invoiceCount = salesInvoiceRepository.countByTripIdAndIsDeletedFalse(trip.getId());
+        if (invoiceCount > 0) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Trip '%s' cannot be deleted because it is referenced by %d sales invoice(s).",
+                    trip.getTripNumber(), invoiceCount));
+            details.add("Financial and historical transaction records must not be automatically deleted or altered.");
+
+            throw new BusinessValidationException(
+                    "Trip Cannot Be Deleted",
+                    "TRIP_HAS_DEPENDENCIES",
+                    String.format("Trip '%s' is referenced by %d sales invoice(s).", trip.getTripNumber(), invoiceCount),
+                    "Resolve the related invoice using its supported business workflow before attempting Trip deletion.",
                     details
             );
         }

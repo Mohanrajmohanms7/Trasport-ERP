@@ -38,7 +38,8 @@ public class TripService {
     @Autowired
     private TenantAccessService tenantAccess;
 
-
+    @Autowired
+    private BusinessDependencyValidationService validationService;
 
     @Autowired
     private AuditService auditService;
@@ -226,6 +227,9 @@ public class TripService {
     @Transactional
     public void deleteTrip(Long id, String deletedByUsername) {
         Trip trip = getTripById(id);
+
+        validationService.validateTripDelete(trip);
+
         trip.setIsDeleted(true);
         trip.setUpdatedBy(deletedByUsername);
         tripRepository.save(trip);

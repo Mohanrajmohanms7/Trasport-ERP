@@ -58,9 +58,15 @@ public class TripController {
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
-        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        tripService.deleteTrip(id, activeUser);
-        return ApiResponse.success(null, "Trip deleted successfully");
+        try {
+            String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+            tripService.deleteTrip(id, activeUser);
+            return ApiResponse.success(null, "Trip deleted successfully");
+        } catch (com.transport.erp.exception.BusinessValidationException e) {
+            return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error(java.util.Collections.singletonList(e.getMessage()), "Failed to delete trip");
+        }
     }
 
     @PostMapping("/{id}/dispatch")
