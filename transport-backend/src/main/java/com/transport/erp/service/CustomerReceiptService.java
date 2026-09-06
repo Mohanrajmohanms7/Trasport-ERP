@@ -108,6 +108,9 @@ public class CustomerReceiptService {
     private AppSettingService settingService;
 
     @Autowired
+    private BusinessDependencyValidationService validationService;
+
+    @Autowired
     private CustomerReceiptPrintAuditRepository printAuditRepository;
 
     @Autowired
@@ -158,10 +161,7 @@ public class CustomerReceiptService {
     @Transactional
     public CustomerReceipt updateReceipt(Long id, CustomerReceipt details, String username) {
         CustomerReceipt existing = getReceiptById(id);
-
-        if (!"DRAFT".equals(existing.getStatus())) {
-            throw new IllegalArgumentException("Only DRAFT receipts can be modified.");
-        }
+        validationService.validateReceiptUpdate(existing);
 
         existing.setAmountReceived(details.getAmountReceived());
         existing.setAdvanceAmount(details.getAdvanceAmount());
@@ -181,9 +181,8 @@ public class CustomerReceiptService {
     @Transactional
     public void deleteReceipt(Long id, String username) {
         CustomerReceipt receipt = getReceiptById(id);
-        if (!"DRAFT".equals(receipt.getStatus())) {
-            throw new IllegalArgumentException("Only DRAFT receipts can be deleted.");
-        }
+        validationService.validateReceiptDelete(receipt);
+
         receipt.setIsDeleted(true);
         receipt.setUpdatedBy(username);
         receiptRepository.save(receipt);
@@ -196,16 +195,18 @@ public class CustomerReceiptService {
     @Transactional
     public CustomerReceiptResponseDTO createReceiptWithAllocations(CustomerReceiptDTO dto, String username) {
         AppUser currentUser = tenantAccess.requireCurrentUser();
-        Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.resolveBranchId(null);
-
-
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + dto.getCustomerId()));
         tenantAccess.assertOwned(customer.getCompanyId());
         if (currentUser.getBranchId() != null && customer.getBranchId() != null && !currentUser.getBranchId().equals(customer.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Customer belongs to another branch.");
+        }
+
+        Long companyId = customer.getCompanyId();
+        Long branchId = currentUser.getBranchId();
+        if (branchId == null) {
+            branchId = customer.getBranchId() != null ? customer.getBranchId() : companyId;
         }
 
         if (dto.getAmountReceived() == null || dto.getAmountReceived().compareTo(BigDecimal.ZERO) <= 0) {
@@ -243,10 +244,6 @@ public class CustomerReceiptService {
                     throw new IllegalArgumentException("Duplicate allocation of the same invoice ID: " + alloc.getInvoiceId());
                 }
 
-                if (alloc.getAmount() == null || alloc.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new IllegalArgumentException("Allocation amount must be greater than zero.");
-                }
-
                 // In DRAFT mode, we read invoice without locking it
                 SalesInvoice invoice = salesInvoiceRepository.findById(alloc.getInvoiceId())
                         .orElseThrow(() -> new IllegalArgumentException("Invoice not found or deleted with ID: " + alloc.getInvoiceId()));
@@ -256,18 +253,7 @@ public class CustomerReceiptService {
                     throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
                 }
 
-                if (!"APPROVED".equals(invoice.getStatus())) {
-                    throw new IllegalArgumentException("Only APPROVED invoices can be allocated. Invoice status: " + invoice.getStatus());
-                }
-
-                BigDecimal outstanding = invoice.getNetAmount().subtract(invoice.getPaidAmount());
-                if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new IllegalArgumentException("Invoice " + invoice.getInvoiceNumber() + " is already fully paid.");
-                }
-
-                if (alloc.getAmount().compareTo(outstanding) > 0) {
-                    throw new IllegalArgumentException("Allocation amount ₹" + alloc.getAmount() + " exceeds invoice outstanding balance ₹" + outstanding);
-                }
+                validationService.validatePaymentAllocation(receipt, invoice, alloc.getAmount());
 
                 CustomerReceiptAllocation entity = new CustomerReceiptAllocation();
                 entity.setReceipt(receipt);
@@ -286,9 +272,7 @@ public class CustomerReceiptService {
             }
         }
 
-        if (totalAllocated.compareTo(receipt.getAmountReceived()) > 0) {
-            throw new IllegalArgumentException("Total allocations exceed the receipt amount received.");
-        }
+        validationService.validateTotalAllocationVsReceived(totalAllocated, receipt.getAmountReceived());
 
         BigDecimal calculatedAdvance = receipt.getAmountReceived().subtract(totalAllocated);
         receipt.setAdvanceAmount(calculatedAdvance);
@@ -345,9 +329,7 @@ public class CustomerReceiptService {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
 
-        if ("CANCELLED".equals(receipt.getStatus())) {
-            throw new IllegalArgumentException("Receipt is already cancelled.");
-        }
+        validationService.validateReceiptCancel(receipt);
 
         if ("DRAFT".equals(receipt.getStatus())) {
             // Simply transition to CANCELLED without any accounting/invoice reversals
@@ -548,35 +530,8 @@ public class CustomerReceiptService {
                     throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
                 }
 
-                if (!invoice.getCompanyId().equals(receipt.getCompanyId())) {
-                    throw new IllegalArgumentException("Company mismatch between receipt and invoice.");
-                }
-
-                // Validate Customer match
-                if (!invoice.getCustomer().getId().equals(receipt.getCustomer().getId())) {
-                    throw new IllegalArgumentException("Customer mismatch: Invoice belongs to another customer.");
-                }
-
-                // Validate Invoice Status
-                if (!"APPROVED".equals(invoice.getStatus())) {
-                    throw new IllegalArgumentException("Only APPROVED invoices can receive payment. Invoice status: " + invoice.getStatus());
-                }
-
-                // Recalculate outstanding from DB
-                BigDecimal outstanding = invoice.getNetAmount().subtract(invoice.getPaidAmount());
-                if (outstanding.compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new IllegalArgumentException("Invoice " + invoice.getInvoiceNumber() + " is already fully paid.");
-                }
-
-                // Validate allocation bounds
                 BigDecimal allocatedAmount = allocation.getAllocatedAmount();
-                if (allocatedAmount == null || allocatedAmount.compareTo(BigDecimal.ZERO) <= 0) {
-                    throw new IllegalArgumentException("Allocation amount must be greater than zero.");
-                }
-
-                if (allocatedAmount.compareTo(outstanding) > 0) {
-                    throw new IllegalArgumentException("Allocation amount ₹" + allocatedAmount + " exceeds invoice outstanding balance ₹" + outstanding);
-                }
+                validationService.validatePaymentAllocation(receipt, invoice, allocatedAmount);
 
                 // Update invoice paidAmount & status
                 BigDecimal newPaidAmount = invoice.getPaidAmount().add(allocatedAmount);
@@ -598,10 +553,7 @@ public class CustomerReceiptService {
             }
         }
 
-        // Validate total allocations do not exceed amount received
-        if (totalAllocated.compareTo(receipt.getAmountReceived()) > 0) {
-            throw new IllegalArgumentException("Total allocations exceed the receipt amount received.");
-        }
+        validationService.validateTotalAllocationVsReceived(totalAllocated, receipt.getAmountReceived());
 
         // Compute and set advance
         BigDecimal advance = receipt.getAmountReceived().subtract(totalAllocated);
@@ -698,8 +650,10 @@ public class CustomerReceiptService {
         audit.setEventTime(java.time.LocalDateTime.now());
         audit.setPerformedBy(username);
         audit.setRemarks(remarks);
-        audit.setCompanyId(receipt.getCompanyId());
-        audit.setBranchId(receipt.getBranchId());
+        Long companyId = receipt.getCompanyId() != null ? receipt.getCompanyId() : tenantAccess.resolveCompanyId(null);
+        Long branchId = receipt.getBranchId() != null ? receipt.getBranchId() : companyId;
+        audit.setCompanyId(companyId);
+        audit.setBranchId(branchId);
         auditTrailRepository.save(audit);
     }
 

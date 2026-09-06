@@ -55,6 +55,9 @@ public class SalesInvoiceService {
     @Autowired
     private AppSettingService settingService;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
 
 
 
@@ -135,6 +138,7 @@ public class SalesInvoiceService {
     @Transactional
     public SalesInvoice updateInvoice(Long id, SalesInvoice details, String username) {
         SalesInvoice existing = getInvoiceById(id);
+        validationService.validateInvoiceUpdate(existing);
 
         existing.setDiscount(details.getDiscount());
         existing.setPaymentTerms(details.getPaymentTerms());
@@ -191,7 +195,7 @@ public class SalesInvoiceService {
         SalesInvoice saved = invoiceRepository.save(invoice);
 
         // Automatically post debit update to customer ledger (Invoice increases outstanding customer owed balance)
-        ledgerService.postToLedger(saved.getCustomer().getId(), null, saved.getNetAmount(), BigDecimal.ZERO, username);
+        ledgerService.postToLedger(saved.getCustomer().getId(), null, saved.getNetAmount(), BigDecimal.ZERO, "Sales invoice approval for " + saved.getInvoiceNumber(), username, saved.getBranchId());
 
         // Automatically post double-entry General Ledger posting
         // Dr: 1100 Customer Receivables = netAmount (e.g. ₹11,800)
@@ -254,6 +258,8 @@ public class SalesInvoiceService {
     @Transactional
     public SalesInvoice cancelInvoice(Long id, String username) {
         SalesInvoice invoice = getInvoiceById(id);
+        validationService.validateInvoiceCancel(invoice);
+
         invoice.setStatus("CANCELLED");
         invoice.setUpdatedBy(username);
 
@@ -268,6 +274,8 @@ public class SalesInvoiceService {
     @Transactional
     public void deleteInvoice(Long id, String username) {
         SalesInvoice invoice = getInvoiceById(id);
+        validationService.validateInvoiceDelete(invoice);
+
         invoice.setIsDeleted(true);
         invoice.setUpdatedBy(username);
         invoiceRepository.save(invoice);

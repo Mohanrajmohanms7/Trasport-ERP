@@ -39,11 +39,16 @@ public class CustomerLedgerService {
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String username) {
-        postToLedger(customerId, receipt, debit, credit, null, username);
+        postToLedger(customerId, receipt, debit, credit, null, username, null);
     }
 
     @Transactional
     public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String remarks, String username) {
+        postToLedger(customerId, receipt, debit, credit, remarks, username, null);
+    }
+
+    @Transactional
+    public void postToLedger(Long customerId, CustomerReceipt receipt, BigDecimal debit, BigDecimal credit, String remarks, String username, Long explicitBranchId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
         tenantAccess.assertCompanyAccess(customer.getCompanyId());
@@ -67,11 +72,22 @@ public class CustomerLedgerService {
         entry.setCreatedBy(username);
         entry.setUpdatedBy(username);
         entry.setCompanyId(tenantAccess.resolveCompanyId(customer.getCompanyId()));
-        Long branchId = (receipt != null && receipt.getBranchId() != null) 
-                ? receipt.getBranchId() 
-                : (customer.getBranchId() != null ? customer.getBranchId() : tenantAccess.resolveBranchId(null));
-        entry.setBranchId(branchId);
 
+        Long targetBranchId = explicitBranchId;
+        if (targetBranchId == null && receipt != null) {
+            targetBranchId = receipt.getBranchId();
+        }
+        if (targetBranchId == null && customer.getBranchId() != null) {
+            targetBranchId = customer.getBranchId();
+        }
+        if (targetBranchId == null) {
+            try {
+                targetBranchId = tenantAccess.resolveBranchId(null);
+            } catch (Exception e) {
+                targetBranchId = customer.getCompanyId();
+            }
+        }
+        entry.setBranchId(targetBranchId);
 
         entry.setCode("LEDG_" + customerId + "_" + System.currentTimeMillis());
         entry.setName("Customer Ledger Entry");

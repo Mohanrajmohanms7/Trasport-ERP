@@ -392,49 +392,296 @@ public class BusinessDependencyValidationService {
         }
     }
 
+    // =========================================================================
+    // SALES INVOICE LIFECYCLE & DEPENDENCY VALIDATION
+    // =========================================================================
+
     public void validateInvoiceDelete(Long invoiceId) {
         SalesInvoice invoice = salesInvoiceRepository.findById(invoiceId)
                 .filter(i -> !Boolean.TRUE.equals(i.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + invoiceId));
 
+        validateInvoiceDelete(invoice);
+    }
+
+    public void validateInvoiceDelete(SalesInvoice invoice) {
+        if (invoice == null) return;
+
         tenantAccess.assertOwned(invoice.getCompanyId());
+        if (invoice.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(invoice.getBranchId());
+        }
 
-        long allocationCount = allocationRepository.countByInvoiceIdAndIsDeletedFalse(invoiceId);
-        BigDecimal allocatedTotal = allocationRepository.sumAllocatedAmountByInvoiceId(invoiceId);
+        String status = invoice.getStatus() != null ? invoice.getStatus().toUpperCase() : "DRAFT";
 
-        if (!"DRAFT".equalsIgnoreCase(invoice.getStatus()) || allocationCount > 0 || allocatedTotal.compareTo(BigDecimal.ZERO) > 0) {
+        if ("APPROVED".equals(status)) {
             List<String> details = new ArrayList<>();
-            details.add(String.format("Invoice '%s' cannot be deleted because ₹%.2f in customer payments has already been allocated to this invoice.",
-                    invoice.getInvoiceNumber(), allocatedTotal));
-            details.add("Financial accounting history cannot be automatically deleted or altered.");
+            details.add(String.format("Invoice '%s' cannot be deleted because its current status is APPROVED.", invoice.getInvoiceNumber()));
+            details.add("Historical financial documents cannot be deleted.");
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Deleted",
+                    "INVOICE_ALREADY_APPROVED",
+                    String.format("Invoice '%s' cannot be deleted because its current status is APPROVED.", invoice.getInvoiceNumber()),
+                    "Use the supported cancellation/reversal workflow instead of deleting historical financial data.",
+                    details
+            );
+        }
+
+        if ("GENERATED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be deleted because its current status is GENERATED.", invoice.getInvoiceNumber()));
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Deleted",
+                    "INVOICE_ALREADY_GENERATED",
+                    String.format("Invoice '%s' cannot be deleted because its current status is GENERATED.", invoice.getInvoiceNumber()),
+                    "Use the supported cancellation/reversal workflow instead of deleting historical financial data.",
+                    details
+            );
+        }
+
+        if ("CANCELLED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be deleted because it is already CANCELLED.", invoice.getInvoiceNumber()));
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Deleted",
+                    "INVOICE_ALREADY_CANCELLED",
+                    String.format("Invoice '%s' is already CANCELLED.", invoice.getInvoiceNumber()),
+                    "No further action can be taken on a cancelled invoice.",
+                    details
+            );
+        }
+
+        if (!"DRAFT".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be deleted because its current status is %s.", invoice.getInvoiceNumber(), status));
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Deleted",
+                    "INVOICE_STATUS_DELETE_BLOCKED",
+                    String.format("Invoice '%s' cannot be deleted because its current status is %s.", invoice.getInvoiceNumber(), status),
+                    "Only invoices in DRAFT status can be deleted.",
+                    details
+            );
+        }
+
+        long allocationCount = allocationRepository.countByInvoiceIdAndIsDeletedFalse(invoice.getId());
+        BigDecimal allocatedTotal = allocationRepository.sumAllocatedAmountByInvoiceId(invoice.getId());
+        BigDecimal paidAmount = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+
+        if (allocationCount > 0 || allocatedTotal.compareTo(BigDecimal.ZERO) > 0 || paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal activePayment = allocatedTotal.compareTo(paidAmount) > 0 ? allocatedTotal : paidAmount;
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' has ₹%.2f in active customer payments/receipts allocated to it.", invoice.getInvoiceNumber(), activePayment));
+            details.add("Automatic payment reversal is unsafe and disabled.");
 
             throw new BusinessValidationException(
                     "Invoice Cannot Be Deleted",
                     "INVOICE_HAS_PAYMENT_DEPENDENCY",
-                    String.format("Invoice '%s' has active payment transactions or is approved.", invoice.getInvoiceNumber()),
-                    "Cancel or reverse the related payment transaction before attempting invoice cancellation.",
+                    String.format("Invoice '%s' has active payment transactions allocated to it.", invoice.getInvoiceNumber()),
+                    "Explicitly reverse or cancel the related customer receipt/payment using the receipt workflow before attempting invoice cancellation.",
                     details
             );
         }
     }
 
+    public void validateInvoiceUpdate(Long invoiceId) {
+        SalesInvoice invoice = salesInvoiceRepository.findById(invoiceId)
+                .filter(i -> !Boolean.TRUE.equals(i.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + invoiceId));
+        validateInvoiceUpdate(invoice);
+    }
+
+    public void validateInvoiceUpdate(SalesInvoice invoice) {
+        if (invoice == null) return;
+
+        tenantAccess.assertOwned(invoice.getCompanyId());
+        if (invoice.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(invoice.getBranchId());
+        }
+
+        String status = invoice.getStatus() != null ? invoice.getStatus().toUpperCase() : "DRAFT";
+
+        if (!"DRAFT".equals(status)) {
+            String errorCode;
+            if ("APPROVED".equals(status)) errorCode = "INVOICE_ALREADY_APPROVED";
+            else if ("GENERATED".equals(status)) errorCode = "INVOICE_ALREADY_GENERATED";
+            else if ("CANCELLED".equals(status)) errorCode = "INVOICE_ALREADY_CANCELLED";
+            else errorCode = "INVOICE_STATUS_UPDATE_BLOCKED";
+
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be modified because its current status is %s.", invoice.getInvoiceNumber(), status));
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Modified",
+                    errorCode,
+                    String.format("Invoice '%s' cannot be modified because its current status is %s.", invoice.getInvoiceNumber(), status),
+                    "Only DRAFT invoices can be modified.",
+                    details
+            );
+        }
+    }
+
+    public void validateInvoiceCancel(Long invoiceId) {
+        SalesInvoice invoice = salesInvoiceRepository.findById(invoiceId)
+                .filter(i -> !Boolean.TRUE.equals(i.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + invoiceId));
+        validateInvoiceCancel(invoice);
+    }
+
+    public void validateInvoiceCancel(SalesInvoice invoice) {
+        if (invoice == null) return;
+
+        tenantAccess.assertOwned(invoice.getCompanyId());
+        if (invoice.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(invoice.getBranchId());
+        }
+
+        String status = invoice.getStatus() != null ? invoice.getStatus().toUpperCase() : "DRAFT";
+
+        if ("CANCELLED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' is already CANCELLED.", invoice.getInvoiceNumber()));
+
+            throw new BusinessValidationException(
+                    "Invoice Already Cancelled",
+                    "INVOICE_ALREADY_CANCELLED",
+                    String.format("Invoice '%s' is already CANCELLED.", invoice.getInvoiceNumber()),
+                    "No further action can be taken on a cancelled invoice.",
+                    details
+            );
+        }
+
+        long allocationCount = allocationRepository.countByInvoiceIdAndIsDeletedFalse(invoice.getId());
+        BigDecimal allocatedTotal = allocationRepository.sumAllocatedAmountByInvoiceId(invoice.getId());
+        BigDecimal paidAmount = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+
+        if (allocationCount > 0 || allocatedTotal.compareTo(BigDecimal.ZERO) > 0 || paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal activePayment = allocatedTotal.compareTo(paidAmount) > 0 ? allocatedTotal : paidAmount;
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' cannot be cancelled because ₹%.2f in customer payments has already been allocated to this invoice.", invoice.getInvoiceNumber(), activePayment));
+            details.add("Automatic payment reversal is unsafe and disabled.");
+
+            throw new BusinessValidationException(
+                    "Invoice Cannot Be Cancelled",
+                    "INVOICE_HAS_PAYMENT_DEPENDENCY",
+                    String.format("Invoice '%s' has active payment transactions allocated to it.", invoice.getInvoiceNumber()),
+                    "Explicitly reverse or cancel the related customer receipt/payment using the receipt workflow before attempting invoice cancellation.",
+                    details
+            );
+        }
+    }
+
+    // =========================================================================
+    // CUSTOMER RECEIPT LIFECYCLE & DEPENDENCY VALIDATION
+    // =========================================================================
+
     public void validateReceiptDelete(Long receiptId) {
         CustomerReceipt receipt = customerReceiptRepository.findById(receiptId)
                 .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Customer receipt not found with ID: " + receiptId));
+        validateReceiptDelete(receipt);
+    }
+
+    public void validateReceiptDelete(CustomerReceipt receipt) {
+        if (receipt == null) return;
 
         tenantAccess.assertOwned(receipt.getCompanyId());
+        if (receipt.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(receipt.getBranchId());
+        }
 
-        if (!"DRAFT".equalsIgnoreCase(receipt.getStatus())) {
+        String status = receipt.getStatus() != null ? receipt.getStatus().toUpperCase() : "DRAFT";
+
+        if ("APPROVED".equals(status)) {
             List<String> details = new ArrayList<>();
-            details.add(String.format("Receipt '%s' is currently in '%s' status and posted to General Ledger.",
-                    receipt.getReceiptNumber(), receipt.getStatus()));
+            details.add(String.format("Receipt '%s' is currently APPROVED and posted to accounting history.", receipt.getReceiptNumber()));
 
             throw new BusinessValidationException(
                     "Receipt Cannot Be Deleted",
                     "RECEIPT_ALREADY_APPROVED",
-                    String.format("Receipt '%s' is already approved/posted.", receipt.getReceiptNumber()),
-                    "Use the customer receipt cancellation/reversal workflow.",
+                    String.format("Customer Receipt '%s' cannot be deleted because it is already APPROVED.", receipt.getReceiptNumber()),
+                    "Approved receipts cannot be deleted or directly edited. Use the explicit receipt cancellation/reversal workflow.",
+                    details
+            );
+        }
+
+        if ("CANCELLED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Receipt '%s' is already CANCELLED.", receipt.getReceiptNumber()));
+
+            throw new BusinessValidationException(
+                    "Receipt Already Cancelled",
+                    "RECEIPT_ALREADY_CANCELLED",
+                    String.format("Customer Receipt '%s' is already CANCELLED.", receipt.getReceiptNumber()),
+                    "No further action can be taken on a cancelled receipt.",
+                    details
+            );
+        }
+    }
+
+    public void validateReceiptUpdate(Long receiptId) {
+        CustomerReceipt receipt = customerReceiptRepository.findById(receiptId)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Customer receipt not found with ID: " + receiptId));
+        validateReceiptUpdate(receipt);
+    }
+
+    public void validateReceiptUpdate(CustomerReceipt receipt) {
+        if (receipt == null) return;
+
+        tenantAccess.assertOwned(receipt.getCompanyId());
+        if (receipt.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(receipt.getBranchId());
+        }
+
+        String status = receipt.getStatus() != null ? receipt.getStatus().toUpperCase() : "DRAFT";
+
+        if (!"DRAFT".equals(status)) {
+            String errorCode = "APPROVED".equals(status) ? "RECEIPT_ALREADY_APPROVED" :
+                    ("CANCELLED".equals(status) ? "RECEIPT_ALREADY_CANCELLED" : "RECEIPT_STATUS_UPDATE_BLOCKED");
+
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Receipt '%s' cannot be modified because its current status is %s.", receipt.getReceiptNumber(), status));
+
+            throw new BusinessValidationException(
+                    "Receipt Cannot Be Modified",
+                    errorCode,
+                    String.format("Customer Receipt '%s' cannot be modified because its current status is %s.", receipt.getReceiptNumber(), status),
+                    "Only DRAFT receipts can be modified.",
+                    details
+            );
+        }
+    }
+
+    public void validateReceiptCancel(Long receiptId) {
+        CustomerReceipt receipt = customerReceiptRepository.findById(receiptId)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Customer receipt not found with ID: " + receiptId));
+        validateReceiptCancel(receipt);
+    }
+
+    public void validateReceiptCancel(CustomerReceipt receipt) {
+        if (receipt == null) return;
+
+        tenantAccess.assertOwned(receipt.getCompanyId());
+        if (receipt.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(receipt.getBranchId());
+        }
+
+        String status = receipt.getStatus() != null ? receipt.getStatus().toUpperCase() : "DRAFT";
+
+        if ("CANCELLED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Receipt '%s' is already CANCELLED.", receipt.getReceiptNumber()));
+
+            throw new BusinessValidationException(
+                    "Receipt Already Cancelled",
+                    "RECEIPT_ALREADY_CANCELLED",
+                    String.format("Customer Receipt '%s' is already CANCELLED.", receipt.getReceiptNumber()),
+                    "No further action can be taken on a cancelled receipt.",
                     details
             );
         }
@@ -450,28 +697,90 @@ public class BusinessDependencyValidationService {
             );
         }
 
-        BigDecimal outstanding = invoice.getNetAmount().subtract(invoice.getPaidAmount());
-        if (allocationAmount.compareTo(outstanding) > 0) {
+        if (receipt.getCustomer() != null && invoice.getCustomer() != null && !receipt.getCustomer().getId().equals(invoice.getCustomer().getId())) {
             List<String> details = new ArrayList<>();
-            details.add(String.format("You entered ₹%.2f, but the invoice outstanding balance is only ₹%.2f.",
-                    allocationAmount, outstanding));
+            details.add(String.format("Receipt '%s' belongs to customer '%s', but invoice '%s' belongs to customer '%s'.",
+                    receipt.getReceiptNumber(), receipt.getCustomer().getName(),
+                    invoice.getInvoiceNumber(), invoice.getCustomer().getName()));
 
             throw new BusinessValidationException(
-                    "Payment Allocation Exceeded",
-                    "ALLOCATION_EXCEEDS_OUTSTANDING",
-                    String.format("Allocation ₹%.2f exceeds invoice outstanding balance ₹%.2f.", allocationAmount, outstanding),
-                    String.format("Enter an allocation amount up to ₹%.2f.", outstanding),
+                    "Customer Mismatch",
+                    "ALLOCATION_CUSTOMER_MISMATCH",
+                    String.format("Cannot allocate receipt '%s' to invoice '%s' because invoice belongs to a different customer.", receipt.getReceiptNumber(), invoice.getInvoiceNumber()),
+                    "Select an invoice belonging to the same customer.",
                     details
             );
         }
 
-        if (!receipt.getCustomer().getId().equals(invoice.getCustomer().getId())) {
+        if (receipt.getCompanyId() != null && invoice.getCompanyId() != null && !receipt.getCompanyId().equals(invoice.getCompanyId())) {
+            List<String> details = new ArrayList<>();
+            details.add("Receipt and invoice belong to different tenant companies.");
+
             throw new BusinessValidationException(
-                    "Customer Mismatch",
-                    "ALLOCATION_CUSTOMER_MISMATCH",
-                    "Receipt customer and invoice customer do not match.",
-                    "Select an invoice belonging to the same corporate customer."
+                    "Company Mismatch",
+                    "ALLOCATION_COMPANY_MISMATCH",
+                    String.format("Cannot allocate receipt '%s' to invoice '%s' because invoice belongs to a different company.", receipt.getReceiptNumber(), invoice.getInvoiceNumber()),
+                    "Select an invoice belonging to the same company.",
+                    details
+            );
+        }
+
+        if (Boolean.TRUE.equals(invoice.getIsDeleted()) || "CANCELLED".equalsIgnoreCase(invoice.getStatus())) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' status is %s.", invoice.getInvoiceNumber(), invoice.getStatus()));
+
+            throw new BusinessValidationException(
+                    "Invoice Cancelled Or Deleted",
+                    "ALLOCATION_INVOICE_CANCELLED",
+                    String.format("Cannot allocate payment to invoice '%s' because the invoice is %s.", invoice.getInvoiceNumber(), invoice.getStatus()),
+                    "Payment allocation is only allowed for active APPROVED invoices.",
+                    details
+            );
+        }
+
+        if (!"APPROVED".equalsIgnoreCase(invoice.getStatus())) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Invoice '%s' status is %s.", invoice.getInvoiceNumber(), invoice.getStatus()));
+
+            throw new BusinessValidationException(
+                    "Invoice Not Approved",
+                    "ALLOCATION_INVOICE_NOT_APPROVED",
+                    String.format("Cannot allocate payment to invoice '%s' because its status is %s.", invoice.getInvoiceNumber(), invoice.getStatus()),
+                    "Approve the invoice before attempting payment allocation.",
+                    details
+            );
+        }
+
+        BigDecimal outstanding = invoice.getNetAmount().subtract(invoice.getPaidAmount());
+        if (allocationAmount.compareTo(outstanding) > 0) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Cannot allocate ₹%.2f to invoice %s because the invoice outstanding amount is ₹%.2f.",
+                    allocationAmount, invoice.getInvoiceNumber(), outstanding));
+
+            throw new BusinessValidationException(
+                    "Allocation Exceeds Outstanding Balance",
+                    "ALLOCATION_EXCEEDS_OUTSTANDING",
+                    String.format("Cannot allocate ₹%.2f to invoice %s because the invoice outstanding amount is ₹%.2f.",
+                            allocationAmount, invoice.getInvoiceNumber(), outstanding),
+                    String.format("Reduce allocation amount to be less than or equal to the invoice outstanding balance of ₹%.2f.", outstanding),
+                    details
             );
         }
     }
+
+    public void validateTotalAllocationVsReceived(BigDecimal totalAllocated, BigDecimal amountReceived) {
+        if (totalAllocated != null && amountReceived != null && totalAllocated.compareTo(amountReceived) > 0) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Total allocated amount ₹%.2f exceeds receipt amount received ₹%.2f.", totalAllocated, amountReceived));
+
+            throw new BusinessValidationException(
+                    "Total Allocation Exceeds Receipt Amount",
+                    "ALLOCATION_EXCEEDS_RECEIVED",
+                    String.format("Total allocation amount ₹%.2f exceeds the receipt amount received of ₹%.2f.", totalAllocated, amountReceived),
+                    String.format("Adjust allocation amounts so total allocations do not exceed receipt amount of ₹%.2f.", amountReceived),
+                    details
+            );
+        }
+    }
+
 }
