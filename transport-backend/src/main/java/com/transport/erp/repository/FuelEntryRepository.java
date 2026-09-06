@@ -32,4 +32,6 @@ public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
 
     long countByDriverIdAndIsDeletedFalse(Long driverId);
+
+    long countByTripIdAndIsDeletedFalse(Long tripId);
 }

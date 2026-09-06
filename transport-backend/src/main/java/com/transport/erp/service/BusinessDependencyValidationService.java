@@ -329,39 +329,7 @@ public class BusinessDependencyValidationService {
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found with ID: " + tripId));
 
-        tenantAccess.assertOwned(trip.getCompanyId());
-
-        String status = trip.getStatus();
-        if (!"PLANNED".equalsIgnoreCase(status) && !"SCHEDULED".equalsIgnoreCase(status)) {
-            List<String> details = new ArrayList<>();
-            details.add(String.format("Trip '%s' cannot be deleted because its current status is %s.",
-                    trip.getTripNumber(), status));
-            details.add("Completed or dispatched trips cannot be deleted.");
-
-            throw new BusinessValidationException(
-                    "Trip Cannot Be Deleted",
-                    "TRIP_STATUS_DELETE_BLOCKED",
-                    String.format("Trip '%s' cannot be deleted because its current status is %s.", trip.getTripNumber(), status),
-                    "Use the supported Trip cancellation/correction workflow instead of deleting the completed Trip.",
-                    details
-            );
-        }
-
-        long invoiceCount = salesInvoiceRepository.countByTripIdAndIsDeletedFalse(tripId);
-        if (invoiceCount > 0) {
-            List<String> details = new ArrayList<>();
-            details.add(String.format("Trip '%s' cannot be deleted because it is referenced by %d sales invoice(s).",
-                    trip.getTripNumber(), invoiceCount));
-            details.add("Financial and historical transaction records must not be automatically deleted or altered.");
-
-            throw new BusinessValidationException(
-                    "Trip Cannot Be Deleted",
-                    "TRIP_HAS_DEPENDENCIES",
-                    String.format("Trip '%s' is referenced by %d sales invoice(s).", trip.getTripNumber(), invoiceCount),
-                    "Resolve the related invoice using its supported business workflow before attempting Trip deletion.",
-                    details
-            );
-        }
+        validateTripDelete(trip);
     }
 
     public void validateTripDelete(Trip trip) {
@@ -384,18 +352,27 @@ public class BusinessDependencyValidationService {
             );
         }
 
+        long fuelCount = fuelEntryRepository.countByTripIdAndIsDeletedFalse(trip.getId());
+        long expenseCount = expenseRepository.countByTripIdAndIsDeletedFalse(trip.getId());
         long invoiceCount = salesInvoiceRepository.countByTripIdAndIsDeletedFalse(trip.getId());
-        if (invoiceCount > 0) {
+
+        if (fuelCount > 0 || expenseCount > 0 || invoiceCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (fuelCount > 0) depParts.add(fuelCount + " fuel entry/entries");
+            if (expenseCount > 0) depParts.add(expenseCount + " expense(s)");
+            if (invoiceCount > 0) depParts.add(invoiceCount + " sales invoice(s)");
+
+            String depSummary = String.join(" and ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Trip '%s' cannot be deleted because it is referenced by %d sales invoice(s).",
-                    trip.getTripNumber(), invoiceCount));
-            details.add("Financial and historical transaction records must not be automatically deleted or altered.");
+            details.add(String.format("Trip '%s' cannot be deleted because it is referenced by %s.",
+                    trip.getTripNumber(), depSummary));
+            details.add("Operational and historical trip records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Trip Cannot Be Deleted",
                     "TRIP_HAS_DEPENDENCIES",
-                    String.format("Trip '%s' is referenced by %d sales invoice(s).", trip.getTripNumber(), invoiceCount),
-                    "Resolve the related invoice using its supported business workflow before attempting Trip deletion.",
+                    String.format("Trip '%s' has active operational or financial dependencies.", trip.getTripNumber()),
+                    "Resolve the related fuel transaction before attempting to delete the trip.",
                     details
             );
         }
