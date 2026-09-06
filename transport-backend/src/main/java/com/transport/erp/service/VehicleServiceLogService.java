@@ -291,25 +291,36 @@ public class VehicleServiceLogService {
             );
         }
 
-        log.setStatus("CANCELLED");
-        log.setUpdatedBy(username);
-        VehicleServiceLog saved = logRepository.save(log);
-
-        Long effectiveBranchIdRev = saved.getBranchId() != null ? saved.getBranchId() : saved.getCompanyId();
-
-        // Reversal JV posting
+        // 3. locate original approval JV
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+
+        // 4. verify reversal does not already exist
+        List<JournalVoucher> existingReversals = jvRepository.findByReferenceNumberAndIsDeletedFalse("REV-" + log.getReferenceNumber());
+        if (existingReversals != null && !existingReversals.isEmpty()) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Reversal JV already exists for vehicle service log '%s'.", log.getReferenceNumber()));
+            throw new BusinessValidationException(
+                    "Reversal Already Exists",
+                    "VEHICLE_SERVICE_REVERSAL_EXISTS",
+                    String.format("Reversal accounting entry already exists for service log '%s'.", log.getReferenceNumber()),
+                    "Vehicle service cancellation reversal has already been posted.",
+                    details
+            );
+        }
+
+        // 5. create reversal JV
+        Long effectiveBranchIdRev = log.getBranchId() != null ? log.getBranchId() : (log.getVehicle() != null && log.getVehicle().getBranchId() != null ? log.getVehicle().getBranchId() : log.getCompanyId());
         if (existingJvs != null) {
             for (JournalVoucher origJv : existingJvs) {
                 JournalVoucher revJv = new JournalVoucher();
-                revJv.setVoucherNumber("REV-JV-SRV-" + saved.getId() + "-" + origJv.getId());
+                revJv.setVoucherNumber("REV-JV-SRV-" + log.getId() + "-" + origJv.getId());
                 revJv.setVoucherDate(LocalDate.now());
                 revJv.setDebitAccount(origJv.getCreditAccount());
                 revJv.setCreditAccount(origJv.getDebitAccount());
                 revJv.setAmount(origJv.getAmount());
                 revJv.setReferenceNumber("REV-" + origJv.getReferenceNumber());
-                revJv.setDescription("Reversal of JV " + origJv.getVoucherNumber() + " for cancelled vehicle service " + saved.getReferenceNumber());
-                revJv.setCompanyId(saved.getCompanyId());
+                revJv.setDescription("Reversal of JV " + origJv.getVoucherNumber() + " for cancelled vehicle service " + log.getReferenceNumber());
+                revJv.setCompanyId(log.getCompanyId());
                 revJv.setBranchId(effectiveBranchIdRev);
                 revJv.setIsDeleted(false);
                 revJv.setCreatedBy(username);
@@ -319,6 +330,11 @@ public class VehicleServiceLogService {
                 jvService.createVoucher(revJv, username);
             }
         }
+
+        // 6. only after successful reversal creation, set service log status to CANCELLED
+        log.setStatus("CANCELLED");
+        log.setUpdatedBy(username);
+        VehicleServiceLog saved = logRepository.save(log);
 
         auditService.log(username, "VEHICLE_SERVICE_CANCELLED", "vehicle_services", saved.getId(), null,
                 "Cancelled vehicle service: " + saved.getReferenceNumber());
