@@ -20,6 +20,9 @@ public class MaterialService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
     public Page<Material> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return materialRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
@@ -81,6 +84,9 @@ public class MaterialService {
         Material material = materialRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Material not found: " + id));
         tenantAccess.assertOwned(material.getCompanyId());
+
+        validationService.validateMaterialDelete(id);
+
         material.setIsDeleted(true);
         materialRepository.save(material);
     }

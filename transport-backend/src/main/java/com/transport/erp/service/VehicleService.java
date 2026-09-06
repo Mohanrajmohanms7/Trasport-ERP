@@ -20,6 +20,9 @@ public class VehicleService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
     public Page<Vehicle> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return vehicleRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
@@ -91,6 +94,9 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + id));
         tenantAccess.assertOwned(vehicle.getCompanyId());
+
+        validationService.validateVehicleDelete(id);
+
         vehicle.setIsDeleted(true);
         vehicleRepository.save(vehicle);
     }

@@ -20,6 +20,9 @@ public class CustomerService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
     public Page<Customer> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return customerRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
@@ -86,6 +89,9 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + id));
         tenantAccess.assertOwned(customer.getCompanyId());
+
+        validationService.validateCustomerDelete(id);
+
         customer.setIsDeleted(true);
         customerRepository.save(customer);
     }

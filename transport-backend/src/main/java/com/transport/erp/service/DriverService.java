@@ -20,6 +20,9 @@ public class DriverService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
     public Page<Driver> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return driverRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
@@ -89,6 +92,9 @@ public class DriverService {
         Driver driver = driverRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Driver not found: " + id));
         tenantAccess.assertOwned(driver.getCompanyId());
+
+        validationService.validateDriverDelete(id);
+
         driver.setIsDeleted(true);
         driverRepository.save(driver);
     }

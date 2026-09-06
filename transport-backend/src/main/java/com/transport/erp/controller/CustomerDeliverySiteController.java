@@ -33,7 +33,13 @@ public class CustomerDeliverySiteController {
     public ApiResponse<Void> deleteSite(
             @PathVariable Long customerId,
             @PathVariable Long id) {
-        siteService.deleteSite(id);
-        return ApiResponse.success(null, "Customer delivery site deleted successfully");
+        try {
+            siteService.deleteSite(id);
+            return ApiResponse.success(null, "Customer delivery site deleted successfully");
+        } catch (com.transport.erp.exception.BusinessValidationException e) {
+            return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (Exception e) {
+            return ApiResponse.error(java.util.Collections.singletonList(e.getMessage()), "Failed to delete delivery site");
+        }
     }
 }

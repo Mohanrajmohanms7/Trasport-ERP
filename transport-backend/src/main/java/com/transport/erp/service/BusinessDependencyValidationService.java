@@ -93,16 +93,21 @@ public class BusinessDependencyValidationService {
         long receiptCount = customerReceiptRepository.countByCustomerIdAndIsDeletedFalse(customerId);
 
         if (bookingCount > 0 || invoiceCount > 0 || receiptCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (bookingCount > 0) depParts.add(bookingCount + " booking(s)");
+            if (invoiceCount > 0) depParts.add(invoiceCount + " invoice(s)");
+            if (receiptCount > 0) depParts.add(receiptCount + " payment receipt(s)");
+
+            String depSummary = String.join(", ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Customer '%s' cannot be deleted because it is already used by %d bookings, %d invoices, and %d payment receipts.",
-                    customer.getName(), bookingCount, invoiceCount, receiptCount));
-            details.add("Deleting this customer would break historical transaction records.");
+            details.add(String.format("Customer '%s' cannot be deleted because it is referenced by %s.", customer.getName(), depSummary));
+            details.add("Historical transaction records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Customer Cannot Be Deleted",
                     "CUSTOMER_HAS_DEPENDENCIES",
                     String.format("Customer '%s' has active transaction dependencies.", customer.getName()),
-                    "Deactivate the customer instead if it should no longer be available for new transactions.",
+                    "Deactivate the customer instead of deleting it.",
                     details
             );
         }
@@ -118,15 +123,15 @@ public class BusinessDependencyValidationService {
         long bookingCount = bookingRepository.countByDeliverySiteIdAndIsDeletedFalse(siteId);
         if (bookingCount > 0) {
             List<String> details = new ArrayList<>();
-            details.add(String.format("Delivery site '%s' cannot be deleted because it is referenced by %d booking transactions.",
+            details.add(String.format("Delivery site '%s' cannot be deleted because it is referenced by %d booking transaction(s).",
                     site.getSiteName(), bookingCount));
-            details.add("Deleting this site would corrupt historical logistics records.");
+            details.add("Historical delivery site logistics records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Delivery Site Cannot Be Deleted",
                     "DELIVERY_SITE_HAS_DEPENDENCIES",
                     String.format("Delivery site '%s' is in use.", site.getSiteName()),
-                    "Deactivate the site instead if it should no longer be available for new bookings.",
+                    "Deactivate the delivery site instead of deleting it.",
                     details
             );
         }
@@ -146,15 +151,21 @@ public class BusinessDependencyValidationService {
         String vehicleIdentifier = vehicle.getName() != null && !vehicle.getName().trim().isEmpty() ? vehicle.getName() : vehicle.getCode();
 
         if (tripCount > 0 || fuelCount > 0 || expenseCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (tripCount > 0) depParts.add(tripCount + " trip(s)");
+            if (fuelCount > 0) depParts.add(fuelCount + " fuel entry/entries");
+            if (expenseCount > 0) depParts.add(expenseCount + " expense(s)");
+
+            String depSummary = String.join(", ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Vehicle '%s' cannot be deleted because it is used in %d trips, %d fuel entries, and %d expenses.",
-                    vehicleIdentifier, tripCount, fuelCount, expenseCount));
+            details.add(String.format("Vehicle '%s' cannot be deleted because it is referenced by %s.", vehicleIdentifier, depSummary));
+            details.add("Historical vehicle operation records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Vehicle Cannot Be Deleted",
                     "VEHICLE_HAS_DEPENDENCIES",
                     String.format("Vehicle '%s' has historical dispatch and operational records.", vehicleIdentifier),
-                    "Deactivate the vehicle instead if it should no longer be available for future trips.",
+                    "Deactivate the vehicle instead of deleting it.",
                     details
             );
         }
@@ -172,15 +183,21 @@ public class BusinessDependencyValidationService {
         long expenseCount = expenseRepository.countByDriverIdAndIsDeletedFalse(driverId);
 
         if (tripCount > 0 || fuelCount > 0 || expenseCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (tripCount > 0) depParts.add(tripCount + " trip(s)");
+            if (fuelCount > 0) depParts.add(fuelCount + " fuel entry/entries");
+            if (expenseCount > 0) depParts.add(expenseCount + " expense(s)");
+
+            String depSummary = String.join(", ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Driver '%s' cannot be deleted because this driver is used in %d trips, %d fuel entries, and %d expenses.",
-                    driver.getName(), tripCount, fuelCount, expenseCount));
+            details.add(String.format("Driver '%s' cannot be deleted because this driver is referenced by %s.", driver.getName(), depSummary));
+            details.add("Historical driver assignment records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Driver Cannot Be Deleted",
                     "DRIVER_HAS_DEPENDENCIES",
                     String.format("Driver '%s' has historical dispatch records.", driver.getName()),
-                    "Deactivate the driver instead if the driver should no longer be available for future trips.",
+                    "Deactivate the driver instead of deleting it.",
                     details
             );
         }
@@ -198,15 +215,21 @@ public class BusinessDependencyValidationService {
         long invoiceDetailCount = salesInvoiceDetailRepository.countByMaterialIdAndInvoiceIsDeletedFalse(materialId);
 
         if (bookingDetailCount > 0 || tripDetailCount > 0 || invoiceDetailCount > 0) {
+            List<String> depParts = new ArrayList<>();
+            if (bookingDetailCount > 0) depParts.add(bookingDetailCount + " booking item(s)");
+            if (tripDetailCount > 0) depParts.add(tripDetailCount + " trip item(s)");
+            if (invoiceDetailCount > 0) depParts.add(invoiceDetailCount + " invoice item(s)");
+
+            String depSummary = String.join(", ", depParts);
             List<String> details = new ArrayList<>();
-            details.add(String.format("Material '%s' cannot be deleted because it is used in %d booking items, %d trip items, and %d invoice items.",
-                    material.getName(), bookingDetailCount, tripDetailCount, invoiceDetailCount));
+            details.add(String.format("Material '%s' cannot be deleted because it is referenced by %s.", material.getName(), depSummary));
+            details.add("Historical material transaction records must not be automatically deleted or altered.");
 
             throw new BusinessValidationException(
                     "Material Cannot Be Deleted",
                     "MATERIAL_HAS_DEPENDENCIES",
                     String.format("Material '%s' is referenced in existing business transactions.", material.getName()),
-                    "Deactivate the material if it should no longer be available for new transactions.",
+                    "Deactivate the material instead of deleting it.",
                     details
             );
         }

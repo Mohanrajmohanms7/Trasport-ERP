@@ -72,6 +72,8 @@ public class CustomerController {
         try {
             customerService.delete(id);
             return ApiResponse.success(null, "Customer deleted successfully");
+        } catch (com.transport.erp.exception.BusinessValidationException e) {
+            return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete customer");
         }

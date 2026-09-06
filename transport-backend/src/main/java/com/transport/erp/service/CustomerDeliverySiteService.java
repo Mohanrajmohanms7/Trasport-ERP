@@ -23,6 +23,9 @@ public class CustomerDeliverySiteService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private BusinessDependencyValidationService validationService;
+
     public List<CustomerDeliverySite> getSitesByCustomer(Long customerId) {
         parentAccess.requireCustomer(customerId);
         return siteRepository.findByCustomerIdAndIsDeletedFalse(customerId);
@@ -48,6 +51,9 @@ public class CustomerDeliverySiteService {
                 .filter(s -> !Boolean.TRUE.equals(s.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Delivery Site not found: " + id));
         tenantAccess.assertCompanyAccess(site.getCompanyId());
+
+        validationService.validateDeliverySiteDelete(id);
+
         site.setIsDeleted(true);
         siteRepository.save(site);
     }
