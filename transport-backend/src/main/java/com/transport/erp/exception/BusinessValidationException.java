@@ -33,5 +33,8 @@ public class BusinessValidationException extends RuntimeException {
         if (this.errors.isEmpty() && message != null) {
             this.errors.add(message);
         }
+        if (userAction != null && !userAction.trim().isEmpty()) {
+            this.errors.add("Action: " + userAction);
+        }
     }
 }

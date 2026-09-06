@@ -335,6 +335,9 @@ public class BusinessDependencyValidationService {
     public void validateTripDelete(Trip trip) {
         if (trip == null) return;
         tenantAccess.assertOwned(trip.getCompanyId());
+        if (trip.getBranchId() != null) {
+            tenantAccess.assertBranchAccess(trip.getBranchId());
+        }
 
         String status = trip.getStatus();
         if (!"PLANNED".equalsIgnoreCase(status) && !"SCHEDULED".equalsIgnoreCase(status)) {
@@ -368,11 +371,22 @@ public class BusinessDependencyValidationService {
                     trip.getTripNumber(), depSummary));
             details.add("Operational and historical trip records must not be automatically deleted or altered.");
 
+            String userAction;
+            if (fuelCount > 0 && expenseCount == 0 && invoiceCount == 0) {
+                userAction = "Resolve or cancel the related fuel transaction before attempting to delete the trip.";
+            } else if (expenseCount > 0 && fuelCount == 0 && invoiceCount == 0) {
+                userAction = "Resolve or cancel the related expense transaction before attempting to delete the trip.";
+            } else if (invoiceCount > 0 && fuelCount == 0 && expenseCount == 0) {
+                userAction = "Resolve the related sales invoice using its supported business workflow before attempting to delete the trip.";
+            } else {
+                userAction = "Resolve the related operational and financial transactions using their supported workflows before attempting to delete the trip.";
+            }
+
             throw new BusinessValidationException(
                     "Trip Cannot Be Deleted",
                     "TRIP_HAS_DEPENDENCIES",
                     String.format("Trip '%s' has active operational or financial dependencies.", trip.getTripNumber()),
-                    "Resolve the related fuel transaction before attempting to delete the trip.",
+                    userAction,
                     details
             );
         }
