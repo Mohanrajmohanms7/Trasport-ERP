@@ -18,6 +18,11 @@ export interface VehicleServiceLog {
   nextServiceDate?: string;
   workshop?: string;
   cost: number;
+  status?: string;
+  paymentMethod?: string;
+  supplier?: { id?: number; name?: string; code?: string };
+  supplierId?: number;
+  referenceNumber?: string;
   remarks?: string;
 }
 
@@ -62,6 +67,18 @@ export class VehicleMgmtService {
 
   addServiceLog(vehicleId: number, log: VehicleServiceLog): Observable<ApiResponse<VehicleServiceLog>> {
     return this.http.post<ApiResponse<VehicleServiceLog>>(`/api/v1/vehicles/${vehicleId}/service`, log);
+  }
+
+  approveServiceLog(vehicleId: number, id: number): Observable<ApiResponse<VehicleServiceLog>> {
+    return this.http.post<ApiResponse<VehicleServiceLog>>(`/api/v1/vehicles/${vehicleId}/service/${id}/approve`, {});
+  }
+
+  cancelServiceLog(vehicleId: number, id: number): Observable<ApiResponse<VehicleServiceLog>> {
+    return this.http.post<ApiResponse<VehicleServiceLog>>(`/api/v1/vehicles/${vehicleId}/service/${id}/cancel`, {});
+  }
+
+  deleteServiceLog(vehicleId: number, id: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`/api/v1/vehicles/${vehicleId}/service/${id}`);
   }
 
   // Driver Assignments APIs

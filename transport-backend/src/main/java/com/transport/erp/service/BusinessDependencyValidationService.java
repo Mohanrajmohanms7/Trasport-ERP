@@ -62,6 +62,12 @@ public class BusinessDependencyValidationService {
     private ExpenseRepository expenseRepository;
 
     @Autowired
+    private VehicleServiceLogRepository vehicleServiceLogRepository;
+
+    @Autowired
+    private JournalVoucherRepository jvRepository;
+
+    @Autowired
     private TenantAccessService tenantAccess;
 
     public void validateCompanyDelete(Long companyId) {
@@ -147,14 +153,16 @@ public class BusinessDependencyValidationService {
         long tripCount = tripRepository.countByVehicleIdAndIsDeletedFalse(vehicleId);
         long fuelCount = fuelEntryRepository.countByVehicleIdAndIsDeletedFalse(vehicleId);
         long expenseCount = expenseRepository.countByVehicleIdAndIsDeletedFalse(vehicleId);
+        long serviceCount = vehicleServiceLogRepository.countByVehicleIdAndIsDeletedFalse(vehicleId);
 
         String vehicleIdentifier = vehicle.getName() != null && !vehicle.getName().trim().isEmpty() ? vehicle.getName() : vehicle.getCode();
 
-        if (tripCount > 0 || fuelCount > 0 || expenseCount > 0) {
+        if (tripCount > 0 || fuelCount > 0 || expenseCount > 0 || serviceCount > 0) {
             List<String> depParts = new ArrayList<>();
             if (tripCount > 0) depParts.add(tripCount + " trip(s)");
             if (fuelCount > 0) depParts.add(fuelCount + " fuel entry/entries");
             if (expenseCount > 0) depParts.add(expenseCount + " expense(s)");
+            if (serviceCount > 0) depParts.add(serviceCount + " service log(s)");
 
             String depSummary = String.join(", ", depParts);
             List<String> details = new ArrayList<>();
@@ -168,6 +176,43 @@ public class BusinessDependencyValidationService {
                     "Deactivate the vehicle instead of deleting it.",
                     details
             );
+        }
+    }
+
+    public void validateVehicleServiceLogDelete(Long serviceId) {
+        VehicleServiceLog log = vehicleServiceLogRepository.findById(serviceId)
+                .filter(s -> !Boolean.TRUE.equals(s.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Vehicle service log not found with ID: " + serviceId));
+
+        tenantAccess.assertOwned(log.getCompanyId());
+
+        String status = log.getStatus() != null ? log.getStatus().toUpperCase() : "DRAFT";
+        if ("APPROVED".equals(status) || "CANCELLED".equals(status)) {
+            List<String> details = new ArrayList<>();
+            details.add(String.format("Vehicle Service Log '%s' status is %s.", log.getReferenceNumber() != null ? log.getReferenceNumber() : log.getId(), status));
+            details.add("Approved or cancelled service logs are immutable. Use the cancellation workflow to reverse accounting instead of deleting the record.");
+            throw new BusinessValidationException(
+                    "Service Log Delete Blocked",
+                    "VEHICLE_SERVICE_STATUS_DELETE_BLOCKED",
+                    String.format("Vehicle service log '%s' cannot be deleted because its current status is %s.", log.getReferenceNumber() != null ? log.getReferenceNumber() : log.getId(), status),
+                    "Approved or cancelled service logs are immutable. Use cancellation workflow instead.",
+                    details
+            );
+        }
+
+        if (log.getReferenceNumber() != null) {
+            List<JournalVoucher> jvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+            if (jvs != null && !jvs.isEmpty()) {
+                List<String> details = new ArrayList<>();
+                details.add(String.format("Accounting voucher exists for vehicle service log '%s'.", log.getReferenceNumber()));
+                throw new BusinessValidationException(
+                        "Service Log Delete Blocked",
+                        "VEHICLE_SERVICE_ACCOUNTING_EXISTS",
+                        String.format("Vehicle service log '%s' cannot be deleted because accounting vouchers exist.", log.getReferenceNumber()),
+                        "Use cancellation workflow to reverse accounting entry.",
+                        details
+                );
+            }
         }
     }
 

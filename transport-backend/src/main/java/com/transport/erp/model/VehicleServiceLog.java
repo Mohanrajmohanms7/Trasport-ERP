@@ -33,6 +33,19 @@ public class VehicleServiceLog extends BaseEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal cost = BigDecimal.ZERO;
 
+    @Column(nullable = false, length = 50)
+    private String status = "DRAFT"; // DRAFT, APPROVED, CANCELLED
+
+    @Column(name = "payment_method", nullable = false, length = 50)
+    private String paymentMethod = "CASH"; // CASH, BANK, CREDIT
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    @Column(name = "reference_number", length = 100)
+    private String referenceNumber;
+
     @Column(columnDefinition = "TEXT")
     private String remarks;
 }

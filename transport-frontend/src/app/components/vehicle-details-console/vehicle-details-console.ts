@@ -63,6 +63,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   maintenanceLogs = signal<VehicleServiceLog[]>([]);
   assignments = signal<VehicleDriverAssignment[]>([]);
   drivers = signal<any[]>([]);
+  suppliers = signal<any[]>([]);
   documentTypes = signal<any[]>([]);
   serviceTypes = signal<any[]>([]);
 
@@ -94,6 +95,24 @@ export class VehicleDetailsConsoleComponent implements OnInit {
           { label: 'TYRE CHANGE', value: 'TYRE_CHANGE' }, { label: 'BRAKE SERVICE', value: 'BRAKE_SERVICE' },
           { label: 'GENERAL MAINTENANCE', value: 'GENERAL_SERVICE' }
         ];
+  }
+
+  get paymentMethodOptions(): FfSelectOption[] {
+    return [
+      { label: 'CASH', value: 'CASH' },
+      { label: 'BANK CURRENT A/C', value: 'BANK' },
+      { label: 'CREDIT (SUPPLIER PAYABLE)', value: 'CREDIT' }
+    ];
+  }
+
+  get supplierOptions(): FfSelectOption[] {
+    return [
+      { label: '-- Select Supplier / Workshop --', value: '' },
+      ...this.suppliers().map(s => ({
+        label: [s.code, s.name].filter(Boolean).join(' — '),
+        value: s.id
+      }))
+    ];
   }
 
   documentForm!: FormGroup;
@@ -150,6 +169,11 @@ export class VehicleDetailsConsoleComponent implements OnInit {
         this.drivers.set(res.data.content || res.data);
       }
     });
+    this.masterService.getMasters<any>('suppliers', this.companyId, { size: 100 }).subscribe(res => {
+      if (res.success && res.data) {
+        this.suppliers.set(res.data.content || res.data);
+      }
+    });
   }
 
   initForms() {
@@ -173,7 +197,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
       serviceDate: ['', Validators.required],
       nextServiceDate: [''],
       workshop: ['', Validators.required],
-      cost: [0, [Validators.required, Validators.min(0)]],
+      cost: [0, [Validators.required, Validators.min(0.01)]],
+      paymentMethod: ['CASH', Validators.required],
+      supplierId: [''],
       remarks: ['']
     });
   }
@@ -267,18 +293,101 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     const id = this.vehicleId();
     if (id == null || this.maintenanceForm.invalid) return;
 
+    const val = { ...this.maintenanceForm.value };
+    if (val.paymentMethod === 'CREDIT' && val.supplierId) {
+      val.supplier = { id: Number(val.supplierId) };
+    }
+
     this.loading.set(true);
-    this.vehicleMgmtService.addServiceLog(id, this.maintenanceForm.value).subscribe({
+    this.vehicleMgmtService.addServiceLog(id, val).subscribe({
       next: () => {
         this.loading.set(false);
         this.notify.success('Maintenance log recorded successfully');
         this.loadMaintenanceHistory();
         this.showMaintenanceEditor.set(false);
-        this.maintenanceForm.reset({ serviceType: 'OIL_CHANGE', cost: 0 });
+        this.maintenanceForm.reset({ serviceType: 'OIL_CHANGE', cost: 0, paymentMethod: 'CASH' });
       },
       error: (err) => {
         this.loading.set(false);
         this.notify.error(err.error?.message || 'Failed to record maintenance log');
+      }
+    });
+  }
+
+  approveLog(log: VehicleServiceLog) {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null || !log.id) return;
+
+    this.loading.set(true);
+    this.vehicleMgmtService.approveServiceLog(vehicleId, log.id).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.notify.success(`Service log #${log.referenceNumber || log.id} approved and posted to accounting!`);
+        this.loadMaintenanceHistory();
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(err.error?.message || 'Failed to approve service log');
+      }
+    });
+  }
+
+  cancelLog(log: VehicleServiceLog) {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null || !log.id) return;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Cancel Service Log Accounting',
+        message: `Are you sure you want to cancel service log #${log.referenceNumber || log.id}? A reversal Journal Voucher will be created.`,
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed && log.id) {
+        this.loading.set(true);
+        this.vehicleMgmtService.cancelServiceLog(vehicleId, log.id).subscribe({
+          next: () => {
+            this.loading.set(false);
+            this.notify.success(`Service log #${log.referenceNumber || log.id} cancelled and reversal posted!`);
+            this.loadMaintenanceHistory();
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.notify.error(err.error?.message || 'Failed to cancel service log');
+          }
+        });
+      }
+    });
+  }
+
+  deleteLog(log: VehicleServiceLog) {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null || !log.id) return;
+
+    const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
+      data: {
+        title: 'Delete Service Log',
+        message: `Are you sure you want to delete service log #${log.referenceNumber || log.id}?`,
+        type: 'danger'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed && log.id) {
+        this.loading.set(true);
+        this.vehicleMgmtService.deleteServiceLog(vehicleId, log.id).subscribe({
+          next: () => {
+            this.loading.set(false);
+            this.notify.success('Service log deleted successfully');
+            this.loadMaintenanceHistory();
+          },
+          error: (err) => {
+            this.loading.set(false);
+            this.notify.error(err.error?.message || 'Failed to delete service log');
+          }
+        });
       }
     });
   }

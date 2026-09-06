@@ -214,31 +214,63 @@
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                    <th class="p-4">Reference #</th>
                     <th class="p-4">Repair Type</th>
-                    <th class="p-4">Workshop</th>
+                    <th class="p-4">Workshop / Supplier</th>
+                    <th class="p-4">Payment Method</th>
+                    <th class="p-4">Status</th>
                     <th class="p-4">Service Date</th>
-                    <th class="p-4">Next Due Date</th>
                     <th class="p-4 text-right">Cost (INR)</th>
-                    <th class="p-4">Remarks</th>
+                    <th class="p-4 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (log of maintenanceLogs(); track log.serviceDate) {
+                  @for (log of maintenanceLogs(); track log.id) {
                     <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
+                      <td class="p-4 font-mono font-bold text-slate-900 dark:text-white">{{ log.referenceNumber || ('SRV-' + log.id) }}</td>
                       <td class="p-4 font-bold text-slate-900 dark:text-white">
                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/30 uppercase tracking-wider">
                           {{ log.serviceType }}
                         </span>
                       </td>
-                      <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ log.workshop }}</td>
+                      <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">
+                        {{ log.supplier?.name || log.workshop || '-' }}
+                      </td>
+                      <td class="p-4">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase">
+                          {{ log.paymentMethod || 'CASH' }}
+                        </span>
+                      </td>
+                      <td class="p-4">
+                        <span [class.bg-amber-100]="(log.status || 'DRAFT') === 'DRAFT'" [class.text-amber-800]="(log.status || 'DRAFT') === 'DRAFT'"
+                              [class.bg-emerald-100]="log.status === 'APPROVED'" [class.text-emerald-800]="log.status === 'APPROVED'"
+                              [class.bg-rose-100]="log.status === 'CANCELLED'" [class.text-rose-800]="log.status === 'CANCELLED'"
+                              class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                          {{ log.status || 'DRAFT' }}
+                        </span>
+                      </td>
                       <td class="p-4 text-slate-650 dark:text-slate-350">{{ log.serviceDate }}</td>
-                      <td class="p-4 text-slate-650 dark:text-slate-350">{{ log.nextServiceDate || 'N/A' }}</td>
                       <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ log.cost | number }}</td>
-                      <td class="p-4 text-slate-600 dark:text-slate-450 leading-relaxed max-w-xs overflow-hidden text-ellipsis">{{ log.remarks || '-' }}</td>
+                      <td class="p-4 text-center flex items-center justify-center gap-1">
+                        @if ((log.status || 'DRAFT') === 'DRAFT') {
+                          <button (click)="approveLog(log)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold cursor-pointer border-none shadow-sm transition" title="Approve & Post JV">
+                            Approve
+                          </button>
+                          <button (click)="deleteLog(log)" class="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition border-none bg-transparent cursor-pointer" title="Delete Draft">
+                            <span class="material-icons text-base">delete</span>
+                          </button>
+                        } @else if (log.status === 'APPROVED') {
+                          <button (click)="cancelLog(log)" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold cursor-pointer border-none shadow-sm transition" title="Cancel & Reversal JV">
+                            Cancel
+                          </button>
+                        } @else {
+                          <span class="text-[10px] text-slate-400 font-semibold italic">Immutable</span>
+                        }
+                      </td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="6" class="p-12 text-center text-slate-400 font-semibold">
+                      <td colspan="8" class="p-12 text-center text-slate-400 font-semibold">
                         <div class="flex flex-col items-center justify-center gap-2">
                           <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">build</span>
                           <span class="text-xs text-slate-400 dark:text-slate-600">No maintenance log records found for this vehicle.</span>
@@ -390,7 +422,14 @@
 
           <ff-textbox formControlName="workshop" label="Workshop Name" placeholder="Workshop details" prefixIcon="store" [required]="true" />
 
-          <ff-number formControlName="cost" label="Total Repairs Cost (INR)" placeholder="0.00" [min]="0" [required]="true" />
+          <div class="grid grid-cols-2 gap-4">
+            <ff-number formControlName="cost" label="Total Repairs Cost (INR)" placeholder="0.00" [min]="0" [required]="true" />
+            <ff-dropdown formControlName="paymentMethod" label="Payment Method" [options]="paymentMethodOptions" [required]="true" />
+          </div>
+
+          @if (maintenanceForm.get('paymentMethod')?.value === 'CREDIT') {
+            <ff-dropdown formControlName="supplierId" label="Select Supplier (Payable)" [options]="supplierOptions" [required]="true" searchPlaceholder="Search supplier..." />
+          }
 
           <ff-textarea formControlName="remarks" label="Remarks / Action notes" placeholder="Oil grade, parts replaced details" [rows]="3" />
 
