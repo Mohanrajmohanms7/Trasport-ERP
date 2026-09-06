@@ -12,6 +12,9 @@ import com.transport.erp.model.Booking;
 import com.transport.erp.repository.BookingRepository;
 import com.transport.erp.repository.TripRepository;
 import com.transport.erp.repository.SalesInvoiceRepository;
+import com.transport.erp.exception.BusinessValidationException;
+import com.transport.erp.model.VehicleDriverAssignment;
+import com.transport.erp.repository.VehicleDriverAssignmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -34,6 +39,9 @@ public class TripService {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private VehicleDriverAssignmentRepository assignmentRepository;
 
     @Autowired
     private TenantAccessService tenantAccess;
@@ -134,6 +142,8 @@ public class TripService {
         }
 
 
+        validateVehicleDriverAssignment(trip);
+
         if (trip.getDetails() != null) {
             for (TripDetail detail : trip.getDetails()) {
                 detail.setTrip(trip);
@@ -162,6 +172,8 @@ public class TripService {
         existing.setRemarks(details.getRemarks());
         existing.setUpdatedBy(updatedByUsername);
 
+        validateVehicleDriverAssignment(existing);
+
         // Replace details
         existing.getDetails().clear();
         if (details.getDetails() != null) {
@@ -182,6 +194,27 @@ public class TripService {
                 "Updated allocations for trip: " + saved.getTripNumber());
 
         return saved;
+    }
+
+    private void validateVehicleDriverAssignment(Trip trip) {
+        if (trip != null && trip.getVehicle() != null && trip.getVehicle().getId() != null
+                && trip.getDriver() != null && trip.getDriver().getId() != null) {
+            Long vehId = trip.getVehicle().getId();
+            Long drvId = trip.getDriver().getId();
+            Optional<VehicleDriverAssignment> activeAssign = assignmentRepository
+                    .findByVehicleIdAndDriverIdAndRemovalDateIsNullAndIsDeletedFalse(vehId, drvId);
+            if (activeAssign.isEmpty()) {
+                List<String> errorDetails = new ArrayList<>();
+                errorDetails.add(String.format("Driver ID %d is not actively assigned to Vehicle ID %d.", drvId, vehId));
+                throw new BusinessValidationException(
+                        "Vehicle Driver Assignment Required",
+                        "DRIVER_VEHICLE_ASSIGNMENT_REQUIRED",
+                        "Trip cannot be dispatched/created without an active vehicle-driver pairing assignment.",
+                        "Create an active vehicle-driver assignment before selecting this vehicle and driver for the trip.",
+                        errorDetails
+                );
+            }
+        }
     }
 
     @Transactional

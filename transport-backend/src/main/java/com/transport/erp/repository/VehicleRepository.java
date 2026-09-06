@@ -8,11 +8,19 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+
 import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Vehicle v WHERE v.id = :id AND v.isDeleted = false")
+    Optional<Vehicle> findByIdForUpdate(@Param("id") Long id);
+
     Optional<Vehicle> findByCompanyIdAndCodeAndIsDeletedFalse(Long companyId, String code);
 
     Page<Vehicle> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);

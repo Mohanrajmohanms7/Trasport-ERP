@@ -4,6 +4,8 @@ import com.transport.erp.dto.ApiResponse;
 import com.transport.erp.model.VehicleDriverAssignment;
 import com.transport.erp.service.VehicleDriverAssignmentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -22,16 +24,20 @@ public class VehicleDriverAssignmentController {
     }
 
     @PostMapping("/{driverId}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'FLEET_MANAGER')")
     public ApiResponse<VehicleDriverAssignment> assignDriver(
             @PathVariable Long vehicleId,
             @PathVariable Long driverId) {
-        VehicleDriverAssignment assignment = assignmentService.assignDriver(vehicleId, driverId);
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        VehicleDriverAssignment assignment = assignmentService.assignDriver(vehicleId, driverId, activeUser);
         return ApiResponse.success(assignment, "Driver assigned to vehicle successfully");
     }
 
     @DeleteMapping
-    public ApiResponse<Void> unassignDriver(@PathVariable Long vehicleId) {
-        assignmentService.unassignDriver(vehicleId);
-        return ApiResponse.success(null, "Driver unassigned from vehicle successfully");
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'FLEET_MANAGER')")
+    public ApiResponse<VehicleDriverAssignment> unassignDriver(@PathVariable Long vehicleId) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        VehicleDriverAssignment unassigned = assignmentService.unassignDriver(vehicleId, activeUser);
+        return ApiResponse.success(unassigned, "Driver unassigned from vehicle successfully");
     }
 }
