@@ -34,4 +34,8 @@ public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     long countByDriverIdAndIsDeletedFalse(Long driverId);
 
     long countByTripIdAndIsDeletedFalse(Long tripId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT f FROM FuelEntry f WHERE f.id = :id AND f.isDeleted = false")
+    Optional<FuelEntry> findAndLockById(@Param("id") Long id);
 }

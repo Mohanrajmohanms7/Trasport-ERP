@@ -35,4 +35,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     long countByDriverIdAndIsDeletedFalse(Long driverId);
 
     long countByTripIdAndIsDeletedFalse(Long tripId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Expense e WHERE e.id = :id AND e.isDeleted = false")
+    Optional<Expense> findAndLockById(@Param("id") Long id);
 }

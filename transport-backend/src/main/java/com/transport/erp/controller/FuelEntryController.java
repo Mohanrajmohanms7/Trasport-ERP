@@ -61,4 +61,18 @@ public class FuelEntryController {
         fuelEntryService.deleteFuelEntry(id, activeUser);
         return ApiResponse.success(null, "Fuel Entry deleted successfully");
     }
+
+    @PostMapping("/{id}/approve")
+    public ApiResponse<FuelEntry> approve(@PathVariable Long id) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        FuelEntry approved = fuelEntryService.approveFuelEntry(id, activeUser);
+        return ApiResponse.success(approved, "Fuel Entry approved successfully");
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<FuelEntry> cancel(@PathVariable Long id) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        FuelEntry cancelled = fuelEntryService.cancelFuelEntry(id, activeUser);
+        return ApiResponse.success(cancelled, "Fuel Entry cancelled successfully");
+    }
 }

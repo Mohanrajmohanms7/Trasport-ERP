@@ -76,4 +76,11 @@ public class ExpenseController {
         Expense rejected = expenseService.rejectExpense(id, activeUser);
         return ApiResponse.success(rejected, "Expense rejected successfully");
     }
+
+    @PostMapping("/{id}/cancel")
+    public ApiResponse<Expense> cancel(@PathVariable Long id) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        Expense cancelled = expenseService.cancelExpense(id, activeUser);
+        return ApiResponse.success(cancelled, "Expense cancelled successfully");
+    }
 }
