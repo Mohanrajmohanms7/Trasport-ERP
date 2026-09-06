@@ -24,6 +24,24 @@ export interface DriverSalary {
   advanceTaken: number;
 }
 
+export interface DriverPayroll {
+  id?: number;
+  payrollNumber?: string;
+  driverId: number;
+  payYear: number;
+  payMonth: number;
+  basicSalary: number;
+  allowanceAmount?: number;
+  deductionAmount?: number;
+  advanceAdjustment?: number;
+  netSalaryPayable?: number;
+  paymentMethod?: string;
+  status?: string; // DRAFT, APPROVED, PAID, CANCELLED
+  accrualJvNumber?: string;
+  paymentJvNumber?: string;
+  cancellationJvNumber?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -66,5 +84,39 @@ export class DriverMgmtService {
 
   saveSalary(driverId: number, salary: DriverSalary): Observable<ApiResponse<DriverSalary>> {
     return this.http.post<ApiResponse<DriverSalary>>(`/api/v1/drivers/${driverId}/salary`, salary);
+  }
+
+  // Payroll APIs
+  getPayrolls(status?: string): Observable<ApiResponse<DriverPayroll[]>> {
+    const url = status ? `/api/v1/driver-payrolls?status=${status}` : `/api/v1/driver-payrolls`;
+    return this.http.get<ApiResponse<DriverPayroll[]>>(url);
+  }
+
+  getPayrollsByDriver(driverId: number): Observable<ApiResponse<DriverPayroll[]>> {
+    return this.http.get<ApiResponse<DriverPayroll[]>>(`/api/v1/driver-payrolls/driver/${driverId}`);
+  }
+
+  createPayroll(payroll: DriverPayroll): Observable<ApiResponse<DriverPayroll>> {
+    return this.http.post<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls`, payroll);
+  }
+
+  updatePayroll(id: number, payroll: DriverPayroll): Observable<ApiResponse<DriverPayroll>> {
+    return this.http.put<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls/${id}`, payroll);
+  }
+
+  deletePayroll(id: number): Observable<ApiResponse<void>> {
+    return this.http.delete<ApiResponse<void>>(`/api/v1/driver-payrolls/${id}`);
+  }
+
+  approvePayroll(id: number): Observable<ApiResponse<DriverPayroll>> {
+    return this.http.post<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls/${id}/approve`, {});
+  }
+
+  payPayroll(id: number, payment: { paymentMethod: string; remarks?: string }): Observable<ApiResponse<DriverPayroll>> {
+    return this.http.post<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls/${id}/pay`, payment);
+  }
+
+  cancelPayroll(id: number): Observable<ApiResponse<DriverPayroll>> {
+    return this.http.post<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls/${id}/cancel`, {});
   }
 }
