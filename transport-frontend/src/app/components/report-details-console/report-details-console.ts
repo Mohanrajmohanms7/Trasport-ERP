@@ -143,10 +143,10 @@ export class ReportDetailsConsoleComponent implements OnInit {
 
   loadBiMetrics() {
     this.biLoading.set(true);
-    this.dashboardService.getAdminDashboard().subscribe({
-      next: (res) => {
+    this.dashboardService.getAdminMetrics().subscribe({
+      next: (res: any) => {
         this.biLoading.set(false);
-        if (res.success && res.data) {
+        if (res && res.success && res.data) {
           const d = res.data;
           this.todayRevenue.set(d.revenueToday || 0);
           this.todayExpenses.set(d.todayExpenses || 0);
@@ -292,9 +292,10 @@ export class ReportDetailsConsoleComponent implements OnInit {
       ? val.columnsList.split(',').map((s: string) => s.trim()).filter(Boolean)
       : val.columnsList;
 
-    const payload: Partial<ReportTemplate> = {
-      templateName: val.templateName,
-      reportType: val.reportType,
+    const payload: ReportTemplate = {
+      templateName: val.templateName || '',
+      reportType: val.reportType || 'FLEET',
+      columnsList: JSON.stringify(columnsArray),
       selectedColumnsJson: JSON.stringify(columnsArray)
     };
 
@@ -323,10 +324,10 @@ export class ReportDetailsConsoleComponent implements OnInit {
   saveSchedule() {
     if (this.scheduleForm.invalid) return;
     const val = this.scheduleForm.value;
-    const payload: Partial<ScheduledReport> = {
-      reportTemplate: { id: Number(val.reportTemplate.id) } as ReportTemplate,
-      cronExpression: val.cronExpression,
-      recipientEmail: val.recipientEmail,
+    const payload: ScheduledReport = {
+      reportTemplate: { id: Number(val.reportTemplate?.id || val.reportTemplate) },
+      cronExpression: val.cronExpression || '',
+      recipientEmail: val.recipientEmail || '',
       active: true
     };
 

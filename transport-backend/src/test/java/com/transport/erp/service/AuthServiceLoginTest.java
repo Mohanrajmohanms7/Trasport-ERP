@@ -82,7 +82,7 @@ class AuthServiceLoginTest {
                 .thenReturn(authentication);
         when(userRepository.findByUsernameAndIsDeletedFalse("superadmin"))
                 .thenReturn(Optional.of(activeUser));
-        when(jwtUtil.generateToken(principal)).thenReturn("jwt-token");
+        when(jwtUtil.generateToken(any(), anyString())).thenReturn("jwt-token");
 
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setToken("refresh-token");

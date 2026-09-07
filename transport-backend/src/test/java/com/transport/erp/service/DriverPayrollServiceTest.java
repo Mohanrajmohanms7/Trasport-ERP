@@ -36,6 +36,8 @@ class DriverPayrollServiceTest {
     @Mock
     private JournalVoucherRepository jvRepository;
 
+    @Mock private FinancialYearPeriodValidationService periodValidationService;
+
     @Mock
     private ChartOfAccountService coaService;
 

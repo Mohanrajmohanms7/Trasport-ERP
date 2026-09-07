@@ -53,4 +53,7 @@ public class Expense extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String remarks;
+
+    @Column(name = "attachment_path", columnDefinition = "TEXT")
+    private String attachmentPath;
 }

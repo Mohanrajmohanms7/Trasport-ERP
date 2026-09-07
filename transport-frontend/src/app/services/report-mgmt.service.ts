@@ -7,16 +7,18 @@ export interface ReportTemplate {
   id?: number;
   templateName: string;
   reportType: string; // FLEET, REVENUE, EXPENSE, TRIP, FUEL
-  columnsList: string;
+  columnsList?: string;
+  selectedColumnsJson?: string;
   companyId?: number;
 }
 
 export interface ScheduledReport {
   id?: number;
-  reportTemplate: { id: number; templateName?: string };
+  reportTemplate?: { id: number; templateName?: string };
   cronExpression: string;
   recipientEmail: string;
   status?: string; // ACTIVE, INACTIVE
+  active?: boolean;
   companyId?: number;
 }
 
