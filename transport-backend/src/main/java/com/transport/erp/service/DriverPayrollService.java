@@ -47,6 +47,11 @@ public class DriverPayrollService {
     @Autowired
     private DriverSalaryService driverSalaryService;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
+
     public Page<DriverPayroll> getPayrolls(Long companyId, String status, Pageable pageable) {
         Long resolvedCompanyId = tenantAccess.resolveCompanyId(companyId);
         if (status != null && !status.trim().isEmpty()) {
@@ -307,7 +312,11 @@ public class DriverPayrollService {
             );
         }
 
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(payroll.getCompanyId(), LocalDate.now());
+
         ChartOfAccount salaryExpenseAcc = coaService.getOrCreateAccount(
+
                 payroll.getCompanyId(), payroll.getBranchId(), "5150", "Driver Salary Expense", "EXPENSE");
         ChartOfAccount salaryPayableAcc = coaService.getOrCreateAccount(
                 payroll.getCompanyId(), payroll.getBranchId(), "2050", "Driver Salary Payable", "LIABILITY");
@@ -405,7 +414,11 @@ public class DriverPayrollService {
             );
         }
 
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(payroll.getCompanyId(), LocalDate.now());
+
         ChartOfAccount salaryPayableAcc = coaService.getOrCreateAccount(
+
                 payroll.getCompanyId(), payroll.getBranchId(), "2050", "Driver Salary Payable", "LIABILITY");
 
         ChartOfAccount creditAcc;
@@ -483,6 +496,10 @@ public class DriverPayrollService {
                     "Use delete endpoint for DRAFT payrolls."
             );
         }
+
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(payroll.getCompanyId(), LocalDate.now());
+
 
         List<String> cancellationJvNumbers = new ArrayList<>();
 

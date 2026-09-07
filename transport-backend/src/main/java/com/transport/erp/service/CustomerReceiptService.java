@@ -91,6 +91,10 @@ public class CustomerReceiptService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
 
     @Autowired
     private CustomerLedgerService ledgerService;
@@ -375,7 +379,11 @@ public class CustomerReceiptService {
             return response;
         }
 
+        // Validate Financial Year period status before accounting reversal
+        periodValidationService.validatePostingAllowed(receipt.getCompanyId(), LocalDate.now());
+
         // Process invoice paidAmount & status reversals for APPROVED receipts
+
         if (receipt.getAllocations() != null && !receipt.getAllocations().isEmpty()) {
             for (CustomerReceiptAllocation allocation : receipt.getAllocations()) {
                 SalesInvoice invoice = salesInvoiceRepository.findAndLockById(allocation.getInvoice().getId())
@@ -560,8 +568,13 @@ public class CustomerReceiptService {
         BigDecimal advance = receipt.getAmountReceived().subtract(totalAllocated);
         receipt.setAdvanceAmount(advance);
 
+        // Validate Financial Year period status before posting accounting entries
+        LocalDate receiptPostingDate = receipt.getReceiptDate() != null ? receipt.getReceiptDate() : LocalDate.now();
+        periodValidationService.validatePostingAllowed(receipt.getCompanyId(), receiptPostingDate);
+
         // Update receipt approval audit fields
         receipt.setStatus("APPROVED");
+
         receipt.setApprovedBy(username);
         receipt.setApprovedAt(java.time.LocalDateTime.now());
         receipt.setUpdatedBy(username);

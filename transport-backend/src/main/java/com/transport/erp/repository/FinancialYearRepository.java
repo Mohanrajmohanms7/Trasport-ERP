@@ -14,4 +14,7 @@ public interface FinancialYearRepository extends JpaRepository<FinancialYear, Lo
     Optional<FinancialYear> findByCodeAndCompanyIdAndIsDeletedFalse(String code, Long companyId);
 
     Page<FinancialYear> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+
+    java.util.List<FinancialYear> findByCompanyIdAndIsDeletedFalse(Long companyId);
 }
+

@@ -46,6 +46,11 @@ public class VehicleServiceLogService {
     @Autowired
     private BusinessDependencyValidationService dependencyValidationService;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
+
     public List<VehicleServiceLog> getLogsByVehicle(Long vehicleId) {
         Vehicle vehicle = parentAccess.requireVehicle(vehicleId);
         tenantAccess.assertOwned(vehicle.getCompanyId());
@@ -200,7 +205,12 @@ public class VehicleServiceLogService {
             );
         }
 
+        // Validate Financial Year period status
+        LocalDate servicePostingDate = log.getServiceDate() != null ? log.getServiceDate() : LocalDate.now();
+        periodValidationService.validatePostingAllowed(log.getCompanyId(), servicePostingDate);
+
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
             details.add(String.format("Accounting vouchers already exist for vehicle service log '%s'.", log.getReferenceNumber()));
@@ -290,6 +300,10 @@ public class VehicleServiceLogService {
                     details
             );
         }
+
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(log.getCompanyId(), LocalDate.now());
+
 
         // 3. locate original approval JV
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());

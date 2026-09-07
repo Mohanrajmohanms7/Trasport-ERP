@@ -62,6 +62,10 @@ public class SalesInvoiceService {
     @Autowired
     private BusinessDependencyValidationService validationService;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
 
 
 
@@ -226,6 +230,11 @@ public class SalesInvoiceService {
             );
         }
 
+        // Validate Financial Year period status
+        LocalDate invoicePostingDate = invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : LocalDate.now();
+        periodValidationService.validatePostingAllowed(invoice.getCompanyId(), invoicePostingDate);
+
+
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(invoice.getInvoiceNumber());
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new java.util.ArrayList<>();
@@ -318,7 +327,9 @@ public class SalesInvoiceService {
 
         // Perform accounting reversals for APPROVED invoices
         if ("APPROVED".equalsIgnoreCase(previousStatus)) {
+            periodValidationService.validatePostingAllowed(invoice.getCompanyId(), LocalDate.now());
             String reversalRef = "REV-" + invoice.getInvoiceNumber();
+
             List<JournalVoucher> existingReversals = jvRepository.findByReferenceNumberAndIsDeletedFalse(reversalRef);
 
             if (existingReversals.isEmpty()) {

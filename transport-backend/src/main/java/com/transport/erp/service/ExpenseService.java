@@ -43,6 +43,11 @@ public class ExpenseService {
     @Autowired
     private AppSettingService settingService;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
+
     public Page<Expense> getExpenses(Long companyId, String status, Pageable pageable) {
         if (status != null && !status.trim().isEmpty()) {
             return expenseRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
@@ -161,7 +166,12 @@ public class ExpenseService {
             );
         }
 
+        // Validate Financial Year period status
+        LocalDate expensePostingDate = expense.getExpenseDate() != null ? expense.getExpenseDate() : LocalDate.now();
+        periodValidationService.validatePostingAllowed(expense.getCompanyId(), expensePostingDate);
+
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(expense.getExpenseNumber());
+
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
             details.add(String.format("Accounting vouchers already exist for expense '%s'.", expense.getExpenseNumber()));
@@ -268,6 +278,10 @@ public class ExpenseService {
                     details
             );
         }
+
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(expense.getCompanyId(), LocalDate.now());
+
 
         expense.setStatus("CANCELLED");
         expense.setUpdatedBy(username);

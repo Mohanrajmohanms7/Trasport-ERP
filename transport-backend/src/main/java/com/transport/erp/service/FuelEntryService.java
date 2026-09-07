@@ -49,6 +49,11 @@ public class FuelEntryService {
     @Autowired
     private AppSettingService settingService;
 
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
+
+
+
     public Page<FuelEntry> getFuelEntries(Long companyId, Pageable pageable) {
         Long resolvedCompanyId = tenantAccess.resolveCompanyId(companyId);
         return fuelEntryRepository.findByCompanyIdAndIsDeletedFalse(resolvedCompanyId, pageable);
@@ -261,7 +266,12 @@ public class FuelEntryService {
             );
         }
 
+        // Validate Financial Year period status
+        LocalDate fuelPostingDate = entry.getFuelDate() != null ? entry.getFuelDate() : LocalDate.now();
+        periodValidationService.validatePostingAllowed(entry.getCompanyId(), fuelPostingDate);
+
         List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(entry.getFuelEntryNumber());
+
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
             details.add(String.format("Accounting vouchers already exist for fuel entry '%s'.", entry.getFuelEntryNumber()));
@@ -357,6 +367,10 @@ public class FuelEntryService {
                     details
             );
         }
+
+        // Validate Financial Year period status
+        periodValidationService.validatePostingAllowed(entry.getCompanyId(), LocalDate.now());
+
 
         entry.setStatus("CANCELLED");
         entry.setUpdatedBy(username);

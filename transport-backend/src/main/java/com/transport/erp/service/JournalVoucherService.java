@@ -32,8 +32,8 @@ public class JournalVoucherService {
     @Autowired
     private AuditService auditService;
 
-
-
+    @Autowired
+    private FinancialYearPeriodValidationService periodValidationService;
 
     public Page<JournalVoucher> getVouchers(Long companyId, Pageable pageable) {
         return voucherRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
@@ -42,13 +42,19 @@ public class JournalVoucherService {
     @Transactional
     public JournalVoucher createVoucher(JournalVoucher voucher, String username) {
         voucher.setVoucherNumber("JV-" + System.currentTimeMillis());
-        voucher.setVoucherDate(LocalDate.now());
+        if (voucher.getVoucherDate() == null) {
+            voucher.setVoucherDate(LocalDate.now());
+        }
         voucher.setIsDeleted(false);
         voucher.setCreatedBy(username);
         voucher.setUpdatedBy(username);
 
         voucher.setCompanyId(tenantAccess.resolveCompanyId(voucher.getCompanyId()));
         voucher.setBranchId(tenantAccess.resolveBranchId(voucher.getBranchId()));
+
+        // Validate Financial Year period status (must be OPEN and cover voucherDate)
+        periodValidationService.validatePostingAllowed(voucher.getCompanyId(), voucher.getVoucherDate());
+
 
         if (voucher.getCode() == null) voucher.setCode(voucher.getVoucherNumber());
         if (voucher.getName() == null) voucher.setName("Journal Voucher Entry");
