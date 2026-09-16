@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     Optional<FuelEntry> findByFuelEntryNumberAndIsDeletedFalse(String fuelEntryNumber);
+    Optional<FuelEntry> findFirstByAttachmentPathContainingAndIsDeletedFalse(String attachmentPath);
 
     Optional<FuelEntry> findByFuelRequestIdAndIsDeletedFalse(Long fuelRequestId);
 

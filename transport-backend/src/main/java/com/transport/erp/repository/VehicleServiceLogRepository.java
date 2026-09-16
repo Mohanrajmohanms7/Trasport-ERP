@@ -14,6 +14,7 @@ import java.util.Optional;
 @Repository
 public interface VehicleServiceLogRepository extends JpaRepository<VehicleServiceLog, Long> {
     List<VehicleServiceLog> findByVehicleIdAndIsDeletedFalse(Long vehicleId);
+    Optional<VehicleServiceLog> findFirstByAttachmentPathContainingAndIsDeletedFalse(String attachmentPath);
 
     long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
 

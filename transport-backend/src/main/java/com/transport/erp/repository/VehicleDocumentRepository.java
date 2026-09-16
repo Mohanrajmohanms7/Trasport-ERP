@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface VehicleDocumentRepository extends JpaRepository<VehicleDocument, Long> {
     List<VehicleDocument> findByVehicleIdAndIsDeletedFalse(Long vehicleId);
+    java.util.Optional<VehicleDocument> findFirstByFilePathContainingAndIsDeletedFalse(String filePath);
 }

@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface DriverDocumentRepository extends JpaRepository<DriverDocument, Long> {
     List<DriverDocument> findByDriverIdAndIsDeletedFalse(Long driverId);
+    java.util.Optional<DriverDocument> findFirstByFilePathContainingAndIsDeletedFalse(String filePath);
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Optional<Expense> findByExpenseNumberAndIsDeletedFalse(String expenseNumber);
+    Optional<Expense> findFirstByAttachmentPathContainingAndIsDeletedFalse(String attachmentPath);
 
     Page<Expense> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
