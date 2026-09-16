@@ -1,18 +1,18 @@
 package com.transport.erp.service;
 
-import com.transport.erp.dto.BalanceSheetReportDTO;
-import com.transport.erp.dto.GeneralLedgerReportDTO;
-import com.transport.erp.dto.ProfitLossReportDTO;
-import com.transport.erp.dto.TrialBalanceDTO;
-import com.transport.erp.model.ChartOfAccount;
-import com.transport.erp.model.JournalVoucher;
+import com.transport.erp.dto.*;
+import com.transport.erp.model.*;
+import com.transport.erp.repository.BranchRepository;
 import com.transport.erp.repository.ChartOfAccountRepository;
+import com.transport.erp.repository.CompanyRepository;
 import com.transport.erp.repository.JournalVoucherRepository;
 import com.transport.erp.security.TenantAccessService;
+import com.transport.erp.util.FinancialReportPdfGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -27,6 +27,12 @@ public class FinancialReportService {
 
     @Autowired
     private ChartOfAccountRepository coaRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
+
+    @Autowired
+    private BranchRepository branchRepository;
 
     @Autowired
     private TenantAccessService tenantAccess;
@@ -324,7 +330,6 @@ public class FinancialReportService {
 
         BigDecimal netProfitCurrentPeriod = allIncome.subtract(allExpense);
 
-        // Include Current Period Net Profit in Equity for Balance Sheet balancing
         equityRows.add(BalanceSheetReportDTO.Row.builder()
                 .accountId(null)
                 .accountCode("NET_PROFIT")
@@ -349,5 +354,237 @@ public class FinancialReportService {
                 .totalLiabilitiesAndEquity(totalLiabilitiesAndEquity)
                 .difference(difference)
                 .build();
+    }
+
+    // ==========================================
+    // PRINT DATA WRAPPERS
+    // ==========================================
+    @Transactional(readOnly = true)
+    public FinancialReportPrintDTO<TrialBalanceDTO.Response> getTrialBalancePrintData(Long companyId, LocalDate startDate, LocalDate endDate) {
+        TrialBalanceDTO.Response data = getTrialBalance(companyId, startDate, endDate);
+        return buildPrintWrapper(companyId, data);
+    }
+
+    @Transactional(readOnly = true)
+    public FinancialReportPrintDTO<GeneralLedgerReportDTO.Response> getGeneralLedgerPrintData(Long accountId, Long companyId, LocalDate startDate, LocalDate endDate) {
+        GeneralLedgerReportDTO.Response data = getGeneralLedger(accountId, companyId, startDate, endDate);
+        return buildPrintWrapper(companyId, data);
+    }
+
+    @Transactional(readOnly = true)
+    public FinancialReportPrintDTO<ProfitLossReportDTO.Response> getProfitLossPrintData(Long companyId, LocalDate startDate, LocalDate endDate) {
+        ProfitLossReportDTO.Response data = getProfitAndLoss(companyId, startDate, endDate);
+        return buildPrintWrapper(companyId, data);
+    }
+
+    @Transactional(readOnly = true)
+    public FinancialReportPrintDTO<BalanceSheetReportDTO.Response> getBalanceSheetPrintData(Long companyId, LocalDate asOfDate) {
+        BalanceSheetReportDTO.Response data = getBalanceSheet(companyId, asOfDate);
+        return buildPrintWrapper(companyId, data);
+    }
+
+    // ==========================================
+    // PDF GENERATION EXPORTS
+    // ==========================================
+    @Transactional(readOnly = true)
+    public void generateTrialBalancePdf(Long companyId, LocalDate startDate, LocalDate endDate, OutputStream os) throws Exception {
+        FinancialReportPrintDTO<TrialBalanceDTO.Response> printDTO = getTrialBalancePrintData(companyId, startDate, endDate);
+        FinancialReportPdfGenerator.generateTrialBalancePdf(printDTO, os);
+    }
+
+    @Transactional(readOnly = true)
+    public void generateGeneralLedgerPdf(Long accountId, Long companyId, LocalDate startDate, LocalDate endDate, OutputStream os) throws Exception {
+        FinancialReportPrintDTO<GeneralLedgerReportDTO.Response> printDTO = getGeneralLedgerPrintData(accountId, companyId, startDate, endDate);
+        FinancialReportPdfGenerator.generateGeneralLedgerPdf(printDTO, os);
+    }
+
+    @Transactional(readOnly = true)
+    public void generateProfitLossPdf(Long companyId, LocalDate startDate, LocalDate endDate, OutputStream os) throws Exception {
+        FinancialReportPrintDTO<ProfitLossReportDTO.Response> printDTO = getProfitLossPrintData(companyId, startDate, endDate);
+        FinancialReportPdfGenerator.generateProfitLossPdf(printDTO, os);
+    }
+
+    @Transactional(readOnly = true)
+    public void generateBalanceSheetPdf(Long companyId, LocalDate asOfDate, OutputStream os) throws Exception {
+        FinancialReportPrintDTO<BalanceSheetReportDTO.Response> printDTO = getBalanceSheetPrintData(companyId, asOfDate);
+        FinancialReportPdfGenerator.generateBalanceSheetPdf(printDTO, os);
+    }
+
+    // ==========================================
+    // CSV EXPORTS
+    // ==========================================
+    @Transactional(readOnly = true)
+    public String generateTrialBalanceCsv(Long companyId, LocalDate startDate, LocalDate endDate) {
+        FinancialReportPrintDTO<TrialBalanceDTO.Response> printDTO = getTrialBalancePrintData(companyId, startDate, endDate);
+        TrialBalanceDTO.Response data = printDTO.getReportData();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("TRIAL BALANCE STATEMENT\n");
+        sb.append("Company: ").append(csv(printDTO.getCompanyName())).append("\n");
+        sb.append("Period: ").append(data.getStartDate()).append(" to ").append(data.getEndDate()).append("\n");
+        sb.append("Status: ").append(data.getDifference() != null && data.getDifference().signum() == 0 ? "BALANCED" : "UNBALANCED").append("\n\n");
+
+        sb.append("Account Code,Account Name,Account Type,Opening Balance,Period Debit,Period Credit,Closing Debit,Closing Credit\n");
+        if (data.getRows() != null) {
+            for (TrialBalanceDTO.Row row : data.getRows()) {
+                sb.append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getOpeningBalance()).append(',')
+                        .append(row.getPeriodDebit()).append(',')
+                        .append(row.getPeriodCredit()).append(',')
+                        .append(row.getClosingDebit()).append(',')
+                        .append(row.getClosingCredit()).append('\n');
+            }
+        }
+        sb.append("TOTALS,,,").append(data.getTotalOpeningBalance()).append(',')
+                .append(data.getTotalPeriodDebit()).append(',')
+                .append(data.getTotalPeriodCredit()).append(',')
+                .append(data.getTotalClosingDebit()).append(',')
+                .append(data.getTotalClosingCredit()).append('\n');
+
+        return sb.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public String generateGeneralLedgerCsv(Long accountId, Long companyId, LocalDate startDate, LocalDate endDate) {
+        FinancialReportPrintDTO<GeneralLedgerReportDTO.Response> printDTO = getGeneralLedgerPrintData(accountId, companyId, startDate, endDate);
+        GeneralLedgerReportDTO.Response data = printDTO.getReportData();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("GENERAL LEDGER STATEMENT\n");
+        sb.append("Company: ").append(csv(printDTO.getCompanyName())).append("\n");
+        sb.append("Account: ").append(csv(data.getAccountCode())).append(" - ").append(csv(data.getAccountName())).append(" (").append(csv(data.getAccountType())).append(")\n");
+        sb.append("Period: ").append(data.getStartDate()).append(" to ").append(data.getEndDate()).append("\n");
+        sb.append("Opening Balance: ").append(data.getOpeningBalance()).append("\n");
+        sb.append("Total Debit: ").append(data.getTotalDebit()).append("\n");
+        sb.append("Total Credit: ").append(data.getTotalCredit()).append("\n");
+        sb.append("Closing Balance: ").append(data.getClosingBalance()).append("\n\n");
+
+        sb.append("Voucher Date,Voucher Number,Reference Number,Description,Debit,Credit,Running Balance\n");
+        if (data.getEntries() != null) {
+            for (GeneralLedgerReportDTO.Entry entry : data.getEntries()) {
+                sb.append(csv(entry.getVoucherDate() != null ? entry.getVoucherDate().toString() : "")).append(',')
+                        .append(csv(entry.getVoucherNumber())).append(',')
+                        .append(csv(entry.getReferenceNumber())).append(',')
+                        .append(csv(entry.getDescription())).append(',')
+                        .append(entry.getDebit()).append(',')
+                        .append(entry.getCredit()).append(',')
+                        .append(entry.getRunningBalance()).append('\n');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public String generateProfitLossCsv(Long companyId, LocalDate startDate, LocalDate endDate) {
+        FinancialReportPrintDTO<ProfitLossReportDTO.Response> printDTO = getProfitLossPrintData(companyId, startDate, endDate);
+        ProfitLossReportDTO.Response data = printDTO.getReportData();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("PROFIT & LOSS STATEMENT\n");
+        sb.append("Company: ").append(csv(printDTO.getCompanyName())).append("\n");
+        sb.append("Period: ").append(data.getStartDate()).append(" to ").append(data.getEndDate()).append("\n");
+        sb.append("Total Income: ").append(data.getTotalIncome()).append("\n");
+        sb.append("Total Expenses: ").append(data.getTotalExpense()).append("\n");
+        sb.append("Net Result: ").append(Boolean.TRUE.equals(data.getIsProfitable()) ? "PROFIT " + data.getNetProfit() : "LOSS " + data.getNetLoss()).append("\n\n");
+
+        sb.append("Category,Account Code,Account Name,Account Type,Amount\n");
+        if (data.getIncomeRows() != null) {
+            for (ProfitLossReportDTO.Row row : data.getIncomeRows()) {
+                sb.append("INCOME,").append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getAmount()).append('\n');
+            }
+        }
+        if (data.getExpenseRows() != null) {
+            for (ProfitLossReportDTO.Row row : data.getExpenseRows()) {
+                sb.append("EXPENSE,").append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getAmount()).append('\n');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    @Transactional(readOnly = true)
+    public String generateBalanceSheetCsv(Long companyId, LocalDate asOfDate) {
+        FinancialReportPrintDTO<BalanceSheetReportDTO.Response> printDTO = getBalanceSheetPrintData(companyId, asOfDate);
+        BalanceSheetReportDTO.Response data = printDTO.getReportData();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("BALANCE SHEET STATEMENT\n");
+        sb.append("Company: ").append(csv(printDTO.getCompanyName())).append("\n");
+        sb.append("As Of Date: ").append(data.getAsOfDate()).append("\n");
+        sb.append("Total Assets: ").append(data.getTotalAssets()).append("\n");
+        sb.append("Total Liabilities: ").append(data.getTotalLiabilities()).append("\n");
+        sb.append("Total Equity: ").append(data.getTotalEquity()).append("\n");
+        sb.append("Total Liabilities & Equity: ").append(data.getTotalLiabilitiesAndEquity()).append("\n");
+        sb.append("Difference: ").append(data.getDifference()).append("\n\n");
+
+        sb.append("Category,Account Code,Account Name,Account Type,Balance\n");
+        if (data.getAssetRows() != null) {
+            for (BalanceSheetReportDTO.Row row : data.getAssetRows()) {
+                sb.append("ASSETS,").append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getBalance()).append('\n');
+            }
+        }
+        if (data.getLiabilityRows() != null) {
+            for (BalanceSheetReportDTO.Row row : data.getLiabilityRows()) {
+                sb.append("LIABILITIES,").append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getBalance()).append('\n');
+            }
+        }
+        if (data.getEquityRows() != null) {
+            for (BalanceSheetReportDTO.Row row : data.getEquityRows()) {
+                sb.append("EQUITY,").append(csv(row.getAccountCode())).append(',')
+                        .append(csv(row.getAccountName())).append(',')
+                        .append(csv(row.getAccountType())).append(',')
+                        .append(row.getBalance()).append('\n');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private <T> FinancialReportPrintDTO<T> buildPrintWrapper(Long companyId, T reportData) {
+        Long targetCompanyId = tenantAccess.resolveCompanyId(companyId);
+        Company company = companyRepository.findById(targetCompanyId).orElse(null);
+        AppUser user = null;
+        try {
+            user = tenantAccess.requireCurrentUser();
+        } catch (Exception ignored) {}
+
+        Branch branch = (user != null && user.getBranchId() != null) 
+                ? branchRepository.findById(user.getBranchId()).orElse(null) 
+                : null;
+
+        return FinancialReportPrintDTO.<T>builder()
+                .companyName(company != null ? company.getName() : "TRANSAFLOW TRANSPORT ERP")
+                .companyAddress(company != null ? company.getAddress() : "")
+                .companyPhone(company != null ? company.getPhone() : "")
+                .companyEmail(company != null ? company.getEmail() : "")
+                .companyGSTIN(company != null ? company.getGstNumber() : "")
+                .companyPAN(company != null ? company.getPanNumber() : "")
+                .branchName(branch != null ? branch.getName() : null)
+                .reportData(reportData)
+                .build();
+    }
+
+    private static String csv(String value) {
+        if (value == null || "null".equals(value)) return "";
+        String escaped = value.replace("\"", "\"\"");
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n") || escaped.contains("\r")) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
     }
 }

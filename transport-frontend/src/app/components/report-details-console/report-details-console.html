@@ -77,9 +77,52 @@
                 Balance Sheet
               </button>
             </div>
-            <button (click)="switchFinancialSubTab(activeFinancialSubTab())" class="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-              <span class="material-icons text-sm">refresh</span> Refresh Report
-            </button>
+            <div class="flex items-center gap-2">
+              @if (activeFinancialSubTab() === 'trial-balance') {
+                <button (click)="exportTrialBalancePdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                  <span class="material-icons text-sm">picture_as_pdf</span> PDF
+                </button>
+                <button (click)="exportTrialBalanceCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  <span class="material-icons text-sm">table_view</span> CSV
+                </button>
+                <button (click)="printTrialBalance()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                  <span class="material-icons text-sm">print</span> Print
+                </button>
+              } @else if (activeFinancialSubTab() === 'general-ledger') {
+                <button (click)="exportGeneralLedgerPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                  <span class="material-icons text-sm">picture_as_pdf</span> PDF
+                </button>
+                <button (click)="exportGeneralLedgerCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  <span class="material-icons text-sm">table_view</span> CSV
+                </button>
+                <button (click)="printGeneralLedger()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                  <span class="material-icons text-sm">print</span> Print
+                </button>
+              } @else if (activeFinancialSubTab() === 'profit-loss') {
+                <button (click)="exportProfitLossPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                  <span class="material-icons text-sm">picture_as_pdf</span> PDF
+                </button>
+                <button (click)="exportProfitLossCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  <span class="material-icons text-sm">table_view</span> CSV
+                </button>
+                <button (click)="printProfitLoss()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                  <span class="material-icons text-sm">print</span> Print
+                </button>
+              } @else if (activeFinancialSubTab() === 'balance-sheet') {
+                <button (click)="exportBalanceSheetPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                  <span class="material-icons text-sm">picture_as_pdf</span> PDF
+                </button>
+                <button (click)="exportBalanceSheetCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                  <span class="material-icons text-sm">table_view</span> CSV
+                </button>
+                <button (click)="printBalanceSheet()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                  <span class="material-icons text-sm">print</span> Print
+                </button>
+              }
+              <button (click)="switchFinancialSubTab(activeFinancialSubTab())" class="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline border-l border-slate-300 dark:border-slate-700 pl-2">
+                <span class="material-icons text-sm">refresh</span> Refresh
+              </button>
+            </div>
           </div>
 
           <!-- A. TRIAL BALANCE -->
