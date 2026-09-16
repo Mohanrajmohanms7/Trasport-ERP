@@ -98,4 +98,22 @@ public class DriverPayrollController {
         DriverPayroll cancelled = payrollService.cancelPayroll(id, username);
         return ApiResponse.success(cancelled, "Driver payroll cancelled and reversal JVs posted");
     }
+
+    @GetMapping("/{id}/print")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    public ApiResponse<com.transport.erp.dto.DriverPayrollPrintDTO> getSalarySlipPrintData(@PathVariable Long id) {
+        com.transport.erp.dto.DriverPayrollPrintDTO printData = payrollService.getSalarySlipPrintData(id);
+        return ApiResponse.success(printData, "Driver salary slip print data fetched successfully");
+    }
+
+    @GetMapping("/{id}/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    public void downloadSalarySlipPdf(@PathVariable Long id, jakarta.servlet.http.HttpServletResponse response) throws Exception {
+        com.transport.erp.dto.DriverPayrollPrintDTO printData = payrollService.getSalarySlipPrintData(id);
+        response.setContentType("application/pdf");
+        String filename = "Salary_Slip_" + (printData.getPayrollNumber() != null ? printData.getPayrollNumber() : id) + ".pdf";
+        response.setHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
+        payrollService.generateSalarySlipPdf(id, response.getOutputStream());
+        response.getOutputStream().flush();
+    }
 }

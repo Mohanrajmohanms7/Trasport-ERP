@@ -163,5 +163,12 @@
         </ff-card>
       }
     }
+
+    @if (opsTab() === 'payrolls') {
+      <div class="driver-ops-actions">
+        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Salary Slips & Payroll History</span>
+      </div>
+      <ff-grid [config]="payrollGridConfig()" [data]="payrolls()" (action)="onPayrollAction($event)" />
+    }
   }
 </ff-sidebar>

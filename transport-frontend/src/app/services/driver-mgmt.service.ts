@@ -42,6 +42,48 @@ export interface DriverPayroll {
   cancellationJvNumber?: string;
 }
 
+export interface DriverPayrollPrintDTO {
+  payrollId: number;
+  payrollNumber: string;
+  payYear: number;
+  payMonth: number;
+  payPeriod: string;
+  status: string;
+  paymentMethod: string;
+  createdDate: string;
+
+  driverId: number;
+  driverName: string;
+  driverCode: string;
+  driverPhone?: string;
+  licenseNumber?: string;
+
+  basicSalary: number;
+  allowanceAmount: number;
+  grossEarnings: number;
+
+  deductionAmount: number;
+  advanceAdjustment: number;
+  totalDeductions: number;
+
+  netSalaryPayable: number;
+
+  accrualJvNumber?: string;
+  paymentJvNumber?: string;
+  cancellationJvNumber?: string;
+
+  companyId: number;
+  companyName: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyGSTIN?: string;
+
+  branchId?: number;
+  branchName?: string;
+  branchAddress?: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -118,5 +160,14 @@ export class DriverMgmtService {
 
   cancelPayroll(id: number): Observable<ApiResponse<DriverPayroll>> {
     return this.http.post<ApiResponse<DriverPayroll>>(`/api/v1/driver-payrolls/${id}/cancel`, {});
+  }
+
+  // Salary Slip PDF & Print APIs
+  getSalarySlipPrint(id: number): Observable<ApiResponse<DriverPayrollPrintDTO>> {
+    return this.http.get<ApiResponse<DriverPayrollPrintDTO>>(`/api/v1/driver-payrolls/${id}/print`);
+  }
+
+  downloadSalarySlipPdf(id: number): Observable<Blob> {
+    return this.http.get(`/api/v1/driver-payrolls/${id}/pdf`, { responseType: 'blob' });
   }
 }

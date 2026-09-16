@@ -50,6 +50,12 @@ public class DriverPayrollService {
     @Autowired
     private FinancialYearPeriodValidationService periodValidationService;
 
+    @Autowired
+    private com.transport.erp.repository.CompanyRepository companyRepository;
+
+    @Autowired
+    private com.transport.erp.repository.BranchRepository branchRepository;
+
 
 
     public Page<DriverPayroll> getPayrolls(Long companyId, String status, Pageable pageable) {
@@ -593,5 +599,83 @@ public class DriverPayrollService {
                 "Cancelled driver payroll " + saved.getPayrollNumber() + " with reversal JVs: " + saved.getCancellationJvNumber());
 
         return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public com.transport.erp.dto.DriverPayrollPrintDTO getSalarySlipPrintData(Long id) {
+        DriverPayroll payroll = getPayrollById(id);
+
+        com.transport.erp.dto.DriverPayrollPrintDTO dto = new com.transport.erp.dto.DriverPayrollPrintDTO();
+        dto.setPayrollId(payroll.getId());
+        dto.setPayrollNumber(payroll.getPayrollNumber());
+        dto.setPayYear(payroll.getPayYear());
+        dto.setPayMonth(payroll.getPayMonth());
+
+        if (payroll.getPayMonth() != null && payroll.getPayMonth() >= 1 && payroll.getPayMonth() <= 12) {
+            String monthName = java.time.Month.of(payroll.getPayMonth()).name();
+            monthName = monthName.substring(0, 1).toUpperCase() + monthName.substring(1).toLowerCase();
+            dto.setPayPeriod(monthName + " " + payroll.getPayYear());
+        } else {
+            dto.setPayPeriod(payroll.getPayMonth() + "/" + payroll.getPayYear());
+        }
+
+        dto.setStatus(payroll.getStatus());
+        dto.setPaymentMethod(payroll.getPaymentMethod());
+        dto.setCreatedDate(payroll.getCreatedDate());
+
+        if (payroll.getDriver() != null) {
+            Driver d = payroll.getDriver();
+            dto.setDriverId(d.getId());
+            dto.setDriverName(d.getName());
+            dto.setDriverCode(d.getCode());
+            dto.setDriverPhone(d.getPhoneNumber());
+            dto.setLicenseNumber(d.getLicenseNumber());
+        }
+
+        BigDecimal basic = payroll.getBasicSalary() != null ? payroll.getBasicSalary() : BigDecimal.ZERO;
+        BigDecimal allowance = payroll.getAllowanceAmount() != null ? payroll.getAllowanceAmount() : BigDecimal.ZERO;
+        BigDecimal deduction = payroll.getDeductionAmount() != null ? payroll.getDeductionAmount() : BigDecimal.ZERO;
+        BigDecimal advance = payroll.getAdvanceAdjustment() != null ? payroll.getAdvanceAdjustment() : BigDecimal.ZERO;
+
+        dto.setBasicSalary(basic);
+        dto.setAllowanceAmount(allowance);
+        dto.setGrossEarnings(basic.add(allowance));
+
+        dto.setDeductionAmount(deduction);
+        dto.setAdvanceAdjustment(advance);
+        dto.setTotalDeductions(deduction.add(advance));
+
+        dto.setNetSalaryPayable(payroll.getNetSalaryPayable() != null ? payroll.getNetSalaryPayable() : basic.add(allowance).subtract(deduction).subtract(advance));
+
+        dto.setAccrualJvNumber(payroll.getAccrualJvNumber());
+        dto.setPaymentJvNumber(payroll.getPaymentJvNumber());
+        dto.setCancellationJvNumber(payroll.getCancellationJvNumber());
+
+        if (payroll.getCompanyId() != null) {
+            dto.setCompanyId(payroll.getCompanyId());
+            companyRepository.findById(payroll.getCompanyId()).ifPresent(c -> {
+                dto.setCompanyName(c.getName());
+                dto.setCompanyAddress(c.getAddress());
+                dto.setCompanyPhone(c.getPhone());
+                dto.setCompanyEmail(c.getEmail());
+                dto.setCompanyGSTIN(c.getGstNumber());
+            });
+        }
+
+        if (payroll.getBranchId() != null) {
+            dto.setBranchId(payroll.getBranchId());
+            branchRepository.findById(payroll.getBranchId()).ifPresent(b -> {
+                dto.setBranchName(b.getName());
+                dto.setBranchAddress(b.getAddress());
+            });
+        }
+
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public void generateSalarySlipPdf(Long id, java.io.OutputStream os) throws Exception {
+        com.transport.erp.dto.DriverPayrollPrintDTO data = getSalarySlipPrintData(id);
+        com.transport.erp.util.DriverSalarySlipPdfGenerator.generateSalarySlipPdf(data, os);
     }
 }

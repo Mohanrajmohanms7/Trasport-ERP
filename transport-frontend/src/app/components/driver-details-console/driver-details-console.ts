@@ -6,7 +6,8 @@ import {
   DriverMgmtService,
   DriverDocument,
   DriverAttendance,
-  DriverSalary
+  DriverSalary,
+  DriverPayroll
 } from '../../services/driver-mgmt.service';
 import {
   FfButtonComponent,
@@ -36,8 +37,7 @@ import {
   FfTextareaComponent,
   FfTextboxComponent,
   FfToolbarComponent,
-  FfToastComponent,
-  ffRequired
+  FfToastComponent
 } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 
@@ -98,6 +98,7 @@ export class DriverDetailsConsoleComponent implements OnInit {
   documents = signal<DriverDocument[]>([]);
   attendanceLogs = signal<DriverAttendance[]>([]);
   salaryConfig = signal<DriverSalary | null>(null);
+  payrolls = signal<DriverPayroll[]>([]);
 
   showDocEditor = signal(false);
   showAttendanceEditor = signal(false);
@@ -143,59 +144,54 @@ export class DriverDetailsConsoleComponent implements OnInit {
   opsTabs: FfTabItem[] = [
     { id: 'documents', label: 'Documents', icon: 'description' },
     { id: 'attendance', label: 'Attendance', icon: 'event_available' },
-    { id: 'salary', label: 'Payroll', icon: 'payments' }
+    { id: 'salary', label: 'Payroll Config', icon: 'payments' },
+    { id: 'payrolls', label: 'Salary Slips', icon: 'receipt_long' }
   ];
 
   editorForm = this.fb.group({
     id: [null as number | null],
-    code: ['', [ffRequired, Validators.maxLength(50)]],
-    name: ['', [ffRequired, Validators.maxLength(150)]],
+    code: ['', [Validators.required, Validators.maxLength(50)]],
+    name: ['', [Validators.required, Validators.maxLength(150)]],
     description: [''],
-    status: ['ACTIVE', [ffRequired]],
+    status: ['ACTIVE', [Validators.required]],
     companyId: [this.companyId],
-    licenseNumber: ['', [ffRequired, Validators.maxLength(50)]],
+    licenseNumber: ['', [Validators.required]],
     licenseExpiryDate: [''],
-    phoneNumber: ['', [Validators.maxLength(20)]]
+    phoneNumber: ['']
   });
 
   documentForm = this.fb.group({
-    docType: ['LICENSE_SCAN', [ffRequired]],
-    docNumber: ['', [ffRequired, Validators.maxLength(50)]],
-    filePath: ['']
+    docType: ['LICENSE_SCAN', [Validators.required]],
+    docNumber: ['', [Validators.required]],
+    filePath: [''],
+    description: ['']
   });
 
   attendanceForm = this.fb.group({
-    attendanceDate: ['', [ffRequired]],
-    status: ['PRESENT', [ffRequired]],
+    attendanceDate: [new Date().toISOString().split('T')[0], [Validators.required]],
+    status: ['PRESENT', [Validators.required]],
     description: ['']
   });
 
   salaryForm = this.fb.group({
-    basicSalary: [0, [ffRequired, Validators.min(0)]],
-    overtimeRate: [0, [ffRequired, Validators.min(0)]],
-    advanceTaken: [0, [ffRequired, Validators.min(0)]]
+    basicSalary: [0, [Validators.required, Validators.min(0)]],
+    overtimeRate: [0, [Validators.required, Validators.min(0)]],
+    advanceTaken: [0, [Validators.required, Validators.min(0)]]
   });
 
   activeCount = computed(() =>
-    this.drivers().filter(d => {
-      const s = (d.status || '').toUpperCase();
-      return s === 'ACTIVE' || s === 'AVAILABLE';
-    }).length
+    this.drivers().filter(d => d.status === 'ACTIVE' || d.status === 'AVAILABLE').length
   );
   inactiveCount = computed(() =>
-    this.drivers().filter(d => {
-      const s = (d.status || '').toUpperCase();
-      return s !== 'ACTIVE' && s !== 'AVAILABLE';
-    }).length
+    this.drivers().filter(d => d.status === 'INACTIVE' || d.status === 'SUSPENDED').length
   );
 
   gridConfig = computed<FfGridConfig>(() => ({
     columns: [
-      { field: 'code', header: 'Driver Code', sortable: true, width: '120px' },
-      { field: 'name', header: 'Driver Name', type: 'avatar', sortable: true },
-      { field: 'licenseNumber', header: 'License Number' },
+      { field: 'code', header: 'Code' },
+      { field: 'name', header: 'Driver Name' },
+      { field: 'licenseNumber', header: 'License No' },
       { field: 'phoneNumber', header: 'Mobile' },
-      { field: 'licenseExpiryDate', header: 'License Expiry', type: 'date' },
       {
         field: 'status',
         header: 'Status',
@@ -261,52 +257,46 @@ export class DriverDetailsConsoleComponent implements OnInit {
     trackByField: 'id'
   }));
 
+  payrollGridConfig = computed<FfGridConfig>(() => ({
+    columns: [
+      { field: 'payrollNumber', header: 'Payroll No' },
+      { field: 'payYear', header: 'Year' },
+      { field: 'payMonth', header: 'Month' },
+      { field: 'basicSalary', header: 'Basic Salary (₹)', type: 'currency' },
+      { field: 'netSalaryPayable', header: 'Net Salary (₹)', type: 'currency' },
+      {
+        field: 'status',
+        header: 'Status',
+        type: 'badge',
+        badgeMap: {
+          DRAFT: { color: 'warning', label: 'Draft' },
+          APPROVED: { color: 'info', label: 'Approved' },
+          POSTED: { color: 'info', label: 'Posted' },
+          PAID: { color: 'success', label: 'Paid' },
+          CANCELLED: { color: 'danger', label: 'Cancelled' }
+        }
+      }
+    ],
+    rowActions: [
+      { id: 'pdf', icon: 'picture_as_pdf', label: 'Salary Slip PDF' },
+      { id: 'print', icon: 'print', label: 'Print Salary Slip' }
+    ],
+    paginated: false,
+    emptyMessage: 'No payroll records found for this driver.',
+    trackByField: 'id'
+  }));
+
   ngOnInit(): void {
     this.loadDrivers();
-    this.loadDropdownData();
-  }
-
-  loadDropdownData(): void {
-    this.masterService.getLookupList(this.companyId, 'DRIVER_STATUS').subscribe(res => {
-      if (res.success && res.data) this.statuses.set(res.data);
-    });
-    this.masterService.getLookupList(this.companyId, 'DRIVER_DOCUMENT_TYPE').subscribe(res => {
-      if (res.success && res.data) this.docTypes.set(res.data);
-    });
-    this.masterService.getLookupList(this.companyId, 'ATTENDANCE_STATUS').subscribe(res => {
-      if (res.success && res.data) this.attendanceStatuses.set(res.data);
-    });
-  }
-
-  loadDrivers(): void {
-    this.loading.set(true);
-    this.masterService
-      .getMasters<Driver>('drivers', this.companyId, {
-        page: this.pageIndex(),
-        size: this.pageSize(),
-        search: this.searchQuery() || undefined
-      })
-      .subscribe({
-        next: res => {
-          this.loading.set(false);
-          if (res.success && res.data) {
-            this.drivers.set(res.data.content);
-            this.totalElements.set(res.data.totalElements);
-          }
-        },
-        error: () => {
-          this.loading.set(false);
-          this.notify.error('Failed to load drivers');
-        }
-      });
+    this.loadLookups();
   }
 
   onHeaderAction(action: FfPageAction): void {
     if (action.id === 'add') this.openAddForm();
   }
 
-  onSearch(term: string): void {
-    this.searchQuery.set(term);
+  onSearch(query: string): void {
+    this.searchQuery.set(query);
     this.pageIndex.set(0);
     this.loadDrivers();
   }
@@ -328,6 +318,14 @@ export class DriverDetailsConsoleComponent implements OnInit {
       case 'ops':
         this.openOps(event.row);
         break;
+    }
+  }
+
+  onPayrollAction(event: FfGridActionEvent<DriverPayroll>): void {
+    if (event.action === 'pdf') {
+      this.downloadSalarySlipPdf(event.row);
+    } else if (event.action === 'print') {
+      this.printSalarySlip(event.row);
     }
   }
 
@@ -432,6 +430,7 @@ export class DriverDetailsConsoleComponent implements OnInit {
       this.loadDocuments(driver.id);
       this.loadAttendance(driver.id);
       this.loadSalary(driver.id);
+      this.loadPayrolls(driver.id);
     }
   }
 
@@ -441,6 +440,41 @@ export class DriverDetailsConsoleComponent implements OnInit {
     this.showDocEditor.set(false);
     this.showAttendanceEditor.set(false);
     this.showSalaryEditor.set(false);
+  }
+
+  private loadDrivers(): void {
+    this.loading.set(true);
+    this.masterService
+      .getMasters<Driver>('drivers', this.companyId, {
+        page: this.pageIndex(),
+        size: this.pageSize(),
+        query: this.searchQuery()
+      })
+      .subscribe({
+        next: res => {
+          this.loading.set(false);
+          if (res.success && res.data) {
+            this.drivers.set(res.data.content);
+            this.totalElements.set(res.data.totalElements);
+          }
+        },
+        error: () => {
+          this.loading.set(false);
+          this.notify.error('Failed to load drivers');
+        }
+      });
+  }
+
+  private loadLookups(): void {
+    this.masterService.getLookupList(this.companyId, 'DRIVER_STATUS').subscribe((res: any) => {
+      if (res.success && res.data) this.statuses.set(res.data);
+    });
+    this.masterService.getLookupList(this.companyId, 'DRIVER_DOC_TYPE').subscribe((res: any) => {
+      if (res.success && res.data) this.docTypes.set(res.data);
+    });
+    this.masterService.getLookupList(this.companyId, 'ATTENDANCE_STATUS').subscribe((res: any) => {
+      if (res.success && res.data) this.attendanceStatuses.set(res.data);
+    });
   }
 
   private loadDocuments(driverId: number): void {
@@ -462,6 +496,14 @@ export class DriverDetailsConsoleComponent implements OnInit {
         this.salaryForm.patchValue(res.data);
       } else {
         this.salaryConfig.set(null);
+      }
+    });
+  }
+
+  private loadPayrolls(driverId: number): void {
+    this.driverMgmt.getPayrollsByDriver(driverId).subscribe(res => {
+      if (res.success && res.data) {
+        this.payrolls.set(res.data);
       }
     });
   }
@@ -537,6 +579,80 @@ export class DriverDetailsConsoleComponent implements OnInit {
         this.loadSalary(driver.id!);
       },
       error: () => this.notify.error('Failed to save payroll')
+    });
+  }
+
+  downloadSalarySlipPdf(payroll: DriverPayroll): void {
+    if (!payroll.id) return;
+    this.driverMgmt.downloadSalarySlipPdf(payroll.id).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Salary_Slip_${payroll.payrollNumber || payroll.id}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.notify.success('Salary Slip PDF downloaded successfully');
+      },
+      error: () => this.notify.error('Failed to download Salary Slip PDF')
+    });
+  }
+
+  printSalarySlip(payroll: DriverPayroll): void {
+    if (!payroll.id) return;
+    this.driverMgmt.getSalarySlipPrint(payroll.id).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const p = res.data;
+          const printWindow = window.open('', '_blank', 'width=800,height=900');
+          if (printWindow) {
+            printWindow.document.write(`
+              <html>
+                <head>
+                  <title>Salary Slip - ${p.payrollNumber || p.payrollId}</title>
+                  <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                    h2 { color: #1e3a8a; margin-bottom: 5px; }
+                    .header-table, .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                    .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; font-size: 13px; }
+                    .data-table th { background-color: #f3f4f6; color: #1e3a8a; text-align: left; }
+                    .right { text-align: right; }
+                    .total-row { font-weight: bold; background-color: #e5e7eb; }
+                    .net-box { background-color: #eff6ff; border: 2px solid #1e3a8a; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; color: #1e3a8a; margin-top: 20px; }
+                  </style>
+                </head>
+                <body>
+                  <h2>${p.companyName || 'Transport ERP'}</h2>
+                  <p>${p.companyAddress || ''}</p>
+                  <hr/>
+                  <h3 style="color:#1e3a8a;">DRIVER SALARY SLIP — ${p.payPeriod}</h3>
+                  <table class="header-table">
+                    <tr><td><strong>Payroll No:</strong> ${p.payrollNumber || p.payrollId}</td><td><strong>Status:</strong> ${p.status}</td></tr>
+                    <tr><td><strong>Driver:</strong> ${p.driverName} (${p.driverCode})</td><td><strong>License:</strong> ${p.licenseNumber || 'N/A'}</td></tr>
+                  </table>
+                  <table class="data-table">
+                    <thead>
+                      <tr><th>Earnings</th><th class="right">Amount (₹)</th><th>Deductions</th><th class="right">Amount (₹)</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Basic Salary</td><td class="right">₹${p.basicSalary?.toFixed(2)}</td><td>Deductions</td><td class="right">₹${p.deductionAmount?.toFixed(2)}</td></tr>
+                      <tr><td>Allowances</td><td class="right">₹${p.allowanceAmount?.toFixed(2)}</td><td>Advance Recovery</td><td class="right">₹${p.advanceAdjustment?.toFixed(2)}</td></tr>
+                      <tr class="total-row"><td>Gross Earnings</td><td class="right">₹${p.grossEarnings?.toFixed(2)}</td><td>Total Deductions</td><td class="right">₹${p.totalDeductions?.toFixed(2)}</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="net-box">NET SALARY PAYABLE: ₹${p.netSalaryPayable?.toFixed(2)}</div>
+                  <br/><br/>
+                  <p style="font-size:11px; color:#666; text-align:right;">System Generated Document | Printed At: ${new Date().toLocaleString()}</p>
+                </body>
+              </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 250);
+          }
+        }
+      },
+      error: () => this.notify.error('Failed to load Salary Slip print data')
     });
   }
 }
