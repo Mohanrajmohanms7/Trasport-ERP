@@ -87,4 +87,23 @@ public class TripController {
         Page<Trip> data = tripService.getTripsReadyForBilling(targetCompanyId, pageable);
         return ApiResponse.success(data, "Unbilled completed trips fetched successfully");
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/export/xlsx", "/xlsx"})
+    public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
+            byte[] bytes = xlsxExportService.exportTrips(scopedCompanyId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=trips_export.xlsx");
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        } catch (Exception e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

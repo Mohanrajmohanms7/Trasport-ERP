@@ -73,4 +73,8 @@ export class TripMgmtService {
   completeTrip(id: number): Observable<ApiResponse<Trip>> {
     return this.http.post<ApiResponse<Trip>>(`/api/v1/trips/${id}/complete`, {});
   }
+
+  exportXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/trips/export/xlsx', { responseType: 'blob' });
+  }
 }

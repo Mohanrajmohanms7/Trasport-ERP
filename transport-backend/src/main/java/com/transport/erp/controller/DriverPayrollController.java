@@ -116,4 +116,24 @@ public class DriverPayrollController {
         payrollService.generateSalarySlipPdf(id, response.getOutputStream());
         response.getOutputStream().flush();
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/export/xlsx", "/xlsx"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
+            byte[] bytes = xlsxExportService.exportDriverPayroll(scopedCompanyId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=driver_payrolls_export.xlsx");
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        } catch (Exception e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

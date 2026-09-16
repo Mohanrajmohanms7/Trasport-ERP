@@ -82,4 +82,23 @@ public class BookingController {
         Booking rejected = bookingService.rejectBooking(id, activeUser);
         return ApiResponse.success(rejected, "Booking rejected successfully");
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/export/xlsx", "/xlsx"})
+    public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
+            byte[] bytes = xlsxExportService.exportBookings(scopedCompanyId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=bookings_export.xlsx");
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        } catch (Exception e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

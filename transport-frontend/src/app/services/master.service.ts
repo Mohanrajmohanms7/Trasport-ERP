@@ -115,4 +115,16 @@ export class MasterService {
       .set('type', type);
     return this.http.get<ApiResponse<LookupValue[]>>(`${this.apiUrl}/lookups/list`, { params });
   }
+
+  // Export XLSX
+  exportXlsx(endpoint: string, companyId?: number): Observable<Blob> {
+    let params = new HttpParams();
+    if (companyId) {
+      params = params.set('companyId', String(companyId));
+    }
+    return this.http.get(`${this.apiUrl}/${endpoint}/export/xlsx`, {
+      params,
+      responseType: 'blob'
+    });
+  }
 }

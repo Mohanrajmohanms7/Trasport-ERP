@@ -170,4 +170,8 @@ export class DriverMgmtService {
   downloadSalarySlipPdf(id: number): Observable<Blob> {
     return this.http.get(`/api/v1/driver-payrolls/${id}/pdf`, { responseType: 'blob' });
   }
+
+  exportPayrollsXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/driver-payrolls/export/xlsx', { responseType: 'blob' });
+  }
 }

@@ -101,4 +101,8 @@ export class FuelMgmtService {
   cancelFuelRequest(id: number): Observable<ApiResponse<FuelRequest>> {
     return this.http.post<ApiResponse<FuelRequest>>(`/api/v1/fuel/request/${id}/cancel`, {});
   }
+
+  exportXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/fuel-entries/export/xlsx', { responseType: 'blob' });
+  }
 }

@@ -88,4 +88,23 @@ public class CustomerController {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/export/xlsx", "/xlsx"})
+    public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
+            byte[] bytes = xlsxExportService.exportCustomers(scopedCompanyId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=customers_export.xlsx");
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        } catch (Exception e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

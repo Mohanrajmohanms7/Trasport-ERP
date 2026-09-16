@@ -69,4 +69,27 @@ public class CustomerLedgerController {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/{customerId}/xlsx", "/{customerId}/export/xlsx"})
+    public void exportXlsx(@PathVariable Long customerId, HttpServletResponse response) {
+        try {
+            CustomerLedgerPrintDTO data = ledgerService.getLedgerPrintData(customerId);
+            String safeCode = data.getCustomerCode() != null ? data.getCustomerCode() : String.valueOf(customerId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=customer_ledger_" + safeCode + ".xlsx");
+
+            byte[] bytes = xlsxExportService.exportCustomerLedger(customerId);
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        } catch (IllegalArgumentException e) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

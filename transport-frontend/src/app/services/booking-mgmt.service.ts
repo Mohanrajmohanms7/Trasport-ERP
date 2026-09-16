@@ -66,4 +66,8 @@ export class BookingMgmtService {
   rejectBooking(id: number): Observable<ApiResponse<Booking>> {
     return this.http.post<ApiResponse<Booking>>(`/api/v1/bookings/${id}/reject`, {});
   }
+
+  exportXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/bookings/export/xlsx', { responseType: 'blob' });
+  }
 }

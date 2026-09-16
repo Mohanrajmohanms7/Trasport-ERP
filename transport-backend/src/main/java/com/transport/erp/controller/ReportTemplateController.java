@@ -58,14 +58,34 @@ public class ReportTemplateController {
         return ApiResponse.success(null, "Report template deleted successfully");
     }
 
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
     @PostMapping("/export")
     public ApiResponse<Map<String, String>> exportReport(@RequestBody Map<String, String> exportRequest) {
         if (exportRequest == null || exportRequest.get("templateId") == null) {
             throw new IllegalArgumentException("templateId is required");
         }
         Long templateId = Long.valueOf(exportRequest.get("templateId"));
+        String format = exportRequest.get("format");
+        if ("XLSX".equalsIgnoreCase(format) || "EXCEL".equalsIgnoreCase(format)) {
+            return ApiResponse.success(
+                    xlsxExportService.exportTemplateXlsx(templateId),
+                    "Report exported as XLSX successfully");
+        }
         return ApiResponse.success(
                 reportExportService.exportTemplate(templateId),
                 "Report exported successfully");
+    }
+
+    @PostMapping("/export/xlsx")
+    public ApiResponse<Map<String, String>> exportReportXlsx(@RequestBody Map<String, String> exportRequest) {
+        if (exportRequest == null || exportRequest.get("templateId") == null) {
+            throw new IllegalArgumentException("templateId is required");
+        }
+        Long templateId = Long.valueOf(exportRequest.get("templateId"));
+        return ApiResponse.success(
+                xlsxExportService.exportTemplateXlsx(templateId),
+                "Report exported as XLSX successfully");
     }
 }

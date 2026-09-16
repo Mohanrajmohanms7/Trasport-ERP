@@ -73,6 +73,14 @@ export class PaymentMgmtService {
     return this.http.get(`/api/v1/customer-ledger/${customerId}/csv`, { responseType: 'blob' });
   }
 
+  downloadCustomerLedgerXlsx(customerId: number): Observable<Blob> {
+    return this.http.get(`/api/v1/customer-ledger/${customerId}/xlsx`, { responseType: 'blob' });
+  }
+
+  exportReceiptsXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/customer-receipts/export/xlsx', { responseType: 'blob' });
+  }
+
   // Outstanding Invoices API
   getOutstandingInvoices(customerId: number): Observable<ApiResponse<any[]>> {
     return this.http.get<ApiResponse<any[]>>(`/api/v1/invoices/customer/${customerId}/outstanding`);

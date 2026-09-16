@@ -59,4 +59,8 @@ export class ExpenseMgmtService {
   rejectExpense(id: number): Observable<ApiResponse<Expense>> {
     return this.http.post<ApiResponse<Expense>>(`/api/v1/expenses/${id}/reject`, {});
   }
+
+  exportXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/expenses/export/xlsx', { responseType: 'blob' });
+  }
 }

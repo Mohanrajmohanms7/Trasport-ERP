@@ -84,4 +84,8 @@ export class InvoiceMgmtService {
   downloadInvoicePdf(id: number): Observable<Blob> {
     return this.http.get(`/api/v1/invoices/${id}/pdf`, { responseType: 'blob' });
   }
+
+  exportXlsx(): Observable<Blob> {
+    return this.http.get('/api/v1/sales-invoices/export/xlsx', { responseType: 'blob' });
+  }
 }

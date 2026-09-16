@@ -83,4 +83,23 @@ public class ExpenseController {
         Expense cancelled = expenseService.cancelExpense(id, activeUser);
         return ApiResponse.success(cancelled, "Expense cancelled successfully");
     }
+
+    @Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @GetMapping({"/export/xlsx", "/xlsx"})
+    public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
+            byte[] bytes = xlsxExportService.exportExpenses(scopedCompanyId);
+
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=expenses_export.xlsx");
+            response.getOutputStream().write(bytes);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN);
+        } catch (Exception e) {
+            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
