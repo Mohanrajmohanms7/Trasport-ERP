@@ -343,6 +343,169 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     });
   }
 
+  downloadLedgerPdf() {
+    const customerId = this.selectedCustomerId();
+    if (!customerId) {
+      this.notify.error('Please select a customer profile first');
+      return;
+    }
+    this.paymentMgmtService.downloadCustomerLedgerPdf(customerId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `customer_ledger_${customerId}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.notify.success('Customer Ledger PDF downloaded successfully');
+      },
+      error: () => this.notify.error('Failed to download Customer Ledger PDF')
+    });
+  }
+
+  downloadLedgerCsv() {
+    const customerId = this.selectedCustomerId();
+    if (!customerId) {
+      this.notify.error('Please select a customer profile first');
+      return;
+    }
+    this.paymentMgmtService.downloadCustomerLedgerCsv(customerId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `customer_ledger_${customerId}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.notify.success('Customer Ledger CSV exported successfully');
+      },
+      error: () => this.notify.error('Failed to export Customer Ledger CSV')
+    });
+  }
+
+  printLedger() {
+    const customerId = this.selectedCustomerId();
+    if (!customerId) {
+      this.notify.error('Please select a customer profile first');
+      return;
+    }
+    this.paymentMgmtService.getCustomerLedgerPrintData(customerId).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(this.buildLedgerPrintHtml(res.data));
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+              printWindow.print();
+            }, 300);
+          }
+        } else {
+          this.notify.error('Failed to load ledger print data');
+        }
+      },
+      error: () => this.notify.error('Failed to load ledger print data')
+    });
+  }
+
+  private buildLedgerPrintHtml(data: any): string {
+    const itemsHtml = (data.items || []).map((item: any, index: number) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${index + 1}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.transactionDate ? new Date(item.transactionDate).toLocaleString() : ''}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">${item.transactionType || 'Adjustment'}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.remarks || ''}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; color: #b91c1c;">₹${(item.debitAmount || 0).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; color: #047857;">₹${(item.creditAmount || 0).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">₹${(item.runningBalance || 0).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Customer Ledger Statement — ${data.customerName}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #111827; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 16px; }
+          .company { font-size: 14px; }
+          .company h2 { margin: 0 0 4px 0; color: #1e3a8a; font-size: 18px; }
+          .title { text-align: center; font-size: 20px; font-weight: bold; color: #1e3a8a; margin: 16px 0; }
+          .meta-grid { display: flex; gap: 20px; margin-bottom: 20px; }
+          .meta-card { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; font-size: 12px; }
+          .meta-card h3 { margin: 0 0 8px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+          th { background: #1e3a8a; color: white; padding: 8px; border: 1px solid #1e3a8a; text-align: left; }
+          .summary-card { width: 320px; background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; margin-left: auto; font-size: 12px; }
+          .summary-row { display: flex; justify-content: space-between; padding: 4px 0; }
+          .grand-total { font-weight: bold; font-size: 14px; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 6px; margin-top: 6px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company">
+            <h2>${data.companyName || 'TRANSAFLOW TRANSPORT ERP'}</h2>
+            <div>${data.companyAddress || ''}</div>
+            <div>Phone: ${data.companyPhone || ''} | Email: ${data.companyEmail || ''}</div>
+            <div>GSTIN: <strong>${data.companyGSTIN || 'N/A'}</strong></div>
+          </div>
+          <div style="text-align: right; font-size: 12px;">
+            <div style="font-weight: bold; color: #1e3a8a;">BRANCH DETAILS</div>
+            <div>${data.branchName || ''}</div>
+            <div>${data.branchAddress || ''}</div>
+          </div>
+        </div>
+
+        <div class="title">CUSTOMER LEDGER STATEMENT</div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <h3>Customer Account Info</h3>
+            <div><strong>${data.customerName || 'N/A'}</strong></div>
+            <div>Code: ${data.customerCode || 'N/A'}</div>
+            <div>Address: ${data.customerAddress || 'N/A'}</div>
+            <div>GSTIN: <strong>${data.customerGSTIN || 'N/A'}</strong></div>
+          </div>
+          <div class="meta-card">
+            <h3>Account Summary</h3>
+            <div>Opening Balance: ₹${(data.openingBalance || 0).toFixed(2)}</div>
+            <div>Total Billed (Debit): ₹${(data.totalDebit || 0).toFixed(2)}</div>
+            <div>Total Paid (Credit): ₹${(data.totalCredit || 0).toFixed(2)}</div>
+            <div>Closing Balance: <strong>₹${(data.closingBalance || 0).toFixed(2)}</strong></div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 5%; text-align: center;">#</th>
+              <th>Date & Time</th>
+              <th>Transaction Type</th>
+              <th>Remarks / Description</th>
+              <th style="text-align: right;">Debit (Owed)</th>
+              <th style="text-align: right;">Credit (Paid)</th>
+              <th style="text-align: right;">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div class="summary-card">
+          <div class="summary-row"><span>Opening Balance:</span><span>₹${(data.openingBalance || 0).toFixed(2)}</span></div>
+          <div class="summary-row"><span>Total Debit:</span><span>₹${(data.totalDebit || 0).toFixed(2)}</span></div>
+          <div class="summary-row"><span>Total Credit:</span><span>₹${(data.totalCredit || 0).toFixed(2)}</span></div>
+          <div class="summary-row grand-total"><span>Closing Balance:</span><span>₹${(data.closingBalance || 0).toFixed(2)}</span></div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
   onCustomerChange(custId: any) {
     this.selectedCustomerId.set(+custId);
     this.loadLedger();
