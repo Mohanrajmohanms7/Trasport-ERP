@@ -12,10 +12,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import com.transport.erp.dto.SalesInvoicePrintDTO;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/invoices")
+@RequestMapping({"/api/v1/invoices", "/api/v1/sales-invoices"})
 @CrossOrigin(origins = "*")
 public class SalesInvoiceController {
 
@@ -42,6 +45,30 @@ public class SalesInvoiceController {
     public ApiResponse<SalesInvoice> getInvoiceById(@PathVariable Long id) {
         SalesInvoice invoice = invoiceService.getInvoiceById(id);
         return ApiResponse.success(invoice, "Invoice details fetched successfully");
+    }
+
+    @GetMapping("/{id}/print")
+    public ApiResponse<SalesInvoicePrintDTO> getInvoicePrintData(@PathVariable Long id) {
+        SalesInvoicePrintDTO data = invoiceService.getInvoicePrintData(id);
+        return ApiResponse.success(data, "Sales invoice print data fetched successfully");
+    }
+
+    @GetMapping("/{id}/pdf")
+    public void exportPdf(@PathVariable Long id, HttpServletResponse response) {
+        try {
+            SalesInvoicePrintDTO data = invoiceService.getInvoicePrintData(id);
+            
+            response.setContentType("application/pdf");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoice_" + data.getInvoiceNumber() + ".pdf");
+            
+            invoiceService.generateInvoicePdf(id, response.getOutputStream());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        } catch (IllegalArgumentException e) {
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PostMapping

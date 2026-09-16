@@ -29,11 +29,24 @@ import com.transport.erp.repository.JournalVoucherRepository;
 import com.transport.erp.service.ChartOfAccountService;
 import com.transport.erp.service.JournalVoucherService;
 
+import com.transport.erp.repository.CompanyRepository;
+import com.transport.erp.repository.BranchRepository;
+import com.transport.erp.dto.SalesInvoicePrintDTO;
+import com.transport.erp.model.Customer;
+import com.transport.erp.model.Company;
+import com.transport.erp.model.Branch;
+
 @Service
 public class SalesInvoiceService {
 
     @Autowired
     private SalesInvoiceRepository invoiceRepository;
+
+    @Autowired
+    private CompanyRepository companyRepository;
+
+    @Autowired
+    private BranchRepository branchRepository;
 
     @Autowired
     private JournalVoucherRepository jvRepository;
@@ -485,6 +498,134 @@ public class SalesInvoiceService {
 
     public List<SalesInvoice> getOutstandingInvoices(Long customerId, Long companyId, Long branchId) {
         return invoiceRepository.findOutstandingInvoices(customerId, companyId, branchId);
+    }
+
+    @Transactional(readOnly = true)
+    public SalesInvoicePrintDTO getInvoicePrintData(Long id) {
+        SalesInvoice invoice = getInvoiceById(id);
+
+        com.transport.erp.model.AppUser currentUser = tenantAccess.requireCurrentUser();
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null
+                && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
+        }
+
+        SalesInvoicePrintDTO dto = new SalesInvoicePrintDTO();
+        dto.setInvoiceId(invoice.getId());
+        dto.setInvoiceNumber(invoice.getInvoiceNumber());
+        dto.setInvoiceDate(invoice.getInvoiceDate());
+        dto.setStatus(invoice.getStatus());
+        dto.setPaymentTerms(invoice.getPaymentTerms());
+        dto.setPaymentStatus(invoice.getPaymentStatus());
+
+        // Customer details
+        Customer customer = invoice.getCustomer();
+        if (customer != null) {
+            dto.setCustomerId(customer.getId());
+            dto.setCustomerName(customer.getName());
+            dto.setCustomerCode(customer.getCode());
+            dto.setCustomerAddress(customer.getAddress());
+            dto.setCustomerPhone(customer.getPhone());
+            dto.setCustomerEmail(customer.getEmail());
+            dto.setCustomerGSTIN(customer.getGstNumber());
+        }
+
+        // Company details
+        if (invoice.getCompanyId() != null) {
+            companyRepository.findById(invoice.getCompanyId()).ifPresent(c -> {
+                dto.setCompanyId(c.getId());
+                dto.setCompanyName(c.getName());
+                dto.setCompanyAddress(c.getAddress());
+                dto.setCompanyPhone(c.getPhone());
+                dto.setCompanyEmail(c.getEmail());
+                dto.setCompanyGSTIN(c.getGstNumber());
+                dto.setCompanyPAN(c.getPanNumber());
+            });
+        }
+
+        // Branch details
+        if (invoice.getBranchId() != null) {
+            branchRepository.findById(invoice.getBranchId()).ifPresent(b -> {
+                dto.setBranchId(b.getId());
+                dto.setBranchName(b.getName());
+                dto.setBranchAddress(b.getAddress());
+                dto.setBranchPhone(b.getPhone());
+            });
+        }
+
+        // Financial calculations
+        BigDecimal subtotal = invoice.getSubtotal() != null ? invoice.getSubtotal() : BigDecimal.ZERO;
+        BigDecimal discount = invoice.getDiscount() != null ? invoice.getDiscount() : BigDecimal.ZERO;
+        BigDecimal netAmount = invoice.getNetAmount() != null ? invoice.getNetAmount() : BigDecimal.ZERO;
+        BigDecimal paidAmount = invoice.getPaidAmount() != null ? invoice.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal balanceDue = netAmount.subtract(paidAmount);
+        if (balanceDue.compareTo(BigDecimal.ZERO) < 0) {
+            balanceDue = BigDecimal.ZERO;
+        }
+
+        dto.setSubtotal(subtotal);
+        dto.setDiscount(discount);
+        dto.setNetAmount(netAmount);
+        dto.setPaidAmount(paidAmount);
+        dto.setBalanceDue(balanceDue);
+
+        BigDecimal totalCGST = BigDecimal.ZERO;
+        BigDecimal totalSGST = BigDecimal.ZERO;
+        BigDecimal totalIGST = BigDecimal.ZERO;
+        List<SalesInvoicePrintDTO.SalesInvoicePrintLineItemDTO> itemDTOs = new ArrayList<>();
+
+        if (invoice.getDetails() != null) {
+            for (SalesInvoiceDetail detail : invoice.getDetails()) {
+                SalesInvoicePrintDTO.SalesInvoicePrintLineItemDTO idto = new SalesInvoicePrintDTO.SalesInvoicePrintLineItemDTO();
+                idto.setDetailId(detail.getId());
+                if (detail.getTrip() != null) {
+                    idto.setTripId(detail.getTrip().getId());
+                    idto.setTripNumber(detail.getTrip().getTripNumber());
+                }
+                if (detail.getMaterial() != null) {
+                    idto.setMaterialId(detail.getMaterial().getId());
+                    idto.setMaterialName(detail.getMaterial().getName());
+                }
+                idto.setQuantity(detail.getQuantity() != null ? detail.getQuantity() : BigDecimal.ZERO);
+                idto.setRate(detail.getRate() != null ? detail.getRate() : BigDecimal.ZERO);
+                idto.setFreightCharges(detail.getFreightCharges() != null ? detail.getFreightCharges() : BigDecimal.ZERO);
+                idto.setLoadingCharges(detail.getLoadingCharges() != null ? detail.getLoadingCharges() : BigDecimal.ZERO);
+                idto.setRoyalty(detail.getRoyalty() != null ? detail.getRoyalty() : BigDecimal.ZERO);
+                idto.setGstPercentage(detail.getGstPercentage() != null ? detail.getGstPercentage() : BigDecimal.ZERO);
+                idto.setCgst(detail.getCgst() != null ? detail.getCgst() : BigDecimal.ZERO);
+                idto.setSgst(detail.getSgst() != null ? detail.getSgst() : BigDecimal.ZERO);
+                idto.setIgst(detail.getIgst() != null ? detail.getIgst() : BigDecimal.ZERO);
+
+                BigDecimal basePrice = idto.getRate().add(idto.getFreightCharges()).add(idto.getLoadingCharges()).add(idto.getRoyalty());
+                BigDecimal lineSub = idto.getQuantity().multiply(basePrice);
+                BigDecimal lineTax = idto.getCgst().add(idto.getSgst()).add(idto.getIgst());
+
+                idto.setLineSubtotal(lineSub);
+                idto.setLineTax(lineTax);
+                idto.setNetAmount(detail.getNetAmount() != null ? detail.getNetAmount() : lineSub.add(lineTax));
+
+                totalCGST = totalCGST.add(idto.getCgst());
+                totalSGST = totalSGST.add(idto.getSgst());
+                totalIGST = totalIGST.add(idto.getIgst());
+
+                itemDTOs.add(idto);
+            }
+        }
+
+        dto.setItems(itemDTOs);
+        dto.setTotalCGST(totalCGST);
+        dto.setTotalSGST(totalSGST);
+        dto.setTotalIGST(totalIGST);
+        BigDecimal totalTax = totalCGST.add(totalSGST).add(totalIGST);
+        dto.setTaxableAmount(subtotal.subtract(totalTax));
+
+        return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public void generateInvoicePdf(Long id, java.io.OutputStream os) throws Exception {
+        SalesInvoicePrintDTO data = getInvoicePrintData(id);
+        com.transport.erp.util.SalesInvoicePdfGenerator.generateSalesInvoicePdf(data, os);
     }
 }
 

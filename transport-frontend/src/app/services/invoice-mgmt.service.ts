@@ -76,4 +76,12 @@ export class InvoiceMgmtService {
   cancelInvoice(id: number): Observable<ApiResponse<SalesInvoice>> {
     return this.http.post<ApiResponse<SalesInvoice>>(`/api/v1/invoices/${id}/cancel`, {});
   }
+
+  getInvoicePrintData(id: number): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`/api/v1/invoices/${id}/print`);
+  }
+
+  downloadInvoicePdf(id: number): Observable<Blob> {
+    return this.http.get(`/api/v1/invoices/${id}/pdf`, { responseType: 'blob' });
+  }
 }

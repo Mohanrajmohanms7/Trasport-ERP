@@ -396,4 +396,153 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       }
     });
   }
+
+  downloadPdf(inv: SalesInvoice) {
+    if (!inv.id) return;
+    this.invoiceMgmtService.downloadInvoicePdf(inv.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice_${inv.invoiceNumber || inv.id}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.notify.success('Invoice PDF downloaded successfully');
+      },
+      error: () => this.notify.error('Failed to download invoice PDF')
+    });
+  }
+
+  printInvoice(inv: SalesInvoice) {
+    if (!inv.id) return;
+    this.invoiceMgmtService.getInvoicePrintData(inv.id).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(this.buildPrintHtml(res.data));
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+              printWindow.print();
+            }, 300);
+          }
+        } else {
+          this.notify.error('Failed to fetch invoice print data');
+        }
+      },
+      error: () => this.notify.error('Failed to fetch invoice print data')
+    });
+  }
+
+  private buildPrintHtml(data: any): string {
+    const itemsHtml = (data.items || []).map((item: any, index: number) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${index + 1}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.materialName || 'General Freight'}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.tripNumber || 'N/A'}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.quantity}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.rate || 0).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${((item.freightCharges || 0) + (item.loadingCharges || 0) + (item.royalty || 0)).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.gstPercentage}%</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.lineTax || 0).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">₹${(item.netAmount || 0).toFixed(2)}</td>
+      </tr>
+    `).join('');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice ${data.invoiceNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #111827; }
+          .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1e3a8a; padding-bottom: 12px; margin-bottom: 16px; }
+          .company { font-size: 14px; }
+          .company h2 { margin: 0 0 4px 0; color: #1e3a8a; font-size: 18px; }
+          .title { text-align: center; font-size: 20px; font-weight: bold; color: #1e3a8a; margin: 16px 0; }
+          .meta-grid { display: flex; gap: 20px; margin-bottom: 20px; }
+          .meta-card { flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; font-size: 12px; }
+          .meta-card h3 { margin: 0 0 8px 0; color: #1e3a8a; font-size: 13px; text-transform: uppercase; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+          th { background: #1e3a8a; color: white; padding: 8px; border: 1px solid #1e3a8a; text-align: left; }
+          .summary-container { display: flex; justify-content: space-between; gap: 20px; font-size: 12px; }
+          .summary-card { width: 300px; background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; }
+          .summary-row { display: flex; justify-content: space-between; padding: 4px 0; }
+          .grand-total { font-weight: bold; font-size: 14px; color: #1e3a8a; border-top: 2px solid #1e3a8a; padding-top: 6px; margin-top: 6px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company">
+            <h2>${data.companyName || 'TRANSAFLOW TRANSPORT ERP'}</h2>
+            <div>${data.companyAddress || ''}</div>
+            <div>Phone: ${data.companyPhone || ''} | Email: ${data.companyEmail || ''}</div>
+            <div>GSTIN: <strong>${data.companyGSTIN || 'N/A'}</strong></div>
+          </div>
+          <div style="text-align: right; font-size: 12px;">
+            <div style="font-weight: bold; color: #1e3a8a;">BRANCH DETAILS</div>
+            <div>${data.branchName || ''}</div>
+            <div>${data.branchAddress || ''}</div>
+          </div>
+        </div>
+
+        <div class="title">TAX INVOICE ${data.status === 'DRAFT' ? '(DRAFT)' : ''}</div>
+
+        <div class="meta-grid">
+          <div class="meta-card">
+            <h3>Bill To (Customer)</h3>
+            <div><strong>${data.customerName || 'N/A'}</strong></div>
+            <div>Code: ${data.customerCode || 'N/A'}</div>
+            <div>Address: ${data.customerAddress || 'N/A'}</div>
+            <div>GSTIN: <strong>${data.customerGSTIN || 'N/A'}</strong></div>
+          </div>
+          <div class="meta-card">
+            <h3>Invoice Reference</h3>
+            <div>Invoice No: <strong>${data.invoiceNumber || ''}</strong></div>
+            <div>Invoice Date: ${data.invoiceDate || ''}</div>
+            <div>Payment Terms: ${data.paymentTerms || ''}</div>
+            <div>Status: <strong>${data.status || ''}</strong> (${data.paymentStatus || ''})</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 5%; text-align: center;">#</th>
+              <th>Material / Item</th>
+              <th>Trip #</th>
+              <th style="text-align: right;">Qty</th>
+              <th style="text-align: right;">Rate</th>
+              <th style="text-align: right;">Add. Charges</th>
+              <th style="text-align: right;">GST %</th>
+              <th style="text-align: right;">GST Amt</th>
+              <th style="text-align: right;">Net Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div class="summary-container">
+          <div style="font-size: 11px; color: #6b7280;">
+            <p>1. Payments subject to terms and conditions.</p>
+            <p>2. Computer generated tax invoice.</p>
+          </div>
+          <div class="summary-card">
+            <div class="summary-row"><span>Subtotal:</span><span>₹${(data.subtotal || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>Discount:</span><span>₹${(data.discount || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>CGST (9%):</span><span>₹${(data.totalCGST || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>SGST (9%):</span><span>₹${(data.totalSGST || 0).toFixed(2)}</span></div>
+            <div class="summary-row grand-total"><span>Grand Total:</span><span>₹${(data.netAmount || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>Paid Amount:</span><span>₹${(data.paidAmount || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>Balance Due:</span><span><strong>₹${(data.balanceDue || 0).toFixed(2)}</strong></span></div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
 }
