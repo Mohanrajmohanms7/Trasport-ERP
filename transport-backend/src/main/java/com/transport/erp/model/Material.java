@@ -21,6 +21,10 @@ public class Material extends BaseEntity {
     @JoinColumn(name = "unit_id")
     private LookupValue unit;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_uom_id")
+    private UomMaster defaultUom;
+
     @Column(name = "default_rate", precision = 12, scale = 2)
     private BigDecimal defaultRate = BigDecimal.ZERO;
 

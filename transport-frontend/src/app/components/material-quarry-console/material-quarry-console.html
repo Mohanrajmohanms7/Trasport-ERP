@@ -7,7 +7,7 @@
         Material & Quarry
       </h1>
       <p class="text-slate-600 dark:text-slate-400 text-sm">
-        Create materials and quarries, then set pricing and loading points
+        Create materials, quarries, UOM masters, conversion rules, pricing and loading points
       </p>
     </div>
   </header>
@@ -30,6 +30,22 @@
         [class.dark:text-white]="activeTab() === 'quarries'"
         class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
         Quarries
+      </button>
+      <button type="button" (click)="activeTab.set('uoms')"
+        [class.border-b-2]="activeTab() === 'uoms'"
+        [class.border-blue-600]="activeTab() === 'uoms'"
+        [class.text-slate-900]="activeTab() === 'uoms'"
+        [class.dark:text-white]="activeTab() === 'uoms'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        UOM Master
+      </button>
+      <button type="button" (click)="activeTab.set('conversions')"
+        [class.border-b-2]="activeTab() === 'conversions'"
+        [class.border-blue-600]="activeTab() === 'conversions'"
+        [class.text-slate-900]="activeTab() === 'conversions'"
+        [class.dark:text-white]="activeTab() === 'conversions'"
+        class="pb-3 px-3 font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+        UOM Conversions
       </button>
       <button type="button" (click)="activeTab.set('pricing')"
         [class.border-b-2]="activeTab() === 'pricing'"
@@ -66,6 +82,7 @@
                 <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
                   <th class="p-4">Material Code</th>
                   <th class="p-4">Material Name</th>
+                  <th class="p-4">Default UOM</th>
                   <th class="p-4 text-right">Default Rate</th>
                   <th class="p-4">Status</th>
                   <th class="p-4 text-center">Actions</th>
@@ -76,6 +93,9 @@
                   <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
                     <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code }}</td>
                     <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ row.name }}</td>
+                    <td class="p-4 font-semibold text-slate-700 dark:text-slate-300">
+                      {{ row.defaultUom ? (row.defaultUom.code + ' (' + row.defaultUom.name + ')') : '—' }}
+                    </td>
                     <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ row.defaultRate | number }}</td>
                     <td class="p-4">{{ row.status }}</td>
                     <td class="p-4 text-center">
@@ -91,7 +111,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No materials yet. Click Add Material.</td>
+                    <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No materials yet. Click Add Material.</td>
                   </tr>
                 }
               </tbody>
@@ -103,7 +123,7 @@
       @if (activeTab() === 'quarries') {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
           <div class="flex justify-between items-center shrink-0">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Quarry Master (optional)</span>
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Quarry Master</span>
             <button type="button" (click)="openAddQuarry()"
               class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
               <span class="material-icons text-sm">add</span> Add Quarry
@@ -115,8 +135,9 @@
                 <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
                   <th class="p-4">Quarry Code</th>
                   <th class="p-4">Quarry Name</th>
-                  <th class="p-4">Address</th>
+                  <th class="p-4">Owner</th>
                   <th class="p-4">Contact</th>
+                  <th class="p-4">Status</th>
                   <th class="p-4 text-center">Actions</th>
                 </tr>
               </thead>
@@ -125,8 +146,9 @@
                   <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
                     <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code }}</td>
                     <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ row.name }}</td>
-                    <td class="p-4 text-slate-600 dark:text-slate-300">{{ row.locationAddress || '—' }}</td>
-                    <td class="p-4 text-slate-600 dark:text-slate-300">{{ row.contactNumber || '—' }}</td>
+                    <td class="p-4 text-slate-700 dark:text-slate-300">{{ row.ownerName || '—' }}</td>
+                    <td class="p-4 text-slate-700 dark:text-slate-300">{{ row.contactNumber || '—' }}</td>
+                    <td class="p-4">{{ row.status }}</td>
                     <td class="p-4 text-center">
                       <div class="flex items-center justify-center gap-2">
                         <button type="button" (click)="openEditQuarry(row)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
@@ -140,7 +162,121 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No quarries yet. Optional — click Add Quarry if needed.</td>
+                    <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No quarries yet. Click Add Quarry.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'uoms') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Unit of Measurement (UOM) Master</span>
+            <button type="button" (click)="openAddUom()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add</span> Add UOM
+            </button>
+          </div>
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">UOM Code</th>
+                  <th class="p-4">UOM Name</th>
+                  <th class="p-4">Symbol</th>
+                  <th class="p-4">Category</th>
+                  <th class="p-4 text-center">Base Unit?</th>
+                  <th class="p-4">Status</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of uoms(); track row.id) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code }}</td>
+                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ row.name }}</td>
+                    <td class="p-4 font-mono text-slate-700 dark:text-slate-300">{{ row.symbol || '—' }}</td>
+                    <td class="p-4">
+                      <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {{ row.category }}
+                      </span>
+                    </td>
+                    <td class="p-4 text-center font-bold text-slate-700 dark:text-slate-300">
+                      {{ row.isBaseUnit ? 'YES' : 'NO' }}
+                    </td>
+                    <td class="p-4">{{ row.status }}</td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" (click)="openEditUom(row)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button type="button" (click)="deleteUom(row)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No UOMs configured yet. Click Add UOM.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (activeTab() === 'conversions') {
+        <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <div class="flex justify-between items-center shrink-0">
+            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">UOM Conversions & Business Rules</span>
+            <button type="button" (click)="openAddConversion()"
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+              <span class="material-icons text-sm">add</span> Add Conversion
+            </button>
+          </div>
+          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                  <th class="p-4">Rule Name / Code</th>
+                  <th class="p-4">Material Scope</th>
+                  <th class="p-4">From UOM</th>
+                  <th class="p-4">To UOM</th>
+                  <th class="p-4 text-right">Conversion Factor</th>
+                  <th class="p-4">Description</th>
+                  <th class="p-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of conversions(); track row.id) {
+                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ row.code || row.name }}</td>
+                    <td class="p-4 font-semibold text-slate-800 dark:text-slate-200">
+                      {{ row.material ? row.material.name : 'GLOBAL (All Materials)' }}
+                    </td>
+                    <td class="p-4 font-bold text-slate-900 dark:text-white">{{ row.fromUom.code || row.fromUom }}</td>
+                    <td class="p-4 font-bold text-slate-900 dark:text-white">{{ row.toUom.code || row.toUom }}</td>
+                    <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-extrabold">{{ row.conversionFactor | number:'1.2-6' }}</td>
+                    <td class="p-4 text-slate-600 dark:text-slate-400">{{ row.description || '—' }}</td>
+                    <td class="p-4 text-center">
+                      <div class="flex items-center justify-center gap-2">
+                        <button type="button" (click)="openEditConversion(row)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
+                          <span class="material-icons text-sm">edit</span>
+                        </button>
+                        <button type="button" (click)="deleteConversion(row)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No conversion rules configured yet. Click Add Conversion.</td>
                   </tr>
                 }
               </tbody>
@@ -150,62 +286,60 @@
       }
 
       @if (activeTab() === 'pricing') {
-        <div class="flex-1 min-h-0 flex flex-col gap-3">
-          <div class="shrink-0 max-w-md" [formGroup]="materialSelectForm">
-            <ff-dropdown
-              formControlName="materialId"
-              label="Select Material"
-              [options]="materialOptions"
-              [required]="true"
-              searchPlaceholder="Search M Sand, Jalli..." />
-            <p class="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-              Pricing for:
-              <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedMaterialLabel() }}</span>
-            </p>
+        <div class="flex-1 min-h-0 flex flex-col gap-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
+            <div class="w-full sm:w-80">
+              <ff-dropdown [formGroup]="materialSelectForm" name="materialId" label="Select Material" [options]="materialOptions" />
+            </div>
+            @if (materialId() != null) {
+              <button type="button" (click)="openAddPrice()"
+                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs self-end sm:self-auto">
+                <span class="material-icons text-sm">add</span> Configure Pricing Rule
+              </button>
+            }
           </div>
 
-          <div class="flex justify-between items-center shrink-0">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Active Base Pricing</span>
-            <button type="button" (click)="openPriceEditor()" [disabled]="!materialId()"
-              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-              <span class="material-icons text-sm">payments</span> Configure Pricing Rule
-            </button>
-          </div>
-
-          <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-                  <th class="p-4">Material Rate</th>
-                  <th class="p-4">Transport Rate</th>
-                  <th class="p-4">Royalty Rate</th>
-                  <th class="p-4">Loading Charges</th>
-                  <th class="p-4">Effective Date</th>
-                  <th class="p-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (price of prices(); track price.effectiveDate) {
-                  <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-                    <td class="p-4 font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ price.materialRate | number }}</td>
-                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.transportRate | number }}</td>
-                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.royaltyRate | number }}</td>
-                    <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-semibold">₹{{ price.loadingCharge | number }}</td>
-                    <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ price.effectiveDate }}</td>
-                    <td class="p-4 text-center">
-                      <button type="button" (click)="deletePrice(price)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Rule">
-                        <span class="material-icons text-sm">delete</span>
-                      </button>
-                    </td>
+          @if (materialId() == null) {
+            <div class="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center bg-slate-50/50 dark:bg-slate-900/20">
+              <span class="material-icons text-4xl text-slate-300 dark:text-slate-700 mb-2">touch_app</span>
+              <p class="text-slate-600 dark:text-slate-400 text-sm font-semibold">Select a material above to manage its price matrix.</p>
+            </div>
+          } @else {
+            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+                    <th class="p-4">Effective Date</th>
+                    <th class="p-4 text-right">Base Material Rate</th>
+                    <th class="p-4 text-right">Transport Rate</th>
+                    <th class="p-4 text-right">Royalty Rate</th>
+                    <th class="p-4 text-right">Loading Charge</th>
+                    <th class="p-4 text-center">Actions</th>
                   </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No pricing rules. Create a Material first, then add pricing.</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  @for (row of prices(); track row.id) {
+                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
+                      <td class="p-4 font-mono font-bold text-slate-900 dark:text-white">{{ row.effectiveDate }}</td>
+                      <td class="p-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">₹{{ row.materialRate | number:'1.2-2' }}</td>
+                      <td class="p-4 text-right font-mono text-slate-700 dark:text-slate-300">₹{{ row.transportRate | number:'1.2-2' }}</td>
+                      <td class="p-4 text-right font-mono text-slate-700 dark:text-slate-300">₹{{ row.royaltyRate | number:'1.2-2' }}</td>
+                      <td class="p-4 text-right font-mono text-slate-700 dark:text-slate-300">₹{{ row.loadingCharge | number:'1.2-2' }}</td>
+                      <td class="p-4 text-center">
+                        <button type="button" (click)="deletePrice(row)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Rule">
+                          <span class="material-icons text-sm">delete</span>
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No price history found for this material. Click Configure Pricing Rule.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       }
 
@@ -215,36 +349,35 @@
             <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Loading Points</span>
             <button type="button" (click)="openAddLocation()"
               class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-              <span class="material-icons text-sm">add_location_alt</span> Register Loading Point
+              <span class="material-icons text-sm">add</span> Register Loading Point
             </button>
           </div>
-
           <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
             <table class="w-full text-left text-xs border-collapse">
               <thead>
                 <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
-                  <th class="p-4">Location Code</th>
-                  <th class="p-4">Loading Point</th>
-                  <th class="p-4 text-right">Loading Charge</th>
-                  <th class="p-4">Coordinates (Lat, Lon)</th>
+                  <th class="p-4">Code</th>
+                  <th class="p-4">Loading Point Name</th>
+                  <th class="p-4 text-right">Standard Loading Charges</th>
+                  <th class="p-4">Geo Coordinates</th>
                   <th class="p-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                @for (loc of loadingLocations(); track loc.locationCode) {
+                @for (loc of loadingLocations(); track loc.id) {
                   <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition">
-                    <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ loc.locationCode }}</td>
-                    <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ loc.loadingPoint }}</td>
-                    <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ loc.loadingCharges | number }}</td>
-                    <td class="p-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {{ loc.latitude || '0.000000' }}, {{ loc.longitude || '0.000000' }}
+                    <td class="p-4 font-mono font-bold text-blue-600 dark:text-blue-400">{{ loc.locationCode }}</td>
+                    <td class="p-4 font-semibold text-slate-900 dark:text-white">{{ loc.loadingPoint }}</td>
+                    <td class="p-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">₹{{ loc.loadingCharges | number:'1.2-2' }}</td>
+                    <td class="p-4 font-mono text-slate-500 dark:text-slate-400">
+                      {{ loc.latitude ? (loc.latitude + ', ' + loc.longitude) : '—' }}
                     </td>
                     <td class="p-4 text-center">
                       <div class="flex items-center justify-center gap-2">
-                        <button type="button" (click)="openEditLocation(loc)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit Point">
+                        <button type="button" (click)="openEditLocation(loc)" class="p-1 text-slate-400 hover:text-blue-600 transition" title="Edit">
                           <span class="material-icons text-sm">edit</span>
                         </button>
-                        <button type="button" (click)="deleteLocation(loc)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete Point">
+                        <button type="button" (click)="deleteLocation(loc)" class="p-1 text-slate-400 hover:text-rose-600 transition" title="Delete">
                           <span class="material-icons text-sm">delete</span>
                         </button>
                       </div>
@@ -252,7 +385,7 @@
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No loading locations registered.</td>
+                    <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No loading points configured yet. Click Register Loading Point.</td>
                   </tr>
                 }
               </tbody>
@@ -263,6 +396,8 @@
 
     </div>
   </main>
+
+  <!-- Modals -->
 
   @if (showMaterialEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
@@ -281,12 +416,65 @@
         <form [formGroup]="materialForm" (ngSubmit)="saveMaterial()" class="flex-1 flex flex-col gap-4 overflow-y-auto">
           <ff-textbox formControlName="code" label="Material Code" prefixIcon="tag" [required]="true" />
           <ff-textbox formControlName="name" label="Material Name" prefixIcon="label" [required]="true" />
+          <ff-dropdown [formGroup]="materialForm" name="defaultUomId" label="Default UOM" [options]="uomOptions" />
           <ff-number formControlName="defaultRate" label="Default Rate" [min]="0" />
           <ff-number formControlName="density" label="Density" [min]="0" [step]="0.001" />
           <ff-textarea formControlName="description" label="Description" [rows]="2" />
           <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showMaterialEditor.set(false)" />
             <ff-button type="submit" label="Save Material" icon="save" variant="primary" [disabled]="materialForm.invalid || loading()" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showUomEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ editingUom() ? 'Edit UOM' : 'Create UOM' }}
+          </h2>
+          <button type="button" (click)="showUomEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <form [formGroup]="uomForm" (ngSubmit)="saveUom()" class="flex-1 flex flex-col gap-4 overflow-y-auto">
+          <ff-textbox formControlName="code" label="UOM Code (e.g. UNIT, CFT, TON)" prefixIcon="tag" [required]="true" />
+          <ff-textbox formControlName="name" label="UOM Name (e.g. Unit 100 CFT)" prefixIcon="label" [required]="true" />
+          <ff-textbox formControlName="symbol" label="Symbol (e.g. MT, cu ft, bag)" prefixIcon="short_text" />
+          <ff-dropdown [formGroup]="uomForm" name="category" label="Category" [options]="categoryOptions" [required]="true" />
+          <ff-textarea formControlName="description" label="Description" [rows]="2" />
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showUomEditor.set(false)" />
+            <ff-button type="submit" label="Save UOM" icon="save" variant="primary" [disabled]="uomForm.invalid || loading()" />
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  @if (showConversionEditor()) {
+    <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
+          <h2 class="text-base font-bold text-slate-900 dark:text-white">
+            {{ editingConversion() ? 'Edit UOM Conversion' : 'Create UOM Conversion' }}
+          </h2>
+          <button type="button" (click)="showConversionEditor.set(false)" class="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <form [formGroup]="conversionForm" (ngSubmit)="saveConversion()" class="flex-1 flex flex-col gap-4 overflow-y-auto">
+          <ff-dropdown [formGroup]="conversionForm" name="materialId" label="Material Scope (Optional - Leave blank for Global)" [options]="materialOptions" />
+          <ff-dropdown [formGroup]="conversionForm" name="fromUomId" label="From UOM" [options]="uomOptions" [required]="true" />
+          <ff-dropdown [formGroup]="conversionForm" name="toUomId" label="To UOM" [options]="uomOptions" [required]="true" />
+          <ff-number formControlName="conversionFactor" label="Conversion Factor" placeholder="e.g. 100 for UNIT->CFT, 4.53 for UNIT->TON" [min]="0.000001" [step]="0.000001" [required]="true" />
+          <ff-textarea formControlName="description" label="Description / Rule Notes" [rows]="2" />
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+            <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showConversionEditor.set(false)" />
+            <ff-button type="submit" label="Save Conversion" icon="save" variant="primary" [disabled]="conversionForm.invalid || loading()" />
           </div>
         </form>
       </div>
