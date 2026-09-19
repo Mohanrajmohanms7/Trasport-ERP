@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -54,4 +56,10 @@ public class Vehicle extends BaseEntity {
 
     @Column(name = "permit_expiry_date")
     private LocalDate permitExpiryDate;
+
+    @Column(name = "current_odometer_km", precision = 12, scale = 2)
+    private BigDecimal currentOdometerKm;
+
+    @Column(name = "odometer_updated_at")
+    private LocalDateTime odometerUpdatedAt;
 }

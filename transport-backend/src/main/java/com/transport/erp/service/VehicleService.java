@@ -48,6 +48,9 @@ public class VehicleService {
             throw new IllegalArgumentException("Vehicle plate/reg code already exists: " + vehicle.getCode());
         }
         vehicle.setIsDeleted(false);
+        // Odometer is written only via VehicleOdometerService — never via master create.
+        vehicle.setCurrentOdometerKm(null);
+        vehicle.setOdometerUpdatedAt(null);
         return vehicleRepository.save(vehicle);
     }
 
