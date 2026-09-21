@@ -12,6 +12,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Lock;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,6 +25,8 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     Optional<Vehicle> findByCompanyIdAndCodeAndIsDeletedFalse(Long companyId, String code);
 
     Page<Vehicle> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+
+    List<Vehicle> findByCompanyIdAndIsDeletedFalseOrderByIdAsc(Long companyId);
 
     Page<Vehicle> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
             Long companyId, String name, String code, Pageable pageable);
