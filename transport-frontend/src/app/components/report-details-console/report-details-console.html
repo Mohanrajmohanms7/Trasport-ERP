@@ -1,32 +1,32 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   <ff-toast />
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">assessment</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">assessment</span>
         Dashboards & Financial Reports
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Executive BI Viewport, Formal Financial Reporting (Trial Balance, General Ledger, P&L, Balance Sheet), Template Management & Scheduled Triggers</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Executive BI Viewport, Formal Financial Reporting (Trial Balance, General Ledger, P&L, Balance Sheet), Template Management & Scheduled Triggers</p>
     </div>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button (click)="onTabChange('bi')" [class.border-b-2]="activeTab() === 'bi'" [class.border-blue-600]="activeTab() === 'bi'" [class.text-slate-900]="activeTab() === 'bi'" [class.dark:text-white]="activeTab() === 'bi'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      <button (click)="onTabChange('bi')" [class.border-b-2]="activeTab() === 'bi'" [class.border-blue-600]="activeTab() === 'bi'" [class.text-slate-900]="activeTab() === 'bi'" [class.dark:text-white]="activeTab() === 'bi'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Executive BI Viewport
       </button>
-      <button (click)="onTabChange('financial-reports')" [class.border-b-2]="activeTab() === 'financial-reports'" [class.border-blue-600]="activeTab() === 'financial-reports'" [class.text-slate-900]="activeTab() === 'financial-reports'" [class.dark:text-white]="activeTab() === 'financial-reports'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="onTabChange('financial-reports')" [class.border-b-2]="activeTab() === 'financial-reports'" [class.border-blue-600]="activeTab() === 'financial-reports'" [class.text-slate-900]="activeTab() === 'financial-reports'" [class.dark:text-white]="activeTab() === 'financial-reports'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Formal Financial Reports
       </button>
-      <button (click)="onTabChange('templates')" [class.border-b-2]="activeTab() === 'templates'" [class.border-blue-600]="activeTab() === 'templates'" [class.text-slate-900]="activeTab() === 'templates'" [class.dark:text-white]="activeTab() === 'templates'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="onTabChange('templates')" [class.border-b-2]="activeTab() === 'templates'" [class.border-blue-600]="activeTab() === 'templates'" [class.text-slate-900]="activeTab() === 'templates'" [class.dark:text-white]="activeTab() === 'templates'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Report Templates
       </button>
-      <button (click)="onTabChange('schedules')" [class.border-b-2]="activeTab() === 'schedules'" [class.border-blue-600]="activeTab() === 'schedules'" [class.text-slate-900]="activeTab() === 'schedules'" [class.dark:text-white]="activeTab() === 'schedules'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="onTabChange('schedules')" [class.border-b-2]="activeTab() === 'schedules'" [class.border-blue-600]="activeTab() === 'schedules'" [class.text-slate-900]="activeTab() === 'schedules'" [class.dark:text-white]="activeTab() === 'schedules'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Scheduled Triggers
       </button>
     </div>
@@ -37,23 +37,23 @@
       <!-- 1. Executive BI Viewport -->
       @if (activeTab() === 'bi') {
         @if (biLoading()) {
-          <div class="p-8 text-center text-xs text-slate-500">Loading live BI metrics…</div>
+          <div class="p-8 text-center text-xs text-[var(--ff-text-muted)]">Loading live BI metrics…</div>
         }
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Today's Revenue</span>
-            <div class="text-2xl font-black text-emerald-700 dark:text-emerald-450">₹{{ todayRevenue() | number:'1.2-2' }}</div>
-            <p class="text-[10px] text-slate-500 mt-1">Invoice net amount for today</p>
+          <div class="bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] border-l-[3px] border-l-[var(--ff-color-success-500)] rounded-[10px] p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Today's Revenue</span>
+            <div class="text-2xl font-black tabular-nums text-[var(--ff-color-success-500)]">₹{{ todayRevenue() | number:'1.2-2' }}</div>
+            <p class="text-[10px] text-[var(--ff-text-muted)] mt-1">Invoice net amount for today</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Today's Expenses</span>
-            <div class="text-2xl font-black text-rose-700 dark:text-rose-450">₹{{ todayExpenses() | number:'1.2-2' }}</div>
-            <p class="text-[10px] text-slate-500 mt-1">Expense entries for today</p>
+          <div class="bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] border-l-[3px] border-l-[var(--ff-color-danger-500)] rounded-[10px] p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Today's Expenses</span>
+            <div class="text-2xl font-black tabular-nums text-[var(--ff-color-danger-500)]">₹{{ todayExpenses() | number:'1.2-2' }}</div>
+            <p class="text-[10px] text-[var(--ff-text-muted)] mt-1">Expense entries for today</p>
           </div>
-          <div class="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
-            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Net Operating Profit</span>
-            <div class="text-2xl font-black text-blue-700 dark:text-blue-450">₹{{ todayProfit() | number:'1.2-2' }}</div>
-            <p class="text-[10px] text-slate-500 mt-1">Today revenue minus expenses</p>
+          <div class="bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] border-l-[3px] border-l-[var(--ff-color-primary-600)] rounded-[10px] p-4 flex flex-col gap-2 font-mono relative overflow-hidden group">
+            <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Net Operating Profit</span>
+            <div class="text-2xl font-black tabular-nums text-[var(--ff-color-primary-600)]">₹{{ todayProfit() | number:'1.2-2' }}</div>
+            <p class="text-[10px] text-[var(--ff-text-muted)] mt-1">Today revenue minus expenses</p>
           </div>
         </div>
       }
@@ -62,64 +62,64 @@
       @if (activeTab() === 'financial-reports') {
         <div class="flex flex-col gap-4">
           <!-- Financial Reports Sub-Nav -->
-          <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+          <div class="flex items-center justify-between border-b border-[var(--ff-border-divider)] pb-2">
             <div class="flex gap-2">
-              <button (click)="switchFinancialSubTab('trial-balance')" [class.bg-blue-600]="activeFinancialSubTab() === 'trial-balance'" [class.text-white]="activeFinancialSubTab() === 'trial-balance'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-500 hover:text-white">
+              <button (click)="switchFinancialSubTab('trial-balance')" [class.bg-blue-600]="activeFinancialSubTab() === 'trial-balance'" [class.dark:bg-blue-500]="activeFinancialSubTab() === 'trial-balance'" [class.text-white]="activeFinancialSubTab() === 'trial-balance'" class="px-3 py-1.5 rounded-[8px] text-xs font-bold transition bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-primary-600)] hover:text-white">
                 Trial Balance
               </button>
-              <button (click)="switchFinancialSubTab('general-ledger')" [class.bg-blue-600]="activeFinancialSubTab() === 'general-ledger'" [class.text-white]="activeFinancialSubTab() === 'general-ledger'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-500 hover:text-white">
+              <button (click)="switchFinancialSubTab('general-ledger')" [class.bg-blue-600]="activeFinancialSubTab() === 'general-ledger'" [class.dark:bg-blue-500]="activeFinancialSubTab() === 'general-ledger'" [class.text-white]="activeFinancialSubTab() === 'general-ledger'" class="px-3 py-1.5 rounded-[8px] text-xs font-bold transition bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-primary-600)] hover:text-white">
                 General Ledger / Account Statement
               </button>
-              <button (click)="switchFinancialSubTab('profit-loss')" [class.bg-blue-600]="activeFinancialSubTab() === 'profit-loss'" [class.text-white]="activeFinancialSubTab() === 'profit-loss'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-500 hover:text-white">
+              <button (click)="switchFinancialSubTab('profit-loss')" [class.bg-blue-600]="activeFinancialSubTab() === 'profit-loss'" [class.dark:bg-blue-500]="activeFinancialSubTab() === 'profit-loss'" [class.text-white]="activeFinancialSubTab() === 'profit-loss'" class="px-3 py-1.5 rounded-[8px] text-xs font-bold transition bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-primary-600)] hover:text-white">
                 Profit & Loss (P&L)
               </button>
-              <button (click)="switchFinancialSubTab('balance-sheet')" [class.bg-blue-600]="activeFinancialSubTab() === 'balance-sheet'" [class.text-white]="activeFinancialSubTab() === 'balance-sheet'" class="px-3 py-1.5 rounded-lg text-xs font-bold transition bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-500 hover:text-white">
+              <button (click)="switchFinancialSubTab('balance-sheet')" [class.bg-blue-600]="activeFinancialSubTab() === 'balance-sheet'" [class.dark:bg-blue-500]="activeFinancialSubTab() === 'balance-sheet'" [class.text-white]="activeFinancialSubTab() === 'balance-sheet'" class="px-3 py-1.5 rounded-[8px] text-xs font-bold transition bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-primary-600)] hover:text-white">
                 Balance Sheet
               </button>
             </div>
             <div class="flex items-center gap-2">
               @if (activeFinancialSubTab() === 'trial-balance') {
-                <button (click)="exportTrialBalancePdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                <button (click)="exportTrialBalancePdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-[var(--ff-color-primary-600)] text-white hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">picture_as_pdf</span> PDF
                 </button>
-                <button (click)="exportTrialBalanceCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                <button (click)="exportTrialBalanceCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">table_view</span> CSV
                 </button>
-                <button (click)="printTrialBalance()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                <button (click)="printTrialBalance()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">print</span> Print
                 </button>
               } @else if (activeFinancialSubTab() === 'general-ledger') {
-                <button (click)="exportGeneralLedgerPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                <button (click)="exportGeneralLedgerPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-[var(--ff-color-primary-600)] text-white hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">picture_as_pdf</span> PDF
                 </button>
-                <button (click)="exportGeneralLedgerCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                <button (click)="exportGeneralLedgerCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">table_view</span> CSV
                 </button>
-                <button (click)="printGeneralLedger()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                <button (click)="printGeneralLedger()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">print</span> Print
                 </button>
               } @else if (activeFinancialSubTab() === 'profit-loss') {
-                <button (click)="exportProfitLossPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                <button (click)="exportProfitLossPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-[var(--ff-color-primary-600)] text-white hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">picture_as_pdf</span> PDF
                 </button>
-                <button (click)="exportProfitLossCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                <button (click)="exportProfitLossCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">table_view</span> CSV
                 </button>
-                <button (click)="printProfitLoss()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                <button (click)="printProfitLoss()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">print</span> Print
                 </button>
               } @else if (activeFinancialSubTab() === 'balance-sheet') {
-                <button (click)="exportBalanceSheetPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 transition">
+                <button (click)="exportBalanceSheetPdf()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-[var(--ff-color-primary-600)] text-white hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">picture_as_pdf</span> PDF
                 </button>
-                <button (click)="exportBalanceSheetCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition">
+                <button (click)="exportBalanceSheetCsv()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">table_view</span> CSV
                 </button>
-                <button (click)="printBalanceSheet()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-800 transition">
+                <button (click)="printBalanceSheet()" [disabled]="exportLoading()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-xs font-bold bg-transparent border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition">
                   <span class="material-icons text-sm">print</span> Print
                 </button>
               }
-              <button (click)="switchFinancialSubTab(activeFinancialSubTab())" class="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline border-l border-slate-300 dark:border-slate-700 pl-2">
+              <button (click)="switchFinancialSubTab(activeFinancialSubTab())" class="flex items-center gap-1 text-xs font-semibold text-[var(--ff-color-primary-600)] hover:underline border-l border-[var(--ff-border-divider)] pl-2">
                 <span class="material-icons text-sm">refresh</span> Refresh
               </button>
             </div>
@@ -128,28 +128,28 @@
           <!-- A. TRIAL BALANCE -->
           @if (activeFinancialSubTab() === 'trial-balance') {
             @if (reportsLoading()) {
-              <div class="p-8 text-center text-xs text-slate-500">Generating Trial Balance Report from Journal Vouchers…</div>
+              <div class="p-8 text-center text-xs text-[var(--ff-text-muted)]">Generating Trial Balance Report from Journal Vouchers…</div>
             } @else if (trialBalanceData()) {
               <div class="flex flex-col gap-4">
-                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center justify-between bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)]">
                   <div>
-                    <h3 class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Trial Balance Report</h3>
-                    <p class="text-xs text-slate-500">Period: {{ trialBalanceData()?.startDate }} to {{ trialBalanceData()?.endDate }}</p>
+                    <h3 class="text-[11px] font-extrabold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Trial Balance Report</h3>
+                    <p class="text-xs text-[var(--ff-text-muted)]">Period: {{ trialBalanceData()?.startDate }} to {{ trialBalanceData()?.endDate }}</p>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-500">Difference:</span>
-                    <span [class.text-emerald-600]="trialBalanceData()?.difference === 0" [class.text-rose-600]="trialBalanceData()?.difference !== 0" class="text-sm font-black font-mono">
+                    <span class="text-xs font-bold text-[var(--ff-text-muted)]">Difference:</span>
+                    <span [class.text-[var(--ff-color-success-500)]]="trialBalanceData()?.difference === 0" [class.text-[var(--ff-color-danger-500)]]="trialBalanceData()?.difference !== 0" class="text-sm font-black font-mono text-right tabular-nums">
                       ₹{{ trialBalanceData()?.difference | number:'1.2-2' }}
                     </span>
-                    <span [class.bg-emerald-100]="trialBalanceData()?.difference === 0" [class.text-emerald-800]="trialBalanceData()?.difference === 0" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                    <span [class.bg-[var(--ff-color-success-50)]]="trialBalanceData()?.difference === 0" [class.text-[var(--ff-color-success-500)]]="trialBalanceData()?.difference === 0" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase">
                       {{ trialBalanceData()?.difference === 0 ? 'BALANCED' : 'UNBALANCED' }}
                     </span>
                   </div>
                 </div>
 
-                <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
                   <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
+                    <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
                       <tr>
                         <th class="p-3">Code</th>
                         <th class="p-3">Account Name</th>
@@ -161,27 +161,27 @@
                         <th class="p-3 text-right">Closing Credit</th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+                    <tbody class="font-mono">
                       @for (row of trialBalanceData()?.rows; track row.accountId) {
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td class="p-3 font-bold text-blue-600 dark:text-blue-400">{{ row.accountCode }}</td>
-                          <td class="p-3 font-sans font-medium text-slate-900 dark:text-white">{{ row.accountName }}</td>
-                          <td class="p-3 text-slate-500">{{ row.accountType }}</td>
-                          <td class="p-3 text-right">₹{{ row.openingBalance | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right text-emerald-600 font-bold">₹{{ row.periodDebit | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right text-rose-600 font-bold">₹{{ row.periodCredit | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-bold text-slate-900 dark:text-white">₹{{ row.closingDebit | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-bold text-slate-900 dark:text-white">₹{{ row.closingCredit | number:'1.2-2' }}</td>
+                        <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                          <td class="p-3 font-bold text-[var(--ff-color-primary-600)]">{{ row.accountCode }}</td>
+                          <td class="p-3 font-sans font-medium text-[var(--ff-text-primary)]">{{ row.accountName }}</td>
+                          <td class="p-3 text-[var(--ff-text-muted)]">{{ row.accountType }}</td>
+                          <td class="p-3 text-right tabular-nums">₹{{ row.openingBalance | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right tabular-nums text-[var(--ff-color-success-500)] font-bold">₹{{ row.periodDebit | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right tabular-nums text-[var(--ff-color-danger-500)] font-bold">₹{{ row.periodCredit | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right tabular-nums font-bold text-[var(--ff-text-primary)]">₹{{ row.closingDebit | number:'1.2-2' }}</td>
+                          <td class="p-3 text-right tabular-nums font-bold text-[var(--ff-text-primary)]">₹{{ row.closingCredit | number:'1.2-2' }}</td>
                         </tr>
                       }
                     </tbody>
-                    <tfoot class="bg-slate-100 dark:bg-slate-800 font-bold font-mono text-slate-900 dark:text-white border-t border-slate-300 dark:border-slate-700">
+                    <tfoot class="bg-[var(--ff-surface-hover)] font-bold font-mono text-[var(--ff-text-primary)] border-t border-[var(--ff-border-divider)]">
                       <tr>
-                        <td colspan="4" class="p-3 uppercase tracking-wider text-right font-sans">Totals:</td>
-                        <td class="p-3 text-right text-emerald-600">₹{{ trialBalanceData()?.totalPeriodDebit | number:'1.2-2' }}</td>
-                        <td class="p-3 text-right text-rose-600">₹{{ trialBalanceData()?.totalPeriodCredit | number:'1.2-2' }}</td>
-                        <td class="p-3 text-right">₹{{ trialBalanceData()?.totalClosingDebit | number:'1.2-2' }}</td>
-                        <td class="p-3 text-right">₹{{ trialBalanceData()?.totalClosingCredit | number:'1.2-2' }}</td>
+                        <td colspan="4" class="p-3 uppercase tracking-[0.05em] text-right font-sans text-[11px] text-[var(--ff-text-muted)]">Totals:</td>
+                        <td class="p-3 text-right tabular-nums text-[var(--ff-color-success-500)]">₹{{ trialBalanceData()?.totalPeriodDebit | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right tabular-nums text-[var(--ff-color-danger-500)]">₹{{ trialBalanceData()?.totalPeriodCredit | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right tabular-nums">₹{{ trialBalanceData()?.totalClosingDebit | number:'1.2-2' }}</td>
+                        <td class="p-3 text-right tabular-nums">₹{{ trialBalanceData()?.totalClosingCredit | number:'1.2-2' }}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -193,9 +193,9 @@
           <!-- B. GENERAL LEDGER / ACCOUNT STATEMENT -->
           @if (activeFinancialSubTab() === 'general-ledger') {
             <div class="flex flex-col gap-4">
-              <div class="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-                <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Select Account:</label>
-                <select [value]="selectedGlAccountId()" (change)="onGlAccountChange($any($event.target).value)" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <div class="flex items-center gap-4 bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)]">
+                <label class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Select Account:</label>
+                <select [value]="selectedGlAccountId()" (change)="onGlAccountChange($any($event.target).value)" class="bg-[var(--ff-surface-input)] border border-[var(--ff-border-default)] rounded-[8px] px-3 py-1.5 text-xs font-medium text-[var(--ff-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--ff-border-focus)]">
                   @for (acc of coaAccounts(); track acc.id) {
                     <option [value]="acc.id">{{ acc.accountCode }} - {{ acc.accountName }} ({{ acc.accountType }})</option>
                   }
@@ -203,31 +203,31 @@
               </div>
 
               @if (reportsLoading()) {
-                <div class="p-8 text-center text-xs text-slate-500">Loading General Ledger Account Statement…</div>
+                <div class="p-8 text-center text-xs text-[var(--ff-text-muted)]">Loading General Ledger Account Statement…</div>
               } @else if (generalLedgerData()) {
                 <div class="flex flex-col gap-4">
                   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <span class="text-[10px] text-slate-500 uppercase font-sans font-bold">Opening Balance</span>
-                      <div class="text-lg font-bold text-slate-900 dark:text-white">₹{{ generalLedgerData()?.openingBalance | number:'1.2-2' }}</div>
+                    <div class="bg-[var(--ff-surface-card)] p-3 rounded-[10px] border border-[var(--ff-border-default)]">
+                      <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-sans font-bold">Opening Balance</span>
+                      <div class="text-lg font-bold tabular-nums text-right text-[var(--ff-text-primary)]">₹{{ generalLedgerData()?.openingBalance | number:'1.2-2' }}</div>
                     </div>
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <span class="text-[10px] text-slate-500 uppercase font-sans font-bold">Total Period Debit</span>
-                      <div class="text-lg font-bold text-emerald-600">₹{{ generalLedgerData()?.totalDebit | number:'1.2-2' }}</div>
+                    <div class="bg-[var(--ff-surface-card)] p-3 rounded-[10px] border border-[var(--ff-border-default)]">
+                      <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-sans font-bold">Total Period Debit</span>
+                      <div class="text-lg font-bold tabular-nums text-right text-[var(--ff-color-success-500)]">₹{{ generalLedgerData()?.totalDebit | number:'1.2-2' }}</div>
                     </div>
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <span class="text-[10px] text-slate-500 uppercase font-sans font-bold">Total Period Credit</span>
-                      <div class="text-lg font-bold text-rose-600">₹{{ generalLedgerData()?.totalCredit | number:'1.2-2' }}</div>
+                    <div class="bg-[var(--ff-surface-card)] p-3 rounded-[10px] border border-[var(--ff-border-default)]">
+                      <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-sans font-bold">Total Period Credit</span>
+                      <div class="text-lg font-bold tabular-nums text-right text-[var(--ff-color-danger-500)]">₹{{ generalLedgerData()?.totalCredit | number:'1.2-2' }}</div>
                     </div>
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <span class="text-[10px] text-slate-500 uppercase font-sans font-bold">Closing Balance</span>
-                      <div class="text-lg font-bold text-blue-600">₹{{ generalLedgerData()?.closingBalance | number:'1.2-2' }}</div>
+                    <div class="bg-[var(--ff-surface-card)] p-3 rounded-[10px] border border-[var(--ff-border-default)]">
+                      <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-sans font-bold">Closing Balance</span>
+                      <div class="text-lg font-bold tabular-nums text-right text-[var(--ff-color-primary-600)]">₹{{ generalLedgerData()?.closingBalance | number:'1.2-2' }}</div>
                     </div>
                   </div>
 
-                  <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                  <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
                     <table class="w-full text-left text-xs">
-                      <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
+                      <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
                         <tr>
                           <th class="p-3">Date</th>
                           <th class="p-3">Voucher No</th>
@@ -238,16 +238,16 @@
                           <th class="p-3 text-right">Running Bal</th>
                         </tr>
                       </thead>
-                      <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+                      <tbody class="font-mono">
                         @for (entry of generalLedgerData()?.entries; track entry.jvId) {
-                          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                            <td class="p-3 text-slate-500 font-sans">{{ entry.voucherDate }}</td>
-                            <td class="p-3 font-bold text-blue-600 dark:text-blue-400">{{ entry.voucherNumber }}</td>
-                            <td class="p-3 text-slate-700 dark:text-slate-300 font-bold">{{ entry.referenceNumber }}</td>
-                            <td class="p-3 font-sans text-slate-600 dark:text-slate-400">{{ entry.description }}</td>
-                            <td class="p-3 text-right text-emerald-600 font-bold">₹{{ entry.debit | number:'1.2-2' }}</td>
-                            <td class="p-3 text-right text-rose-600 font-bold">₹{{ entry.credit | number:'1.2-2' }}</td>
-                            <td class="p-3 text-right font-bold text-slate-900 dark:text-white">₹{{ entry.runningBalance | number:'1.2-2' }}</td>
+                          <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                            <td class="p-3 text-[var(--ff-text-muted)] font-sans">{{ entry.voucherDate }}</td>
+                            <td class="p-3 font-bold text-[var(--ff-color-primary-600)]">{{ entry.voucherNumber }}</td>
+                            <td class="p-3 text-[var(--ff-text-secondary)] font-bold">{{ entry.referenceNumber }}</td>
+                            <td class="p-3 font-sans text-[var(--ff-text-secondary)]">{{ entry.description }}</td>
+                            <td class="p-3 text-right tabular-nums text-[var(--ff-color-success-500)] font-bold">₹{{ entry.debit | number:'1.2-2' }}</td>
+                            <td class="p-3 text-right tabular-nums text-[var(--ff-color-danger-500)] font-bold">₹{{ entry.credit | number:'1.2-2' }}</td>
+                            <td class="p-3 text-right tabular-nums font-bold text-[var(--ff-text-primary)]">₹{{ entry.runningBalance | number:'1.2-2' }}</td>
                           </tr>
                         }
                       </tbody>
@@ -261,45 +261,45 @@
           <!-- C. PROFIT & LOSS -->
           @if (activeFinancialSubTab() === 'profit-loss') {
             @if (reportsLoading()) {
-              <div class="p-8 text-center text-xs text-slate-500">Calculating Profit & Loss Statement from Journal Vouchers…</div>
+              <div class="p-8 text-center text-xs text-[var(--ff-text-muted)]">Calculating Profit & Loss Statement from Journal Vouchers…</div>
             } @else if (profitLossData()) {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Income Section -->
-                <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-                  <h3 class="text-sm font-extrabold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center justify-between">
+                <div class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
+                  <h3 class="text-[11px] font-extrabold text-[var(--ff-color-success-500)] uppercase tracking-[0.05em] flex items-center justify-between">
                     <span>Income / Revenue</span>
-                    <span class="font-mono text-base">₹{{ profitLossData()?.totalIncome | number:'1.2-2' }}</span>
+                    <span class="font-mono text-base tabular-nums text-right">₹{{ profitLossData()?.totalIncome | number:'1.2-2' }}</span>
                   </h3>
-                  <div class="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900">
+                  <div class="rounded-[8px] bg-[var(--ff-surface-card)]">
                     @for (row of profitLossData()?.incomeRows; track row.accountId) {
-                      <div class="p-3 flex justify-between items-center text-xs">
-                        <span class="font-medium text-slate-900 dark:text-white">{{ row.accountCode }} - {{ row.accountName }}</span>
-                        <span class="font-mono font-bold text-emerald-600">₹{{ row.amount | number:'1.2-2' }}</span>
+                      <div class="p-3 flex justify-between items-center text-xs border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                        <span class="font-medium text-[var(--ff-text-primary)]">{{ row.accountCode }} - {{ row.accountName }}</span>
+                        <span class="font-mono font-bold tabular-nums text-right text-[var(--ff-color-success-500)]">₹{{ row.amount | number:'1.2-2' }}</span>
                       </div>
                     }
                   </div>
                 </div>
 
                 <!-- Expense Section -->
-                <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-                  <h3 class="text-sm font-extrabold text-rose-700 dark:text-rose-400 uppercase tracking-wider flex items-center justify-between">
+                <div class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
+                  <h3 class="text-[11px] font-extrabold text-[var(--ff-color-danger-500)] uppercase tracking-[0.05em] flex items-center justify-between">
                     <span>Operating Expenses</span>
-                    <span class="font-mono text-base">₹{{ profitLossData()?.totalExpense | number:'1.2-2' }}</span>
+                    <span class="font-mono text-base tabular-nums text-right">₹{{ profitLossData()?.totalExpense | number:'1.2-2' }}</span>
                   </h3>
-                  <div class="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900">
+                  <div class="rounded-[8px] bg-[var(--ff-surface-card)]">
                     @for (row of profitLossData()?.expenseRows; track row.accountId) {
-                      <div class="p-3 flex justify-between items-center text-xs">
-                        <span class="font-medium text-slate-900 dark:text-white">{{ row.accountCode }} - {{ row.accountName }}</span>
-                        <span class="font-mono font-bold text-rose-600">₹{{ row.amount | number:'1.2-2' }}</span>
+                      <div class="p-3 flex justify-between items-center text-xs border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                        <span class="font-medium text-[var(--ff-text-primary)]">{{ row.accountCode }} - {{ row.accountName }}</span>
+                        <span class="font-mono font-bold tabular-nums text-right text-[var(--ff-color-danger-500)]">₹{{ row.amount | number:'1.2-2' }}</span>
                       </div>
                     }
                   </div>
                 </div>
 
                 <!-- Net Summary Banner -->
-                <div class="md:col-span-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-4 rounded-xl flex items-center justify-between">
-                  <span class="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">Net Profit / (Loss) for Period</span>
-                  <div class="text-xl font-black font-mono" [class.text-emerald-600]="profitLossData()?.isProfitable" [class.text-rose-600]="!profitLossData()?.isProfitable">
+                <div class="md:col-span-2 bg-[var(--ff-color-primary-50)] border border-[var(--ff-border-default)] p-4 rounded-[10px] flex items-center justify-between">
+                  <span class="text-[11px] font-extrabold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Net Profit / (Loss) for Period</span>
+                  <div class="text-xl font-black font-mono tabular-nums text-right" [class.text-[var(--ff-color-success-500)]]="profitLossData()?.isProfitable" [class.text-[var(--ff-color-danger-500)]]="!profitLossData()?.isProfitable">
                     ₹{{ (profitLossData()?.isProfitable ? profitLossData()?.netProfit : profitLossData()?.netLoss) | number:'1.2-2' }}
                   </div>
                 </div>
@@ -310,53 +310,53 @@
           <!-- D. BALANCE SHEET -->
           @if (activeFinancialSubTab() === 'balance-sheet') {
             @if (reportsLoading()) {
-              <div class="p-8 text-center text-xs text-slate-500">Generating Balance Sheet Statement…</div>
+              <div class="p-8 text-center text-xs text-[var(--ff-text-muted)]">Generating Balance Sheet Statement…</div>
             } @else if (balanceSheetData()) {
               <div class="flex flex-col gap-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <!-- Assets -->
-                  <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-                    <h3 class="text-sm font-extrabold text-blue-700 dark:text-blue-400 uppercase tracking-wider flex items-center justify-between">
+                  <div class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
+                    <h3 class="text-[11px] font-extrabold text-[var(--ff-color-primary-600)] uppercase tracking-[0.05em] flex items-center justify-between">
                       <span>Assets</span>
-                      <span class="font-mono text-base">₹{{ balanceSheetData()?.totalAssets | number:'1.2-2' }}</span>
+                      <span class="font-mono text-base tabular-nums text-right">₹{{ balanceSheetData()?.totalAssets | number:'1.2-2' }}</span>
                     </h3>
-                    <div class="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900">
+                    <div class="rounded-[8px] bg-[var(--ff-surface-card)]">
                       @for (row of balanceSheetData()?.assetRows; track row.accountId) {
-                        <div class="p-3 flex justify-between items-center text-xs">
-                          <span class="font-medium text-slate-900 dark:text-white">{{ row.accountCode }} - {{ row.accountName }}</span>
-                          <span class="font-mono font-bold text-slate-900 dark:text-white">₹{{ row.balance | number:'1.2-2' }}</span>
+                        <div class="p-3 flex justify-between items-center text-xs border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                          <span class="font-medium text-[var(--ff-text-primary)]">{{ row.accountCode }} - {{ row.accountName }}</span>
+                          <span class="font-mono font-bold tabular-nums text-right text-[var(--ff-text-primary)]">₹{{ row.balance | number:'1.2-2' }}</span>
                         </div>
                       }
                     </div>
                   </div>
 
                   <!-- Liabilities -->
-                  <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-                    <h3 class="text-sm font-extrabold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                  <div class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
+                    <h3 class="text-[11px] font-extrabold text-[var(--ff-color-warning-500)] uppercase tracking-[0.05em] flex items-center justify-between">
                       <span>Liabilities</span>
-                      <span class="font-mono text-base">₹{{ balanceSheetData()?.totalLiabilities | number:'1.2-2' }}</span>
+                      <span class="font-mono text-base tabular-nums text-right">₹{{ balanceSheetData()?.totalLiabilities | number:'1.2-2' }}</span>
                     </h3>
-                    <div class="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900">
+                    <div class="rounded-[8px] bg-[var(--ff-surface-card)]">
                       @for (row of balanceSheetData()?.liabilityRows; track row.accountId) {
-                        <div class="p-3 flex justify-between items-center text-xs">
-                          <span class="font-medium text-slate-900 dark:text-white">{{ row.accountCode }} - {{ row.accountName }}</span>
-                          <span class="font-mono font-bold text-slate-900 dark:text-white">₹{{ row.balance | number:'1.2-2' }}</span>
+                        <div class="p-3 flex justify-between items-center text-xs border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                          <span class="font-medium text-[var(--ff-text-primary)]">{{ row.accountCode }} - {{ row.accountName }}</span>
+                          <span class="font-mono font-bold tabular-nums text-right text-[var(--ff-text-primary)]">₹{{ row.balance | number:'1.2-2' }}</span>
                         </div>
                       }
                     </div>
                   </div>
 
                   <!-- Equity -->
-                  <div class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
-                    <h3 class="text-sm font-extrabold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center justify-between">
+                  <div class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
+                    <h3 class="text-[11px] font-extrabold text-[var(--ff-color-info-500)] uppercase tracking-[0.05em] flex items-center justify-between">
                       <span>Equity</span>
-                      <span class="font-mono text-base">₹{{ balanceSheetData()?.totalEquity | number:'1.2-2' }}</span>
+                      <span class="font-mono text-base tabular-nums text-right">₹{{ balanceSheetData()?.totalEquity | number:'1.2-2' }}</span>
                     </h3>
-                    <div class="divide-y divide-slate-200 dark:divide-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900">
+                    <div class="rounded-[8px] bg-[var(--ff-surface-card)]">
                       @for (row of balanceSheetData()?.equityRows; track row.accountCode) {
-                        <div class="p-3 flex justify-between items-center text-xs">
-                          <span class="font-medium text-slate-900 dark:text-white">{{ row.accountName }}</span>
-                          <span class="font-mono font-bold text-purple-600">₹{{ row.balance | number:'1.2-2' }}</span>
+                        <div class="p-3 flex justify-between items-center text-xs border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                          <span class="font-medium text-[var(--ff-text-primary)]">{{ row.accountName }}</span>
+                          <span class="font-mono font-bold tabular-nums text-right text-[var(--ff-color-info-500)]">₹{{ row.balance | number:'1.2-2' }}</span>
                         </div>
                       }
                     </div>
@@ -364,16 +364,16 @@
                 </div>
 
                 <!-- Equation Check Footer -->
-                <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-300 dark:border-slate-700 flex items-center justify-between">
-                  <div class="flex items-center gap-4 text-xs font-bold text-slate-700 dark:text-slate-300">
-                    <span>Assets: <strong class="font-mono font-black text-slate-900 dark:text-white">₹{{ balanceSheetData()?.totalAssets | number:'1.2-2' }}</strong></span>
+                <div class="bg-[var(--ff-surface-hover)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex items-center justify-between">
+                  <div class="flex items-center gap-4 text-xs font-bold text-[var(--ff-text-secondary)]">
+                    <span>Assets: <strong class="font-mono font-black tabular-nums text-[var(--ff-text-primary)]">₹{{ balanceSheetData()?.totalAssets | number:'1.2-2' }}</strong></span>
                     <span>=</span>
-                    <span>Liabilities + Equity: <strong class="font-mono font-black text-slate-900 dark:text-white">₹{{ balanceSheetData()?.totalLiabilitiesAndEquity | number:'1.2-2' }}</strong></span>
+                    <span>Liabilities + Equity: <strong class="font-mono font-black tabular-nums text-[var(--ff-text-primary)]">₹{{ balanceSheetData()?.totalLiabilitiesAndEquity | number:'1.2-2' }}</strong></span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-500">Difference:</span>
-                    <span class="text-sm font-black font-mono text-emerald-600">₹{{ balanceSheetData()?.difference | number:'1.2-2' }}</span>
-                    <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">BALANCED</span>
+                    <span class="text-xs font-bold text-[var(--ff-text-muted)]">Difference:</span>
+                    <span class="text-sm font-black font-mono tabular-nums text-right text-[var(--ff-color-success-500)]">₹{{ balanceSheetData()?.difference | number:'1.2-2' }}</span>
+                    <span class="bg-[var(--ff-color-success-50)] text-[var(--ff-color-success-500)] px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase">BALANCED</span>
                   </div>
                 </div>
               </div>
@@ -385,26 +385,26 @@
       <!-- 3. Report Templates -->
       @if (activeTab() === 'templates') {
         <div class="flex justify-between items-center">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Custom Report Templates</h2>
-          <button (click)="showTemplateEditor.set(!showTemplateEditor())" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">
+          <h2 class="text-[11px] font-bold uppercase tracking-[0.05em] text-[var(--ff-text-muted)]">Custom Report Templates</h2>
+          <button (click)="showTemplateEditor.set(!showTemplateEditor())" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-bold text-xs px-3 py-1.5 rounded-[8px] transition">
             {{ showTemplateEditor() ? 'Cancel' : 'New Template' }}
           </button>
         </div>
         @if (showTemplateEditor()) {
-          <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+          <form [formGroup]="templateForm" (ngSubmit)="saveTemplate()" class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <ff-textbox label="Template Name" formControlName="templateName" placeholder="e.g. Monthly Revenue Detailed" />
               <ff-dropdown label="Report Type" formControlName="reportType" [options]="reportTypeOptions" />
               <ff-textbox label="Columns (comma-separated)" formControlName="columnsList" placeholder="invoiceNumber, netAmount, status" />
             </div>
             <div class="flex justify-end gap-2">
-              <button type="submit" [disabled]="templateForm.invalid" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg">Save Template</button>
+              <button type="submit" [disabled]="templateForm.invalid" class="bg-[var(--ff-color-primary-600)] text-white text-xs font-bold px-4 py-2 rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed">Save Template</button>
             </div>
           </form>
         }
-        <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
+            <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
               <tr>
                 <th class="p-3">Template Name</th>
                 <th class="p-3">Type</th>
@@ -412,15 +412,15 @@
                 <th class="p-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody>
               @for (tpl of templates(); track tpl.id) {
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                  <td class="p-3 font-bold text-slate-900 dark:text-white">{{ tpl.templateName }}</td>
-                  <td class="p-3 font-mono text-blue-600">{{ tpl.reportType }}</td>
-                  <td class="p-3 font-mono text-slate-500">{{ tpl.selectedColumnsJson }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                  <td class="p-3 font-bold text-[var(--ff-text-primary)]">{{ tpl.templateName }}</td>
+                  <td class="p-3 font-mono text-[var(--ff-color-primary-600)]">{{ tpl.reportType }}</td>
+                  <td class="p-3 font-mono text-[var(--ff-text-muted)]">{{ tpl.selectedColumnsJson }}</td>
                   <td class="p-3 text-right flex justify-end gap-2">
-                    <button (click)="exportXlsx(tpl)" class="text-blue-600 hover:underline font-bold">Export CSV</button>
-                    <button (click)="deleteTemplate(tpl)" class="text-rose-600 hover:underline font-bold">Delete</button>
+                    <button (click)="exportXlsx(tpl)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] font-bold">Export CSV</button>
+                    <button (click)="deleteTemplate(tpl)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] font-bold">Delete</button>
                   </td>
                 </tr>
               }
@@ -432,26 +432,26 @@
       <!-- 4. Scheduled Triggers -->
       @if (activeTab() === 'schedules') {
         <div class="flex justify-between items-center">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Scheduled Trigger Rules</h2>
-          <button (click)="showScheduleEditor.set(!showScheduleEditor())" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition">
+          <h2 class="text-[11px] font-bold uppercase tracking-[0.05em] text-[var(--ff-text-muted)]">Scheduled Trigger Rules</h2>
+          <button (click)="showScheduleEditor.set(!showScheduleEditor())" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-bold text-xs px-3 py-1.5 rounded-[8px] transition">
             {{ showScheduleEditor() ? 'Cancel' : 'New Trigger' }}
           </button>
         </div>
         @if (showScheduleEditor()) {
-          <form [formGroup]="scheduleForm" (ngSubmit)="saveSchedule()" class="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+          <form [formGroup]="scheduleForm" (ngSubmit)="saveSchedule()" class="bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)] flex flex-col gap-3">
             <div formGroupName="reportTemplate" class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <ff-dropdown label="Template" formControlName="id" [options]="reportTemplateOptions" />
               <ff-textbox label="Cron Expression" formControlName="cronExpression" placeholder="0 0 12 * * ?" />
               <ff-textbox label="Recipient Email" formControlName="recipientEmail" placeholder="admin@transaflow.com" />
             </div>
             <div class="flex justify-end gap-2">
-              <button type="submit" [disabled]="scheduleForm.invalid" class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg">Save Schedule</button>
+              <button type="submit" [disabled]="scheduleForm.invalid" class="bg-[var(--ff-color-primary-600)] text-white text-xs font-bold px-4 py-2 rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed">Save Schedule</button>
             </div>
           </form>
         }
-        <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+        <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs">
-            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider">
+            <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
               <tr>
                 <th class="p-3">Template</th>
                 <th class="p-3">Cron Expression</th>
@@ -459,14 +459,14 @@
                 <th class="p-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+            <tbody class="font-mono">
               @for (sch of schedules(); track sch.id) {
-                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                  <td class="p-3 font-sans font-bold text-slate-900 dark:text-white">{{ sch.reportTemplate?.templateName || 'Template #' + sch.reportTemplate?.id }}</td>
-                  <td class="p-3 text-blue-600 font-bold">{{ sch.cronExpression }}</td>
-                  <td class="p-3 text-slate-600 dark:text-slate-400 font-sans">{{ sch.recipientEmail }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                  <td class="p-3 font-sans font-bold text-[var(--ff-text-primary)]">{{ sch.reportTemplate?.templateName || 'Template #' + sch.reportTemplate?.id }}</td>
+                  <td class="p-3 text-[var(--ff-color-primary-600)] font-bold">{{ sch.cronExpression }}</td>
+                  <td class="p-3 text-[var(--ff-text-secondary)] font-sans">{{ sch.recipientEmail }}</td>
                   <td class="p-3 text-right">
-                    <button (click)="deleteSchedule(sch)" class="text-rose-600 hover:underline font-bold">Delete</button>
+                    <button (click)="deleteSchedule(sch)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] font-bold">Delete</button>
                   </td>
                 </tr>
               }

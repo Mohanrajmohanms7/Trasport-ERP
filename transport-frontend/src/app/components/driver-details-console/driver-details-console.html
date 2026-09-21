@@ -28,13 +28,18 @@
   </ff-toolbar>
 
   @if (!loading() && !drivers().length && !searchQuery()) {
-    <ff-empty-state
-      icon="badge"
-      title="No drivers yet"
-      message="Add your first driver to start managing licenses, attendance, and payroll."
-      actionLabel="Add Driver"
-      actionIcon="person_add"
-      (action)="openAddForm()" />
+    <div class="flex flex-col items-center justify-center gap-2 p-8 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px]">
+      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+        <span class="material-icons text-lg">badge</span>
+      </span>
+      <ff-empty-state
+        icon="badge"
+        title="No drivers yet"
+        message="Add your first driver to start managing licenses, attendance, and payroll."
+        actionLabel="Add Driver"
+        actionIcon="person_add"
+        (action)="openAddForm()" />
+    </div>
   } @else {
     <ff-card [padding]="'none'">
       <ff-grid
@@ -78,9 +83,9 @@
   (closed)="closeOps()">
 
   @if (selectedDriver(); as driver) {
-    <div class="driver-ops-meta">
+    <div class="driver-ops-meta flex items-center gap-3 mb-4 px-3 py-2 rounded-[8px] bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)]">
       <ff-status-badge [label]="driver.status" [color]="driver.status === 'ACTIVE' ? 'success' : 'danger'" />
-      <span class="driver-ops-meta__code">{{ driver.code }} · {{ driver.licenseNumber }}</span>
+      <span class="driver-ops-meta__code text-[11px] font-semibold text-[var(--ff-text-muted)]">{{ driver.code }} · {{ driver.licenseNumber }}</span>
     </div>
 
     <ff-tabs [tabs]="opsTabs" [activeTab]="opsTab()" (tabChange)="opsTab.set($event)" />
@@ -141,12 +146,17 @@
           <ff-dashboard-card label="Advance" [value]="'₹' + salary.advanceTaken" icon="money_off" color="danger" />
         </div>
       } @else if (!showSalaryEditor()) {
-        <ff-empty-state
-          icon="payments"
-          title="No payroll configured"
-          message="Set basic salary, overtime rate, and advances for this driver."
-          actionLabel="Configure"
-          (action)="showSalaryEditor.set(true)" />
+        <div class="flex flex-col items-center justify-center gap-2 p-6 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] mb-4">
+          <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+            <span class="material-icons text-lg">payments</span>
+          </span>
+          <ff-empty-state
+            icon="payments"
+            title="No payroll configured"
+            message="Set basic salary, overtime rate, and advances for this driver."
+            actionLabel="Configure"
+            (action)="showSalaryEditor.set(true)" />
+        </div>
       }
 
       @if (showSalaryEditor()) {
@@ -166,7 +176,7 @@
 
     @if (opsTab() === 'payrolls') {
       <div class="driver-ops-actions">
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Salary Slips & Payroll History</span>
+        <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Salary Slips & Payroll History</span>
       </div>
       <ff-grid [config]="payrollGridConfig()" [data]="payrolls()" (action)="onPayrollAction($event)" />
     }

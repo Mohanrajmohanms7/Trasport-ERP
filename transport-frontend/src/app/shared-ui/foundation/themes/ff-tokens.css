@@ -6,51 +6,53 @@
 :root,
 [data-ff-theme='light'] {
   /* Colors — Primary */
-  --ff-color-primary-50: #eff6ff;
-  --ff-color-primary-100: #dbeafe;
-  --ff-color-primary-500: #3b82f6;
-  --ff-color-primary-600: #2563eb;
-  --ff-color-primary-700: #1d4ed8;
+  --ff-color-primary-50: #eaf0fe;
+  --ff-color-primary-100: #eaf0fe;
+  --ff-color-primary-500: #2653eb;
+  --ff-color-primary-600: #2653eb;
+  --ff-color-primary-700: #1e44c4;
   --ff-color-primary-900: #1e3a8a;
 
   /* Semantic */
-  --ff-color-success-50: #ecfdf5;
-  --ff-color-success-500: #10b981;
+  --ff-color-success-50: #eaf8ef;
+  --ff-color-success-500: #16a34a;
   --ff-color-success-700: #047857;
-  --ff-color-danger-50: #fef2f2;
-  --ff-color-danger-500: #ef4444;
+  --ff-color-danger-50: #fdecec;
+  --ff-color-danger-500: #dc2626;
   --ff-color-danger-700: #b91c1c;
-  --ff-color-warning-50: #fffbeb;
-  --ff-color-warning-500: #f59e0b;
+  --ff-color-warning-50: #fef3e2;
+  --ff-color-warning-500: #d97706;
   --ff-color-warning-700: #b45309;
-  --ff-color-info-50: #ecfeff;
-  --ff-color-info-500: #06b6d4;
+  --ff-color-info-50: #e8f6fd;
+  --ff-color-info-500: #0ea5e9;
   --ff-color-info-700: #0e7490;
 
   /* Surfaces */
-  --ff-surface-page: #f8fafc;
+  --ff-surface-page: #f4f6f9;
   --ff-surface-card: #ffffff;
   --ff-surface-sidebar: #ffffff;
   --ff-surface-input: #ffffff;
-  --ff-surface-hover: #f1f5f9;
+  --ff-surface-hover: #f8fafc;
   --ff-surface-toolbar: #ffffff;
 
   /* Text */
   --ff-text-primary: #0f172a;
   --ff-text-secondary: #475569;
-  --ff-text-muted: #64748b;
+  --ff-text-muted: #94a3b8;
   --ff-text-inverse: #ffffff;
-  --ff-text-link: #2563eb;
-  --ff-text-error: #ef4444;
+  --ff-text-link: #2653eb;
+  --ff-text-error: #dc2626;
 
   /* Borders */
   --ff-border-default: #e2e8f0;
   --ff-border-strong: #cbd5e1;
-  --ff-border-focus: #2563eb;
+  --ff-border-focus: #2653eb;
+  --ff-border-divider: #edf1f5;
 
   /* Typography */
   --ff-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --ff-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --ff-font-variant-numeric: tabular-nums;
   --ff-text-xs: 0.75rem;
   --ff-text-sm: 0.875rem;
   --ff-text-base: 1rem;
@@ -67,10 +69,10 @@
   --ff-space-6: 1.5rem;
   --ff-space-8: 2rem;
 
-  /* Radius */
+  /* Radius — lg is the card radius (10px) */
   --ff-radius-sm: 0.25rem;
   --ff-radius-md: 0.5rem;
-  --ff-radius-lg: 0.75rem;
+  --ff-radius-lg: 0.625rem;
   --ff-radius-xl: 1rem;
   --ff-radius-full: 9999px;
 
@@ -92,23 +94,43 @@
 
 [data-ff-theme='dark'],
 .dark {
-  --ff-surface-page: #0f172a;
-  --ff-surface-card: #1e293b;
-  --ff-surface-sidebar: #1e293b;
-  --ff-surface-input: #0f172a;
-  --ff-surface-hover: #334155;
-  --ff-surface-toolbar: #1e293b;
+  --ff-color-primary-50: #1b2748;
+  --ff-color-primary-100: #1b2748;
+  --ff-color-primary-500: #5b84ff;
+  --ff-color-primary-600: #5b84ff;
+  --ff-color-primary-700: #7b9cff;
 
-  --ff-text-primary: #f8fafc;
-  --ff-text-secondary: #cbd5e1;
-  --ff-text-muted: #94a3b8;
-  --ff-text-inverse: #0f172a;
-  --ff-text-link: #60a5fa;
+  --ff-color-success-50: #123227;
+  --ff-color-success-500: #34d399;
+  --ff-color-success-700: #6ee7b7;
+  --ff-color-danger-50: #3a1616;
+  --ff-color-danger-500: #f87171;
+  --ff-color-danger-700: #fca5a5;
+  --ff-color-warning-50: #332608;
+  --ff-color-warning-500: #fbbf24;
+  --ff-color-warning-700: #fcd34d;
+  --ff-color-info-50: #0f2a38;
+  --ff-color-info-500: #38bdf8;
+  --ff-color-info-700: #7dd3fc;
+
+  --ff-surface-page: #0b1220;
+  --ff-surface-card: #131b2c;
+  --ff-surface-sidebar: #131b2c;
+  --ff-surface-input: #131b2c;
+  --ff-surface-hover: #1b2438;
+  --ff-surface-toolbar: #131b2c;
+
+  --ff-text-primary: #eef2f8;
+  --ff-text-secondary: #aab4c5;
+  --ff-text-muted: #6b7688;
+  --ff-text-inverse: #0b1220;
+  --ff-text-link: #5b84ff;
   --ff-text-error: #f87171;
 
-  --ff-border-default: #334155;
-  --ff-border-strong: #475569;
-  --ff-border-focus: #3b82f6;
+  --ff-border-default: #232e44;
+  --ff-border-strong: #324160;
+  --ff-border-focus: #5b84ff;
+  --ff-border-divider: #1c2740;
 
   --ff-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --ff-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);

@@ -1,22 +1,25 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">local_shipping</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">local_shipping</span>
         Trip Planning & Dispatch
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Manage dispatch fleet allocations, vehicle driver assignments, and transit delivery confirmations</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage dispatch fleet allocations, vehicle driver assignments, and transit delivery confirmations</p>
     </div>
+    <button (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
+      <span class="material-icons text-sm">schedule_send</span> Plan Dispatch Trip
+    </button>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white border-b-2 border-blue-600">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-primary)] border-b-2 border-[var(--ff-color-primary-600)]">
         Dispatch Board Registry
       </button>
     </div>
@@ -26,21 +29,17 @@
       
       <!-- List View -->
       <div class="flex justify-between items-center shrink-0">
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Planned Trips</span>
-        <button (click)="openAddTrip()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-          <span class="material-icons text-sm">schedule_send</span> Plan Dispatch Trip
-        </button>
+        <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Planned Trips</span>
       </div>
 
-      <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+      <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
-            <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+            <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
               <th class="p-4">Trip Number</th>
               <th class="p-4">Trip Date</th>
               <th class="p-4">Booking Code</th>
-              <th class="p-4">Allocated Vehicle</th>
-              <th class="p-4">Allocated Driver</th>
+              <th class="p-4">Allocated Vehicle / Driver</th>
               <th class="p-4">Status</th>
               <th class="p-4">Billing Status</th>
               <th class="p-4 text-center">Workflow Actions</th>
@@ -48,57 +47,75 @@
           </thead>
           <tbody>
             @for (trip of trips(); track trip.tripNumber) {
-              <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ trip.tripNumber }}</td>
-                <td class="p-4 text-slate-600 dark:text-slate-350">{{ trip.tripDate }}</td>
-                <td class="p-4 font-mono text-slate-700 dark:text-slate-300 font-semibold">{{ trip.booking?.bookingNumber }}</td>
-                <td class="p-4 text-slate-700 dark:text-slate-300 font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
-                <td class="p-4 text-slate-700 dark:text-slate-300">{{ trip.driver?.name || 'Not Allocated' }}</td>
+              <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ trip.tripNumber }}</td>
+                <td class="p-4 text-[var(--ff-text-secondary)]">{{ trip.tripDate }}</td>
+                <td class="p-4 font-mono text-[var(--ff-text-secondary)] font-semibold">{{ trip.booking?.bookingNumber }}</td>
                 <td class="p-4">
-                  <span [class.bg-blue-50]="trip.status === 'PLANNED'" [class.dark:bg-blue-950]="trip.status === 'PLANNED'" [class.text-blue-700]="trip.status === 'PLANNED'" [class.dark:text-blue-400]="trip.status === 'PLANNED'"
-                        [class.bg-amber-50]="trip.status === 'DISPATCHED'" [class.dark:bg-amber-950]="trip.status === 'DISPATCHED'" [class.text-amber-700]="trip.status === 'DISPATCHED'" [class.dark:text-amber-400]="trip.status === 'DISPATCHED'"
-                        [class.bg-emerald-50]="trip.status === 'COMPLETED'" [class.dark:bg-emerald-950]="trip.status === 'COMPLETED'" [class.text-emerald-700]="trip.status === 'COMPLETED'" [class.dark:text-emerald-400]="trip.status === 'COMPLETED'"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
-                    {{ trip.status }}
+                  <span class="inline-flex items-center gap-2 max-w-full bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-full px-2.5 py-1">
+                    <span class="font-mono text-[var(--ff-text-primary)] font-semibold truncate">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</span>
+                    <span class="w-px h-3 bg-[var(--ff-border-divider)] shrink-0"></span>
+                    <span class="text-[var(--ff-text-secondary)] truncate">{{ trip.driver?.name || 'Not Allocated' }}</span>
                   </span>
+                </td>
+                <td class="p-4">
+                  <div class="flex flex-col gap-1.5 min-w-[7.5rem]">
+                    <div class="flex items-center gap-[3px]" aria-hidden="true">
+                      <span class="h-1.5 flex-1 rounded-sm border"
+                            [style.background-color]="(trip.status === 'PLANNED' || trip.status === 'DISPATCHED' || trip.status === 'COMPLETED') ? 'var(--ff-color-primary-600)' : 'transparent'"
+                            [style.border-color]="(trip.status === 'PLANNED' || trip.status === 'DISPATCHED' || trip.status === 'COMPLETED') ? 'var(--ff-color-primary-600)' : 'var(--ff-border-default)'"></span>
+                      <span class="h-1.5 flex-1 rounded-sm border"
+                            [style.background-color]="(trip.status === 'DISPATCHED' || trip.status === 'COMPLETED') ? 'var(--ff-color-primary-600)' : 'transparent'"
+                            [style.border-color]="(trip.status === 'DISPATCHED' || trip.status === 'COMPLETED') ? 'var(--ff-color-primary-600)' : 'var(--ff-border-default)'"></span>
+                      <span class="h-1.5 flex-1 rounded-sm border"
+                            [style.background-color]="trip.status === 'COMPLETED' ? 'var(--ff-color-primary-600)' : 'transparent'"
+                            [style.border-color]="trip.status === 'COMPLETED' ? 'var(--ff-color-primary-600)' : 'var(--ff-border-default)'"></span>
+                    </div>
+                    <span [class.bg-blue-50]="trip.status === 'PLANNED'" [class.dark:bg-blue-950]="trip.status === 'PLANNED'" [class.text-blue-700]="trip.status === 'PLANNED'" [class.dark:text-blue-400]="trip.status === 'PLANNED'"
+                          [class.bg-amber-50]="trip.status === 'DISPATCHED'" [class.dark:bg-amber-950]="trip.status === 'DISPATCHED'" [class.text-amber-700]="trip.status === 'DISPATCHED'" [class.dark:text-amber-400]="trip.status === 'DISPATCHED'"
+                          [class.bg-emerald-50]="trip.status === 'COMPLETED'" [class.dark:bg-emerald-950]="trip.status === 'COMPLETED'" [class.text-emerald-700]="trip.status === 'COMPLETED'" [class.dark:text-emerald-400]="trip.status === 'COMPLETED'"
+                          class="inline-flex self-start items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-slate-200 dark:border-slate-800">
+                      {{ trip.status }}
+                    </span>
+                  </div>
                 </td>
                 <td class="p-4">
                   <span [class.bg-blue-50]="trip.billingStatus === 'READY_FOR_BILLING'" [class.dark:bg-blue-950]="trip.billingStatus === 'READY_FOR_BILLING'" [class.text-blue-700]="trip.billingStatus === 'READY_FOR_BILLING'" [class.dark:text-blue-400]="trip.billingStatus === 'READY_FOR_BILLING'"
                         [class.bg-purple-50]="trip.billingStatus === 'INVOICE_DRAFT'" [class.dark:bg-purple-950]="trip.billingStatus === 'INVOICE_DRAFT'" [class.text-purple-700]="trip.billingStatus === 'INVOICE_DRAFT'" [class.dark:text-purple-400]="trip.billingStatus === 'INVOICE_DRAFT'"
                         [class.bg-emerald-50]="trip.billingStatus === 'INVOICED'" [class.dark:bg-emerald-950]="trip.billingStatus === 'INVOICED'" [class.text-emerald-700]="trip.billingStatus === 'INVOICED'" [class.dark:text-emerald-400]="trip.billingStatus === 'INVOICED'"
                         [class.bg-slate-100]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.dark:bg-slate-900]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.text-slate-650]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus" [class.dark:text-slate-400]="trip.billingStatus === 'NOT_READY' || !trip.billingStatus"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800 whitespace-nowrap">
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-slate-200 dark:border-slate-800 whitespace-nowrap">
                     {{ trip.billingStatus === 'READY_FOR_BILLING' ? 'READY FOR BILLING' : (trip.billingStatus === 'INVOICE_DRAFT' ? 'INVOICE DRAFT' : (trip.billingStatus === 'INVOICED' ? 'INVOICED' : 'NOT READY')) }}
                   </span>
                 </td>
                 <td class="p-4 text-center">
-                  <div class="flex items-center justify-center gap-3">
+                  <div class="flex items-center justify-center gap-2">
                     @if (trip.status === 'PLANNED') {
-                      <button (click)="dispatchTrip(trip)" class="p-1 hover:text-amber-600 dark:hover:text-amber-400 transition" title="Dispatch Vehicle">
+                      <button (click)="dispatchTrip(trip)" class="inline-flex items-center gap-1 h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white text-[11px] font-semibold transition" title="Dispatch Vehicle">
                         <span class="material-icons text-sm">departure_board</span>
                       </button>
                     } @else if (trip.status === 'DISPATCHED') {
-                      <button (click)="completeTrip(trip)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Complete Trip">
+                      <button (click)="completeTrip(trip)" class="inline-flex items-center gap-1 h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white text-[11px] font-semibold transition" title="Complete Trip">
                         <span class="material-icons text-sm">done_all</span>
                       </button>
                     }
                     @if (trip.billingStatus === 'READY_FOR_BILLING') {
-                      <button (click)="generateInvoice(trip)" class="p-1 text-blue-600 hover:text-blue-500 transition" title="Generate Invoice">
+                      <button (click)="generateInvoice(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] transition" title="Generate Invoice">
                         <span class="material-icons text-sm">post_add</span>
                       </button>
                     } @else if (trip.billingStatus === 'INVOICE_DRAFT') {
-                      <button (click)="continueInvoice(trip)" class="p-1 text-purple-650 hover:text-purple-500 transition" title="Continue Invoice">
+                      <button (click)="continueInvoice(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] transition" title="Continue Invoice">
                         <span class="material-icons text-sm">edit_note</span>
                       </button>
                     } @else if (trip.billingStatus === 'INVOICED') {
-                      <button (click)="viewInvoice(trip)" class="p-1 text-emerald-600 hover:text-emerald-500 transition" title="View Invoice">
+                      <button (click)="viewInvoice(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-success-500)] hover:bg-[var(--ff-surface-hover)] transition" title="View Invoice">
                         <span class="material-icons text-sm">receipt</span>
                       </button>
                     }
-                    <button (click)="openEditTrip(trip)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Trip Allocations">
+                    <button (click)="openEditTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Trip Allocations">
                       <span class="material-icons text-sm">edit</span>
                     </button>
-                    <button (click)="deleteTrip(trip)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Cancel Itinerary">
+                    <button (click)="deleteTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Cancel Itinerary">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </div>
@@ -106,7 +123,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No planned trips in transit.</td>
+                <td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No planned trips in transit.</td>
               </tr>
             }
           </tbody>
@@ -120,16 +137,16 @@
   @if (showEditor()) {
     <div class="fixed inset-0 z-[90] flex p-2 sm:p-3 bg-slate-950/70 backdrop-blur-[2px]"
          (click)="showEditor.set(false)">
-      <div class="flex-1 w-full h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="flex-1 w-full h-full overflow-hidden rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">schedule_send</span>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">schedule_send</span>
             {{ editingTrip() ? 'Edit Trip Allocations' : 'Plan Dispatch Trip' }}
           </h2>
           <button type="button" (click)="showEditor.set(false)"
-                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  class="p-1.5 rounded-lg text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
@@ -152,24 +169,24 @@
               </div>
             </div>
 
-            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
-                <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Allocated Materials Payload details</span>
-                <button type="button" (click)="addDetail()" class="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold">
+                <span class="text-xs font-bold text-[var(--ff-text-primary)] uppercase tracking-wider">Allocated Materials Payload details</span>
+                <button type="button" (click)="addDetail()" class="text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
                   <span class="material-icons text-sm">add</span> Add Material Detail
                 </button>
               </div>
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" label="Payload Quantity (Tons)" [min]="0" [required]="true" />
                     <ff-number formControlName="loadingCharges" label="Loading Charges" [min]="0" [required]="true" />
                     <div class="flex items-center justify-end gap-2 lg:pb-2">
-                      <button type="button" (click)="removeDetail(idx)" class="text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete Row">
+                      <button type="button" (click)="removeDetail(idx)" class="text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -179,7 +196,7 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
             <ff-button type="submit" label="Save Trip Plan" icon="save" variant="primary" [disabled]="tripForm.invalid || detailsArray.length === 0" />
           </div>

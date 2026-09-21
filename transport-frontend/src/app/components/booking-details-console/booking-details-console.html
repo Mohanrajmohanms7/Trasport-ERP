@@ -1,22 +1,25 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">receipt_long</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">receipt_long</span>
         Booking
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Manage customer material requests, itemized transport calculations, and billing approval workflows</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage customer material requests, itemized transport calculations, and billing approval workflows</p>
     </div>
+    <button (click)="openAddBooking()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
+      <span class="material-icons text-sm">add_circle</span> Register Booking Request
+    </button>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-white border-b-2 border-blue-600">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      <button class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-primary)] border-b-2 border-[var(--ff-color-primary-600)]">
         Booking Requests Registry
       </button>
     </div>
@@ -26,16 +29,13 @@
       
       <!-- List View -->
       <div class="flex justify-between items-center shrink-0">
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Registered Bookings</span>
-        <button (click)="openAddBooking()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
-          <span class="material-icons text-sm">add_circle</span> Register Booking Request
-        </button>
+        <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Registered Bookings</span>
       </div>
 
-      <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+      <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
-            <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+            <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
               <th class="p-4">Booking Number</th>
               <th class="p-4">Booking Date</th>
               <th class="p-4">Customer Name</th>
@@ -47,48 +47,57 @@
           </thead>
           <tbody>
             @for (bkg of bookings(); track bkg.bookingNumber) {
-              <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ bkg.bookingNumber }}</td>
-                <td class="p-4 text-slate-600 dark:text-slate-350">{{ bkg.bookingDate }}</td>
-                <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ bkg.customer?.name }}</td>
-                <td class="p-4 text-slate-700 dark:text-slate-300">{{ bkg.deliverySite?.siteName || '-' }}</td>
+              <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ bkg.bookingNumber }}</td>
+                <td class="p-4 text-[var(--ff-text-secondary)]">{{ bkg.bookingDate }}</td>
+                <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ bkg.customer?.name }}</td>
+                <td class="p-4 text-[var(--ff-text-secondary)]">{{ bkg.deliverySite?.siteName || '-' }}</td>
                 <td class="p-4">
-                  <span [class.bg-rose-50]="bkg.priority === 'HIGH'" [class.dark:bg-rose-950]="bkg.priority === 'HIGH'" [class.text-rose-700]="bkg.priority === 'HIGH'" [class.dark:text-rose-400]="bkg.priority === 'HIGH'"
-                        [class.bg-slate-100]="bkg.priority !== 'HIGH'" [class.dark:bg-slate-950]="bkg.priority !== 'HIGH'" [class.text-slate-600]="bkg.priority !== 'HIGH'" [class.dark:text-slate-400]="bkg.priority !== 'HIGH'"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
-                    {{ bkg.priority }}
+                  <span class="inline-flex items-center gap-2">
+                    <span class="bkg-dot"
+                          [class.bkg-dot--high]="bkg.priority === 'HIGH'"
+                          [class.bkg-dot--medium]="bkg.priority === 'MEDIUM'"
+                          [class.bkg-dot--low]="bkg.priority !== 'HIGH' && bkg.priority !== 'MEDIUM'"></span>
+                    <span [class.bg-rose-50]="bkg.priority === 'HIGH'" [class.dark:bg-rose-950]="bkg.priority === 'HIGH'" [class.text-rose-700]="bkg.priority === 'HIGH'" [class.dark:text-rose-400]="bkg.priority === 'HIGH'"
+                          [class.bg-slate-100]="bkg.priority !== 'HIGH'" [class.dark:bg-slate-950]="bkg.priority !== 'HIGH'" [class.text-slate-600]="bkg.priority !== 'HIGH'" [class.dark:text-slate-400]="bkg.priority !== 'HIGH'"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                      {{ bkg.priority }}
+                    </span>
                   </span>
                 </td>
                 <td class="p-4">
                   <span [class.bg-blue-50]="bkg.status === 'PENDING'" [class.dark:bg-blue-950]="bkg.status === 'PENDING'" [class.text-blue-700]="bkg.status === 'PENDING'" [class.dark:text-blue-400]="bkg.status === 'PENDING'"
                         [class.bg-emerald-50]="bkg.status === 'APPROVED'" [class.dark:bg-emerald-950]="bkg.status === 'APPROVED'" [class.text-emerald-700]="bkg.status === 'APPROVED'" [class.dark:text-emerald-400]="bkg.status === 'APPROVED'"
                         [class.bg-rose-50]="bkg.status === 'REJECTED'" [class.dark:bg-rose-950]="bkg.status === 'REJECTED'" [class.text-rose-700]="bkg.status === 'REJECTED'" [class.dark:text-rose-400]="bkg.status === 'REJECTED'"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                        [class.bkg-badge--info]="bkg.status === 'PENDING'"
+                        [class.bkg-badge--success]="bkg.status === 'APPROVED'"
+                        [class.bkg-badge--danger]="bkg.status === 'REJECTED'"
+                        class="bkg-badge px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
                     {{ bkg.status }}
                   </span>
                 </td>
                 <td class="p-4 text-center">
-                  <div class="flex items-center justify-center gap-3">
+                  <div class="flex items-center justify-center gap-2">
                     @if (bkg.status === 'PENDING') {
-                      <button (click)="approveBooking(bkg)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve Request">
-                        <span class="material-icons text-sm">check_circle</span>
+                      <button (click)="approveBooking(bkg)" class="bkg-btn-solid" title="Approve Request">
+                        <span class="material-icons text-sm">check_circle</span> Approve
                       </button>
-                      <button (click)="rejectBooking(bkg)" class="p-1 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Reject Request">
-                        <span class="material-icons text-sm">cancel</span>
+                      <button (click)="rejectBooking(bkg)" class="bkg-btn-outline" title="Reject Request">
+                        <span class="material-icons text-sm">cancel</span> Reject
                       </button>
                     }
-                    <button (click)="openEditBooking(bkg)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Booking">
+                    <button (click)="openEditBooking(bkg)" class="bkg-btn-outline" title="Edit Booking">
                       <span class="material-icons text-sm">edit</span>
                     </button>
-                    <button (click)="deleteBooking(bkg)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Cancel Booking">
-                      <span class="material-icons text-sm">delete</span>
+                    <button (click)="deleteBooking(bkg)" class="bkg-btn-outline" title="Cancel Booking">
+                      <span class="material-icons text-sm">delete</span> Cancel
                     </button>
                   </div>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="p-8 text-center text-slate-500 font-semibold">No booking requests found.</td>
+                <td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No booking requests found.</td>
               </tr>
             }
           </tbody>
@@ -102,16 +111,16 @@
   @if (showEditor()) {
     <div class="fixed inset-0 z-[90] flex p-2 sm:p-3 bg-slate-950/70 backdrop-blur-[2px]"
          (click)="showEditor.set(false)">
-      <div class="flex-1 w-full h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="flex-1 w-full h-full overflow-hidden rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">add_circle</span>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">add_circle</span>
             {{ editingBooking() ? 'Edit Booking Request' : 'Register Booking Request' }}
           </h2>
           <button type="button" (click)="showEditor.set(false)"
-                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  class="p-1.5 rounded-lg text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
@@ -132,17 +141,17 @@
               </div>
             </div>
 
-            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
-                <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Requested Materials (Itemized details)</span>
-                <button type="button" (click)="addDetail()" class="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold">
+                <span class="text-xs font-bold text-[var(--ff-text-primary)] uppercase tracking-wider">Requested Materials (Itemized details)</span>
+                <button type="button" (click)="addDetail()" class="text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
                   <span class="material-icons text-sm">add</span> Add Material Row
                 </button>
               </div>
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Master" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
@@ -151,15 +160,15 @@
                     <ff-number formControlName="gstPercentage" label="GST (%)" [min]="0" [max]="100" />
                     
                     <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Line Amount (INR)</span>
-                      <div class="h-10 px-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between font-mono font-bold text-blue-700 dark:text-blue-300 text-xs">
+                      <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Line Amount (INR)</span>
+                      <div class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-50)] border border-[var(--ff-border-default)] flex items-center justify-between font-mono font-bold text-[var(--ff-color-primary-600)] text-xs tabular-nums">
                         <span>₹{{ getItemTotalAmount(row) | number:'1.2-2' }}</span>
-                        <span class="text-[10px] text-blue-500/90 font-sans font-semibold">(Incl. GST)</span>
+                        <span class="text-[10px] text-[var(--ff-color-primary-600)] font-sans font-semibold">(Incl. GST)</span>
                       </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-2 lg:pb-2">
-                      <button type="button" (click)="removeDetail(idx)" class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition" title="Delete Row">
+                      <button type="button" (click)="removeDetail(idx)" class="p-2 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] rounded-lg transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -167,14 +176,14 @@
                 }
 
                 @if (detailsArray.length > 0) {
-                  <div class="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex flex-wrap items-center justify-between text-xs gap-3">
+                  <div class="p-3 bg-[var(--ff-color-primary-50)] border border-[var(--ff-border-default)] rounded-[10px] flex flex-wrap items-center justify-between text-xs gap-3">
                     <div class="flex items-center gap-4">
-                      <span class="text-slate-500 dark:text-slate-400 font-medium">Subtotal: <strong class="text-slate-800 dark:text-slate-200 font-mono">₹{{ grandSubtotal | number:'1.2-2' }}</strong></span>
-                      <span class="text-slate-500 dark:text-slate-400 font-medium">GST Tax: <strong class="text-slate-800 dark:text-slate-200 font-mono">₹{{ grandGstTotal | number:'1.2-2' }}</strong></span>
+                      <span class="text-[var(--ff-text-secondary)] font-medium">Subtotal: <strong class="text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ grandSubtotal | number:'1.2-2' }}</strong></span>
+                      <span class="text-[var(--ff-text-secondary)] font-medium">GST Tax: <strong class="text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ grandGstTotal | number:'1.2-2' }}</strong></span>
                     </div>
                     <div class="flex items-center gap-2">
-                      <span class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">Estimated Booking Amount:</span>
-                      <span class="text-sm font-extrabold text-blue-600 dark:text-blue-400 font-mono">₹{{ grandTotal | number:'1.2-2' }}</span>
+                      <span class="font-bold text-[var(--ff-text-secondary)] uppercase tracking-wider text-[11px]">Estimated Booking Amount:</span>
+                      <span class="text-sm font-extrabold text-[var(--ff-color-primary-600)] font-mono tabular-nums">₹{{ grandTotal | number:'1.2-2' }}</span>
                     </div>
                   </div>
                 }
@@ -182,7 +191,7 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
             <ff-button type="submit" label="Submit Request" icon="save" variant="primary" [disabled]="bookingForm.invalid || detailsArray.length === 0" />
           </div>

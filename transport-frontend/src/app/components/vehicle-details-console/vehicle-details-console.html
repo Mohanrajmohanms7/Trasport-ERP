@@ -1,13 +1,13 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">local_shipping</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">local_shipping</span>
         Vehicle Master
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Manage vehicle registration documentation, workshop service schedules, and driver active assignments logs</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage vehicle registration documentation, workshop service schedules, and driver active assignments logs</p>
     </div>
   </header>
 
@@ -17,14 +17,14 @@
     <!-- Top Control Grid -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0">
       <!-- Left: Vehicle Selection Card -->
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+      <div class="bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] p-5 shadow-sm flex flex-col gap-4">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <div class="w-10 h-10 rounded-[8px] bg-[var(--ff-color-primary-50)] flex items-center justify-center text-[var(--ff-color-primary-600)]">
             <span class="material-icons">local_shipping</span>
           </div>
           <div>
-            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100">Vehicle Scope</h3>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500">Select active vehicle from fleet</p>
+            <h3 class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Vehicle Scope</h3>
+            <p class="text-[10px] text-[var(--ff-text-muted)]">Select active vehicle from fleet</p>
           </div>
         </div>
         <div [formGroup]="vehicleSelectForm">
@@ -36,105 +36,105 @@
             searchPlaceholder="Search vehicle code or name..." />
         </div>
         @if (selectedVehicle()) {
-          <div class="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800/80 rounded-lg">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-              Selected: <span class="text-slate-900 dark:text-white">{{ selectedVehicle()?.code }}</span>
+          <div class="flex items-center gap-2 p-2 bg-[var(--ff-color-success-50)] rounded-[8px]">
+            <span class="w-2 h-2 rounded-full bg-[var(--ff-color-success-500)] animate-pulse"></span>
+            <span class="text-[10px] font-semibold text-[var(--ff-text-secondary)]">
+              Selected: <span class="text-[var(--ff-text-primary)]">{{ selectedVehicle()?.code }}</span>
             </span>
           </div>
         }
       </div>
 
       <!-- Right: Vehicle Specifications Card -->
-      <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-center min-h-[160px]">
+      <div class="lg:col-span-2 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] p-5 shadow-sm flex flex-col justify-center min-h-[160px]">
         @if (selectedVehicle()) {
           <div class="flex flex-col gap-4 h-full justify-between">
-            <div class="flex justify-between items-start border-b border-slate-100 dark:border-slate-800/85 pb-2">
+            <div class="flex justify-between items-start border-b border-[var(--ff-border-divider)] pb-2">
               <div>
-                <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Fleet Specifications</span>
-                <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Fleet Specifications</span>
+                <h2 class="text-base font-bold text-[var(--ff-text-primary)] mt-0.5">
                   {{ selectedVehicle()?.name || 'Unnamed Vehicle' }}
                 </h2>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-color-info-50)] text-[var(--ff-color-info-500)] uppercase tracking-wide">
                 {{ selectedVehicle()?.ownerType || 'OWNED' }}
               </span>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div class="flex flex-col gap-0.5">
-                <span class="text-[9px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Brand / Model</span>
-                <span class="font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.brand || '-' }} / {{ selectedVehicle()?.model || '-' }}</span>
+                <span class="text-[11px] text-[var(--ff-text-muted)] font-semibold uppercase tracking-[0.05em]">Brand / Model</span>
+                <span class="font-bold text-[var(--ff-text-primary)]">{{ selectedVehicle()?.brand || '-' }} / {{ selectedVehicle()?.model || '-' }}</span>
               </div>
               <div class="flex flex-col gap-0.5">
-                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Chassis Number</span>
-                <span class="font-mono font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.chassisNumber || '-' }}</span>
+                <span class="text-[11px] text-[var(--ff-text-muted)] font-semibold uppercase tracking-[0.05em]">Chassis Number</span>
+                <span class="font-mono font-bold text-[var(--ff-text-primary)]">{{ selectedVehicle()?.chassisNumber || '-' }}</span>
               </div>
               <div class="flex flex-col gap-0.5">
-                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Engine Number</span>
-                <span class="font-mono font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.engineNumber || '-' }}</span>
+                <span class="text-[11px] text-[var(--ff-text-muted)] font-semibold uppercase tracking-[0.05em]">Engine Number</span>
+                <span class="font-mono font-bold text-[var(--ff-text-primary)]">{{ selectedVehicle()?.engineNumber || '-' }}</span>
               </div>
               <div class="flex flex-col gap-0.5">
-                <span class="text-[9px] text-slate-400 dark:text-slate-550 font-semibold uppercase">Owner Name</span>
-                <span class="font-bold text-slate-800 dark:text-slate-200">{{ selectedVehicle()?.ownerName || '-' }}</span>
+                <span class="text-[11px] text-[var(--ff-text-muted)] font-semibold uppercase tracking-[0.05em]">Owner Name</span>
+                <span class="font-bold text-[var(--ff-text-primary)]">{{ selectedVehicle()?.ownerName || '-' }}</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pt-2 border-t border-[var(--ff-border-divider)] text-xs">
               <div class="flex items-center gap-2">
-                <span class="material-icons text-slate-400 text-base">event</span>
+                <span class="material-icons text-[var(--ff-text-muted)] text-base">event</span>
                 <div class="flex flex-col">
-                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Purchase Date</span>
-                  <span class="font-semibold text-slate-700 dark:text-slate-300">{{ selectedVehicle()?.purchaseDate || 'N/A' }}</span>
+                  <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Purchase Date</span>
+                  <span class="font-semibold text-[var(--ff-text-secondary)]">{{ selectedVehicle()?.purchaseDate || 'N/A' }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="material-icons text-slate-400 text-base">verified_user</span>
+                <span class="material-icons text-[var(--ff-text-muted)] text-base">verified_user</span>
                 <div class="flex flex-col">
-                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Insurance Expiry</span>
-                  <span class="font-semibold text-slate-750 dark:text-slate-300">{{ selectedVehicle()?.insuranceExpiryDate || 'N/A' }}</span>
+                  <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Insurance Expiry</span>
+                  <span class="font-semibold text-[var(--ff-text-secondary)]">{{ selectedVehicle()?.insuranceExpiryDate || 'N/A' }}</span>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="material-icons text-slate-400 text-base">assignment_turned_in</span>
+                <span class="material-icons text-[var(--ff-text-muted)] text-base">assignment_turned_in</span>
                 <div class="flex flex-col">
-                  <span class="text-[9px] text-slate-400 dark:text-slate-500 uppercase">Permit Expiry</span>
-                  <span class="font-semibold text-slate-750 dark:text-slate-300">{{ selectedVehicle()?.permitExpiryDate || 'N/A' }}</span>
+                  <span class="text-[11px] text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Permit Expiry</span>
+                  <span class="font-semibold text-[var(--ff-text-secondary)]">{{ selectedVehicle()?.permitExpiryDate || 'N/A' }}</span>
                 </div>
               </div>
             </div>
           </div>
         } @else {
           <div class="flex flex-col items-center justify-center text-center p-4">
-            <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-slate-950/60 flex items-center justify-center text-slate-400 dark:text-slate-650 mb-2">
-              <span class="material-icons">info_outline</span>
+            <div class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] flex items-center justify-center text-[var(--ff-color-primary-600)] mb-2">
+              <span class="material-icons text-lg">info_outline</span>
             </div>
-            <h4 class="text-xs font-bold text-slate-700 dark:text-slate-300">No Vehicle Selected</h4>
-            <p class="text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mt-0.5">Select a vehicle on the left to display its full specification dashboard</p>
+            <h4 class="text-xs font-bold text-[var(--ff-text-primary)]">No Vehicle Selected</h4>
+            <p class="text-[10px] text-[var(--ff-text-muted)] max-w-xs mt-0.5">Select a vehicle on the left to display its full specification dashboard</p>
           </div>
         }
       </div>
     </section>
 
     <!-- Bottom console detail tables -->
-    <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+    <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
       @if (selectedVehicle()) {
         <!-- Segmented Tab switcher capsule -->
-        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 px-6 py-4 shrink-0 select-none bg-slate-50/50 dark:bg-slate-900/10">
-          <div class="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl gap-1">
+        <div class="flex items-center justify-between border-b border-[var(--ff-border-divider)] px-6 py-4 shrink-0 select-none bg-[var(--ff-surface-hover)]">
+          <div class="flex bg-[var(--ff-surface-hover)] p-1 rounded-[10px] gap-1">
             <button type="button" (click)="activeTab.set('documents')" 
                     [class]="activeTab() === 'documents' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
-                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">assignment</span> Documents
             </button>
             <button type="button" (click)="activeTab.set('maintenance')" 
                     [class]="activeTab() === 'maintenance' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
-                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">build</span> Workshop Logs
             </button>
             <button type="button" (click)="activeTab.set('driver')" 
                     [class]="activeTab() === 'driver' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
-                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">person</span> Assignments
             </button>
           </div>
@@ -147,18 +147,18 @@
           @if (activeTab() === 'documents') {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Registration & Expiry Documents</span>
-                <p class="text-[10px] text-slate-400 dark:text-slate-550">Upload and keep track of vital vehicle license papers</p>
+                <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Registration & Expiry Documents</span>
+                <p class="text-[10px] text-[var(--ff-text-muted)]">Upload and keep track of vital vehicle license papers</p>
               </div>
-              <button (click)="openDocEditor()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+              <button (click)="openDocEditor()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none hover:shadow-none transition duration-200 text-xs border-none cursor-pointer">
                 <span class="material-icons text-sm">upload_file</span> Register Document
               </button>
             </div>
 
-            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+            <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                  <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                     <th class="p-4">Document Type</th>
                     <th class="p-4">Document Number</th>
                     <th class="p-4">Expiration Date</th>
@@ -168,27 +168,29 @@
                 </thead>
                 <tbody>
                   @for (doc of documents(); track doc.docNumber) {
-                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
+                    <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
                       <td class="p-4">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/30 uppercase tracking-wider">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--ff-color-info-50)] text-[var(--ff-color-info-500)] uppercase tracking-wider">
                           {{ doc.docType }}
                         </span>
                       </td>
-                      <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-bold">{{ doc.docNumber }}</td>
-                      <td class="p-4 text-slate-750 dark:text-slate-300 font-semibold">{{ doc.expiryDate }}</td>
-                      <td class="p-4 text-slate-400 font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
+                      <td class="p-4 font-mono text-[var(--ff-text-primary)] font-bold">{{ doc.docNumber }}</td>
+                      <td class="p-4 text-[var(--ff-text-secondary)] font-semibold">{{ doc.expiryDate }}</td>
+                      <td class="p-4 text-[var(--ff-text-muted)] font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
                       <td class="p-4 text-center">
-                        <button (click)="deleteDocument(doc)" class="p-1.5 text-slate-400 hover:text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition duration-200 border-none bg-transparent cursor-pointer" title="Delete Document">
-                          <span class="material-icons text-base">delete</span>
+                        <button (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition duration-200 cursor-pointer" title="Delete Document">
+                          <span class="material-icons text-sm">delete</span>
                         </button>
                       </td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="5" class="p-12 text-center text-slate-400 font-semibold">
+                      <td colspan="5" class="p-12 text-center text-[var(--ff-text-muted)] font-semibold">
                         <div class="flex flex-col items-center justify-center gap-2">
-                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">description</span>
-                          <span class="text-xs text-slate-400 dark:text-slate-600">No active documents registered for this vehicle.</span>
+                          <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                            <span class="material-icons text-lg">description</span>
+                          </span>
+                          <span class="text-xs text-[var(--ff-text-muted)]">No active documents registered for this vehicle.</span>
                         </div>
                       </td>
                     </tr>
@@ -202,18 +204,18 @@
           @if (activeTab() === 'maintenance') {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Workshop Repairs History</span>
-                <p class="text-[10px] text-slate-400 dark:text-slate-550">Track workshop logs, parts replaced, and maintenance expenses</p>
+                <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Workshop Repairs History</span>
+                <p class="text-[10px] text-[var(--ff-text-muted)]">Track workshop logs, parts replaced, and maintenance expenses</p>
               </div>
-              <button (click)="openMaintenanceEditor()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+              <button (click)="openMaintenanceEditor()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none hover:shadow-none transition duration-200 text-xs border-none cursor-pointer">
                 <span class="material-icons text-sm">build</span> Log Workshop Entry
               </button>
             </div>
 
-            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+            <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                  <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                     <th class="p-4">Reference #</th>
                     <th class="p-4">Repair Type</th>
                     <th class="p-4">Workshop / Supplier</th>
@@ -226,54 +228,56 @@
                 </thead>
                 <tbody>
                   @for (log of maintenanceLogs(); track log.id) {
-                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
-                      <td class="p-4 font-mono font-bold text-slate-900 dark:text-white">{{ log.referenceNumber || ('SRV-' + log.id) }}</td>
-                      <td class="p-4 font-bold text-slate-900 dark:text-white">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/30 uppercase tracking-wider">
+                    <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                      <td class="p-4 font-mono font-bold text-[var(--ff-text-primary)]">{{ log.referenceNumber || ('SRV-' + log.id) }}</td>
+                      <td class="p-4 font-bold text-[var(--ff-text-primary)]">
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--ff-color-warning-50)] text-[var(--ff-color-warning-500)] uppercase tracking-wider">
                           {{ log.serviceType }}
                         </span>
                       </td>
-                      <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">
+                      <td class="p-4 text-[var(--ff-text-secondary)] font-semibold">
                         {{ log.supplier?.name || log.workshop || '-' }}
                       </td>
                       <td class="p-4">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase">
+                        <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] uppercase">
                           {{ log.paymentMethod || 'CASH' }}
                         </span>
                       </td>
                       <td class="p-4">
-                        <span [class.bg-amber-100]="(log.status || 'DRAFT') === 'DRAFT'" [class.text-amber-800]="(log.status || 'DRAFT') === 'DRAFT'"
-                              [class.bg-emerald-100]="log.status === 'APPROVED'" [class.text-emerald-800]="log.status === 'APPROVED'"
-                              [class.bg-rose-100]="log.status === 'CANCELLED'" [class.text-rose-800]="log.status === 'CANCELLED'"
-                              class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <span [class.bg-amber-100]="(log.status || 'DRAFT') === 'DRAFT'" [class.dark:bg-amber-950/40]="(log.status || 'DRAFT') === 'DRAFT'" [class.text-amber-800]="(log.status || 'DRAFT') === 'DRAFT'" [class.dark:text-amber-450]="(log.status || 'DRAFT') === 'DRAFT'"
+                              [class.bg-emerald-100]="log.status === 'APPROVED'" [class.dark:bg-emerald-950/40]="log.status === 'APPROVED'" [class.text-emerald-800]="log.status === 'APPROVED'" [class.dark:text-emerald-450]="log.status === 'APPROVED'"
+                              [class.bg-rose-100]="log.status === 'CANCELLED'" [class.dark:bg-rose-950/40]="log.status === 'CANCELLED'" [class.text-rose-800]="log.status === 'CANCELLED'" [class.dark:text-rose-450]="log.status === 'CANCELLED'"
+                              class="px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider">
                           {{ log.status || 'DRAFT' }}
                         </span>
                       </td>
-                      <td class="p-4 text-slate-650 dark:text-slate-350">{{ log.serviceDate }}</td>
-                      <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ log.cost | number }}</td>
+                      <td class="p-4 text-[var(--ff-text-secondary)]">{{ log.serviceDate }}</td>
+                      <td class="p-4 text-right tabular-nums font-mono text-[var(--ff-color-success-500)] font-bold">₹{{ log.cost | number }}</td>
                       <td class="p-4 text-center flex items-center justify-center gap-1">
                         @if ((log.status || 'DRAFT') === 'DRAFT') {
-                          <button (click)="approveLog(log)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold cursor-pointer border-none shadow-sm transition" title="Approve & Post JV">
+                          <button (click)="approveLog(log)" class="px-2.5 py-1 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white rounded-[8px] text-[10px] font-bold cursor-pointer border-none shadow-none transition" title="Approve & Post JV">
                             Approve
                           </button>
-                          <button (click)="deleteLog(log)" class="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition border-none bg-transparent cursor-pointer" title="Delete Draft">
-                            <span class="material-icons text-base">delete</span>
+                          <button (click)="deleteLog(log)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition cursor-pointer" title="Delete Draft">
+                            <span class="material-icons text-sm">delete</span>
                           </button>
                         } @else if (log.status === 'APPROVED') {
-                          <button (click)="cancelLog(log)" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold cursor-pointer border-none shadow-sm transition" title="Cancel & Reversal JV">
+                          <button (click)="cancelLog(log)" class="px-2.5 py-1 bg-transparent hover:bg-[var(--ff-color-danger-50)] text-[var(--ff-color-danger-500)] rounded-[8px] text-[10px] font-bold cursor-pointer border border-[var(--ff-border-default)] shadow-none transition" title="Cancel & Reversal JV">
                             Cancel
                           </button>
                         } @else {
-                          <span class="text-[10px] text-slate-400 font-semibold italic">Immutable</span>
+                          <span class="text-[10px] text-[var(--ff-text-muted)] font-semibold italic">Immutable</span>
                         }
                       </td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="8" class="p-12 text-center text-slate-400 font-semibold">
+                      <td colspan="8" class="p-12 text-center text-[var(--ff-text-muted)] font-semibold">
                         <div class="flex flex-col items-center justify-center gap-2">
-                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">build</span>
-                          <span class="text-xs text-slate-400 dark:text-slate-600">No maintenance log records found for this vehicle.</span>
+                          <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                            <span class="material-icons text-lg">build</span>
+                          </span>
+                          <span class="text-xs text-[var(--ff-text-muted)]">No maintenance log records found for this vehicle.</span>
                         </div>
                       </td>
                     </tr>
@@ -287,19 +291,19 @@
           @if (activeTab() === 'driver') {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
-                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Active Driver Assignments Logs</span>
-                <p class="text-[10px] text-slate-400 dark:text-slate-550">Assign primary drivers to this vehicle scope or review past duty handovers</p>
+                <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Active Driver Assignments Logs</span>
+                <p class="text-[10px] text-[var(--ff-text-muted)]">Assign primary drivers to this vehicle scope or review past duty handovers</p>
               </div>
               <div class="flex items-center gap-2">
-                <button (click)="unassignDriver()" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-semibold py-2 px-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-750 transition duration-200 text-xs cursor-pointer">
+                <button (click)="unassignDriver()" class="bg-transparent hover:bg-[var(--ff-surface-hover)] text-[var(--ff-text-primary)] font-semibold py-2 px-4 rounded-[8px] shadow-none border border-[var(--ff-border-default)] transition duration-200 text-xs cursor-pointer">
                   Unassign Current Driver
                 </button>
-                <button [matMenuTriggerFor]="driverSelectMenu" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm hover:shadow transition duration-200 text-xs border-none cursor-pointer">
+                <button [matMenuTriggerFor]="driverSelectMenu" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none hover:shadow-none transition duration-200 text-xs border-none cursor-pointer">
                   Assign Active Driver
                 </button>
-                <mat-menu #driverSelectMenu="matMenu" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+                <mat-menu #driverSelectMenu="matMenu" class="bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] text-[var(--ff-text-primary)]">
                   @for (drv of drivers(); track drv.id) {
-                    <button mat-menu-item (click)="assignDriver(drv.id)" class="hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    <button mat-menu-item (click)="assignDriver(drv.id)" class="hover:bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)]">
                       {{ drv.name }} ({{ drv.licenseNumber || drv.code }})
                     </button>
                   }
@@ -307,10 +311,10 @@
               </div>
             </div>
 
-            <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-950/20">
+            <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-450 uppercase tracking-wider font-bold">
+                  <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                     <th class="p-4">Assignment Date</th>
                     <th class="p-4">Driver Code/ID</th>
                     <th class="p-4">Status</th>
@@ -319,24 +323,26 @@
                 </thead>
                 <tbody>
                   @for (asg of assignments(); track asg.assignmentDate) {
-                    <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/40 dark:hover:bg-slate-850/30 transition">
-                      <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ asg.assignmentDate }}</td>
-                      <td class="p-4 font-mono text-slate-700 dark:text-slate-200 font-bold">DRIVER #{{ asg.driverId }}</td>
+                    <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                      <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ asg.assignmentDate }}</td>
+                      <td class="p-4 font-mono text-[var(--ff-text-primary)] font-bold">DRIVER #{{ asg.driverId }}</td>
                       <td class="p-4">
                         <span [class.bg-emerald-50]="!asg.removalDate" [class.dark:bg-emerald-950/40]="!asg.removalDate" [class.text-emerald-700]="!asg.removalDate" [class.dark:text-emerald-450]="!asg.removalDate"
                               [class.bg-slate-100]="asg.removalDate" [class.dark:bg-slate-950]="asg.removalDate" [class.text-slate-500]="asg.removalDate"
-                              class="px-2.5 py-0.5 rounded-full text-[9px] font-bold border border-slate-200 dark:border-slate-850 uppercase tracking-wide">
+                              class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide">
                           {{ asg.removalDate ? 'INACTIVE' : 'ACTIVE' }}
                         </span>
                       </td>
-                      <td class="p-4 text-slate-600 dark:text-slate-450">{{ asg.removalDate || 'Current Duty' }}</td>
+                      <td class="p-4 text-[var(--ff-text-secondary)]">{{ asg.removalDate || 'Current Duty' }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="4" class="p-12 text-center text-slate-400 font-semibold">
+                      <td colspan="4" class="p-12 text-center text-[var(--ff-text-muted)] font-semibold">
                         <div class="flex flex-col items-center justify-center gap-2">
-                          <span class="material-icons text-slate-300 dark:text-slate-700 text-3xl">people</span>
-                          <span class="text-xs text-slate-400 dark:text-slate-600">No driver assignments logged yet for this vehicle.</span>
+                          <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                            <span class="material-icons text-lg">people</span>
+                          </span>
+                          <span class="text-xs text-[var(--ff-text-muted)]">No driver assignments logged yet for this vehicle.</span>
                         </div>
                       </td>
                     </tr>
@@ -348,12 +354,12 @@
         </div>
       } @else {
         <!-- Dynamic Illustrative Welcome Placeholder -->
-        <div class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/50 dark:bg-slate-900/10">
-          <div class="w-20 h-20 rounded-full bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-4 animate-pulse">
-            <span class="material-icons text-4xl">local_shipping</span>
+        <div class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-[var(--ff-surface-hover)]">
+          <div class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] flex items-center justify-center text-[var(--ff-color-primary-600)] mb-4">
+            <span class="material-icons text-lg">local_shipping</span>
           </div>
-          <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Welcome to Vehicle Workspace</h3>
-          <p class="text-xs text-slate-500 dark:text-slate-455 max-w-sm mt-2 leading-relaxed">
+          <h3 class="text-base font-bold text-[var(--ff-text-primary)]">Welcome to Vehicle Workspace</h3>
+          <p class="text-xs text-[var(--ff-text-muted)] max-w-sm mt-2 leading-relaxed">
             Please select a vehicle from the top-left dropdown to inspect its official registration documents, view repair workshop logs, or assign active drivers.
           </p>
         </div>
@@ -364,17 +370,17 @@
   <!-- Slide-out Sidebar Form Editor for Documents -->
   @if (showDocEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-500">upload_file</span>
+      <div class="w-full max-w-md bg-[var(--ff-surface-card)] border-l border-[var(--ff-border-default)] h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+          <h2 class="text-base font-bold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">upload_file</span>
             Register Fleet Document
           </h2>
-          <button (click)="showDocEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+          <button (click)="showDocEditor.set(false)" class="p-1 text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Vehicle: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedVehicleLabel() }}</span></p>
+        <p class="text-xs text-[var(--ff-text-muted)] -mt-2">Vehicle: <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedVehicleLabel() }}</span></p>
 
         <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
@@ -386,7 +392,7 @@
 
           <ff-textbox formControlName="filePath" label="Upload Reference Path" placeholder="Reference PDF or image URL path" prefixIcon="link" />
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+          <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showDocEditor.set(false)" />
             <ff-button type="submit" label="Save Document" icon="save" variant="primary" [disabled]="documentForm.invalid" />
           </div>
@@ -399,17 +405,17 @@
   <!-- Slide-out Sidebar Form Editor for Maintenance Logs -->
   @if (showMaintenanceEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-500">build</span>
+      <div class="w-full max-w-md bg-[var(--ff-surface-card)] border-l border-[var(--ff-border-default)] h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+          <h2 class="text-base font-bold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">build</span>
             Log Workshop Entry
           </h2>
-          <button (click)="showMaintenanceEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+          <button (click)="showMaintenanceEditor.set(false)" class="p-1 text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Vehicle: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedVehicleLabel() }}</span></p>
+        <p class="text-xs text-[var(--ff-text-muted)] -mt-2">Vehicle: <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedVehicleLabel() }}</span></p>
 
         <form [formGroup]="maintenanceForm" (ngSubmit)="saveMaintenanceLog()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
@@ -433,7 +439,7 @@
 
           <ff-textarea formControlName="remarks" label="Remarks / Action notes" placeholder="Oil grade, parts replaced details" [rows]="3" />
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+          <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showMaintenanceEditor.set(false)" />
             <ff-button type="submit" label="Log Service" icon="save" variant="primary" [disabled]="maintenanceForm.invalid" />
           </div>

@@ -1,21 +1,21 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-0.5">
-      <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-2xl">people</span>
+      <h1 class="text-2xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-2xl">people</span>
         Customer Master
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm">Manage delivery sites, contact persons, and compliance documents</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm">Manage delivery sites, contact persons, and compliance documents</p>
     </div>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
 
     <!-- Customer selector — required before sites / contacts / documents -->
-    <div class="px-6 pt-4 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0" [formGroup]="customerSelectForm">
+    <div class="px-6 pt-4 pb-3 border-b border-[var(--ff-border-divider)] shrink-0" [formGroup]="customerSelectForm">
       <div class="max-w-md">
         <ff-dropdown
           formControlName="customerId"
@@ -24,21 +24,21 @@
           [required]="true"
           searchPlaceholder="Search customer code or name..." />
       </div>
-      <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+      <p class="mt-2 text-xs text-[var(--ff-text-muted)]">
         Working on:
-        <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedCustomerLabel() }}</span>
+        <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedCustomerLabel() }}</span>
       </p>
     </div>
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none shrink-0">
-      <button (click)="activeTab.set('sites')" [class.border-b-2]="activeTab() === 'sites'" [class.border-blue-600]="activeTab() === 'sites'" [class.text-slate-900]="activeTab() === 'sites'" [class.dark:text-white]="activeTab() === 'sites'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none shrink-0">
+      <button (click)="activeTab.set('sites')" [class.border-b-2]="activeTab() === 'sites'" [class.border-blue-600]="activeTab() === 'sites'" [class.text-slate-900]="activeTab() === 'sites'" [class.dark:text-white]="activeTab() === 'sites'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Unloading Delivery Sites
       </button>
-      <button (click)="activeTab.set('contacts')" [class.border-b-2]="activeTab() === 'contacts'" [class.border-blue-600]="activeTab() === 'contacts'" [class.text-slate-900]="activeTab() === 'contacts'" [class.dark:text-white]="activeTab() === 'contacts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('contacts')" [class.border-b-2]="activeTab() === 'contacts'" [class.border-blue-600]="activeTab() === 'contacts'" [class.text-slate-900]="activeTab() === 'contacts'" [class.dark:text-white]="activeTab() === 'contacts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Contact Persons Directory
       </button>
-      <button (click)="activeTab.set('documents')" [class.border-b-2]="activeTab() === 'documents'" [class.border-blue-600]="activeTab() === 'documents'" [class.text-slate-900]="activeTab() === 'documents'" [class.dark:text-white]="activeTab() === 'documents'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('documents')" [class.border-b-2]="activeTab() === 'documents'" [class.border-blue-600]="activeTab() === 'documents'" [class.text-slate-900]="activeTab() === 'documents'" [class.dark:text-white]="activeTab() === 'documents'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Compliance Documents
       </button>
     </div>
@@ -50,16 +50,16 @@
       @if (activeTab() === 'sites') {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Registered Sites</span>
-          <button (click)="openSiteEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Registered Sites</span>
+          <button (click)="openSiteEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">add_location_alt</span> Register Delivery Site
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                 <th class="p-4">Site Code</th>
                 <th class="p-4">Site Name</th>
                 <th class="p-4">Manager Name</th>
@@ -69,20 +69,27 @@
             </thead>
             <tbody>
               @for (site of deliverySites(); track site.siteCode) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ site.siteCode }}</td>
-                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ site.siteName }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-300">{{ site.managerName || 'N/A' }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ site.address }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ site.siteCode }}</td>
+                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ site.siteName }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ site.managerName || 'N/A' }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ site.address }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteSite(site)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete Site">
+                    <button (click)="deleteSite(site)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Site">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No registered delivery locations.</td>
+                  <td colspan="5" class="p-8">
+                    <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                        <span class="material-icons text-lg">add_location_alt</span>
+                      </span>
+                      No registered delivery locations.
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -95,16 +102,16 @@
       @if (activeTab() === 'contacts') {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Contact Personnel</span>
-          <button (click)="openContactEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Contact Personnel</span>
+          <button (click)="openContactEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">person_add</span> Add Contact Person
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                 <th class="p-4">Contact Name</th>
                 <th class="p-4">Designation</th>
                 <th class="p-4">Email</th>
@@ -114,20 +121,27 @@
             </thead>
             <tbody>
               @for (contact of contacts(); track contact.contactName) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 text-slate-900 dark:text-white font-bold">{{ contact.contactName }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-300 font-semibold">{{ contact.designation }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ contact.email }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ contact.phone }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 text-[var(--ff-text-primary)] font-bold">{{ contact.contactName }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)] font-semibold">{{ contact.designation }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ contact.email }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ contact.phone }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteContact(contact)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Remove Contact">
+                    <button (click)="deleteContact(contact)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Remove Contact">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="p-8 text-center text-slate-500 font-semibold">No contacts registered.</td>
+                  <td colspan="5" class="p-8">
+                    <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                        <span class="material-icons text-lg">person_add</span>
+                      </span>
+                      No contacts registered.
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -140,16 +154,16 @@
       @if (activeTab() === 'documents') {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Compliance Documents</span>
-          <button (click)="openDocEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Compliance Documents</span>
+          <button (click)="openDocEditor()" [disabled]="!customerId()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">upload_file</span> Register Document
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                 <th class="p-4">Document Type</th>
                 <th class="p-4">Card/Reg Number</th>
                 <th class="p-4">File Reference</th>
@@ -158,19 +172,26 @@
             </thead>
             <tbody>
               @for (doc of documents(); track doc.docNumber) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-bold text-slate-900 dark:text-white">{{ doc.docType }}</td>
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ doc.docNumber }}</td>
-                  <td class="p-4 text-slate-500 font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-bold text-[var(--ff-text-primary)]">{{ doc.docType }}</td>
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ doc.docNumber }}</td>
+                  <td class="p-4 text-[var(--ff-text-muted)] font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteDocument(doc)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Delete Document">
+                    <button (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Document">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="4" class="p-8 text-center text-slate-500 font-semibold">No registered compliance files.</td>
+                  <td colspan="4" class="p-8">
+                    <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                        <span class="material-icons text-lg">upload_file</span>
+                      </span>
+                      No registered compliance files.
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -185,17 +206,17 @@
   <!-- Slide-out Sidebar Form Editor for Sites -->
   @if (showSiteEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-500">add_location_alt</span>
+      <div class="w-full max-w-md bg-[var(--ff-surface-card)] border-l border-[var(--ff-border-default)] h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+          <h2 class="text-base font-bold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">add_location_alt</span>
             Register Delivery Site
           </h2>
-          <button (click)="showSiteEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+          <button (click)="showSiteEditor.set(false)" class="p-1 text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Customer: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedCustomerLabel() }}</span></p>
+        <p class="text-xs text-[var(--ff-text-muted)] -mt-2">Customer: <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedCustomerLabel() }}</span></p>
 
         <form [formGroup]="siteForm" (ngSubmit)="saveSite()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
@@ -208,7 +229,7 @@
 
           <ff-textarea formControlName="address" label="Physical Address" placeholder="Site unloading address details" [rows]="3" [required]="true" />
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+          <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showSiteEditor.set(false)" />
             <ff-button type="submit" label="Save Location" icon="save" variant="primary" [disabled]="siteForm.invalid" />
           </div>
@@ -221,17 +242,17 @@
   <!-- Slide-out Sidebar Form Editor for Contacts -->
   @if (showContactEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-500">person_add</span>
+      <div class="w-full max-w-md bg-[var(--ff-surface-card)] border-l border-[var(--ff-border-default)] h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+          <h2 class="text-base font-bold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">person_add</span>
             Add Contact Person
           </h2>
-          <button (click)="showContactEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+          <button (click)="showContactEditor.set(false)" class="p-1 text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Customer: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedCustomerLabel() }}</span></p>
+        <p class="text-xs text-[var(--ff-text-muted)] -mt-2">Customer: <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedCustomerLabel() }}</span></p>
 
         <form [formGroup]="contactForm" (ngSubmit)="saveContact()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
@@ -244,7 +265,7 @@
             <ff-textbox formControlName="phone" label="Mobile Number" placeholder="Phone Number" prefixIcon="call" [digitsOnly]="true" [required]="true" />
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+          <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showContactEditor.set(false)" />
             <ff-button type="submit" label="Save Contact" icon="save" variant="primary" [disabled]="contactForm.invalid" />
           </div>
@@ -257,17 +278,17 @@
   <!-- Slide-out Sidebar Form Editor for Documents -->
   @if (showDocEditor()) {
     <div class="fixed inset-0 bg-black/50 dark:bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-      <div class="w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
-        <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-          <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-500">upload_file</span>
+      <div class="w-full max-w-md bg-[var(--ff-surface-card)] border-l border-[var(--ff-border-default)] h-full p-6 flex flex-col gap-5 shadow-2xl animate-slide-in">
+        <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+          <h2 class="text-base font-bold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">upload_file</span>
             Register Customer Document
           </h2>
-          <button (click)="showDocEditor.set(false)" class="p-1 text-slate-500 hover:text-slate-900 dark:hover:text-white transition">
+          <button (click)="showDocEditor.set(false)" class="p-1 text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 -mt-2">Customer: <span class="font-semibold text-slate-800 dark:text-slate-200">{{ selectedCustomerLabel() }}</span></p>
+        <p class="text-xs text-[var(--ff-text-muted)] -mt-2">Customer: <span class="font-semibold text-[var(--ff-text-primary)]">{{ selectedCustomerLabel() }}</span></p>
 
         <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
@@ -277,7 +298,7 @@
 
           <ff-textbox formControlName="filePath" label="Upload Reference Path" placeholder="Reference PDF or image URL path" prefixIcon="link" />
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800 mt-auto">
+          <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showDocEditor.set(false)" />
             <ff-button type="submit" label="Save Document" icon="save" variant="primary" [disabled]="documentForm.invalid" />
           </div>

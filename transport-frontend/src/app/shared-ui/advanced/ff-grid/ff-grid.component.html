@@ -13,7 +13,7 @@
               class="ff-grid__th"
               [class.ff-grid__th--sortable]="config().sortable && col.sortable !== false"
               [style.width]="col.width || null"
-              [style.text-align]="col.align || 'left'"
+              [style.text-align]="col.align || (col.type === 'currency' ? 'right' : 'left')"
               scope="col"
               (click)="onSort(col)">
               <span class="ff-grid__th-label">{{ col.header }}</span>
@@ -43,7 +43,12 @@
             <td
               class="ff-grid__empty"
               [attr.colspan]="columns().length + (config().selectable ? 1 : 0) + (rowActions().length ? 1 : 0)">
-              {{ config().emptyMessage || 'No data available' }}
+              <div class="ff-grid__empty-inner">
+                <span class="ff-grid__empty-chip" aria-hidden="true">
+                  <span class="material-symbols-outlined">inbox</span>
+                </span>
+                {{ config().emptyMessage || 'No data available' }}
+              </div>
             </td>
           </tr>
         } @else {
@@ -59,7 +64,7 @@
                 </td>
               }
               @for (col of columns(); track col.field) {
-                <td class="ff-grid__td" [style.text-align]="col.align || 'left'">
+                <td class="ff-grid__td" [style.text-align]="col.align || (col.type === 'currency' ? 'right' : 'left')">
                   @switch (col.type) {
                     @case ('currency') {
                       {{ asCurrency(cellValue(row, col)) | ffCurrency }}

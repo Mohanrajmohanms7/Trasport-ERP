@@ -1,31 +1,31 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">account_balance_wallet</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">account_balance_wallet</span>
         Sales Billing & GST
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Generate corporate tax invoices, compute CGST/SGST breakdowns, and reconcile customer ledgers</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Generate corporate tax invoices, compute CGST/SGST breakdowns, and reconcile customer ledgers</p>
     </div>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none gap-2">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none gap-2">
       <button (click)="setTab('ledger')"
               [class.border-b-2]="billingTab() === 'ledger'" [class.border-blue-600]="billingTab() === 'ledger'"
               [class.text-slate-900]="billingTab() === 'ledger'" [class.dark:text-white]="billingTab() === 'ledger'"
-              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Invoices Ledger
       </button>
       <button (click)="setTab('ready')"
               [class.border-b-2]="billingTab() === 'ready'" [class.border-blue-600]="billingTab() === 'ready'"
               [class.text-slate-900]="billingTab() === 'ready'" [class.dark:text-white]="billingTab() === 'ready'"
-              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+              class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Ready for Billing
       </button>
 
@@ -37,16 +37,16 @@
       <!-- List View -->
       @if (billingTab() === 'ledger') {
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Generated Vouchers</span>
-          <button (click)="openAddInvoice()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Generated Vouchers</span>
+          <button (click)="openAddInvoice()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">receipt</span> Generate Tax Invoice
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
                 <th class="p-4">Invoice Number</th>
                 <th class="p-4">Invoice Date</th>
                 <th class="p-4">Customer Name</th>
@@ -59,41 +59,43 @@
             </thead>
             <tbody>
               @for (inv of invoices(); track inv.invoiceNumber) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ inv.invoiceNumber }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ inv.invoiceDate }}</td>
-                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ inv.customer?.name }}</td>
-                  <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ inv.subtotal | number }}</td>
-                  <td class="p-4 text-right font-mono text-slate-500">₹{{ inv.discount | number }}</td>
-                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ inv.netAmount | number }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ inv.invoiceNumber }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ inv.invoiceDate }}</td>
+                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ inv.customer?.name }}</td>
+                  <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-secondary)]">₹{{ inv.subtotal | number }}</td>
+                  <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-muted)]">₹{{ inv.discount | number }}</td>
+                  <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-primary)] text-base font-extrabold leading-tight">₹{{ inv.netAmount | number }}</td>
                   <td class="p-4">
                     <span [class.bg-blue-50]="inv.status === 'DRAFT'" [class.dark:bg-blue-950]="inv.status === 'DRAFT'" [class.text-blue-700]="inv.status === 'DRAFT'" [class.dark:text-blue-400]="inv.status === 'DRAFT'"
                           [class.bg-emerald-50]="inv.status === 'APPROVED'" [class.dark:bg-emerald-950]="inv.status === 'APPROVED'" [class.text-emerald-700]="inv.status === 'APPROVED'" [class.dark:text-emerald-400]="inv.status === 'APPROVED'"
                           [class.bg-rose-50]="inv.status === 'CANCELLED'" [class.dark:bg-rose-950]="inv.status === 'CANCELLED'" [class.text-rose-700]="inv.status === 'CANCELLED'" [class.dark:text-rose-400]="inv.status === 'CANCELLED'"
-                          class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-slate-200 dark:border-slate-800">
                       {{ inv.status }}
                     </span>
                   </td>
                   <td class="p-4 text-center">
-                    <div class="flex items-center justify-center gap-3">
-                      <button (click)="downloadPdf(inv)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Download PDF Invoice">
-                        <span class="material-icons text-sm">picture_as_pdf</span>
-                      </button>
-                      <button (click)="printInvoice(inv)" class="p-1 hover:text-purple-600 dark:hover:text-purple-400 transition" title="Print Invoice">
-                        <span class="material-icons text-sm">print</span>
-                      </button>
+                    <div class="flex items-center justify-center gap-2">
+                      <div class="inline-flex items-center rounded-[8px] border border-[var(--ff-border-default)] overflow-hidden">
+                        <button (click)="downloadPdf(inv)" class="h-8 px-2 text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] transition" title="Download PDF Invoice">
+                          <span class="material-icons text-sm">picture_as_pdf</span>
+                        </button>
+                        <button (click)="printInvoice(inv)" class="h-8 px-2 border-l border-[var(--ff-border-divider)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] transition" title="Print Invoice">
+                          <span class="material-icons text-sm">print</span>
+                        </button>
+                      </div>
                       @if (inv.status === 'DRAFT') {
-                        <button (click)="approveInvoice(inv)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve & Post Ledger">
+                        <button (click)="approveInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve & Post Ledger">
                           <span class="material-icons text-sm">check_circle</span>
                         </button>
-                        <button (click)="cancelInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-400 transition" title="Cancel Invoice">
+                        <button (click)="cancelInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] text-[11px] font-semibold" title="Cancel Invoice">
                           <span class="material-icons text-sm">cancel</span>
                         </button>
                       }
-                      <button (click)="openEditInvoice(inv)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Billing Detail">
+                      <button (click)="openEditInvoice(inv)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Billing Detail">
                         <span class="material-icons text-sm">edit</span>
                       </button>
-                      <button (click)="deleteInvoice(inv)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Delete Record">
+                      <button (click)="deleteInvoice(inv)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Record">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -101,7 +103,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No tax invoices generated.</td>
+                  <td colspan="8" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No tax invoices generated.</td>
                 </tr>
               }
             </tbody>
@@ -112,13 +114,13 @@
       <!-- Ready for Billing view -->
       @if (billingTab() === 'ready') {
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Completed Trips Ready for Invoicing</span>
+          <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Completed Trips Ready for Invoicing</span>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
                 <th class="p-4">Trip Number</th>
                 <th class="p-4">Customer Name</th>
                 <th class="p-4">Allocated Payload Payload</th>
@@ -131,31 +133,31 @@
             </thead>
             <tbody>
               @for (trip of readyTrips(); track trip.tripNumber) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ trip.tripNumber }}</td>
-                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ trip.booking?.customer?.name }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-350">
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ trip.tripNumber }}</td>
+                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ trip.booking?.customer?.name }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">
                     @for (dt of trip.details; track dt.id) {
                       <div>{{ dt.material?.name }} — {{ dt.quantity }} Tons</div>
                     }
                   </td>
-                  <td class="p-4 text-slate-700 dark:text-slate-350 font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-350">{{ trip.driver?.name || 'Not Allocated' }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-400">{{ trip.tripDate }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)] font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ trip.driver?.name || 'Not Allocated' }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ trip.tripDate }}</td>
                   <td class="p-4">
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800">
                       {{ trip.status }}
                     </span>
                   </td>
                   <td class="p-4 text-center">
-                    <button (click)="generateInvoice(trip)" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-1.5 px-3 rounded-lg shadow transition text-[11px] flex items-center gap-1.5 mx-auto">
+                    <button (click)="generateInvoice(trip)" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-1.5 px-3 rounded-[8px] shadow-none transition text-[11px] flex items-center gap-1.5 mx-auto">
                       <span class="material-icons text-xs">receipt</span> Generate Invoice
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="p-8 text-center text-slate-500 font-semibold">No completed trips ready for billing.</td>
+                  <td colspan="8" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No completed trips ready for billing.</td>
                 </tr>
               }
             </tbody>
@@ -171,25 +173,27 @@
   @if (showEditor()) {
     <div class="fixed inset-0 z-[90] flex p-2 sm:p-3 bg-slate-950/70 backdrop-blur-[2px]"
          (click)="showEditor.set(false)">
-      <div class="flex-1 w-full h-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="flex-1 w-full h-full overflow-hidden rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">receipt</span>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">receipt</span>
             {{ editingInvoice() ? 'Edit Invoice' : 'Generate Tax Invoice' }}
           </h2>
           <div class="flex items-center gap-2">
             @if (editingInvoice(); as inv) {
-              <button type="button" (click)="downloadPdf(inv)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 rounded-lg hover:bg-blue-100 transition" title="Download PDF">
-                <span class="material-icons text-sm">picture_as_pdf</span> PDF
-              </button>
-              <button type="button" (click)="printInvoice(inv)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/60 rounded-lg hover:bg-purple-100 transition" title="Print Invoice">
-                <span class="material-icons text-sm">print</span> Print
-              </button>
+              <div class="inline-flex items-center rounded-[8px] border border-[var(--ff-border-default)] overflow-hidden">
+                <button type="button" (click)="downloadPdf(inv)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] transition" title="Download PDF">
+                  <span class="material-icons text-sm">picture_as_pdf</span> PDF
+                </button>
+                <button type="button" (click)="printInvoice(inv)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] border-l border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] transition" title="Print Invoice">
+                  <span class="material-icons text-sm">print</span> Print
+                </button>
+              </div>
             }
             <button type="button" (click)="showEditor.set(false)"
-                    class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    class="p-1.5 rounded-lg text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
               <span class="material-icons">close</span>
             </button>
           </div>
@@ -206,17 +210,17 @@
               <ff-number formControlName="discount" label="Adjustment Discount Amount" placeholder="0.00" [min]="0" />
             </div>
 
-            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
+            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
-                <span class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Billing Items (Trips / Materials)</span>
-                <button type="button" (click)="addDetail()" class="text-xs text-blue-600 dark:text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 font-semibold">
+                <span class="text-xs font-bold text-[var(--ff-text-primary)] uppercase tracking-wider">Billing Items (Trips / Materials)</span>
+                <button type="button" (click)="addDetail()" class="text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
                   <span class="material-icons text-sm">add</span> Add Billing Row
                 </button>
               </div>
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
                     <div formGroupName="trip">
                       <ff-dropdown formControlName="id" label="Trip reference" [options]="tripOptions" searchPlaceholder="Search options..." />
                     </div>
@@ -228,15 +232,15 @@
                     <ff-number formControlName="freightCharges" label="Freight Charge" [min]="0" [required]="true" />
                     
                     <div class="flex flex-col gap-1">
-                      <span class="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Line Amount (INR)</span>
-                      <div class="h-10 px-3 rounded-lg bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 flex items-center justify-between font-mono font-bold text-blue-700 dark:text-blue-300 text-xs">
+                      <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Line Amount (INR)</span>
+                      <div class="h-10 px-3 rounded-[8px] bg-[var(--ff-color-primary-50)] border border-[var(--ff-border-default)] flex items-center justify-end font-mono font-bold text-[var(--ff-color-primary-600)] text-xs tabular-nums">
                         <span>₹{{ getItemTotalAmount(row) | number:'1.2-2' }}</span>
-                        <span class="text-[10px] text-blue-500/90 font-sans font-semibold">(Incl. 18% GST)</span>
+                        <span class="text-[10px] text-[var(--ff-text-muted)] font-sans font-semibold ml-2">(Incl. 18% GST)</span>
                       </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-2 lg:pb-2">
-                      <button type="button" (click)="removeDetail(idx)" class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition" title="Delete Row">
+                      <button type="button" (click)="removeDetail(idx)" class="p-2 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] rounded-lg transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -244,17 +248,26 @@
                 }
 
                 @if (detailsArray.length > 0) {
-                  <div class="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl flex flex-wrap items-center justify-between text-xs gap-3">
-                    <div class="flex items-center gap-4">
-                      <span class="text-slate-500 dark:text-slate-400 font-medium">Material Subtotal: <strong class="text-slate-800 dark:text-slate-200 font-mono">₹{{ grandSubtotal | number:'1.2-2' }}</strong></span>
-                      <span class="text-slate-500 dark:text-slate-400 font-medium">Freight: <strong class="text-slate-800 dark:text-slate-200 font-mono">₹{{ grandFreight | number:'1.2-2' }}</strong></span>
+                  <div class="p-4 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] flex flex-wrap items-end justify-between text-xs gap-4">
+                    <div class="flex items-end gap-6">
+                      <span class="flex flex-col gap-0.5 text-right">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Material Subtotal</span>
+                        <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandSubtotal | number:'1.2-2' }}</strong>
+                      </span>
+                      <span class="flex flex-col gap-0.5 text-right">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Freight</span>
+                        <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandFreight | number:'1.2-2' }}</strong>
+                      </span>
                       @if (grandDiscount > 0) {
-                        <span class="text-rose-500 dark:text-rose-400 font-medium">Discount: <strong class="font-mono">-₹{{ grandDiscount | number:'1.2-2' }}</strong></span>
+                        <span class="flex flex-col gap-0.5 text-right">
+                          <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Discount</span>
+                          <strong class="text-[var(--ff-color-danger-500)] font-mono tabular-nums text-sm">-₹{{ grandDiscount | number:'1.2-2' }}</strong>
+                        </span>
                       }
                     </div>
-                    <div class="flex items-center gap-2">
-                      <span class="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">Voucher Net Total:</span>
-                      <span class="text-sm font-extrabold text-blue-600 dark:text-blue-400 font-mono">₹{{ grandTotal | number:'1.2-2' }}</span>
+                    <div class="flex flex-col items-end gap-0.5 text-right">
+                      <span class="font-bold text-[var(--ff-text-muted)] uppercase tracking-wider text-[11px]">Voucher Net Total</span>
+                      <span class="text-2xl font-extrabold text-[var(--ff-text-primary)] font-mono tabular-nums leading-none">₹{{ grandTotal | number:'1.2-2' }}</span>
                     </div>
                   </div>
                 }
@@ -262,7 +275,7 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
             <ff-button type="submit" label="Generate Billing Voucher" icon="save" variant="primary" [disabled]="invoiceForm.invalid || detailsArray.length === 0" />
           </div>

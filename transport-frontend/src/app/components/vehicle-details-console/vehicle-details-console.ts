@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { VehicleMgmtService, VehicleDocument, VehicleServiceLog, VehicleDriverAssignment } from '../../services/vehicle-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -40,6 +41,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
+  private route = inject(ActivatedRoute);
 
   private companyId = resolveTenantCompanyId();
 
@@ -47,6 +49,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   vehicleId = signal<number | null>(null);
   vehicles = signal<any[]>([]);
   loading = signal<boolean>(false);
+  private requestedVehicleId: number | null = null;
 
   readonly selectedVehicle = computed(() => {
     const id = this.vehicleId();
@@ -124,6 +127,14 @@ export class VehicleDetailsConsoleComponent implements OnInit {
 
   ngOnInit() {
     this.initForms();
+    this.route.queryParamMap.subscribe(params => {
+      const raw = params.get('vehicleId');
+      const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
+      this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
+      if (this.requestedVehicleId != null && this.vehicles().length) {
+        this.selectVehicle(this.requestedVehicleId);
+      }
+    });
     this.loadVehicles();
     this.loadDropdownData();
   }
@@ -133,7 +144,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
       if (res.success && res.data) {
         const list = res.data.content || res.data || [];
         this.vehicles.set(list);
-        if (list.length && this.vehicleId() == null) {
+        if (this.requestedVehicleId != null) {
+          this.selectVehicle(this.requestedVehicleId);
+        } else if (list.length && this.vehicleId() == null) {
           this.selectVehicle(list[0].id);
         }
       }

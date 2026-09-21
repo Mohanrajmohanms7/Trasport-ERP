@@ -52,6 +52,89 @@ import { FfToastComponent } from '@ff/ui';
       height: 100%;
       overflow: hidden;
     }
+
+    .app-nav {
+      background-color: var(--ff-surface-sidebar);
+      border-right: 1px solid var(--ff-border-default);
+    }
+
+    .app-nav-lockup {
+      border-bottom: 1px solid var(--ff-border-divider);
+    }
+
+    .app-nav-chip {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background-color: var(--ff-color-primary-50);
+      color: var(--ff-color-primary-600);
+    }
+
+    .app-nav-group {
+      margin-top: 1rem;
+    }
+    .app-nav-group:first-child {
+      margin-top: 0;
+    }
+
+    .app-nav-group-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ff-text-muted);
+    }
+
+    .app-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      height: 40px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border-left: 3px solid transparent;
+      color: var(--ff-text-secondary);
+      font-size: 0.875rem;
+      text-decoration: none;
+      position: relative;
+      transition: background-color 120ms ease;
+    }
+    .app-nav-item:hover:not(.app-nav-item--active) {
+      background-color: var(--ff-surface-hover);
+    }
+    .app-nav-item--active {
+      background-color: var(--ff-color-primary-50);
+      color: var(--ff-color-primary-600);
+      border-left-color: var(--ff-color-primary-600);
+      font-weight: 500;
+    }
+    .app-nav-item--active .material-symbols-outlined {
+      color: var(--ff-color-primary-600);
+    }
+
+    .app-nav-badge {
+      margin-left: auto;
+      background-color: var(--ff-color-primary-50);
+      color: var(--ff-color-primary-600);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+    }
+
+    .app-nav-collapse {
+      border-top: 1px solid var(--ff-border-divider);
+    }
+    .app-nav-collapse-btn {
+      height: 40px;
+      border-radius: 8px;
+      color: var(--ff-text-secondary);
+      transition: background-color 120ms ease;
+    }
+    .app-nav-collapse-btn:hover {
+      background-color: var(--ff-surface-hover);
+      color: var(--ff-text-primary);
+    }
   `]
 })
 export class AppShellComponent implements OnDestroy {

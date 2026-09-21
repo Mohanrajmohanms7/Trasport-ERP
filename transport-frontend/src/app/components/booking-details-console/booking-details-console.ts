@@ -29,7 +29,74 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     FfButtonComponent
   ],
   templateUrl: './booking-details-console.html',
-  styles: []
+  styles: [`
+    .bkg-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+    .bkg-dot--high { background-color: var(--ff-color-danger-500); }
+    .bkg-dot--medium { background-color: var(--ff-color-warning-500); }
+    .bkg-dot--low { background-color: var(--ff-text-muted); }
+
+    .bkg-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.4;
+      border: none;
+    }
+    .bkg-badge.bkg-badge--info {
+      background-color: var(--ff-color-info-50) !important;
+      color: var(--ff-color-info-500) !important;
+    }
+    .bkg-badge.bkg-badge--success {
+      background-color: var(--ff-color-success-50) !important;
+      color: var(--ff-color-success-500) !important;
+    }
+    .bkg-badge.bkg-badge--danger {
+      background-color: var(--ff-color-danger-50) !important;
+      color: var(--ff-color-danger-500) !important;
+    }
+
+    .bkg-btn-solid {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: none;
+      background-color: var(--ff-color-success-500);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .bkg-btn-outline {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid var(--ff-border-default);
+      background-color: transparent;
+      color: var(--ff-text-secondary);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 120ms ease;
+    }
+    .bkg-btn-outline:hover {
+      background-color: var(--ff-surface-hover);
+      color: var(--ff-text-primary);
+    }
+  `]
 })
 export class BookingDetailsConsoleComponent implements OnInit {
   private bookingMgmtService = inject(BookingMgmtService);

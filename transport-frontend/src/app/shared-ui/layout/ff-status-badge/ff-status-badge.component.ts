@@ -28,7 +28,9 @@ export type FfStatusColor = 'success' | 'warning' | 'danger' | 'info' | 'neutral
     .ff-status[data-color='success'] { background: var(--ff-color-success-50); color: var(--ff-color-success-700); }
     .ff-status[data-color='danger'] { background: var(--ff-color-danger-50); color: var(--ff-color-danger-700); }
     .ff-status[data-color='warning'] { background: var(--ff-color-warning-50); color: var(--ff-color-warning-700); }
-    .ff-status[data-color='info'], .ff-status[data-color='primary'] { background: var(--ff-color-primary-50); color: var(--ff-color-primary-700); }
+    .ff-status[data-color='info'] { background: var(--ff-color-info-50); color: var(--ff-color-info-700); }
+    .ff-status[data-color='primary'] { background: var(--ff-color-primary-50); color: var(--ff-color-primary-700); }
+    .ff-status[data-color='neutral'] { background: var(--ff-surface-hover); color: var(--ff-text-secondary); }
     .ff-status__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush

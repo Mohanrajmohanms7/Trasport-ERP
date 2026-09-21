@@ -1,25 +1,25 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">receipt_long</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">receipt_long</span>
         Expense Management
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Audit operational expenses entries, verify toll and driver bata vouchers, and process approvals</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Audit operational expenses entries, verify toll and driver bata vouchers, and process approvals</p>
     </div>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button (click)="activeTab.set('all'); loadExpenses()" [class.border-b-2]="activeTab() === 'all'" [class.border-blue-600]="activeTab() === 'all'" [class.text-slate-900]="activeTab() === 'all'" [class.dark:text-white]="activeTab() === 'all'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      <button (click)="activeTab.set('all'); loadExpenses()" [class.border-b-2]="activeTab() === 'all'" [class.border-blue-600]="activeTab() === 'all'" [class.text-slate-900]="activeTab() === 'all'" [class.dark:text-white]="activeTab() === 'all'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Vouchers Ledger
       </button>
-      <button (click)="activeTab.set('pending'); loadExpenses()" [class.border-b-2]="activeTab() === 'pending'" [class.border-blue-600]="activeTab() === 'pending'" [class.text-slate-900]="activeTab() === 'pending'" [class.dark:text-white]="activeTab() === 'pending'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('pending'); loadExpenses()" [class.border-b-2]="activeTab() === 'pending'" [class.border-blue-600]="activeTab() === 'pending'" [class.text-slate-900]="activeTab() === 'pending'" [class.dark:text-white]="activeTab() === 'pending'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Pending Approvals
       </button>
     </div>
@@ -29,16 +29,16 @@
       
       <!-- List View -->
       <div class="flex justify-between items-center shrink-0">
-        <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Voucher List</span>
-        <button (click)="openAddExpense()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+        <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Voucher List</span>
+        <button (click)="openAddExpense()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
           <span class="material-icons text-sm">add_circle</span> Record Expense Voucher
         </button>
       </div>
 
-      <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+      <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
-            <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+            <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
               <th class="p-4">Voucher Number</th>
               <th class="p-4">Category</th>
               <th class="p-4">Description</th>
@@ -52,14 +52,14 @@
           </thead>
           <tbody>
             @for (exp of expenses(); track exp.expenseNumber) {
-              <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ exp.expenseNumber }}</td>
-                <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350">{{ exp.category }}</span></td>
-                <td class="p-4 text-slate-700 dark:text-slate-300">{{ exp.description }}</td>
-                <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ exp.amount | number }}</td>
-                <td class="p-4 text-right font-mono text-slate-500">₹{{ exp.gstAmount | number }}</td>
-                <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ exp.totalAmount | number }}</td>
-                <td class="p-4 font-mono text-[10px] text-slate-500">
+              <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ exp.expenseNumber }}</td>
+                <td class="p-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)]">{{ exp.category }}</span></td>
+                <td class="p-4 text-[var(--ff-text-secondary)]">{{ exp.description }}</td>
+                <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-secondary)]">₹{{ exp.amount | number }}</td>
+                <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-muted)]">₹{{ exp.gstAmount | number }}</td>
+                <td class="p-4 text-right font-mono tabular-nums text-[var(--ff-text-primary)] font-extrabold">₹{{ exp.totalAmount | number }}</td>
+                <td class="p-4 font-mono text-[10px] text-[var(--ff-text-muted)]">
                   @if (exp.vehicle) {
                     <span>Vehicle: {{ exp.vehicle?.registrationNumber }}</span>
                   } @else if (exp.driver) {
@@ -72,24 +72,24 @@
                   <span [class.bg-blue-50]="exp.status === 'SUBMITTED'" [class.dark:bg-blue-950]="exp.status === 'SUBMITTED'" [class.text-blue-700]="exp.status === 'SUBMITTED'" [class.dark:text-blue-400]="exp.status === 'SUBMITTED'"
                         [class.bg-emerald-50]="exp.status === 'APPROVED'" [class.dark:bg-emerald-950]="exp.status === 'APPROVED'" [class.text-emerald-700]="exp.status === 'APPROVED'" [class.dark:text-emerald-400]="exp.status === 'APPROVED'"
                         [class.bg-rose-50]="exp.status === 'REJECTED'" [class.dark:bg-rose-950]="exp.status === 'REJECTED'" [class.text-rose-700]="exp.status === 'REJECTED'" [class.dark:text-rose-400]="exp.status === 'REJECTED'"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200 dark:border-slate-800">
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border border-slate-200 dark:border-slate-800">
                     {{ exp.status }}
                   </span>
                 </td>
                 <td class="p-4 text-center">
-                  <div class="flex items-center justify-center gap-3">
+                  <div class="flex items-center justify-center gap-2">
                     @if (exp.status === 'SUBMITTED') {
-                      <button (click)="approveExpense(exp)" class="p-1 hover:text-emerald-600 dark:hover:text-emerald-400 transition" title="Approve Request">
+                      <button (click)="approveExpense(exp)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve Request">
                         <span class="material-icons text-sm">check_circle</span>
                       </button>
-                      <button (click)="rejectExpense(exp)" class="p-1 hover:text-rose-600 dark:hover:text-rose-450 transition" title="Reject Request">
+                      <button (click)="rejectExpense(exp)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] text-[11px] font-semibold" title="Reject Request">
                         <span class="material-icons text-sm">cancel</span>
                       </button>
                     }
-                    <button (click)="openEditExpense(exp)" class="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition" title="Edit Voucher">
+                    <button (click)="openEditExpense(exp)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Voucher">
                       <span class="material-icons text-sm">edit</span>
                     </button>
-                    <button (click)="deleteExpense(exp)" class="p-1 hover:text-rose-600 dark:hover:text-rose-500 transition" title="Delete Voucher">
+                    <button (click)="deleteExpense(exp)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Voucher">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </div>
@@ -97,7 +97,14 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="9" class="p-8 text-center text-slate-500 font-semibold">No recorded expense vouchers.</td>
+                <td colspan="9" class="p-8">
+                  <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                    <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                      <span class="material-icons text-lg">receipt_long</span>
+                    </span>
+                    No recorded expense vouchers.
+                  </div>
+                </td>
               </tr>
             }
           </tbody>
@@ -111,16 +118,16 @@
   @if (showEditor()) {
     <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
          (click)="showEditor.set(false)">
-      <div class="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">add_circle</span>
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">add_circle</span>
             {{ editingExpense() ? 'Edit Expense Voucher' : 'Record Expense Voucher' }}
           </h2>
           <button type="button" (click)="showEditor.set(false)"
-                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  class="p-1.5 rounded-lg text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
@@ -155,7 +162,7 @@
             <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Voucher audit remarks" prefixIcon="notes" />
           </div>
 
-          <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
             <ff-button type="submit" label="Save Voucher" icon="save" variant="primary" [disabled]="expenseForm.invalid" />
           </div>

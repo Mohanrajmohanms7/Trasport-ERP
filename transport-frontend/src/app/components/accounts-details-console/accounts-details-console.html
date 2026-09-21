@@ -1,28 +1,28 @@
-<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-slate-800 dark:text-slate-100 relative overflow-hidden">
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
   
   <!-- Header Title -->
-  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 shrink-0">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-1">
-      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-        <span class="material-icons text-blue-600 dark:text-blue-500 text-3xl">account_balance</span>
+      <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">account_balance</span>
         Accounts & General Ledger
       </h1>
-      <p class="text-slate-600 dark:text-slate-400 text-sm mt-1">Audit Chart of Accounts, record double-entry Journal Vouchers, and review Trial Balances sheet summaries</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Audit Chart of Accounts, record double-entry Journal Vouchers, and review Trial Balances sheet summaries</p>
     </div>
   </header>
 
   <!-- Main console layouts -->
-  <main class="flex-1 min-h-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-xl flex flex-col overflow-hidden">
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 px-6 pt-3 select-none">
-      <button (click)="activeTab.set('chart')" [class.border-b-2]="activeTab() === 'chart'" [class.border-blue-600]="activeTab() === 'chart'" [class.text-slate-900]="activeTab() === 'chart'" [class.dark:text-white]="activeTab() === 'chart'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      <button (click)="activeTab.set('chart')" [class.border-b-2]="activeTab() === 'chart'" [class.border-blue-600]="activeTab() === 'chart'" [class.text-slate-900]="activeTab() === 'chart'" [class.dark:text-white]="activeTab() === 'chart'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Chart of Accounts
       </button>
-      <button (click)="activeTab.set('journal')" [class.border-b-2]="activeTab() === 'journal'" [class.border-blue-600]="activeTab() === 'journal'" [class.text-slate-900]="activeTab() === 'journal'" [class.dark:text-white]="activeTab() === 'journal'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('journal')" [class.border-b-2]="activeTab() === 'journal'" [class.border-blue-600]="activeTab() === 'journal'" [class.text-slate-900]="activeTab() === 'journal'" [class.dark:text-white]="activeTab() === 'journal'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Journal Book
       </button>
-      <button (click)="activeTab.set('trial')" [class.border-b-2]="activeTab() === 'trial'" [class.border-blue-600]="activeTab() === 'trial'" [class.text-slate-900]="activeTab() === 'trial'" [class.dark:text-white]="activeTab() === 'trial'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
+      <button (click)="activeTab.set('trial')" [class.border-b-2]="activeTab() === 'trial'" [class.border-blue-600]="activeTab() === 'trial'" [class.text-slate-900]="activeTab() === 'trial'" [class.dark:text-white]="activeTab() === 'trial'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Trial Balance summary
       </button>
     </div>
@@ -33,16 +33,16 @@
       <!-- 1. Chart of Accounts Viewport -->
       @if (activeTab() === 'chart') {
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">General Ledger Accounts</span>
-          <button (click)="openAddAccount()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">General Ledger Accounts</span>
+          <button (click)="openAddAccount()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">add_box</span> Add Ledger Account
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                 <th class="p-4">Account Code</th>
                 <th class="p-4">Account Name</th>
                 <th class="p-4">Type</th>
@@ -53,18 +53,18 @@
             </thead>
             <tbody>
               @for (acc of accounts(); track acc.accountCode) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ acc.accountCode }}</td>
-                  <td class="p-4 text-slate-900 dark:text-white font-semibold">{{ acc.accountName }}</td>
-                  <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-350">{{ acc.accountType }}</span></td>
-                  <td class="p-4 text-right font-mono text-slate-600 dark:text-slate-400">₹{{ acc.openingBalance | number }}</td>
-                  <td class="p-4 text-right font-mono text-emerald-700 dark:text-emerald-400 font-bold">₹{{ acc.runningBalance | number }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ acc.accountCode }}</td>
+                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ acc.accountName }}</td>
+                  <td class="p-4"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-color-info-50)] text-[var(--ff-color-info-500)]">{{ acc.accountType }}</span></td>
+                  <td class="p-4 text-right tabular-nums font-mono text-[var(--ff-text-secondary)]">₹{{ acc.openingBalance | number }}</td>
+                  <td class="p-4 text-right tabular-nums font-mono text-[var(--ff-color-success-500)] font-bold">₹{{ acc.runningBalance | number }}</td>
                   <td class="p-4 text-center">
                     <div class="flex items-center justify-center gap-2">
-                      <button (click)="openEditAccount(acc)" class="p-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition">
+                      <button (click)="openEditAccount(acc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
                         <span class="material-icons text-sm">edit</span>
                       </button>
-                      <button (click)="deleteAccount(acc)" class="p-1 text-slate-500 hover:text-rose-600 dark:hover:text-rose-450 transition">
+                      <button (click)="deleteAccount(acc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -72,7 +72,14 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No ledger accounts created.</td>
+                  <td colspan="6" class="p-8">
+                    <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                        <span class="material-icons text-lg">add_box</span>
+                      </span>
+                      No ledger accounts created.
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -83,16 +90,16 @@
       <!-- 2. Journal Book Viewport -->
       @if (activeTab() === 'journal') {
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Posted Journal Vouchers</span>
-          <button (click)="openAddJournal()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg shadow transition text-xs">
+          <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Posted Journal Vouchers</span>
+          <button (click)="openAddJournal()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">import_contacts</span> Record Double Entry
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                 <th class="p-4">Voucher Number</th>
                 <th class="p-4">Voucher Date</th>
                 <th class="p-4">Debit Ledger</th>
@@ -103,17 +110,24 @@
             </thead>
             <tbody>
               @for (jv of vouchers(); track jv.voucherNumber) {
-                <tr class="border-b border-slate-100 dark:border-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-850/50 transition">
-                  <td class="p-4 font-mono text-blue-700 dark:text-blue-400 font-bold">{{ jv.voucherNumber }}</td>
-                  <td class="p-4 text-slate-600 dark:text-slate-350">{{ jv.voucherDate }}</td>
-                  <td class="p-4 text-rose-700 dark:text-rose-400 font-semibold">Dr. {{ jv.debitAccount?.accountName }}</td>
-                  <td class="p-4 text-emerald-700 dark:text-emerald-400 font-semibold">Cr. {{ jv.creditAccount?.accountName }}</td>
-                  <td class="p-4 text-right font-mono text-slate-900 dark:text-white font-bold">₹{{ jv.amount | number }}</td>
-                  <td class="p-4 text-slate-700 dark:text-slate-300">{{ jv.description }}</td>
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ jv.voucherNumber }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ jv.voucherDate }}</td>
+                  <td class="p-4 text-[var(--ff-color-danger-500)] font-semibold">Dr. {{ jv.debitAccount?.accountName }}</td>
+                  <td class="p-4 text-[var(--ff-color-success-500)] font-semibold">Cr. {{ jv.creditAccount?.accountName }}</td>
+                  <td class="p-4 text-right tabular-nums font-mono text-[var(--ff-text-primary)] font-bold">₹{{ jv.amount | number }}</td>
+                  <td class="p-4 text-[var(--ff-text-secondary)]">{{ jv.description }}</td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="p-8 text-center text-slate-500 font-semibold">No journal entries recorded.</td>
+                  <td colspan="6" class="p-8">
+                    <div class="flex flex-col items-center justify-center gap-2 text-center text-[var(--ff-text-muted)] font-semibold">
+                      <span class="w-9 h-9 rounded-[8px] bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] flex items-center justify-center">
+                        <span class="material-icons text-lg">import_contacts</span>
+                      </span>
+                      No journal entries recorded.
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -124,15 +138,15 @@
       <!-- 3. Trial Balance Viewport -->
       @if (activeTab() === 'trial') {
         <div class="flex flex-col gap-4">
-          <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-3">
-            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Unadjusted Trial Balance Sheet</span>
+          <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
+            <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Unadjusted Trial Balance Sheet</span>
             <div class="flex items-center gap-2">
               @if (totalAssetsExpenses === totalLiabilitiesEquityRevenue) {
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-450 flex items-center gap-1">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-color-success-50)] text-[var(--ff-color-success-500)] flex items-center gap-1">
                   <span class="material-icons text-[10px]">check_circle</span> BALANCED
                 </span>
               } @else {
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-450 flex items-center gap-1">
+                <span class="px-2.5 py-1 rounded-[8px] text-[11px] font-semibold bg-[var(--ff-color-danger-50)] text-[var(--ff-color-danger-500)] flex items-center gap-1">
                   <span class="material-icons text-[10px]">warning</span> UNBALANCED
                 </span>
               }
@@ -143,38 +157,38 @@
             
             <!-- Assets & Expenses Debits column -->
             <div class="flex flex-col gap-3">
-              <h3 class="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">Debits (Assets & Expenses)</h3>
+              <h3 class="text-[11px] font-bold text-[var(--ff-color-danger-500)] uppercase tracking-[0.05em] border-b border-[var(--ff-border-divider)] pb-2">Debits (Assets & Expenses)</h3>
               <div class="flex flex-col gap-2 font-mono text-xs">
                 @for (acc of accounts(); track acc.accountCode) {
                   @if (acc.accountType === 'ASSET' || acc.accountType === 'EXPENSE') {
-                    <div class="flex justify-between py-1 border-b border-slate-200 dark:border-slate-850">
-                      <span class="text-slate-700 dark:text-slate-300">{{ acc.accountName }}</span>
-                      <span class="text-slate-900 dark:text-white font-bold">₹{{ acc.runningBalance | number }}</span>
+                    <div class="flex justify-between py-1 border-b border-[var(--ff-border-divider)]">
+                      <span class="text-[var(--ff-text-secondary)]">{{ acc.accountName }}</span>
+                      <span class="text-right tabular-nums text-[var(--ff-text-primary)] font-bold">₹{{ acc.runningBalance | number }}</span>
                     </div>
                   }
                 }
-                <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold text-rose-700 dark:text-rose-400 mt-2">
+                <div class="flex justify-between py-2 border-t border-[var(--ff-border-divider)] text-sm font-extrabold text-[var(--ff-color-danger-500)] mt-2">
                   <span>Total Debit Balance</span>
-                  <span>₹{{ totalAssetsExpenses | number }}</span>
+                  <span class="text-right tabular-nums">₹{{ totalAssetsExpenses | number }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Liabilities & Equity & Income Credits column -->
             <div class="flex flex-col gap-3">
-              <h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800 pb-2">Credits (Liabilities, Equity & Income)</h3>
+              <h3 class="text-[11px] font-bold text-[var(--ff-color-success-500)] uppercase tracking-[0.05em] border-b border-[var(--ff-border-divider)] pb-2">Credits (Liabilities, Equity & Income)</h3>
               <div class="flex flex-col gap-2 font-mono text-xs">
                 @for (acc of accounts(); track acc.accountCode) {
                   @if (acc.accountType === 'LIABILITY' || acc.accountType === 'EQUITY' || acc.accountType === 'INCOME') {
-                    <div class="flex justify-between py-1 border-b border-slate-200 dark:border-slate-850">
-                      <span class="text-slate-700 dark:text-slate-300">{{ acc.accountName }}</span>
-                      <span class="text-slate-900 dark:text-white font-bold">₹{{ acc.runningBalance | number }}</span>
+                    <div class="flex justify-between py-1 border-b border-[var(--ff-border-divider)]">
+                      <span class="text-[var(--ff-text-secondary)]">{{ acc.accountName }}</span>
+                      <span class="text-right tabular-nums text-[var(--ff-text-primary)] font-bold">₹{{ acc.runningBalance | number }}</span>
                     </div>
                   }
                 }
-                <div class="flex justify-between py-2 border-t border-slate-200 dark:border-slate-700 text-sm font-extrabold text-emerald-700 dark:text-emerald-400 mt-2">
+                <div class="flex justify-between py-2 border-t border-[var(--ff-border-divider)] text-sm font-extrabold text-[var(--ff-color-success-500)] mt-2">
                   <span>Total Credit Balance</span>
-                  <span>₹{{ totalLiabilitiesEquityRevenue | number }}</span>
+                  <span class="text-right tabular-nums">₹{{ totalLiabilitiesEquityRevenue | number }}</span>
                 </div>
               </div>
             </div>
@@ -188,18 +202,18 @@
 
   <!-- Centered Add/Edit Ledger Account Popup -->
   @if (showAccountEditor()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]"
          (click)="showAccountEditor.set(false)">
-      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">add_box</span>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">add_box</span>
             {{ editingAccount() ? 'Edit Account Master' : 'Add Ledger Account' }}
           </h2>
           <button type="button" (click)="showAccountEditor.set(false)"
-                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  class="p-1.5 rounded-[8px] text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
@@ -222,7 +236,7 @@
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-6 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showAccountEditor.set(false)" />
             <ff-button type="submit" label="Save Account" icon="save" variant="primary" [disabled]="accountForm.invalid" />
           </div>
@@ -233,18 +247,18 @@
 
   <!-- Centered Journal Entry Popup -->
   @if (showJournalEditor()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]"
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]"
          (click)="showJournalEditor.set(false)">
-      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
+      <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
-        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="material-icons text-blue-600 dark:text-blue-400">import_contacts</span>
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold text-[var(--ff-text-primary)] flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">import_contacts</span>
             Post Journal Entry
           </h2>
           <button type="button" (click)="showJournalEditor.set(false)"
-                  class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  class="p-1.5 rounded-[8px] text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
             <span class="material-icons">close</span>
           </button>
         </div>
@@ -265,7 +279,7 @@
             <ff-textbox formControlName="referenceNumber" label="Reference Transaction Number" placeholder="Adjust txn Ref" prefixIcon="tag" />
           </div>
 
-          <div class="flex justify-end gap-2 px-6 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
+          <div class="flex justify-end gap-2 px-6 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showJournalEditor.set(false)" />
             <ff-button type="submit" label="Post Entry" icon="save" variant="primary" [disabled]="journalForm.invalid" />
           </div>

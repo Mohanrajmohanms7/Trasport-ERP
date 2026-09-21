@@ -1,16 +1,17 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { DashboardService } from '../../services/dashboard.service';
+import { DashboardService, MaintenanceDueDashboardItem, MaintenanceDueDashboardResponse } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
+import { FfStatusBadgeComponent, FfStatusColor } from '@ff/ui';
 
 @Component({
     selector: 'app-dashboard',
     standalone: true,
-    imports: [CommonModule, MatCardModule, MatButtonModule, MatMenuModule],
+    imports: [CommonModule, MatCardModule, MatButtonModule, MatMenuModule, FfStatusBadgeComponent],
     templateUrl: './dashboard.html',
     styles: [`
       :host {
@@ -18,6 +19,158 @@ import { MatMenuModule } from '@angular/material/menu';
         height: 100%;
         min-height: 0;
         overflow: hidden;
+      }
+
+      .dash-kpi {
+        background-color: var(--ff-surface-card);
+        border: 1px solid var(--ff-border-default);
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .dash-kpi--brand { border-left: 3px solid var(--ff-color-primary-600); }
+      .dash-kpi--success { border-left: 3px solid var(--ff-color-success-500); }
+      .dash-kpi--warning { border-left: 3px solid var(--ff-color-warning-500); }
+      .dash-kpi--danger { border-left: 3px solid var(--ff-color-danger-500); }
+      .dash-kpi--info { border-left: 3px solid var(--ff-color-info-500); }
+
+      .dash-kpi-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .dash-kpi-icon--brand { background-color: var(--ff-color-primary-50); color: var(--ff-color-primary-600); }
+      .dash-kpi-icon--success { background-color: var(--ff-color-success-50); color: var(--ff-color-success-500); }
+      .dash-kpi-icon--warning { background-color: var(--ff-color-warning-50); color: var(--ff-color-warning-500); }
+      .dash-kpi-icon--danger { background-color: var(--ff-color-danger-50); color: var(--ff-color-danger-500); }
+      .dash-kpi-icon--info { background-color: var(--ff-color-info-50); color: var(--ff-color-info-500); }
+
+      .dash-kpi-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ff-text-muted);
+      }
+      .dash-kpi-value {
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.15;
+        font-variant-numeric: tabular-nums;
+        color: var(--ff-text-primary);
+      }
+      .dash-kpi-sub {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--ff-text-secondary);
+      }
+      .dash-kpi-pill {
+        display: inline-flex;
+        align-self: flex-start;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 0.125rem 0.5rem;
+        border-radius: 9999px;
+        background-color: var(--ff-color-danger-50);
+        color: var(--ff-color-danger-500);
+      }
+
+      .dash-panel {
+        background-color: var(--ff-surface-card);
+        border: 1px solid var(--ff-border-default);
+        border-radius: 10px;
+        padding: 20px;
+      }
+      .dash-panel-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ff-text-muted);
+      }
+
+      .dash-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 40px;
+        padding: 0 12px 0 6px;
+        border-radius: 9999px;
+        border: 1px solid var(--ff-border-default);
+        background-color: var(--ff-surface-card);
+        color: var(--ff-text-primary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 120ms ease;
+      }
+      .dash-action:hover {
+        background-color: var(--ff-surface-hover);
+      }
+      .dash-action-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .dash-action-icon--brand { background-color: var(--ff-color-primary-50); color: var(--ff-color-primary-600); }
+      .dash-action-icon--success { background-color: var(--ff-color-success-50); color: var(--ff-color-success-500); }
+      .dash-action-icon--warning { background-color: var(--ff-color-warning-50); color: var(--ff-color-warning-500); }
+      .dash-action-icon--danger { background-color: var(--ff-color-danger-50); color: var(--ff-color-danger-500); }
+      .dash-action-icon--info { background-color: var(--ff-color-info-50); color: var(--ff-color-info-500); }
+
+      .dash-feed-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 12px;
+        border: 1px solid var(--ff-border-default);
+        border-radius: 10px;
+        background-color: var(--ff-surface-hover);
+        border-left-width: 3px;
+        border-left-style: solid;
+      }
+      .dash-feed-row--danger { border-left-color: var(--ff-color-danger-500); }
+      .dash-feed-row--warning { border-left-color: var(--ff-color-warning-500); }
+      .dash-feed-row--info { border-left-color: var(--ff-color-info-500); }
+      .dash-feed-row--neutral { border-left-color: var(--ff-color-primary-600); }
+
+      .dash-feed-chip {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .dash-feed-chip--danger { background-color: var(--ff-color-danger-50); color: var(--ff-color-danger-500); }
+      .dash-feed-chip--warning { background-color: var(--ff-color-warning-50); color: var(--ff-color-warning-500); }
+      .dash-feed-chip--info { background-color: var(--ff-color-info-50); color: var(--ff-color-info-500); }
+      .dash-feed-chip--brand { background-color: var(--ff-color-primary-50); color: var(--ff-color-primary-600); }
+      .dash-feed-chip--success { background-color: var(--ff-color-success-50); color: var(--ff-color-success-500); }
+
+      .dash-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        font-size: 12px;
+        color: var(--ff-text-muted);
       }
     `]
 })
@@ -29,9 +182,15 @@ export class DashboardComponent implements OnInit {
   activeRole = signal<string>('ADMIN');
   metrics = signal<any>(null);
   loading = signal<boolean>(false);
+  loadError = signal<string | null>(null);
 
   notifications = signal<any[]>([]);
   activities = signal<any[]>([]);
+
+  readonly maintenanceDueDashboard = computed<MaintenanceDueDashboardResponse | null>(() => {
+    const data = this.metrics()?.maintenanceDueDashboard;
+    return data ?? null;
+  });
 
   trendValues = computed(() => {
     const m = this.metrics();
@@ -99,29 +258,36 @@ export class DashboardComponent implements OnInit {
 
   fetchMetrics() {
     this.loading.set(true);
+    this.loadError.set(null);
     const role = this.activeRole();
     const done = () => this.loading.set(false);
+    const fail = () => {
+      this.loadError.set('Unable to load dashboard telemetry.');
+      done();
+    };
     const apply = (res: any) => {
       if (res?.success) {
         this.metrics.set(res.data);
         this.notifications.set(Array.isArray(res.data?.alerts) ? res.data.alerts : []);
         this.activities.set(Array.isArray(res.data?.recentActivities) ? res.data.recentActivities : []);
+      } else {
+        this.loadError.set('Unable to load dashboard telemetry.');
       }
       done();
     };
 
     if (role === 'ADMIN') {
-      this.dashboardService.getAdminMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getAdminMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'OWNER') {
-      this.dashboardService.getOwnerMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getOwnerMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'OPERATIONS') {
-      this.dashboardService.getOperationsMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getOperationsMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'VEHICLE') {
-      this.dashboardService.getVehicleMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getVehicleMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'ACCOUNTANT') {
-      this.dashboardService.getAccountMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getAccountMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'DRIVER') {
-      this.dashboardService.getDriverMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getDriverMetrics().subscribe({ next: apply, error: fail });
     } else {
       done();
     }
@@ -142,6 +308,49 @@ export class DashboardComponent implements OnInit {
       return;
     }
     this.router.navigate([target]);
+  }
+
+  openMaintenanceVehicle(item: MaintenanceDueDashboardItem) {
+    if (item?.vehicleId == null) return;
+    this.router.navigate(['/vehicles'], { queryParams: { vehicleId: item.vehicleId } });
+  }
+
+  dueStatusColor(status: string | null | undefined): FfStatusColor {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE':
+      case 'DUE':
+        return 'danger';
+      case 'DUE_SOON':
+        return 'warning';
+      case 'UNKNOWN':
+        return 'info';
+      default:
+        return 'neutral';
+    }
+  }
+
+  dueStatusLabel(status: string | null | undefined): string {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE': return 'Overdue';
+      case 'DUE': return 'Due';
+      case 'DUE_SOON': return 'Due Soon';
+      case 'UNKNOWN': return 'Unknown';
+      default: return status || '—';
+    }
+  }
+
+  vehicleLabel(item: MaintenanceDueDashboardItem): string {
+    return [item.vehicleCode, item.vehicleName].filter(Boolean).join(' — ') || `Vehicle #${item.vehicleId}`;
+  }
+
+  nextDueLabel(item: MaintenanceDueDashboardItem): string {
+    if (item.nextDueKm != null) {
+      return `${item.nextDueKm} km`;
+    }
+    if (item.nextDueDate) {
+      return String(item.nextDueDate);
+    }
+    return '—';
   }
 
   private buildPolyline(values: number[], width: number, height: number): string {
