@@ -111,7 +111,8 @@ export class AppShellComponent implements OnDestroy {
         { label: 'Driver Master', route: '/drivers', icon: 'person' },
         { label: 'Customer Master', route: '/customers', icon: 'group' },
         { label: 'Branch Master', route: '/masters', icon: 'store' },
-        { label: 'Material & Quarry', route: '/materials-quarries', icon: 'category' }
+        { label: 'Material & Quarry', route: '/materials-quarries', icon: 'category' },
+        { label: 'Spare Parts', route: '/spare-parts', icon: 'inventory_2' }
       ]
     },
     {
@@ -176,6 +177,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'trips-planning') return 'Trip Management';
       if (segment === 'fuel-logs') return 'Fuel Management';
       if (segment === 'work-orders') return 'Work Orders';
+      if (segment === 'spare-parts') return 'Spare Parts';
       if (segment === 'expense-logs') return 'Expense Management';
       if (segment === 'billing-invoices') return 'Invoice';
       if (segment === 'payment-logs') return 'Payments';

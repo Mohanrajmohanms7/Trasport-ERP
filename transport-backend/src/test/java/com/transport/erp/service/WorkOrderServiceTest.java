@@ -10,16 +10,22 @@ import com.transport.erp.model.AppRole;
 import com.transport.erp.model.AppUser;
 import com.transport.erp.model.LookupValue;
 import com.transport.erp.model.MaintenanceRule;
+import com.transport.erp.model.SparePart;
 import com.transport.erp.model.Supplier;
+import com.transport.erp.model.UomMaster;
 import com.transport.erp.model.Vehicle;
 import com.transport.erp.model.VehicleMaintenanceBaseline;
 import com.transport.erp.model.WorkOrder;
+import com.transport.erp.model.WorkOrderLabour;
+import com.transport.erp.model.WorkOrderPart;
 import com.transport.erp.repository.AppUserRepository;
 import com.transport.erp.repository.LookupValueRepository;
 import com.transport.erp.repository.MaintenanceRuleRepository;
 import com.transport.erp.repository.SupplierRepository;
 import com.transport.erp.repository.VehicleMaintenanceBaselineRepository;
 import com.transport.erp.repository.VehicleRepository;
+import com.transport.erp.repository.WorkOrderLabourRepository;
+import com.transport.erp.repository.WorkOrderPartRepository;
 import com.transport.erp.repository.WorkOrderRepository;
 import com.transport.erp.security.TenantAccessService;
 import com.transport.erp.security.TenantParentAccess;
@@ -83,6 +89,8 @@ class WorkOrderServiceTest {
     private static final Long RULE_ID = 7L;
 
     @Mock private WorkOrderRepository workOrderRepository;
+    @Mock private WorkOrderPartRepository workOrderPartRepository;
+    @Mock private WorkOrderLabourRepository workOrderLabourRepository;
     @Mock private VehicleRepository vehicleRepository;
     @Mock private MaintenanceRuleRepository ruleRepository;
     @Mock private VehicleMaintenanceBaselineRepository baselineRepository;
@@ -118,6 +126,8 @@ class WorkOrderServiceTest {
             return order;
         });
         when(workOrderRepository.findDetailById(anyLong())).thenAnswer(inv -> Optional.ofNullable(persisted.get()));
+        when(workOrderPartRepository.findActiveByWorkOrderId(any())).thenReturn(List.of());
+        when(workOrderLabourRepository.findActiveByWorkOrderId(any())).thenReturn(List.of());
     }
 
     @Test
@@ -544,6 +554,10 @@ class WorkOrderServiceTest {
         verify(workOrderRepository, times(1)).searchIds(any(), any(), any(), any(), any(), any(), any());
         verify(workOrderRepository, times(1)).findDetailsByIds(any());
         verify(workOrderRepository, never()).findDetailById(any());
+        verify(workOrderPartRepository, never()).findActiveByWorkOrderId(any());
+        verify(workOrderLabourRepository, never()).findActiveByWorkOrderId(any());
+        assertNull(page.getContent().get(0).getParts());
+        assertNull(page.getContent().get(0).getLabour());
 
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         verify(workOrderRepository).searchIds(any(), any(), any(), any(), any(), any(), pageable.capture());
@@ -554,6 +568,53 @@ class WorkOrderServiceTest {
         service.get(10L);
         verify(workOrderRepository, times(1)).findDetailById(10L);
         verify(workOrderRepository, times(1)).findDetailsByIds(any());
+        verify(workOrderPartRepository, times(1)).findActiveByWorkOrderId(10L);
+        verify(workOrderLabourRepository, times(1)).findActiveByWorkOrderId(10L);
+        verify(workOrderPartRepository, never()).findById(any());
+        verify(workOrderLabourRepository, never()).findById(any());
+    }
+
+    @Test
+    @DisplayName("Operational totals sum non-deleted lines and leave actual cost unchanged")
+    void operationalTotalsLeaveActualCostUnchanged() {
+        WorkOrder order = stored(openOrder());
+        order.setEstimatedCost(new BigDecimal("50.00"));
+        order.setActualCost(new BigDecimal("80.00"));
+        WorkOrderPart partLine = new WorkOrderPart();
+        partLine.setId(1L);
+        partLine.setLineTotal(new BigDecimal("10.10"));
+        partLine.setQuantity(new BigDecimal("1.000"));
+        partLine.setUnitRate(new BigDecimal("10.10"));
+        SparePart part = new SparePart();
+        part.setId(5L);
+        part.setCode("OIL");
+        part.setName("Engine oil");
+        partLine.setSparePart(part);
+        UomMaster uom = new UomMaster();
+        uom.setId(7L);
+        uom.setCode("LITRE");
+        uom.setName("Litre");
+        partLine.setUom(uom);
+        WorkOrderLabour labourLine = new WorkOrderLabour();
+        labourLine.setId(2L);
+        labourLine.setDescription("Fit filter");
+        labourLine.setHours(new BigDecimal("1.50"));
+        labourLine.setRate(new BigDecimal("13.50"));
+        labourLine.setLineTotal(new BigDecimal("20.25"));
+        when(workOrderPartRepository.findActiveByWorkOrderId(10L)).thenReturn(List.of(partLine));
+        when(workOrderLabourRepository.findActiveByWorkOrderId(10L)).thenReturn(List.of(labourLine));
+
+        WorkOrderResponse response = service.get(10L);
+
+        assertEquals(new BigDecimal("10.10"), response.getPartsTotal());
+        assertEquals(new BigDecimal("20.25"), response.getLabourTotal());
+        assertEquals(new BigDecimal("30.35"), response.getOperationalCost());
+        assertEquals(new BigDecimal("80.00"), response.getActualCost());
+        assertEquals(new BigDecimal("50.00"), response.getEstimatedCost());
+        assertEquals(1, response.getParts().size());
+        assertEquals(1, response.getLabour().size());
+        verify(workOrderPartRepository, times(1)).findActiveByWorkOrderId(10L);
+        verify(workOrderLabourRepository, times(1)).findActiveByWorkOrderId(10L);
     }
 
     @Test

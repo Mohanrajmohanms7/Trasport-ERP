@@ -6,6 +6,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -53,4 +54,9 @@ public class WorkOrderResponse {
     private String completedBy;
     private String cancelledBy;
     private Integer version;
+    private List<WorkOrderPartResponse> parts;
+    private List<WorkOrderLabourResponse> labour;
+    private BigDecimal partsTotal;
+    private BigDecimal labourTotal;
+    private BigDecimal operationalCost;
 }

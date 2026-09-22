@@ -4,6 +4,8 @@ import com.transport.erp.dto.MaintenanceDueResponse;
 import com.transport.erp.dto.WorkOrderCancelRequest;
 import com.transport.erp.dto.WorkOrderCompleteRequest;
 import com.transport.erp.dto.WorkOrderCreateRequest;
+import com.transport.erp.dto.WorkOrderLabourResponse;
+import com.transport.erp.dto.WorkOrderPartResponse;
 import com.transport.erp.dto.WorkOrderResponse;
 import com.transport.erp.dto.WorkOrderUpdateRequest;
 import com.transport.erp.exception.BusinessValidationException;
@@ -15,12 +17,16 @@ import com.transport.erp.model.Supplier;
 import com.transport.erp.model.Vehicle;
 import com.transport.erp.model.VehicleMaintenanceBaseline;
 import com.transport.erp.model.WorkOrder;
+import com.transport.erp.model.WorkOrderLabour;
+import com.transport.erp.model.WorkOrderPart;
 import com.transport.erp.repository.AppUserRepository;
 import com.transport.erp.repository.LookupValueRepository;
 import com.transport.erp.repository.MaintenanceRuleRepository;
 import com.transport.erp.repository.SupplierRepository;
 import com.transport.erp.repository.VehicleMaintenanceBaselineRepository;
 import com.transport.erp.repository.VehicleRepository;
+import com.transport.erp.repository.WorkOrderLabourRepository;
+import com.transport.erp.repository.WorkOrderPartRepository;
 import com.transport.erp.repository.WorkOrderRepository;
 import com.transport.erp.security.TenantAccessService;
 import com.transport.erp.security.TenantParentAccess;
@@ -37,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -73,6 +80,12 @@ public class WorkOrderService {
 
     @Autowired
     private WorkOrderRepository workOrderRepository;
+
+    @Autowired
+    private WorkOrderPartRepository workOrderPartRepository;
+
+    @Autowired
+    private WorkOrderLabourRepository workOrderLabourRepository;
 
     @Autowired
     private VehicleRepository vehicleRepository;
@@ -146,7 +159,7 @@ public class WorkOrderService {
 
     @Transactional(readOnly = true)
     public WorkOrderResponse get(Long id) {
-        return toResponse(requireReadable(id));
+        return toDetail(requireReadable(id));
     }
 
     @Transactional
@@ -199,7 +212,7 @@ public class WorkOrderService {
 
         auditService.log(username, "WORK_ORDER_CREATED", "work_orders", saved.getId(), null,
                 "number=" + number + ", vehicleId=" + vehicle.getId() + ", source=" + source);
-        return toResponse(reload(saved.getId()));
+        return toDetail(reload(saved.getId()));
     }
 
     @Transactional
@@ -226,7 +239,7 @@ public class WorkOrderService {
         workOrderRepository.save(order);
         auditService.log(username, "WORK_ORDER_UPDATED", "work_orders", order.getId(), null,
                 "number=" + order.getWorkOrderNumber() + ", status=" + order.getStatus());
-        return toResponse(reload(order.getId()));
+        return toDetail(reload(order.getId()));
     }
 
     @Transactional
@@ -243,7 +256,7 @@ public class WorkOrderService {
         workOrderRepository.save(order);
         auditService.log(username, "WORK_ORDER_STARTED", "work_orders", order.getId(), null,
                 "number=" + order.getWorkOrderNumber());
-        return toResponse(reload(order.getId()));
+        return toDetail(reload(order.getId()));
     }
 
     @Transactional
@@ -280,7 +293,7 @@ public class WorkOrderService {
         workOrderRepository.save(order);
         auditService.log(username, "WORK_ORDER_COMPLETED", "work_orders", order.getId(), null,
                 "number=" + order.getWorkOrderNumber() + ", odometerAtComplete=" + order.getOdometerAtComplete());
-        return toResponse(reload(order.getId()));
+        return toDetail(reload(order.getId()));
     }
 
     @Transactional
@@ -310,7 +323,7 @@ public class WorkOrderService {
         workOrderRepository.save(order);
         auditService.log(username, "WORK_ORDER_CANCELLED", "work_orders", order.getId(), null,
                 "number=" + order.getWorkOrderNumber());
-        return toResponse(reload(order.getId()));
+        return toDetail(reload(order.getId()));
     }
 
     private void applyPreventiveSnapshot(WorkOrder order, Vehicle vehicle, WorkOrderCreateRequest request) {
@@ -635,6 +648,68 @@ public class WorkOrderService {
         }
         String trimmed = raw.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private WorkOrderResponse toDetail(WorkOrder order) {
+        WorkOrderResponse dto = toResponse(order);
+        List<WorkOrderPart> parts = workOrderPartRepository.findActiveByWorkOrderId(order.getId());
+        List<WorkOrderLabour> labour = workOrderLabourRepository.findActiveByWorkOrderId(order.getId());
+        dto.setParts(parts.stream().map(this::toPartResponse).toList());
+        dto.setLabour(labour.stream().map(this::toLabourResponse).toList());
+        BigDecimal partsTotal = parts.stream()
+                .map(WorkOrderPart::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+        BigDecimal labourTotal = labour.stream()
+                .map(WorkOrderLabour::getLineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+        dto.setPartsTotal(partsTotal);
+        dto.setLabourTotal(labourTotal);
+        dto.setOperationalCost(partsTotal.add(labourTotal).setScale(2, RoundingMode.HALF_UP));
+        return dto;
+    }
+
+    private WorkOrderPartResponse toPartResponse(WorkOrderPart line) {
+        WorkOrderPartResponse dto = new WorkOrderPartResponse();
+        dto.setId(line.getId());
+        dto.setCode(line.getCode());
+        dto.setQuantity(line.getQuantity());
+        dto.setUnitRate(line.getUnitRate());
+        dto.setLineTotal(line.getLineTotal());
+        dto.setNotes(line.getNotes());
+        dto.setVersion(line.getVersion());
+        if (line.getSparePart() != null) {
+            dto.setSparePartId(line.getSparePart().getId());
+            dto.setSparePartCode(line.getSparePart().getCode());
+            dto.setSparePartName(line.getSparePart().getName());
+        }
+        if (line.getUom() != null) {
+            dto.setUomId(line.getUom().getId());
+            dto.setUomCode(line.getUom().getCode());
+            dto.setUomName(line.getUom().getName());
+        }
+        return dto;
+    }
+
+    private WorkOrderLabourResponse toLabourResponse(WorkOrderLabour line) {
+        WorkOrderLabourResponse dto = new WorkOrderLabourResponse();
+        dto.setId(line.getId());
+        dto.setCode(line.getCode());
+        dto.setDescription(line.getDescription());
+        dto.setHours(line.getHours());
+        dto.setRate(line.getRate());
+        dto.setLineTotal(line.getLineTotal());
+        dto.setWorkDate(line.getWorkDate());
+        dto.setNotes(line.getNotes());
+        dto.setVersion(line.getVersion());
+        if (line.getAppUser() != null) {
+            dto.setAppUserId(line.getAppUser().getId());
+            dto.setAppUserName(line.getAppUser().getName() != null
+                    ? line.getAppUser().getName()
+                    : line.getAppUser().getUsername());
+        }
+        return dto;
     }
 
     private WorkOrderResponse toResponse(WorkOrder order) {

@@ -13,6 +13,7 @@ import { VehicleDetailsConsoleComponent } from './components/vehicle-details-con
 import { WorkOrderListComponent } from './components/work-orders/work-order-list';
 import { WorkOrderFormComponent } from './components/work-orders/work-order-form';
 import { WorkOrderDetailComponent } from './components/work-orders/work-order-detail';
+import { SparePartCatalogComponent } from './components/spare-parts/spare-part-catalog';
 import { DriverDetailsConsoleComponent } from './components/driver-details-console/driver-details-console';
 import { CustomerDetailsConsoleComponent } from './components/customer-details-console/customer-details-console';
 import { MaterialQuarryConsoleComponent } from './components/material-quarry-console/material-quarry-console';
@@ -57,6 +58,7 @@ export const routes: Routes = [
       { path: 'work-orders', component: WorkOrderListComponent },
       { path: 'work-orders/new', component: WorkOrderFormComponent },
       { path: 'work-orders/:id', component: WorkOrderDetailComponent },
+      { path: 'spare-parts', component: SparePartCatalogComponent },
       { path: 'drivers', component: DriverDetailsConsoleComponent }, 
       { path: 'customers', component: CustomerDetailsConsoleComponent },
       { path: 'materials-quarries', component: MaterialQuarryConsoleComponent },

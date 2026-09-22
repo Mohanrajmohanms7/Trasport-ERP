@@ -52,6 +52,37 @@ export interface WorkOrder {
   createdBy?: string | null;
   completedBy?: string | null;
   cancelledBy?: string | null;
+  parts?: WorkOrderPartLine[];
+  labour?: WorkOrderLabourLine[];
+  partsTotal?: number | null;
+  labourTotal?: number | null;
+  operationalCost?: number | null;
+}
+
+export interface WorkOrderPartLine {
+  id: number;
+  sparePartId?: number;
+  sparePartCode?: string;
+  sparePartName?: string;
+  quantity: number;
+  unitRate: number;
+  lineTotal: number;
+  uomId?: number;
+  uomCode?: string;
+  uomName?: string;
+  notes?: string | null;
+}
+
+export interface WorkOrderLabourLine {
+  id: number;
+  appUserId?: number | null;
+  appUserName?: string | null;
+  description: string;
+  hours: number;
+  rate: number;
+  lineTotal: number;
+  workDate?: string | null;
+  notes?: string | null;
 }
 
 export interface WorkOrderPage {
@@ -111,6 +142,30 @@ export class WorkOrderService {
 
   cancel(id: number, body: { cancellationReason: string }): Observable<ApiResponse<WorkOrder>> {
     return this.http.post<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/cancel`, body);
+  }
+
+  addPart(id: number, body: Record<string, unknown>): Observable<ApiResponse<WorkOrder>> {
+    return this.http.post<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/parts`, body);
+  }
+
+  updatePart(id: number, lineId: number, body: Record<string, unknown>): Observable<ApiResponse<WorkOrder>> {
+    return this.http.put<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/parts/${lineId}`, body);
+  }
+
+  removePart(id: number, lineId: number): Observable<ApiResponse<WorkOrder>> {
+    return this.http.delete<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/parts/${lineId}`);
+  }
+
+  addLabour(id: number, body: Record<string, unknown>): Observable<ApiResponse<WorkOrder>> {
+    return this.http.post<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/labour`, body);
+  }
+
+  updateLabour(id: number, lineId: number, body: Record<string, unknown>): Observable<ApiResponse<WorkOrder>> {
+    return this.http.put<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/labour/${lineId}`, body);
+  }
+
+  removeLabour(id: number, lineId: number): Observable<ApiResponse<WorkOrder>> {
+    return this.http.delete<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/labour/${lineId}`);
   }
 
   upload(file: File): Observable<ApiResponse<{ fileName: string; originalName?: string }>> {

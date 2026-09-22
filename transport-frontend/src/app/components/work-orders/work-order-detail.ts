@@ -2,8 +2,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
+import { SparePart, SparePartService } from '../../services/spare-part.service';
+import { WorkOrder, WorkOrderLabourLine, WorkOrderPartLine, WorkOrderService, workOrderError } from '../../services/work-order.service';
 
 @Component({
   selector: 'app-work-order-detail',
@@ -14,6 +16,8 @@ import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work
 export class WorkOrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private workOrders = inject(WorkOrderService);
+  private sparePartsApi = inject(SparePartService);
+  private http = inject(HttpClient);
   private auth = inject(AuthService);
 
   loading = signal(true);
@@ -32,11 +36,152 @@ export class WorkOrderDetailComponent implements OnInit {
   actualCost = signal('');
   cancellationReason = signal('');
 
+  spareParts = signal<SparePart[]>([]);
+  people = signal<{ id: number; name: string }[]>([]);
+  partSparePartId = signal('');
+  partQuantity = signal('');
+  partRate = signal('');
+  partNotes = signal('');
+  partEditingId = signal<number | null>(null);
+  labourUserId = signal('');
+  labourDescription = signal('');
+  labourHours = signal('');
+  labourRate = signal('');
+  labourDate = signal('');
+  labourNotes = signal('');
+  labourEditingId = signal<number | null>(null);
+
   ngOnInit() {
     const roles = this.auth.currentUser()?.roles || [];
     this.canWrite.set(roles.some(role =>
       role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || role === 'BRANCH_MANAGER'));
     this.load();
+    this.sparePartsApi.list().subscribe({
+      next: res => this.spareParts.set(res?.success && res.data ? res.data.content || [] : []),
+      error: () => this.spareParts.set([])
+    });
+    this.http.get<any>('/api/v1/users', { params: { page: '0', size: '100' } }).subscribe({
+      next: res => {
+        const rows = res?.data?.content || [];
+        this.people.set(rows.map((row: any) => ({
+          id: row.id,
+          name: row.name || row.username || String(row.id)
+        })));
+      },
+      error: () => this.people.set([])
+    });
+  }
+
+  canEditLines(order: WorkOrder): boolean {
+    return this.canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS');
+  }
+
+  savePart() {
+    const current = this.order();
+    if (!current || !this.canEditLines(current)) return;
+    this.error.set(null);
+    this.feedback.set(null);
+    if (!this.partSparePartId() || !this.partQuantity().trim()) {
+      this.error.set('Part and quantity are required.');
+      return;
+    }
+    const body: Record<string, unknown> = {
+      sparePartId: Number(this.partSparePartId()),
+      quantity: Number(this.partQuantity()),
+      notes: this.partNotes().trim() || null
+    };
+    if (this.partRate().trim()) body['unitRate'] = Number(this.partRate());
+    const editing = this.partEditingId();
+    const call = editing
+      ? this.workOrders.updatePart(current.id, editing, body)
+      : this.workOrders.addPart(current.id, body);
+    call.subscribe({
+      next: res => this.afterLine(res, 'Part saved.'),
+      error: err => this.error.set(workOrderError(err))
+    });
+  }
+
+  editPart(line: WorkOrderPartLine) {
+    this.partEditingId.set(line.id);
+    this.partSparePartId.set(line.sparePartId != null ? String(line.sparePartId) : '');
+    this.partQuantity.set(String(line.quantity));
+    this.partRate.set(line.unitRate != null ? String(line.unitRate) : '');
+    this.partNotes.set(line.notes || '');
+  }
+
+  removePart(line: WorkOrderPartLine) {
+    const current = this.order();
+    if (!current || !this.canEditLines(current)) return;
+    this.workOrders.removePart(current.id, line.id).subscribe({
+      next: res => this.afterLine(res, 'Part removed.'),
+      error: err => this.error.set(workOrderError(err))
+    });
+  }
+
+  saveLabour() {
+    const current = this.order();
+    if (!current || !this.canEditLines(current)) return;
+    this.error.set(null);
+    this.feedback.set(null);
+    if (!this.labourDescription().trim() || !this.labourHours().trim() || !this.labourRate().trim()) {
+      this.error.set('Description, hours, and rate are required.');
+      return;
+    }
+    const body: Record<string, unknown> = {
+      appUserId: this.labourUserId() ? Number(this.labourUserId()) : null,
+      description: this.labourDescription().trim(),
+      hours: Number(this.labourHours()),
+      rate: Number(this.labourRate()),
+      workDate: this.labourDate() || null,
+      notes: this.labourNotes().trim() || null
+    };
+    const editing = this.labourEditingId();
+    const call = editing
+      ? this.workOrders.updateLabour(current.id, editing, body)
+      : this.workOrders.addLabour(current.id, body);
+    call.subscribe({
+      next: res => this.afterLine(res, 'Labour saved.'),
+      error: err => this.error.set(workOrderError(err))
+    });
+  }
+
+  editLabour(line: WorkOrderLabourLine) {
+    this.labourEditingId.set(line.id);
+    this.labourUserId.set(line.appUserId != null ? String(line.appUserId) : '');
+    this.labourDescription.set(line.description || '');
+    this.labourHours.set(String(line.hours));
+    this.labourRate.set(line.rate != null ? String(line.rate) : '');
+    this.labourDate.set(line.workDate || '');
+    this.labourNotes.set(line.notes || '');
+  }
+
+  removeLabour(line: WorkOrderLabourLine) {
+    const current = this.order();
+    if (!current || !this.canEditLines(current)) return;
+    this.workOrders.removeLabour(current.id, line.id).subscribe({
+      next: res => this.afterLine(res, 'Labour removed.'),
+      error: err => this.error.set(workOrderError(err))
+    });
+  }
+
+  private afterLine(res: { success?: boolean; data?: WorkOrder; message?: string } | null, message: string) {
+    if (res?.success && res.data) {
+      this.apply(res.data);
+      this.feedback.set(message);
+      this.partEditingId.set(null);
+      this.partQuantity.set('');
+      this.partRate.set('');
+      this.partNotes.set('');
+      this.labourEditingId.set(null);
+      this.labourDescription.set('');
+      this.labourHours.set('');
+      this.labourRate.set('');
+      this.labourDate.set('');
+      this.labourNotes.set('');
+      this.labourUserId.set('');
+    } else {
+      this.error.set(res?.message || 'The line could not be saved.');
+    }
   }
 
   load() {
