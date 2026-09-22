@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { DashboardService } from '../../services/dashboard.service';
+import { DashboardService, MaintenanceDueDashboardItem, MaintenanceDueDashboardResponse } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -29,9 +29,15 @@ export class DashboardComponent implements OnInit {
   activeRole = signal<string>('ADMIN');
   metrics = signal<any>(null);
   loading = signal<boolean>(false);
+  loadError = signal<string | null>(null);
 
   notifications = signal<any[]>([]);
   activities = signal<any[]>([]);
+
+  readonly maintenanceDueDashboard = computed<MaintenanceDueDashboardResponse | null>(() => {
+    const data = this.metrics()?.maintenanceDueDashboard;
+    return data ?? null;
+  });
 
   trendValues = computed(() => {
     const m = this.metrics();
@@ -99,29 +105,42 @@ export class DashboardComponent implements OnInit {
 
   fetchMetrics() {
     this.loading.set(true);
+    this.loadError.set(null);
     const role = this.activeRole();
     const done = () => this.loading.set(false);
+    const fail = () => {
+      this.metrics.set(null);
+      this.notifications.set([]);
+      this.activities.set([]);
+      this.loadError.set('Unable to load dashboard telemetry.');
+      done();
+    };
     const apply = (res: any) => {
       if (res?.success) {
         this.metrics.set(res.data);
         this.notifications.set(Array.isArray(res.data?.alerts) ? res.data.alerts : []);
         this.activities.set(Array.isArray(res.data?.recentActivities) ? res.data.recentActivities : []);
+      } else {
+        this.metrics.set(null);
+        this.notifications.set([]);
+        this.activities.set([]);
+        this.loadError.set('Unable to load dashboard telemetry.');
       }
       done();
     };
 
     if (role === 'ADMIN') {
-      this.dashboardService.getAdminMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getAdminMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'OWNER') {
-      this.dashboardService.getOwnerMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getOwnerMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'OPERATIONS') {
-      this.dashboardService.getOperationsMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getOperationsMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'VEHICLE') {
-      this.dashboardService.getVehicleMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getVehicleMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'ACCOUNTANT') {
-      this.dashboardService.getAccountMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getAccountMetrics().subscribe({ next: apply, error: fail });
     } else if (role === 'DRIVER') {
-      this.dashboardService.getDriverMetrics().subscribe({ next: apply, error: done });
+      this.dashboardService.getDriverMetrics().subscribe({ next: apply, error: fail });
     } else {
       done();
     }
@@ -130,6 +149,49 @@ export class DashboardComponent implements OnInit {
   changeViewRole(role: string) {
     this.activeRole.set(role);
     this.fetchMetrics();
+  }
+
+  openMaintenanceVehicle(item: MaintenanceDueDashboardItem) {
+    if (item?.vehicleId == null) return;
+    this.router.navigate(['/vehicles'], { queryParams: { vehicleId: item.vehicleId } });
+  }
+
+  dueStatusLabel(status: string | null | undefined): string {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE': return 'Overdue';
+      case 'DUE': return 'Due';
+      case 'DUE_SOON': return 'Due Soon';
+      case 'UNKNOWN': return 'Unknown';
+      default: return status || '—';
+    }
+  }
+
+  dueStatusClass(status: string | null | undefined): string {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE':
+      case 'DUE':
+        return 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300';
+      case 'DUE_SOON':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300';
+      case 'UNKNOWN':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300';
+      default:
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+    }
+  }
+
+  vehicleLabel(item: MaintenanceDueDashboardItem): string {
+    return [item.vehicleCode, item.vehicleName].filter(Boolean).join(' — ') || `Vehicle #${item.vehicleId}`;
+  }
+
+  nextDueLabel(item: MaintenanceDueDashboardItem): string {
+    if (item.nextDueKm != null) {
+      return `${item.nextDueKm} km`;
+    }
+    if (item.nextDueDate) {
+      return String(item.nextDueDate);
+    }
+    return '—';
   }
 
   executeAction(action: string) {

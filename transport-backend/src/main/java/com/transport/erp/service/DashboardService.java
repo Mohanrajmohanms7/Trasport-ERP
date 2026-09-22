@@ -41,6 +41,7 @@ public class DashboardService {
     @Autowired private ExpenseRepository expenseRepository;
     @Autowired private FuelEntryRepository fuelEntryRepository;
     @Autowired private CustomerReceiptRepository customerReceiptRepository;
+    @Autowired private MaintenanceDueDashboardService maintenanceDueDashboardService;
 
     @Transactional(readOnly = true)
     public Map<String, Object> getAdminDashboard() {
@@ -93,6 +94,7 @@ public class DashboardService {
         data.put("monthlyExpenseTrend", monthlyTrend(companyId, false));
         data.put("recentActivities", recentActivities(companyId));
         data.put("alerts", buildAlerts(companyId, today));
+        data.put("maintenanceDueDashboard", maintenanceDueDashboardService.build(companyId, today));
         return data;
     }
 
@@ -179,6 +181,7 @@ public class DashboardService {
         data.put("permitExpiryCount", permitExpiryCount);
         data.put("maintenanceDueCount", maintenanceDueCount);
         data.put("vehicleUtilization", utilization);
+        data.put("maintenanceDueDashboard", maintenanceDueDashboardService.build(companyId, today));
         return data;
     }
 
