@@ -53,6 +53,9 @@ public class FileStorageService {
     @Autowired
     private VehicleServiceLogRepository vehicleServiceLogRepository;
 
+    @Autowired
+    private WorkOrderRepository workOrderRepository;
+
     public FileStorageService(@Value("${app.file.upload-dir:uploads}") String uploadDir) {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
@@ -216,6 +219,14 @@ public class FileStorageService {
             if (serviceLog.isPresent()) {
                 owningCompanyId = serviceLog.get().getCompanyId();
                 owningBranchId = serviceLog.get().getBranchId();
+            }
+        }
+
+        if (owningCompanyId == null) {
+            Optional<WorkOrder> workOrder = workOrderRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse(cleanName);
+            if (workOrder.isPresent()) {
+                owningCompanyId = workOrder.get().getCompanyId();
+                owningBranchId = workOrder.get().getBranchId();
             }
         }
 

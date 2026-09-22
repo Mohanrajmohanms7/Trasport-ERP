@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @Setter
 public class MaintenanceDueDashboardItem {
     private Long vehicleId;
+    private Long ruleId;
     private String vehicleCode;
     private String vehicleName;
     private String maintenanceType;

@@ -1,0 +1,114 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6">
+  <a routerLink="/work-orders" class="text-xs text-blue-700 no-underline">Back to work orders</a>
+  <h1 class="text-lg font-bold text-slate-900 dark:text-white mt-2">New work order</h1>
+  <p class="text-xs text-slate-500 mb-4">Opened as OPEN. Company and branch come from the vehicle.</p>
+
+  @if (loading()) {
+    <div class="p-8 text-xs text-slate-500">Loading form…</div>
+  } @else {
+    <form class="max-w-2xl grid grid-cols-1 gap-3" (ngSubmit)="submit()">
+      @if (error()) {
+        <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+      }
+      @if (success()) {
+        <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">{{ success() }}</div>
+      }
+
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Vehicle
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [disabled]="lockedPreventive()" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId">
+          <option [ngValue]="null">Select vehicle</option>
+          @for (vehicle of vehicles(); track vehicle.id) {
+            <option [ngValue]="vehicle.id">{{ vehicle.code }} — {{ vehicle.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Source
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [disabled]="lockedPreventive()" [ngModel]="source()" (ngModelChange)="source.set($event)" name="source">
+          <option value="MANUAL">Manual</option>
+          <option value="PREVENTIVE">Preventive</option>
+        </select>
+      </label>
+
+      @if (source() === 'PREVENTIVE') {
+        <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+          Maintenance rule
+          <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [disabled]="lockedPreventive()" [ngModel]="maintenanceRuleId()" (ngModelChange)="maintenanceRuleId.set($event ? +$event : null)" name="ruleId">
+            <option [ngValue]="null">Select rule</option>
+            @for (rule of rules(); track rule.id) {
+              <option [ngValue]="rule.id">{{ rule.maintenanceType }} — {{ rule.name }}</option>
+            }
+          </select>
+        </label>
+        @if (lockedPreventive()) {
+          <p class="text-[11px] text-slate-500">This preventive job is fixed to the dashboard alert vehicle and rule.</p>
+        }
+      } @else {
+        <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+          Maintenance type
+          <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType">
+            <option value="">Select type</option>
+            @for (type of types(); track type.code) {
+              <option [value]="type.code">{{ type.name || type.code }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Title
+        <input class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Description
+        <textarea class="border border-slate-200 rounded-lg px-3 py-2 text-xs" rows="3" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description"></textarea>
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Priority
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
+          <option value="LOW">Low</option>
+          <option value="NORMAL">Normal</option>
+          <option value="HIGH">High</option>
+        </select>
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Supplier
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ? +$event : null)" name="supplierId">
+          <option [ngValue]="null">None</option>
+          @for (supplier of suppliers(); track supplier.id) {
+            <option [ngValue]="supplier.id">{{ supplier.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Assignee
+        <select class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="assignedUserId()" (ngModelChange)="assignedUserId.set($event ? +$event : null)" name="assignedUserId">
+          <option [ngValue]="null">None</option>
+          @for (user of users(); track user.id) {
+            <option [ngValue]="user.id">{{ user.name || user.username }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Estimated cost
+        <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="estimatedCost()" (ngModelChange)="estimatedCost.set($event)" name="estimatedCost" />
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Requested date
+        <input type="date" class="border border-slate-200 rounded-lg px-3 py-2 text-xs" [ngModel]="requestedDate()" (ngModelChange)="requestedDate.set($event)" name="requestedDate" />
+      </label>
+      <label class="text-xs font-semibold text-slate-600 flex flex-col gap-1">
+        Attachment
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" (change)="onFile($event)" />
+        @if (attachmentPath()) {
+          <span class="text-[11px] text-slate-500">{{ attachmentPath() }}</span>
+        }
+      </label>
+      <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer w-fit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Create work order' }}
+      </button>
+    </form>
+  }
+</div>

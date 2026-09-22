@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { VehicleMgmtService, VehicleDocument, VehicleServiceLog, VehicleDriverAssignment } from '../../services/vehicle-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -13,6 +13,7 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfTextareaComponent, FfDatepickerComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
 
 @Component({
   selector: 'app-vehicle-details-console',
@@ -30,7 +31,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     FfNumberComponent,
     FfTextareaComponent,
     FfDatepickerComponent,
-    FfButtonComponent
+    FfButtonComponent,
+    RouterLink
   ],
   templateUrl: './vehicle-details-console.html',
   styles: []
@@ -42,6 +44,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
   private route = inject(ActivatedRoute);
+  private workOrderService = inject(WorkOrderService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -63,6 +66,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   });
 
   documents = signal<VehicleDocument[]>([]);
+  workOrders = signal<WorkOrder[]>([]);
+  workOrdersLoading = signal(false);
+  workOrdersError = signal<string | null>(null);
   maintenanceLogs = signal<VehicleServiceLog[]>([]);
   assignments = signal<VehicleDriverAssignment[]>([]);
   drivers = signal<any[]>([]);
@@ -131,6 +137,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
       const raw = params.get('vehicleId');
       const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
       this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
+      if (params.get('tab') === 'work-orders') {
+        this.activeTab.set('work-orders');
+      }
       if (this.requestedVehicleId != null && this.vehicles().length) {
         this.selectVehicle(this.requestedVehicleId);
       }
@@ -160,10 +169,34 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.documents.set([]);
     this.maintenanceLogs.set([]);
     this.assignments.set([]);
+    this.workOrders.set([]);
+    this.workOrdersError.set(null);
     if (vehicleId == null) return;
     this.loadDocuments();
     this.loadMaintenanceHistory();
     this.loadDriverAssignments();
+    this.loadWorkOrders();
+  }
+
+  loadWorkOrders() {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null) return;
+    this.workOrdersLoading.set(true);
+    this.workOrdersError.set(null);
+    this.workOrderService.list({ vehicleId, page: 0, size: 50 }).subscribe({
+      next: res => {
+        this.workOrders.set(res?.success ? (res.data?.content || []) : []);
+        if (!res?.success) {
+          this.workOrdersError.set(res?.message || 'Unable to load work orders.');
+        }
+        this.workOrdersLoading.set(false);
+      },
+      error: err => {
+        this.workOrders.set([]);
+        this.workOrdersError.set(workOrderError(err));
+        this.workOrdersLoading.set(false);
+      }
+    });
   }
 
   loadDropdownData() {

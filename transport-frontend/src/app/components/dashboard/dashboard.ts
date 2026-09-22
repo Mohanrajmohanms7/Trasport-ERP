@@ -156,6 +156,19 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/vehicles'], { queryParams: { vehicleId: item.vehicleId } });
   }
 
+  canCreateWorkOrder(status: string | null | undefined): boolean {
+    const value = String(status || '').toUpperCase();
+    return value === 'DUE' || value === 'DUE_SOON' || value === 'OVERDUE';
+  }
+
+  createWorkOrderFromAlert(item: MaintenanceDueDashboardItem, event: Event) {
+    event.stopPropagation();
+    if (item?.vehicleId == null || item.ruleId == null) return;
+    this.router.navigate(['/work-orders/new'], {
+      queryParams: { vehicleId: item.vehicleId, ruleId: item.ruleId, source: 'PREVENTIVE' }
+    });
+  }
+
   dueStatusLabel(status: string | null | undefined): string {
     switch (String(status || '').toUpperCase()) {
       case 'OVERDUE': return 'Overdue';

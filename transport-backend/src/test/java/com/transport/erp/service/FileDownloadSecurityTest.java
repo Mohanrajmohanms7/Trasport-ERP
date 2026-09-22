@@ -50,6 +50,9 @@ class FileDownloadSecurityTest {
     @Mock
     private VehicleServiceLogRepository vehicleServiceLogRepository;
 
+    @Mock
+    private WorkOrderRepository workOrderRepository;
+
     private FileStorageService fileStorageService;
 
     private AppUser tenantUserCompany1;
@@ -67,6 +70,7 @@ class FileDownloadSecurityTest {
         ReflectionTestUtils.setField(fileStorageService, "expenseRepository", expenseRepository);
         ReflectionTestUtils.setField(fileStorageService, "fuelEntryRepository", fuelEntryRepository);
         ReflectionTestUtils.setField(fileStorageService, "vehicleServiceLogRepository", vehicleServiceLogRepository);
+        ReflectionTestUtils.setField(fileStorageService, "workOrderRepository", workOrderRepository);
 
         tenantUserCompany1 = new AppUser();
         tenantUserCompany1.setId(10L);
@@ -179,6 +183,41 @@ class FileDownloadSecurityTest {
 
         assertThrows(AccessDeniedException.class, () ->
                 fileStorageService.validateFileAccess("unknown_file.pdf", tenantUserCompany1));
+    }
+
+    @Test
+    @DisplayName("Work order attachment is authorized by company and branch")
+    void workOrderAttachment_companyAndBranch() {
+        when(tenantAccess.isSuperAdmin(tenantUserCompany1)).thenReturn(false);
+        when(customerDocumentRepository.findFirstByFilePathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(vehicleDocumentRepository.findFirstByFilePathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(driverDocumentRepository.findFirstByFilePathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(tripDocumentRepository.findFirstByFilePathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(tripDocumentRepository.findFirstByFileNameAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(expenseRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(fuelEntryRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+        when(vehicleServiceLogRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse(anyString())).thenReturn(Optional.empty());
+
+        WorkOrder order = new WorkOrder();
+        order.setCompanyId(1L);
+        order.setBranchId(101L);
+        order.setAttachmentPath("uuid_work_order.pdf");
+        when(workOrderRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse("uuid_work_order.pdf"))
+                .thenReturn(Optional.of(order));
+
+        assertDoesNotThrow(() -> fileStorageService.validateFileAccess("uuid_work_order.pdf", tenantUserCompany1));
+        verify(tenantAccess).assertCompanyAccess(1L);
+        verify(tenantAccess).assertBranchAccess(101L);
+
+        WorkOrder foreign = new WorkOrder();
+        foreign.setCompanyId(2L);
+        foreign.setBranchId(202L);
+        when(workOrderRepository.findFirstByAttachmentPathContainingAndIsDeletedFalse("uuid_foreign_wo.pdf"))
+                .thenReturn(Optional.of(foreign));
+        doThrow(new AccessDeniedException("Access denied to another company's data"))
+                .when(tenantAccess).assertCompanyAccess(2L);
+        assertThrows(AccessDeniedException.class, () ->
+                fileStorageService.validateFileAccess("uuid_foreign_wo.pdf", tenantUserCompany1));
     }
 
     @Test

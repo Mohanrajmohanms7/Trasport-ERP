@@ -1,0 +1,108 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+  <a routerLink="/work-orders" class="text-xs text-blue-700 no-underline">Back to work orders</a>
+
+  @if (loading()) {
+    <div class="p-8 text-xs text-slate-500">Loading work order…</div>
+  } @else if (error() && !order()) {
+    <div class="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+  } @else if (order(); as order) {
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h1 class="text-lg font-bold text-slate-900 dark:text-white">{{ order.workOrderNumber }}</h1>
+        <p class="text-xs text-slate-500">{{ order.name }}</p>
+      </div>
+      <div class="text-xs font-bold text-slate-700">{{ order.status }} · {{ order.priority }}</div>
+    </div>
+
+    @if (feedback()) {
+      <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">{{ feedback() }}</div>
+    }
+    @if (error()) {
+      <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    }
+
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
+        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Work order</h2>
+        <p>Source: {{ order.source }}</p>
+        <p>Maintenance: {{ order.maintenanceType }}</p>
+        <p>Opened: {{ order.openedAt ? (order.openedAt | date:'medium') : '—' }}</p>
+        <p>Started: {{ order.startedAt ? (order.startedAt | date:'medium') : '—' }}</p>
+        <p>Completed: {{ order.completedAt ? (order.completedAt | date:'medium') : '—' }}</p>
+        <p>Cancelled: {{ order.cancelledAt ? (order.cancelledAt | date:'medium') : '—' }}</p>
+        <p>Requested: {{ order.requestedDate || '—' }}</p>
+        <p>Description: {{ order.description || '—' }}</p>
+      </div>
+      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
+        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Vehicle</h2>
+        <p>{{ order.vehicleCode }} — {{ order.vehicleName }}</p>
+        <a class="text-blue-700" [routerLink]="['/vehicles']" [queryParams]="{ vehicleId: order.vehicleId, tab: 'work-orders' }">Open vehicle</a>
+        <p class="mt-2">Odometer at open: {{ order.odometerAtOpen != null ? (order.odometerAtOpen | number) : '—' }}</p>
+        <p>Odometer at completion: {{ order.odometerAtComplete != null ? (order.odometerAtComplete | number) : '—' }}</p>
+        <p>Supplier: {{ order.supplierName || '—' }}</p>
+        <p>Assignee: {{ order.assignedUserName || '—' }}</p>
+        <p>Estimated cost: {{ order.estimatedCost != null ? (order.estimatedCost | number:'1.2-2') : '—' }}</p>
+        <p>Actual cost: {{ order.actualCost != null ? (order.actualCost | number:'1.2-2') : '—' }}</p>
+      </div>
+    </section>
+
+    @if (order.source === 'PREVENTIVE') {
+      <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs">
+        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Preventive snapshot</h2>
+        <p>Rule: {{ order.maintenanceRuleName || order.maintenanceRuleId }}</p>
+        <p>Trigger: {{ order.triggerMode || '—' }}</p>
+        <p>Due status at creation: {{ order.dueStatusAtCreation || '—' }}</p>
+        <p>Due KM: {{ order.dueKm != null ? (order.dueKm | number) : '—' }}</p>
+        <p>Due date: {{ order.dueDate || '—' }}</p>
+        <p>Baseline KM: {{ order.baselineLastServiceKm != null ? (order.baselineLastServiceKm | number) : '—' }}</p>
+        <p>Baseline date: {{ order.baselineLastServiceDate || '—' }}</p>
+      </section>
+    }
+
+    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-2">
+      <h2 class="font-bold uppercase tracking-wider text-slate-500">Diagnosis and notes</h2>
+      <p>Diagnosis: {{ order.diagnosis || '—' }}</p>
+      <p>Completion notes: {{ order.completionNotes || '—' }}</p>
+      <p>Cancellation reason: {{ order.cancellationReason || '—' }}</p>
+      @if (order.attachmentPath) {
+        <p>Attachment: {{ order.attachmentPath }}</p>
+      }
+    </section>
+
+    @if (canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS')) {
+      <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 gap-2 max-w-xl" (ngSubmit)="save()">
+        <h2 class="font-bold uppercase tracking-wider text-slate-500">Update</h2>
+        @if (order.status === 'OPEN') {
+          <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Title" />
+          <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description"></textarea>
+          <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
+            <option value="LOW">Low</option>
+            <option value="NORMAL">Normal</option>
+            <option value="HIGH">High</option>
+          </select>
+          <input type="date" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="requestedDate()" (ngModelChange)="requestedDate.set($event)" name="requestedDate" />
+        }
+        <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="diagnosis()" (ngModelChange)="diagnosis.set($event)" name="diagnosis" placeholder="Diagnosis"></textarea>
+        <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="estimatedCost()" (ngModelChange)="estimatedCost.set($event)" name="estimatedCost" placeholder="Estimated cost" />
+        <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Save</button>
+      </form>
+
+      <div class="flex flex-col gap-3 max-w-xl text-xs">
+        @if (order.status === 'OPEN') {
+          <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer w-fit" (click)="start()">Start</button>
+        }
+        @if (order.status === 'IN_PROGRESS') {
+          <div class="flex flex-col gap-2">
+            <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="completionNotes()" (ngModelChange)="completionNotes.set($event)" name="completionNotes" placeholder="Completion notes"></textarea>
+            <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="actualCost()" (ngModelChange)="actualCost.set($event)" name="actualCost" placeholder="Actual cost (optional)" />
+            <button type="button" class="px-3 py-2 rounded-lg bg-emerald-700 text-white font-bold border-none cursor-pointer w-fit" (click)="complete()">Complete</button>
+          </div>
+        }
+        <div class="flex flex-col gap-2">
+          <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="cancellationReason()" (ngModelChange)="cancellationReason.set($event)" name="cancellationReason" placeholder="Cancellation reason"></textarea>
+          <button type="button" class="px-3 py-2 rounded-lg bg-rose-700 text-white font-bold border-none cursor-pointer w-fit" (click)="cancel()">Cancel work order</button>
+        </div>
+      </div>
+    }
+  }
+</div>

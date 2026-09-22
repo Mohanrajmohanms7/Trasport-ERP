@@ -10,6 +10,9 @@ import { DashboardComponent } from './components/dashboard/dashboard';
 import { UserRoleManagementComponent } from './components/user-role-management/user-role-management';
 import { CompanyAdministrationComponent } from './components/company-administration/company-administration';
 import { VehicleDetailsConsoleComponent } from './components/vehicle-details-console/vehicle-details-console';
+import { WorkOrderListComponent } from './components/work-orders/work-order-list';
+import { WorkOrderFormComponent } from './components/work-orders/work-order-form';
+import { WorkOrderDetailComponent } from './components/work-orders/work-order-detail';
 import { DriverDetailsConsoleComponent } from './components/driver-details-console/driver-details-console';
 import { CustomerDetailsConsoleComponent } from './components/customer-details-console/customer-details-console';
 import { MaterialQuarryConsoleComponent } from './components/material-quarry-console/material-quarry-console';
@@ -51,6 +54,9 @@ export const routes: Routes = [
       { path: 'users-roles', component: UserRoleManagementComponent },
       { path: 'company-admin', component: CompanyAdministrationComponent },
       { path: 'vehicles', component: VehicleDetailsConsoleComponent },
+      { path: 'work-orders', component: WorkOrderListComponent },
+      { path: 'work-orders/new', component: WorkOrderFormComponent },
+      { path: 'work-orders/:id', component: WorkOrderDetailComponent },
       { path: 'drivers', component: DriverDetailsConsoleComponent }, 
       { path: 'customers', component: CustomerDetailsConsoleComponent },
       { path: 'materials-quarries', component: MaterialQuarryConsoleComponent },

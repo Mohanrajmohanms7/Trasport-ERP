@@ -18,6 +18,7 @@ export interface MaintenanceDueDashboardSummary {
 
 export interface MaintenanceDueDashboardItem {
   vehicleId: number;
+  ruleId?: number;
   vehicleCode?: string;
   vehicleName?: string;
   maintenanceType?: string;

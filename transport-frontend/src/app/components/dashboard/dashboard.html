@@ -387,10 +387,17 @@
                         —
                       }
                     </td>
-                    <td class="p-3">
+                    <td class="p-3 whitespace-nowrap">
                       <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide" [class]="dueStatusClass(item.dueStatus)">
                         {{ dueStatusLabel(item.dueStatus) }}
                       </span>
+                      @if (canCreateWorkOrder(item.dueStatus) && item.ruleId != null) {
+                        <button type="button"
+                                class="ml-2 px-2 py-0.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold border-none cursor-pointer"
+                                (click)="createWorkOrderFromAlert(item, $event)">
+                          Work order
+                        </button>
+                      }
                     </td>
                   </tr>
                 }

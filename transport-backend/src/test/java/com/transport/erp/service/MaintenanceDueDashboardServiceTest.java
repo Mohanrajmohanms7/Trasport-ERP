@@ -129,6 +129,7 @@ class MaintenanceDueDashboardServiceTest {
                 MaintenanceDueCalculator.DUE_SOON,
                 MaintenanceDueCalculator.UNKNOWN
         ), statuses);
+        assertEquals(1L, service.build(COMPANY_ID, TODAY).getAlerts().get(0).getRuleId());
     }
 
     @Test
