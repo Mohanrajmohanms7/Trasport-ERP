@@ -101,6 +101,7 @@ class WorkOrderServiceTest {
     @Mock private TenantParentAccess parentAccess;
     @Mock private AuditService auditService;
     @Mock private EntityManager entityManager;
+    @Mock private WorkOrderFinancialPosting workOrderFinancialPosting;
 
     @InjectMocks
     private WorkOrderService service;
@@ -556,6 +557,7 @@ class WorkOrderServiceTest {
         verify(workOrderRepository, never()).findDetailById(any());
         verify(workOrderPartRepository, never()).findActiveByWorkOrderId(any());
         verify(workOrderLabourRepository, never()).findActiveByWorkOrderId(any());
+        verify(workOrderFinancialPosting, never()).attachAccounting(any(), any());
         assertNull(page.getContent().get(0).getParts());
         assertNull(page.getContent().get(0).getLabour());
 
@@ -572,6 +574,7 @@ class WorkOrderServiceTest {
         verify(workOrderLabourRepository, times(1)).findActiveByWorkOrderId(10L);
         verify(workOrderPartRepository, never()).findById(any());
         verify(workOrderLabourRepository, never()).findById(any());
+        verify(workOrderFinancialPosting, times(1)).attachAccounting(eq(first), any());
     }
 
     @Test
@@ -615,6 +618,65 @@ class WorkOrderServiceTest {
         assertEquals(1, response.getLabour().size());
         verify(workOrderPartRepository, times(1)).findActiveByWorkOrderId(10L);
         verify(workOrderLabourRepository, times(1)).findActiveByWorkOrderId(10L);
+    }
+
+    @Test
+    @DisplayName("Accounting failure leaves the work order in progress and posts nothing further")
+    void accountingFailureRollsBackCompletion() {
+        WorkOrder order = stored(openOrder());
+        order.setStatus(WorkOrderService.STATUS_IN_PROGRESS);
+        when(vehicleRepository.findByIdForUpdate(VEHICLE_ID)).thenReturn(Optional.of(order.getVehicle()));
+        org.mockito.Mockito.doThrow(new BusinessValidationException(
+                "Financial Period Closed", "FINANCIAL_YEAR_CLOSED", "FINANCIAL_YEAR_CLOSED: closed", "Use an open year"))
+                .when(workOrderFinancialPosting).postCompletion(any(), any(), any());
+        WorkOrderCompleteRequest request = new WorkOrderCompleteRequest();
+        request.setCompletionNotes("Done");
+        request.setActualCost(new BigDecimal("350.00"));
+
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class,
+                () -> service.complete(10L, request, "admin"));
+
+        assertEquals("FINANCIAL_YEAR_CLOSED", ex.getErrorCode());
+        assertEquals(WorkOrderService.STATUS_IN_PROGRESS, order.getStatus());
+        assertNull(order.getActualCost());
+        verify(workOrderRepository, never()).save(any());
+        verify(auditService, never()).log(any(), eq("WORK_ORDER_COMPLETED"), any(), any(), any(), any());
+        verify(auditService, never()).log(any(), eq("WORK_ORDER_ACCOUNTING_POSTED"), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("A second completion sees the locked status and does not post again")
+    void duplicateCompletionDoesNotPostAgain() {
+        WorkOrder order = stored(openOrder());
+        order.setStatus(WorkOrderService.STATUS_IN_PROGRESS);
+        when(vehicleRepository.findByIdForUpdate(VEHICLE_ID)).thenReturn(Optional.of(order.getVehicle()));
+        WorkOrderCompleteRequest request = new WorkOrderCompleteRequest();
+        request.setCompletionNotes("Done");
+        request.setActualCost(new BigDecimal("350.00"));
+
+        service.complete(10L, request, "admin");
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class,
+                () -> service.complete(10L, request, "admin"));
+
+        assertEquals("WORK_ORDER_INVALID_TRANSITION", ex.getErrorCode());
+        verify(workOrderFinancialPosting, times(1)).postCompletion(eq(order), eq(new BigDecimal("350.00")), eq("admin"));
+        InOrder sequence = inOrder(workOrderRepository, workOrderFinancialPosting);
+        sequence.verify(workOrderRepository).findByIdForUpdate(10L);
+        sequence.verify(workOrderFinancialPosting).postCompletion(any(), any(), any());
+        sequence.verify(workOrderRepository).save(order);
+    }
+
+    @Test
+    @DisplayName("Branch user cannot complete another branch work order")
+    void branchUserCannotCompleteOtherBranch() {
+        WorkOrder order = stored(openOrder());
+        order.setBranchId(2L);
+        order.setStatus(WorkOrderService.STATUS_IN_PROGRESS);
+        WorkOrderCompleteRequest request = new WorkOrderCompleteRequest();
+        request.setCompletionNotes("Done");
+        request.setActualCost(new BigDecimal("10.00"));
+        assertThrows(AccessDeniedException.class, () -> service.complete(10L, request, "admin"));
+        verify(workOrderFinancialPosting, never()).postCompletion(any(), any(), any());
     }
 
     @Test

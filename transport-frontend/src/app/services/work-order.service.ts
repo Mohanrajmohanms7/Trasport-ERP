@@ -57,6 +57,30 @@ export interface WorkOrder {
   partsTotal?: number | null;
   labourTotal?: number | null;
   operationalCost?: number | null;
+  financialAmount?: number | null;
+  accountingStatus?: string | null;
+  journalVoucherId?: number | null;
+  journalVoucherReference?: string | null;
+  postedAt?: string | null;
+}
+
+export interface ServiceHistoryRow {
+  id: number;
+  vehicleId?: number;
+  vehicleRegistrationNumber?: string | null;
+  sourceType: string;
+  sourceId: number;
+  serviceDate?: string | null;
+  serviceType?: string | null;
+  description?: string | null;
+  workOrderNumber?: string | null;
+  supplierName?: string | null;
+  odometerKm?: number | null;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  operationalCost?: number | null;
+  financialAmount?: number | null;
+  status?: string | null;
 }
 
 export interface WorkOrderPartLine {
@@ -166,6 +190,11 @@ export class WorkOrderService {
 
   removeLabour(id: number, lineId: number): Observable<ApiResponse<WorkOrder>> {
     return this.http.delete<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/labour/${lineId}`);
+  }
+
+  serviceHistory(vehicleId: number, page = 0, size = 50): Observable<ApiResponse<{ content: ServiceHistoryRow[] }>> {
+    const params = new HttpParams().set('page', String(page)).set('size', String(size));
+    return this.http.get<ApiResponse<{ content: ServiceHistoryRow[] }>>(`/api/v1/vehicles/${vehicleId}/service-history`, { params });
   }
 
   upload(file: File): Observable<ApiResponse<{ fileName: string; originalName?: string }>> {

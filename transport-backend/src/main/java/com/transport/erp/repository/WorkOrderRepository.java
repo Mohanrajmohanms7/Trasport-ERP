@@ -77,6 +77,17 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
     Optional<WorkOrder> findByIdForUpdate(@Param("id") Long id);
 
     @Query("""
+            SELECT w FROM WorkOrder w
+            JOIN FETCH w.vehicle
+            LEFT JOIN FETCH w.supplier
+            WHERE w.companyId = :companyId
+              AND w.vehicle.id = :vehicleId
+              AND w.status = 'COMPLETED'
+              AND w.isDeleted = false
+            """)
+    List<WorkOrder> findCompletedForVehicle(@Param("companyId") Long companyId, @Param("vehicleId") Long vehicleId);
+
+    @Query("""
             SELECT COUNT(w) FROM WorkOrder w
             WHERE w.companyId = :companyId
               AND w.vehicle.id = :vehicleId

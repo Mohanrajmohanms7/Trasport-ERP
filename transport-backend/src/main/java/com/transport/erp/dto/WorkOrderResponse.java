@@ -59,4 +59,9 @@ public class WorkOrderResponse {
     private BigDecimal partsTotal;
     private BigDecimal labourTotal;
     private BigDecimal operationalCost;
+    private BigDecimal financialAmount;
+    private String accountingStatus;
+    private Long journalVoucherId;
+    private String journalVoucherReference;
+    private LocalDateTime postedAt;
 }

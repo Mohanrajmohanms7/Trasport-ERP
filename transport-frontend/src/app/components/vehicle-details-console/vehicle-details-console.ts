@@ -13,7 +13,7 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfTextareaComponent, FfDatepickerComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
-import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
+import { ServiceHistoryRow, WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
 
 @Component({
   selector: 'app-vehicle-details-console',
@@ -67,6 +67,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
 
   documents = signal<VehicleDocument[]>([]);
   workOrders = signal<WorkOrder[]>([]);
+  serviceHistory = signal<ServiceHistoryRow[]>([]);
+  serviceHistoryLoading = signal(false);
+  serviceHistoryError = signal<string | null>(null);
   workOrdersLoading = signal(false);
   workOrdersError = signal<string | null>(null);
   maintenanceLogs = signal<VehicleServiceLog[]>([]);
@@ -137,8 +140,9 @@ export class VehicleDetailsConsoleComponent implements OnInit {
       const raw = params.get('vehicleId');
       const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
       this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
-      if (params.get('tab') === 'work-orders') {
-        this.activeTab.set('work-orders');
+      const tab = params.get('tab');
+      if (tab === 'work-orders' || tab === 'service-history') {
+        this.activeTab.set(tab);
       }
       if (this.requestedVehicleId != null && this.vehicles().length) {
         this.selectVehicle(this.requestedVehicleId);
@@ -171,11 +175,35 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.assignments.set([]);
     this.workOrders.set([]);
     this.workOrdersError.set(null);
+    this.serviceHistory.set([]);
+    this.serviceHistoryError.set(null);
     if (vehicleId == null) return;
     this.loadDocuments();
     this.loadMaintenanceHistory();
     this.loadDriverAssignments();
     this.loadWorkOrders();
+    this.loadServiceHistory();
+  }
+
+  loadServiceHistory() {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null) return;
+    this.serviceHistoryLoading.set(true);
+    this.serviceHistoryError.set(null);
+    this.workOrderService.serviceHistory(vehicleId).subscribe({
+      next: res => {
+        this.serviceHistory.set(res?.success ? (res.data?.content || []) : []);
+        if (!res?.success) {
+          this.serviceHistoryError.set(res?.message || 'Unable to load service history.');
+        }
+        this.serviceHistoryLoading.set(false);
+      },
+      error: err => {
+        this.serviceHistory.set([]);
+        this.serviceHistoryError.set(workOrderError(err));
+        this.serviceHistoryLoading.set(false);
+      }
+    });
   }
 
   loadWorkOrders() {

@@ -117,6 +117,9 @@ public class WorkOrderService {
     @Autowired
     private EntityManager entityManager;
 
+    @Autowired
+    private WorkOrderFinancialPosting workOrderFinancialPosting;
+
     @Transactional(readOnly = true)
     public Page<WorkOrderResponse> list(
             Long vehicleId,
@@ -282,6 +285,8 @@ public class WorkOrderService {
         Vehicle vehicle = vehicleRepository.findByIdForUpdate(order.getVehicle().getId())
                 .orElseThrow(this::vehicleInvalid);
         entityManager.refresh(vehicle);
+
+        workOrderFinancialPosting.postCompletion(order, actualCost, username);
 
         order.setStatus(STATUS_COMPLETED);
         order.setCompletedAt(LocalDateTime.now());
@@ -667,6 +672,7 @@ public class WorkOrderService {
         dto.setPartsTotal(partsTotal);
         dto.setLabourTotal(labourTotal);
         dto.setOperationalCost(partsTotal.add(labourTotal).setScale(2, RoundingMode.HALF_UP));
+        workOrderFinancialPosting.attachAccounting(order, dto);
         return dto;
     }
 

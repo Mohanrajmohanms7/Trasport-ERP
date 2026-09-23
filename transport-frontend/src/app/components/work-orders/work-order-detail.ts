@@ -72,6 +72,12 @@ export class WorkOrderDetailComponent implements OnInit {
     });
   }
 
+  accountingLabel(status?: string | null): string {
+    if (status === 'POSTED') return 'Posted';
+    if (status === 'REVERSED') return 'Reversed';
+    return 'Not Posted';
+  }
+
   canEditLines(order: WorkOrder): boolean {
     return this.canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS');
   }

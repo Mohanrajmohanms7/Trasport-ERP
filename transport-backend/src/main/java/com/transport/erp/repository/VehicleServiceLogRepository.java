@@ -14,6 +14,17 @@ import java.util.Optional;
 @Repository
 public interface VehicleServiceLogRepository extends JpaRepository<VehicleServiceLog, Long> {
     List<VehicleServiceLog> findByVehicleIdAndIsDeletedFalse(Long vehicleId);
+
+    @Query("""
+            SELECT l FROM VehicleServiceLog l
+            JOIN FETCH l.vehicle
+            LEFT JOIN FETCH l.supplier
+            WHERE l.companyId = :companyId
+              AND l.vehicle.id = :vehicleId
+              AND l.isDeleted = false
+              AND UPPER(l.status) <> 'CANCELLED'
+            """)
+    List<VehicleServiceLog> findActiveHistory(@Param("companyId") Long companyId, @Param("vehicleId") Long vehicleId);
     Optional<VehicleServiceLog> findFirstByAttachmentPathContainingAndIsDeletedFalse(String attachmentPath);
 
     long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
