@@ -5,8 +5,9 @@ services:
   - type: web
     name: transport-backend
     runtime: docker
-    dockerfilePath: ./transport-backend/Dockerfile
-    dockerContext: ./transport-backend
+    rootDir: transport-backend
+    dockerfilePath: Dockerfile
+    dockerContext: .
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
