@@ -262,6 +262,9 @@ export class DashboardComponent implements OnInit {
     const role = this.activeRole();
     const done = () => this.loading.set(false);
     const fail = () => {
+      this.metrics.set(null);
+      this.notifications.set([]);
+      this.activities.set([]);
       this.loadError.set('Unable to load dashboard telemetry.');
       done();
     };
@@ -271,6 +274,9 @@ export class DashboardComponent implements OnInit {
         this.notifications.set(Array.isArray(res.data?.alerts) ? res.data.alerts : []);
         this.activities.set(Array.isArray(res.data?.recentActivities) ? res.data.recentActivities : []);
       } else {
+        this.metrics.set(null);
+        this.notifications.set([]);
+        this.activities.set([]);
         this.loadError.set('Unable to load dashboard telemetry.');
       }
       done();
@@ -298,35 +304,22 @@ export class DashboardComponent implements OnInit {
     this.fetchMetrics();
   }
 
-  executeAction(action: string) {
-    const target = this.quickActionRoutes[action] || '/dashboard';
-    if (target.includes('?')) {
-      const [path, query] = target.split('?');
-      const params: Record<string, string> = {};
-      new URLSearchParams(query).forEach((v, k) => { params[k] = v; });
-      this.router.navigate([path], { queryParams: params });
-      return;
-    }
-    this.router.navigate([target]);
-  }
-
   openMaintenanceVehicle(item: MaintenanceDueDashboardItem) {
     if (item?.vehicleId == null) return;
     this.router.navigate(['/vehicles'], { queryParams: { vehicleId: item.vehicleId } });
   }
 
-  dueStatusColor(status: string | null | undefined): FfStatusColor {
-    switch (String(status || '').toUpperCase()) {
-      case 'OVERDUE':
-      case 'DUE':
-        return 'danger';
-      case 'DUE_SOON':
-        return 'warning';
-      case 'UNKNOWN':
-        return 'info';
-      default:
-        return 'neutral';
-    }
+  canCreateWorkOrder(status: string | null | undefined): boolean {
+    const value = String(status || '').toUpperCase();
+    return value === 'DUE' || value === 'DUE_SOON' || value === 'OVERDUE';
+  }
+
+  createWorkOrderFromAlert(item: MaintenanceDueDashboardItem, event: Event) {
+    event.stopPropagation();
+    if (item?.vehicleId == null || item.ruleId == null) return;
+    this.router.navigate(['/work-orders/new'], {
+      queryParams: { vehicleId: item.vehicleId, ruleId: item.ruleId, source: 'PREVENTIVE' }
+    });
   }
 
   dueStatusLabel(status: string | null | undefined): string {
@@ -336,6 +329,20 @@ export class DashboardComponent implements OnInit {
       case 'DUE_SOON': return 'Due Soon';
       case 'UNKNOWN': return 'Unknown';
       default: return status || '—';
+    }
+  }
+
+  dueStatusClass(status: string | null | undefined): string {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE':
+      case 'DUE':
+        return 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300';
+      case 'DUE_SOON':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300';
+      case 'UNKNOWN':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300';
+      default:
+        return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
     }
   }
 
@@ -351,6 +358,32 @@ export class DashboardComponent implements OnInit {
       return String(item.nextDueDate);
     }
     return '—';
+  }
+
+  executeAction(action: string) {
+    const target = this.quickActionRoutes[action] || '/dashboard';
+    if (target.includes('?')) {
+      const [path, query] = target.split('?');
+      const params: Record<string, string> = {};
+      new URLSearchParams(query).forEach((v, k) => { params[k] = v; });
+      this.router.navigate([path], { queryParams: params });
+      return;
+    }
+    this.router.navigate([target]);
+  }
+
+  dueStatusColor(status: string | null | undefined): FfStatusColor {
+    switch (String(status || '').toUpperCase()) {
+      case 'OVERDUE':
+      case 'DUE':
+        return 'danger';
+      case 'DUE_SOON':
+        return 'warning';
+      case 'UNKNOWN':
+        return 'info';
+      default:
+        return 'neutral';
+    }
   }
 
   private buildPolyline(values: number[], width: number, height: number): string {

@@ -15,6 +15,7 @@ import com.transport.erp.repository.SalesInvoiceRepository;
 import com.transport.erp.exception.BusinessValidationException;
 import com.transport.erp.model.VehicleDriverAssignment;
 import com.transport.erp.repository.VehicleDriverAssignmentRepository;
+import com.transport.erp.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,6 +43,12 @@ public class TripService {
 
     @Autowired
     private VehicleDriverAssignmentRepository assignmentRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private VehicleMaintenanceStateService maintenanceState;
 
     @Autowired
     private TenantAccessService tenantAccess;
@@ -143,6 +150,7 @@ public class TripService {
 
 
         validateVehicleDriverAssignment(trip);
+        assertVehicleAvailableForNewTrip(trip, null);
 
         if (trip.getDetails() != null) {
             for (TripDetail detail : trip.getDetails()) {
@@ -166,6 +174,7 @@ public class TripService {
     @Transactional
     public Trip updateTrip(Long id, Trip details, String updatedByUsername) {
         Trip existing = getTripById(id);
+        Long previousVehicleId = existing.getVehicle() == null ? null : existing.getVehicle().getId();
 
         existing.setVehicle(details.getVehicle());
         existing.setDriver(details.getDriver());
@@ -173,6 +182,7 @@ public class TripService {
         existing.setUpdatedBy(updatedByUsername);
 
         validateVehicleDriverAssignment(existing);
+        assertVehicleAvailableForNewTrip(existing, previousVehicleId);
 
         // Replace details
         existing.getDetails().clear();
@@ -215,6 +225,32 @@ public class TripService {
                 );
             }
         }
+    }
+
+    /**
+     * Blocks a new use of a vehicle that has an IN_PROGRESS work order.
+     * A trip that already references the same vehicle is left unchanged.
+     * The vehicle row is locked first so starting maintenance and creating a trip serialize.
+     * There is no role bypass.
+     */
+    private void assertVehicleAvailableForNewTrip(Trip trip, Long alreadyAssignedVehicleId) {
+        if (trip == null || trip.getVehicle() == null || trip.getVehicle().getId() == null) {
+            return;
+        }
+        Long vehicleId = trip.getVehicle().getId();
+        if (vehicleId.equals(alreadyAssignedVehicleId)) {
+            return;
+        }
+        vehicleRepository.findByIdForUpdate(vehicleId).ifPresent(locked -> {
+            if (maintenanceState.isVehicleUnderMaintenance(locked.getId())) {
+                throw new BusinessValidationException(
+                        "This vehicle is currently under maintenance and cannot be used for a new trip.",
+                        "VEHICLE_UNDER_MAINTENANCE",
+                        "VEHICLE_UNDER_MAINTENANCE: Vehicle is currently under maintenance and cannot be used for a new trip.",
+                        "Complete or cancel the in-progress work order before planning a new trip for this vehicle."
+                );
+            }
+        });
     }
 
     @Transactional

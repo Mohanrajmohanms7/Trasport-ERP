@@ -336,7 +336,7 @@
             </span>
           </div>
           <span class="dash-kpi-value">{{ maintenanceDueDashboard()?.summary?.dueCount || 0 }}</span>
-          <span class="dash-kpi-sub">Due today</span>
+          <span class="dash-kpi-sub">Interval reached</span>
         </div>
         <div class="dash-kpi dash-kpi--warning">
           <div class="flex items-start justify-between gap-2">
@@ -498,6 +498,9 @@
             No vehicles due for preventive maintenance.
           </div>
         } @else {
+          @if ((maintenanceDueDashboard()?.summary?.unknownCount || 0) > 0) {
+            <p class="mb-3 text-[11px] text-[var(--ff-color-info-500)]">Unknown means the authoritative odometer or last-service baseline is missing, so a due date or kilometre cannot be calculated.</p>
+          }
           <div class="overflow-x-auto rounded-[10px]">
             <table class="w-full text-left text-xs border-collapse min-w-[720px]">
               <thead>
@@ -511,7 +514,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (item of maintenanceDueDashboard()!.alerts; track item.vehicleId + '-' + item.maintenanceType) {
+                @for (item of maintenanceDueDashboard()!.alerts; track item.vehicleId + '-' + item.maintenanceType + '-' + item.ruleId) {
                   <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition cursor-pointer"
                       (click)="openMaintenanceVehicle(item)">
                     <td class="p-3 font-bold text-[var(--ff-text-primary)] whitespace-nowrap">{{ vehicleLabel(item) }}</td>
@@ -533,8 +536,15 @@
                         —
                       }
                     </td>
-                    <td class="p-3">
+                    <td class="p-3 whitespace-nowrap">
                       <ff-status-badge [label]="dueStatusLabel(item.dueStatus)" [color]="dueStatusColor(item.dueStatus)" />
+                      @if (canCreateWorkOrder(item.dueStatus) && item.ruleId != null) {
+                        <button type="button"
+                                class="ml-2 px-2 py-0.5 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-[10px] font-bold border-none cursor-pointer"
+                                (click)="createWorkOrderFromAlert(item, $event)">
+                          Work order
+                        </button>
+                      }
                     </td>
                   </tr>
                 }

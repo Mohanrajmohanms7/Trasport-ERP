@@ -56,9 +56,16 @@
                   {{ selectedVehicle()?.name || 'Unnamed Vehicle' }}
                 </h2>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-color-info-50)] text-[var(--ff-color-info-500)] uppercase tracking-wide">
-                {{ selectedVehicle()?.ownerType || 'OWNED' }}
-              </span>
+              <div class="flex items-center gap-2">
+                @if (selectedVehicle()?.underMaintenance) {
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide">
+                    Under Maintenance
+                  </span>
+                }
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-color-info-50)] text-[var(--ff-color-info-500)] uppercase tracking-wide">
+                  {{ selectedVehicle()?.ownerType || 'OWNED' }}
+                </span>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -136,6 +143,21 @@
                     [class]="activeTab() === 'driver' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">person</span> Assignments
+            </button>
+            <button type="button" (click)="activeTab.set('service-history')" 
+                    [class]="activeTab() === 'service-history' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">history</span> Service History
+            </button>
+            <button type="button" (click)="activeTab.set('maintenance-requests')" 
+                    [class]="activeTab() === 'maintenance-requests' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">report</span> Requests
+            </button>
+            <button type="button" (click)="activeTab.set('work-orders')" 
+                    [class]="activeTab() === 'work-orders' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">handyman</span> Work Orders
             </button>
           </div>
         </div>
@@ -350,6 +372,150 @@
                 </tbody>
               </table>
             </div>
+          }
+
+          @if (activeTab() === 'service-history') {
+            <div class="flex flex-col shrink-0">
+              <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Service History</span>
+              <p class="text-[10px] text-slate-400 dark:text-slate-550">Completed work orders and workshop service logs, newest first</p>
+            </div>
+            @if (serviceHistoryLoading()) {
+              <div class="p-8 text-center text-xs text-slate-500">Loading service history…</div>
+            } @else if (serviceHistoryError()) {
+              <div class="p-4 text-xs text-rose-700">{{ serviceHistoryError() }}</div>
+            } @else {
+              <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="p-3">Date</th>
+                      <th class="p-3">Source</th>
+                      <th class="p-3">Service type</th>
+                      <th class="p-3">Description</th>
+                      <th class="p-3">Workshop</th>
+                      <th class="p-3">Odometer</th>
+                      <th class="p-3">Cost</th>
+                      <th class="p-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of serviceHistory(); track row.sourceType + '-' + row.sourceId) {
+                      <tr class="border-t border-slate-100 dark:border-slate-800">
+                        <td class="p-3">{{ row.serviceDate || '—' }}</td>
+                        <td class="p-3">{{ row.sourceType === 'WORK_ORDER' ? 'WORK ORDER' : 'SERVICE LOG' }}</td>
+                        <td class="p-3">{{ row.serviceType || '—' }}</td>
+                        <td class="p-3">{{ row.description || row.workOrderNumber || '—' }}</td>
+                        <td class="p-3">{{ row.supplierName || '—' }}</td>
+                        <td class="p-3">{{ row.odometerKm != null ? (row.odometerKm | number) : '—' }}</td>
+                        <td class="p-3">{{ row.financialAmount != null ? (row.financialAmount | number:'1.2-2') : '—' }}</td>
+                        <td class="p-3">{{ row.status || '—' }}</td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="8" class="p-8 text-center text-slate-500">No service history for this vehicle.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          @if (activeTab() === 'maintenance-requests') {
+            <div class="flex flex-col shrink-0">
+              <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Maintenance Requests</span>
+              <p class="text-[10px] text-slate-400 dark:text-slate-550">Reported problems for this vehicle. Work orders stay on their own tab.</p>
+            </div>
+            @if (maintenanceRequestsLoading()) {
+              <div class="p-8 text-center text-xs text-slate-500">Loading requests…</div>
+            } @else if (maintenanceRequestsError()) {
+              <div class="p-4 text-xs text-rose-700">{{ maintenanceRequestsError() }}</div>
+            } @else {
+              <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="p-3">Request No</th>
+                      <th class="p-3">Date</th>
+                      <th class="p-3">Priority</th>
+                      <th class="p-3">Description</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3">Work Order</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of maintenanceRequests(); track row.id) {
+                      <tr class="border-t border-slate-100 dark:border-slate-800">
+                        <td class="p-3"><a class="text-blue-700" [routerLink]="['/maintenance-requests', row.id]">{{ row.requestNumber }}</a></td>
+                        <td class="p-3">{{ row.requestedAt ? (row.requestedAt | date:'mediumDate') : '—' }}</td>
+                        <td class="p-3">{{ row.priority }}</td>
+                        <td class="p-3">{{ row.description }}</td>
+                        <td class="p-3">{{ row.status }}</td>
+                        <td class="p-3">
+                          @if (row.workOrderId) {
+                            <a class="text-blue-700" [routerLink]="['/work-orders', row.workOrderId]">{{ row.workOrderNumber }}</a>
+                          } @else {
+                            —
+                          }
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">No maintenance requests for this vehicle.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          @if (activeTab() === 'work-orders') {
+            <div class="flex justify-between items-center shrink-0">
+              <div class="flex flex-col">
+                <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Work Orders</span>
+                <p class="text-[10px] text-slate-400 dark:text-slate-550">Open and completed maintenance jobs for this vehicle</p>
+              </div>
+              <a [routerLink]="['/work-orders/new']" [queryParams]="{ vehicleId: vehicleId(), source: 'MANUAL' }" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-xl shadow-sm text-xs no-underline">
+                New work order
+              </a>
+            </div>
+            @if (workOrdersLoading()) {
+              <div class="p-8 text-center text-xs text-slate-500">Loading work orders…</div>
+            } @else if (workOrdersError()) {
+              <div class="p-4 text-xs text-rose-700">{{ workOrdersError() }}</div>
+            } @else if (!workOrders().length) {
+              <div class="p-8 text-center text-xs text-slate-500">No work orders for this vehicle.</div>
+            } @else {
+              <div class="flex-1 min-h-0 overflow-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-slate-100/60 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase tracking-wider font-bold">
+                      <th class="p-4">Number</th>
+                      <th class="p-4">Source</th>
+                      <th class="p-4">Maintenance</th>
+                      <th class="p-4">Status</th>
+                      <th class="p-4">Priority</th>
+                      <th class="p-4">Opened</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of workOrders(); track row.id) {
+                      <tr class="border-b border-slate-100 dark:border-slate-800/40">
+                        <td class="p-4 font-bold">
+                          <a class="text-blue-700" [routerLink]="['/work-orders', row.id]">{{ row.workOrderNumber }}</a>
+                        </td>
+                        <td class="p-4">{{ row.source }}</td>
+                        <td class="p-4">{{ row.maintenanceType }}</td>
+                        <td class="p-4">{{ row.status }}</td>
+                        <td class="p-4">{{ row.priority }}</td>
+                        <td class="p-4">{{ row.openedAt ? (row.openedAt | date:'mediumDate') : '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
           }
         </div>
       } @else {

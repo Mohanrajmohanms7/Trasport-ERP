@@ -3,6 +3,7 @@ package com.transport.erp.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.LocalDate;
@@ -21,4 +22,10 @@ public class Driver extends BaseEntity {
 
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
+
+    @Column(name = "app_user_id")
+    private Long appUserId;
+
+    @Transient
+    private String appUserName;
 }

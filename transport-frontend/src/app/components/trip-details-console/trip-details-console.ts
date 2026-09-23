@@ -56,9 +56,12 @@ export class TripDetailsConsoleComponent implements OnInit {
     return [{ label: '-- Choose Booking Reference --', value: '' }, ...this.bookings().map(booking => ({ label: booking.bookingNumber || booking.code, value: booking.id }))];
   }
   get vehicleOptions(): FfSelectOption[] {
+    const currentVehicleId = this.editingTrip()?.vehicle?.id;
     return [{ label: '-- Choose Transit Vehicle --', value: '' }, ...this.vehicles().map(v => ({
-      label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
-      value: v.id
+      label: ([v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle')
+        + (v.underMaintenance ? ' (Under maintenance)' : ''),
+      value: v.id,
+      disabled: !!v.underMaintenance && v.id !== currentVehicleId
     }))];
   }
   get driverOptions(): FfSelectOption[] {
@@ -235,10 +238,22 @@ export class TripDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to create trip');
+          this.notify.error(this.tripError(err, 'Failed to create trip'));
         }
       });
     }
+  }
+
+  private tripError(err: any, fallback: string): string {
+    const message = err?.error?.message;
+    if (message) {
+      return message;
+    }
+    const errors = err?.error?.errors;
+    if (Array.isArray(errors) && errors.length) {
+      return String(errors[0]);
+    }
+    return fallback;
   }
 
   dispatchTrip(trip: Trip) {

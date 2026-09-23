@@ -24,6 +24,10 @@ public interface UomMasterRepository extends JpaRepository<UomMaster, Long> {
 
     List<UomMaster> findByCompanyIdAndIsDeletedFalse(Long companyId);
 
+    @Query("SELECT u FROM UomMaster u WHERE u.isDeleted = false AND UPPER(u.status) = 'ACTIVE' "
+            + "AND (u.companyId IS NULL OR u.companyId = :companyId) ORDER BY u.code")
+    List<UomMaster> findActiveForCompanyOrGlobal(@Param("companyId") Long companyId);
+
     Page<UomMaster> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
     @Query("SELECT u FROM UomMaster u WHERE u.isDeleted = false AND " +

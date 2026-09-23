@@ -133,6 +133,7 @@ public class MaintenanceDueDashboardService {
     private static MaintenanceDueDashboardItem toItem(MaintenanceDueResponse row, Vehicle vehicle) {
         MaintenanceDueDashboardItem item = new MaintenanceDueDashboardItem();
         item.setVehicleId(row.getVehicleId());
+        item.setRuleId(row.getRuleId());
         item.setVehicleCode(vehicle.getCode());
         item.setVehicleName(vehicle.getName());
         item.setMaintenanceType(row.getMaintenanceType());

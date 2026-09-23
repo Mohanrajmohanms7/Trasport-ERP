@@ -1,0 +1,65 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-bold text-slate-900 dark:text-white">Spare parts</h1>
+      <p class="text-xs text-slate-500">Catalog used by work order parts. This is not an inventory balance.</p>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+  }
+  @if (feedback()) {
+    <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">{{ feedback() }}</div>
+  }
+
+  @if (canWrite()) {
+    <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 md:grid-cols-2 gap-2" (ngSubmit)="create()">
+      <h2 class="md:col-span-2 font-bold uppercase tracking-wider text-slate-500">New spare part</h2>
+      <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" placeholder="Code" />
+      <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Name" />
+      <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description" />
+      <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="defaultUomId()" (ngModelChange)="defaultUomId.set($event)" name="uom">
+        <option value="">Unit</option>
+        @for (uom of uoms(); track uom.id) {
+          <option [value]="uom.id">{{ uom.code }} — {{ uom.name }}</option>
+        }
+      </select>
+      <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="defaultRate()" (ngModelChange)="defaultRate.set($event)" name="rate" placeholder="Default rate" />
+      <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Create</button>
+    </form>
+  }
+
+  @if (loading()) {
+    <div class="p-8 text-xs text-slate-500">Loading spare parts…</div>
+  } @else {
+    <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-auto">
+      <table class="w-full text-xs">
+        <thead class="text-left text-slate-500">
+          <tr>
+            <th class="p-3">Code</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Unit</th>
+            <th class="p-3">Default rate</th>
+            <th class="p-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr class="border-t border-slate-100 dark:border-slate-800">
+              <td class="p-3">{{ row.code }}</td>
+              <td class="p-3">{{ row.name }}</td>
+              <td class="p-3">{{ row.defaultUomCode || row.defaultUomName || '—' }}</td>
+              <td class="p-3">{{ row.defaultRate != null ? (row.defaultRate | number:'1.2-2') : '—' }}</td>
+              <td class="p-3">{{ row.status }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="p-3 text-slate-500" colspan="5">No spare parts yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

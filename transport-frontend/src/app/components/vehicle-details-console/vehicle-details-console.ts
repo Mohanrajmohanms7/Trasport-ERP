@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { VehicleMgmtService, VehicleDocument, VehicleServiceLog, VehicleDriverAssignment } from '../../services/vehicle-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -13,6 +13,8 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfTextareaComponent, FfDatepickerComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { ServiceHistoryRow, WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
+import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
 @Component({
   selector: 'app-vehicle-details-console',
@@ -30,7 +32,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     FfNumberComponent,
     FfTextareaComponent,
     FfDatepickerComponent,
-    FfButtonComponent
+    FfButtonComponent,
+    RouterLink
   ],
   templateUrl: './vehicle-details-console.html',
   styles: []
@@ -42,6 +45,8 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
   private route = inject(ActivatedRoute);
+  private workOrderService = inject(WorkOrderService);
+  private maintenanceRequestsApi = inject(MaintenanceRequestService);
 
   private companyId = resolveTenantCompanyId();
 
@@ -63,6 +68,15 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   });
 
   documents = signal<VehicleDocument[]>([]);
+  workOrders = signal<WorkOrder[]>([]);
+  serviceHistory = signal<ServiceHistoryRow[]>([]);
+  serviceHistoryLoading = signal(false);
+  serviceHistoryError = signal<string | null>(null);
+  maintenanceRequests = signal<MaintenanceRequest[]>([]);
+  maintenanceRequestsLoading = signal(false);
+  maintenanceRequestsError = signal<string | null>(null);
+  workOrdersLoading = signal(false);
+  workOrdersError = signal<string | null>(null);
   maintenanceLogs = signal<VehicleServiceLog[]>([]);
   assignments = signal<VehicleDriverAssignment[]>([]);
   drivers = signal<any[]>([]);
@@ -131,6 +145,10 @@ export class VehicleDetailsConsoleComponent implements OnInit {
       const raw = params.get('vehicleId');
       const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
       this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
+      const tab = params.get('tab');
+      if (tab === 'work-orders' || tab === 'service-history' || tab === 'maintenance-requests') {
+        this.activeTab.set(tab);
+      }
       if (this.requestedVehicleId != null && this.vehicles().length) {
         this.selectVehicle(this.requestedVehicleId);
       }
@@ -160,10 +178,82 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.documents.set([]);
     this.maintenanceLogs.set([]);
     this.assignments.set([]);
+    this.workOrders.set([]);
+    this.workOrdersError.set(null);
+    this.serviceHistory.set([]);
+    this.serviceHistoryError.set(null);
+    this.maintenanceRequests.set([]);
+    this.maintenanceRequestsError.set(null);
     if (vehicleId == null) return;
     this.loadDocuments();
     this.loadMaintenanceHistory();
     this.loadDriverAssignments();
+    this.loadWorkOrders();
+    this.loadServiceHistory();
+    this.loadMaintenanceRequests();
+  }
+
+  loadMaintenanceRequests() {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null) return;
+    this.maintenanceRequestsLoading.set(true);
+    this.maintenanceRequestsError.set(null);
+    this.maintenanceRequestsApi.list({ vehicleId, page: 0, size: 50 }).subscribe({
+      next: res => {
+        this.maintenanceRequests.set(res?.success ? (res.data?.content || []) : []);
+        if (!res?.success) {
+          this.maintenanceRequestsError.set(res?.message || 'Unable to load maintenance requests.');
+        }
+        this.maintenanceRequestsLoading.set(false);
+      },
+      error: err => {
+        this.maintenanceRequests.set([]);
+        this.maintenanceRequestsError.set(maintenanceRequestError(err));
+        this.maintenanceRequestsLoading.set(false);
+      }
+    });
+  }
+
+  loadServiceHistory() {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null) return;
+    this.serviceHistoryLoading.set(true);
+    this.serviceHistoryError.set(null);
+    this.workOrderService.serviceHistory(vehicleId).subscribe({
+      next: res => {
+        this.serviceHistory.set(res?.success ? (res.data?.content || []) : []);
+        if (!res?.success) {
+          this.serviceHistoryError.set(res?.message || 'Unable to load service history.');
+        }
+        this.serviceHistoryLoading.set(false);
+      },
+      error: err => {
+        this.serviceHistory.set([]);
+        this.serviceHistoryError.set(workOrderError(err));
+        this.serviceHistoryLoading.set(false);
+      }
+    });
+  }
+
+  loadWorkOrders() {
+    const vehicleId = this.vehicleId();
+    if (vehicleId == null) return;
+    this.workOrdersLoading.set(true);
+    this.workOrdersError.set(null);
+    this.workOrderService.list({ vehicleId, page: 0, size: 50 }).subscribe({
+      next: res => {
+        this.workOrders.set(res?.success ? (res.data?.content || []) : []);
+        if (!res?.success) {
+          this.workOrdersError.set(res?.message || 'Unable to load work orders.');
+        }
+        this.workOrdersLoading.set(false);
+      },
+      error: err => {
+        this.workOrders.set([]);
+        this.workOrdersError.set(workOrderError(err));
+        this.workOrdersLoading.set(false);
+      }
+    });
   }
 
   loadDropdownData() {
