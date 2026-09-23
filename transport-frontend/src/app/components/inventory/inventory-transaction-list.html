@@ -1,15 +1,21 @@
 <div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
   <div>
     <h1 class="text-lg font-bold text-slate-900 dark:text-white">Inventory transactions</h1>
-    <p class="text-xs text-slate-500">Phase 9 records OPENING_BALANCE only.</p>
+    <p class="text-xs text-slate-500">OPENING_BALANCE, ISSUE, and RETURN movements.</p>
   </div>
 
-  <form class="grid grid-cols-1 md:grid-cols-3 gap-2" (ngSubmit)="load()">
+  <form class="grid grid-cols-1 md:grid-cols-4 gap-2" (ngSubmit)="load()">
     <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
       <option value="">All warehouses</option>
       @for (row of warehouses(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
+    </select>
+    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="transactionType()" (ngModelChange)="transactionType.set($event)" name="type">
+      <option value="">All types</option>
+      <option value="OPENING_BALANCE">OPENING_BALANCE</option>
+      <option value="ISSUE">ISSUE</option>
+      <option value="RETURN">RETURN</option>
     </select>
     <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer w-fit">Filter</button>
   </form>
@@ -30,6 +36,7 @@
             <th class="p-3">Spare Part</th>
             <th class="p-3">Warehouse</th>
             <th class="p-3">Quantity</th>
+            <th class="p-3">Work Order</th>
             <th class="p-3">Created By</th>
             <th class="p-3">Reference</th>
           </tr>
@@ -42,12 +49,13 @@
               <td class="p-3">{{ row.sparePartCode }} — {{ row.sparePartName }}</td>
               <td class="p-3">{{ row.warehouseCode || row.warehouseName }}</td>
               <td class="p-3">{{ row.quantity }}</td>
+              <td class="p-3">{{ row.workOrderNumber || '—' }}</td>
               <td class="p-3">{{ row.createdBy }}</td>
               <td class="p-3">{{ row.referenceType || '—' }}{{ row.referenceId ? ' #' + row.referenceId : '' }}</td>
             </tr>
           } @empty {
             <tr>
-              <td class="p-3 text-slate-500" colspan="7">No inventory transactions yet.</td>
+              <td class="p-3 text-slate-500" colspan="8">No inventory transactions yet.</td>
             </tr>
           }
         </tbody>

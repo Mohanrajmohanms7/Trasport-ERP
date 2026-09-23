@@ -99,6 +99,10 @@ public class WorkOrderLineService {
         WorkOrder order = lockEditable(workOrderId, user);
         WorkOrderPart line = partRepository.findActiveLine(lineId, workOrderId)
                 .orElseThrow(this::lineNotFound);
+        BigDecimal issued = line.getIssuedQuantity() == null ? BigDecimal.ZERO : line.getIssuedQuantity();
+        if (issued.compareTo(BigDecimal.ZERO) > 0) {
+            throw issuedLineLocked();
+        }
         line.setIsDeleted(true);
         line.setUpdatedBy(username);
         partRepository.save(line);
@@ -182,6 +186,15 @@ public class WorkOrderLineService {
         }
         rate = requireNonNegative(rate, 2, this::rateInvalid);
         boolean partChanged = line.getSparePart() == null || !part.getId().equals(line.getSparePart().getId());
+        BigDecimal issued = line.getIssuedQuantity() == null ? BigDecimal.ZERO : line.getIssuedQuantity();
+        if (!creating && issued.compareTo(BigDecimal.ZERO) > 0) {
+            if (partChanged) {
+                throw issuedLineLocked();
+            }
+            if (quantity.compareTo(issued) < 0) {
+                throw issuedQuantityLocked();
+            }
+        }
         line.setSparePart(part);
         if (creating || partChanged) {
             line.setUom(part.getDefaultUom());
@@ -189,6 +202,10 @@ public class WorkOrderLineService {
         line.setQuantity(quantity);
         line.setUnitRate(rate);
         line.setLineTotal(lineTotal(quantity, rate));
+        if (creating) {
+            line.setIssuedQuantity(BigDecimal.ZERO);
+            line.setReturnedQuantity(BigDecimal.ZERO);
+        }
         line.setNotes(trimToNull(request.getNotes()));
         line.setName(truncate(part.getName(), 150));
         line.setDescription(part.getDescription());
@@ -349,6 +366,22 @@ public class WorkOrderLineService {
                 "WORK_ORDER_LABOUR_RATE_INVALID",
                 "Labour rate cannot be negative.",
                 "Enter zero or a positive rate.");
+    }
+
+    private BusinessValidationException issuedLineLocked() {
+        return failure(
+                "Work Order Part Issued",
+                "INVENTORY_WORK_ORDER_PART_INVALID",
+                "A work order part with issued stock cannot be removed or assigned a different spare part.",
+                "Return issued quantity before changing this line.");
+    }
+
+    private BusinessValidationException issuedQuantityLocked() {
+        return failure(
+                "Work Order Part Issued",
+                "INVENTORY_QUANTITY_INVALID",
+                "Requested quantity cannot be lower than the quantity already issued.",
+                "Increase the requested quantity, or return issued stock first.");
     }
 
     private BusinessValidationException lineNotFound() {

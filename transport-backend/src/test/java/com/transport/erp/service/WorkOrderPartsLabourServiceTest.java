@@ -358,6 +358,23 @@ class WorkOrderPartsLabourServiceTest {
     }
 
     @Test
+    @DisplayName("issued part cannot be removed or reduced below issued quantity")
+    void issuedPartCannotBeRemovedOrReduced() {
+        WorkOrderPart existing = storedPart();
+        existing.setIssuedQuantity(new BigDecimal("2.000"));
+        existing.setReturnedQuantity(BigDecimal.ZERO);
+        BusinessValidationException removed = assertThrows(BusinessValidationException.class,
+                () -> lineService.removePart(10L, 100L, "admin"));
+        assertEquals("INVENTORY_WORK_ORDER_PART_INVALID", removed.getErrorCode());
+        assertFalse(Boolean.TRUE.equals(existing.getIsDeleted()));
+
+        BusinessValidationException reduced = assertThrows(BusinessValidationException.class,
+                () -> lineService.updatePart(10L, 100L, partRequest(new BigDecimal("1"), new BigDecimal("10.00")), "admin"));
+        assertEquals("INVENTORY_QUANTITY_INVALID", reduced.getErrorCode());
+        assertEquals(new BigDecimal("1.000"), existing.getQuantity());
+    }
+
+    @Test
     @DisplayName("21 and 22 deleted lines stay out of the active line query used for totals")
     void deletedLinesExcludedFromTotalsQuery() throws Exception {
         Query parts = WorkOrderPartRepository.class.getMethod("findActiveByWorkOrderId", Long.class).getAnnotation(Query.class);

@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 public class InventoryTransaction extends BaseEntity {
 
     public static final String TYPE_OPENING_BALANCE = "OPENING_BALANCE";
+    public static final String TYPE_ISSUE = "ISSUE";
+    public static final String TYPE_RETURN = "RETURN";
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "warehouse_id", nullable = false)
@@ -40,4 +42,12 @@ public class InventoryTransaction extends BaseEntity {
 
     @Column(name = "reference_id")
     private Long referenceId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_order_id")
+    private WorkOrder workOrder;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "work_order_part_id")
+    private WorkOrderPart workOrderPart;
 }

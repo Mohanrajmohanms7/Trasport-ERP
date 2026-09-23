@@ -326,6 +326,19 @@ class InventoryOpeningBalanceServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("Decrease available uses the stock lock and rejects insufficient quantity")
+    void decreaseAvailableLocksAndRejectsInsufficient() {
+        WarehouseStock existing = stockWithMasters(new BigDecimal("10.000"));
+        when(stockRepository.findActiveForUpdate(1L, 5L)).thenReturn(Optional.of(existing));
+        WarehouseStock remaining = inventoryService.decreaseAvailable(warehouse, part, new BigDecimal("7.000"), "admin");
+        assertEquals(new BigDecimal("3.000"), remaining.getAvailableQuantity());
+        verify(stockRepository).findActiveForUpdate(1L, 5L);
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class,
+                () -> inventoryService.decreaseAvailable(warehouse, part, new BigDecimal("4.000"), "admin"));
+        assertEquals("INVENTORY_INSUFFICIENT_STOCK", ex.getErrorCode());
+    }
+
     private OpeningBalanceRequest opening(Long warehouseId, Long sparePartId, BigDecimal quantity) {
         OpeningBalanceRequest request = new OpeningBalanceRequest();
         request.setWarehouseId(warehouseId);

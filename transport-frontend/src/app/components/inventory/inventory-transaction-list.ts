@@ -18,6 +18,7 @@ export class InventoryTransactionListComponent implements OnInit {
   rows = signal<InventoryTransaction[]>([]);
   warehouses = signal<Warehouse[]>([]);
   warehouseId = signal('');
+  transactionType = signal('');
 
   ngOnInit() {
     this.inventory.listWarehouses({ page: 0, size: 100 }).subscribe({
@@ -32,6 +33,7 @@ export class InventoryTransactionListComponent implements OnInit {
     this.error.set(null);
     this.inventory.listTransactions({
       warehouseId: this.warehouseId() ? Number(this.warehouseId()) : null,
+      transactionType: this.transactionType() || null,
       page: 0,
       size: 50
     }).subscribe({

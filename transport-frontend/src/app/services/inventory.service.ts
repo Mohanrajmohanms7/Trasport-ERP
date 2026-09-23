@@ -51,8 +51,33 @@ export interface InventoryTransaction {
   quantity?: number;
   referenceType?: string;
   referenceId?: number;
+  workOrderId?: number;
+  workOrderNumber?: string;
+  workOrderPartId?: number;
   createdBy?: string;
   description?: string;
+}
+
+export interface StockMovement {
+  transactionId?: number;
+  transactionCode?: string;
+  transactionType?: string;
+  workOrderId?: number;
+  workOrderNumber?: string;
+  workOrderPartId?: number;
+  sparePartId?: number;
+  sparePartCode?: string;
+  sparePartName?: string;
+  warehouseId?: number;
+  warehouseCode?: string;
+  warehouseName?: string;
+  quantity?: number;
+  issuedQuantity?: number;
+  returnedQuantity?: number;
+  netIssuedQuantity?: number;
+  remainingToIssue?: number;
+  returnableQuantity?: number;
+  availableQuantity?: number;
 }
 
 export interface PageResult<T> {
@@ -125,6 +150,9 @@ export class InventoryService {
     warehouseId?: number | null;
     sparePartId?: number | null;
     branchId?: number | null;
+    transactionType?: string | null;
+    workOrderId?: number | null;
+    reference?: string | null;
     page?: number;
     size?: number;
   } = {}): Observable<ApiResponse<PageResult<InventoryTransaction>>> {
@@ -134,6 +162,27 @@ export class InventoryService {
     if (filters.warehouseId) params = params.set('warehouseId', String(filters.warehouseId));
     if (filters.sparePartId) params = params.set('sparePartId', String(filters.sparePartId));
     if (filters.branchId) params = params.set('branchId', String(filters.branchId));
+    if (filters.transactionType) params = params.set('transactionType', filters.transactionType);
+    if (filters.workOrderId) params = params.set('workOrderId', String(filters.workOrderId));
+    if (filters.reference) params = params.set('reference', filters.reference);
     return this.http.get<ApiResponse<PageResult<InventoryTransaction>>>(`${this.inventoryUrl}/transactions`, { params });
+  }
+
+  issue(body: {
+    warehouseId: number;
+    workOrderId: number;
+    workOrderPartId: number;
+    quantity: number;
+  }): Observable<ApiResponse<StockMovement>> {
+    return this.http.post<ApiResponse<StockMovement>>(`${this.inventoryUrl}/stock/issue`, body);
+  }
+
+  returnStock(body: {
+    warehouseId: number;
+    workOrderId: number;
+    workOrderPartId: number;
+    quantity: number;
+  }): Observable<ApiResponse<StockMovement>> {
+    return this.http.post<ApiResponse<StockMovement>>(`${this.inventoryUrl}/stock/return`, body);
   }
 }

@@ -7,23 +7,24 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
-public class WorkOrderPartResponse {
-    private Long id;
-    private String code;
+public class StockMovementResponse {
+    private Long transactionId;
+    private String transactionCode;
+    private String transactionType;
+    private Long workOrderId;
+    private String workOrderNumber;
+    private Long workOrderPartId;
     private Long sparePartId;
     private String sparePartCode;
     private String sparePartName;
+    private Long warehouseId;
+    private String warehouseCode;
+    private String warehouseName;
     private BigDecimal quantity;
     private BigDecimal issuedQuantity;
     private BigDecimal returnedQuantity;
     private BigDecimal netIssuedQuantity;
     private BigDecimal remainingToIssue;
     private BigDecimal returnableQuantity;
-    private BigDecimal unitRate;
-    private BigDecimal lineTotal;
-    private Long uomId;
-    private String uomCode;
-    private String uomName;
-    private String notes;
-    private Integer version;
+    private BigDecimal availableQuantity;
 }

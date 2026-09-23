@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { InventoryService, Warehouse, WarehouseStock } from '../../services/inventory.service';
 import { SparePart, SparePartService } from '../../services/spare-part.service';
 import { WorkOrder, WorkOrderLabourLine, WorkOrderPartLine, WorkOrderService, workOrderError } from '../../services/work-order.service';
 
@@ -17,6 +18,7 @@ export class WorkOrderDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private workOrders = inject(WorkOrderService);
   private sparePartsApi = inject(SparePartService);
+  private inventory = inject(InventoryService);
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
@@ -51,11 +53,21 @@ export class WorkOrderDetailComponent implements OnInit {
   labourNotes = signal('');
   labourEditingId = signal<number | null>(null);
 
+  warehouses = signal<Warehouse[]>([]);
+  warehouseId = signal('');
+  stockByPart = signal<Record<number, number>>({});
+  issueQty: Record<number, string> = {};
+  returnQty: Record<number, string> = {};
+
   ngOnInit() {
     const roles = this.auth.currentUser()?.roles || [];
     this.canWrite.set(roles.some(role =>
       role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || role === 'BRANCH_MANAGER'));
     this.load();
+    this.inventory.listWarehouses({ status: 'ACTIVE', page: 0, size: 100 }).subscribe({
+      next: res => this.warehouses.set(res?.success && res.data ? res.data.content || [] : []),
+      error: () => this.warehouses.set([])
+    });
     this.sparePartsApi.list().subscribe({
       next: res => this.spareParts.set(res?.success && res.data ? res.data.content || [] : []),
       error: () => this.spareParts.set([])
@@ -80,6 +92,132 @@ export class WorkOrderDetailComponent implements OnInit {
 
   canEditLines(order: WorkOrder): boolean {
     return this.canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS');
+  }
+
+  canMoveInventory(order: WorkOrder): boolean {
+    return this.canEditLines(order);
+  }
+
+  availableFor(line: WorkOrderPartLine): number {
+    return line.sparePartId != null ? (this.stockByPart()[line.sparePartId] ?? 0) : 0;
+  }
+
+  remaining(line: WorkOrderPartLine): number {
+    return line.remainingToIssue != null ? line.remainingToIssue : Math.max(0, line.quantity - (line.issuedQuantity || 0));
+  }
+
+  returnable(line: WorkOrderPartLine): number {
+    return line.returnableQuantity != null
+      ? line.returnableQuantity
+      : Math.max(0, (line.issuedQuantity || 0) - (line.returnedQuantity || 0));
+  }
+
+  onWarehouseChange(value: string) {
+    this.warehouseId.set(value);
+    this.loadWarehouseStock();
+  }
+
+  loadWarehouseStock() {
+    const warehouseId = this.warehouseId() ? Number(this.warehouseId()) : null;
+    if (!warehouseId) {
+      this.stockByPart.set({});
+      return;
+    }
+    this.inventory.listStock({ warehouseId, page: 0, size: 200 }).subscribe({
+      next: res => {
+        const map: Record<number, number> = {};
+        const rows: WarehouseStock[] = res?.success && res.data ? res.data.content || [] : [];
+        for (const row of rows) {
+          if (row.sparePartId != null) {
+            map[row.sparePartId] = Number(row.availableQuantity || 0);
+          }
+        }
+        this.stockByPart.set(map);
+      },
+      error: () => this.stockByPart.set({})
+    });
+  }
+
+  issue(line: WorkOrderPartLine) {
+    const current = this.order();
+    if (!current || !this.canMoveInventory(current)) return;
+    const warehouseId = this.warehouseId() ? Number(this.warehouseId()) : null;
+    const quantity = Number(this.issueQty[line.id]);
+    this.error.set(null);
+    this.feedback.set(null);
+    if (!warehouseId) {
+      this.error.set('Select a warehouse before issuing stock.');
+      return;
+    }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      this.error.set('Issue quantity must be greater than zero.');
+      return;
+    }
+    if (quantity > this.remaining(line)) {
+      this.error.set('Issue quantity exceeds the remaining work order quantity.');
+      return;
+    }
+    if (quantity > this.availableFor(line)) {
+      this.error.set('Insufficient stock available.');
+      return;
+    }
+    this.inventory.issue({
+      warehouseId,
+      workOrderId: current.id,
+      workOrderPartId: line.id,
+      quantity
+    }).subscribe({
+      next: res => {
+        if (res?.success) {
+          this.issueQty[line.id] = '';
+          this.feedback.set('Stock issued.');
+          this.load();
+          this.loadWarehouseStock();
+        } else {
+          this.error.set(res?.message || 'Stock could not be issued.');
+        }
+      },
+      error: err => this.error.set(workOrderError(err))
+    });
+  }
+
+  returnStock(line: WorkOrderPartLine) {
+    const current = this.order();
+    if (!current || !this.canMoveInventory(current)) return;
+    const warehouseId = this.warehouseId() ? Number(this.warehouseId()) : null;
+    const quantity = Number(this.returnQty[line.id]);
+    this.error.set(null);
+    this.feedback.set(null);
+    if (!warehouseId) {
+      this.error.set('Select a warehouse before returning stock.');
+      return;
+    }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      this.error.set('Return quantity must be greater than zero.');
+      return;
+    }
+    if (quantity > this.returnable(line)) {
+      this.error.set('Return quantity exceeds the remaining issued quantity.');
+      return;
+    }
+    this.inventory.returnStock({
+      warehouseId,
+      workOrderId: current.id,
+      workOrderPartId: line.id,
+      quantity
+    }).subscribe({
+      next: res => {
+        if (res?.success) {
+          this.returnQty[line.id] = '';
+          this.feedback.set('Stock returned.');
+          this.load();
+          this.loadWarehouseStock();
+        } else {
+          this.error.set(res?.message || 'Stock could not be returned.');
+        }
+      },
+      error: err => this.error.set(workOrderError(err))
+    });
   }
 
   savePart() {

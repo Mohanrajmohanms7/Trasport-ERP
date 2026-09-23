@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,11 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
               AND (:sparePartId IS NULL OR p.id = :sparePartId)
               AND (:branchId IS NULL OR t.branchId = :branchId)
               AND (:transactionType IS NULL OR t.transactionType = :transactionType)
+              AND (:workOrderId IS NULL OR t.workOrder.id = :workOrderId)
+              AND (:reference = '' OR LOWER(t.code) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
+              AND (:createdBy = '' OR t.createdBy = :createdBy)
+              AND t.createdDate >= :fromDate
+              AND t.createdDate <= :toDate
             """,
             countQuery = """
             SELECT COUNT(t) FROM InventoryTransaction t
@@ -34,6 +41,11 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
               AND (:sparePartId IS NULL OR p.id = :sparePartId)
               AND (:branchId IS NULL OR t.branchId = :branchId)
               AND (:transactionType IS NULL OR t.transactionType = :transactionType)
+              AND (:workOrderId IS NULL OR t.workOrder.id = :workOrderId)
+              AND (:reference = '' OR LOWER(t.code) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
+              AND (:createdBy = '' OR t.createdBy = :createdBy)
+              AND t.createdDate >= :fromDate
+              AND t.createdDate <= :toDate
             """)
     Page<Long> searchIds(
             @Param("companyId") Long companyId,
@@ -41,6 +53,11 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("sparePartId") Long sparePartId,
             @Param("branchId") Long branchId,
             @Param("transactionType") String transactionType,
+            @Param("workOrderId") Long workOrderId,
+            @Param("reference") String reference,
+            @Param("createdBy") String createdBy,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
             Pageable pageable);
 
     @Query("""
@@ -48,6 +65,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             JOIN FETCH t.warehouse w
             JOIN FETCH w.branch
             JOIN FETCH t.sparePart p
+            LEFT JOIN FETCH t.workOrder
             WHERE t.id IN :ids
             """)
     List<InventoryTransaction> findDetailsByIds(@Param("ids") Collection<Long> ids);
@@ -57,7 +75,20 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             JOIN FETCH t.warehouse w
             JOIN FETCH w.branch
             JOIN FETCH t.sparePart p
+            LEFT JOIN FETCH t.workOrder
             WHERE t.id = :id AND t.isDeleted = false
             """)
     Optional<InventoryTransaction> findDetailById(@Param("id") Long id);
+
+    @Query("""
+            SELECT COALESCE(SUM(t.quantity), 0) FROM InventoryTransaction t
+            WHERE t.workOrderPart.id = :workOrderPartId
+              AND t.warehouse.id = :warehouseId
+              AND t.transactionType = :transactionType
+              AND t.isDeleted = false
+            """)
+    BigDecimal sumQuantity(
+            @Param("warehouseId") Long warehouseId,
+            @Param("workOrderPartId") Long workOrderPartId,
+            @Param("transactionType") String transactionType);
 }

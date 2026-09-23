@@ -9,6 +9,7 @@ import com.transport.erp.model.InventoryTransaction;
 import com.transport.erp.model.SparePart;
 import com.transport.erp.model.Warehouse;
 import com.transport.erp.model.WarehouseStock;
+import com.transport.erp.model.WorkOrder;
 import com.transport.erp.repository.InventoryTransactionRepository;
 import com.transport.erp.repository.SparePartRepository;
 import com.transport.erp.repository.WarehouseStockRepository;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -149,6 +151,11 @@ public class InventoryService {
             Long warehouseId,
             Long sparePartId,
             String transactionType,
+            Long workOrderId,
+            String reference,
+            String createdBy,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
             Pageable pageable) {
         AppUser user = tenantAccess.requireCurrentUser();
         Long companyId = tenantAccess.resolveCompanyId(requestedCompanyId);
@@ -161,7 +168,17 @@ public class InventoryService {
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "id"));
         Page<Long> ids = transactionRepository.searchIds(
-                companyId, warehouseId, sparePartId, branchFilter, normalizeFilter(transactionType), sorted);
+                companyId,
+                warehouseId,
+                sparePartId,
+                branchFilter,
+                normalizeFilter(transactionType),
+                workOrderId,
+                blankToEmpty(reference),
+                blankToEmpty(createdBy),
+                fromDate != null ? fromDate : LocalDateTime.of(1970, 1, 1, 0, 0),
+                toDate != null ? toDate : LocalDateTime.of(2999, 12, 31, 23, 59, 59),
+                sorted);
         if (ids.isEmpty()) {
             return new PageImpl<>(List.of(), sorted, ids.getTotalElements());
         }
@@ -182,6 +199,21 @@ public class InventoryService {
                 .orElseThrow(() -> invalid("STOCK_NOT_FOUND", "Inventory transaction was not found."));
         assertReadable(row.getCompanyId(), row.getBranchId(), user);
         return toTransactionResponse(row);
+    }
+
+    WarehouseStock increaseAvailable(Warehouse warehouse, SparePart part, BigDecimal quantity, String username) {
+        return addQuantity(warehouse, part, quantity, username);
+    }
+
+    WarehouseStock decreaseAvailable(Warehouse warehouse, SparePart part, BigDecimal quantity, String username) {
+        WarehouseStock stock = stockRepository.findActiveForUpdate(warehouse.getId(), part.getId())
+                .orElseThrow(() -> invalid("INVENTORY_INSUFFICIENT_STOCK", "Insufficient stock available."));
+        if (stock.getAvailableQuantity().compareTo(quantity) < 0) {
+            throw invalid("INVENTORY_INSUFFICIENT_STOCK", "Insufficient stock available.");
+        }
+        stock.setAvailableQuantity(stock.getAvailableQuantity().subtract(quantity));
+        stock.setUpdatedBy(username);
+        return stockRepository.saveAndFlush(stock);
     }
 
     private WarehouseStock addQuantity(Warehouse warehouse, SparePart part, BigDecimal quantity, String username) {
@@ -332,6 +364,14 @@ public class InventoryService {
             dto.setSparePartId(part.getId());
             dto.setSparePartCode(part.getCode());
             dto.setSparePartName(part.getName());
+        }
+        WorkOrder workOrder = row.getWorkOrder();
+        if (workOrder != null) {
+            dto.setWorkOrderId(workOrder.getId());
+            dto.setWorkOrderNumber(workOrder.getWorkOrderNumber());
+        }
+        if (row.getWorkOrderPart() != null) {
+            dto.setWorkOrderPartId(row.getWorkOrderPart().getId());
         }
         return dto;
     }

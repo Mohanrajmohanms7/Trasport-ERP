@@ -26,6 +26,9 @@ public class InventoryTransactionResponse {
     private BigDecimal quantity;
     private String referenceType;
     private Long referenceId;
+    private Long workOrderId;
+    private String workOrderNumber;
+    private Long workOrderPartId;
     private String createdBy;
     private String description;
 }

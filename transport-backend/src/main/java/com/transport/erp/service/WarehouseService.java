@@ -173,7 +173,7 @@ public class WarehouseService {
                 .orElseThrow(() -> invalid("WAREHOUSE_NOT_FOUND", "Warehouse was not found."));
         assertReadable(warehouse, user);
         if (!"ACTIVE".equalsIgnoreCase(warehouse.getStatus())) {
-            throw invalid("WAREHOUSE_INACTIVE", "Opening stock requires an active warehouse.");
+            throw invalid("WAREHOUSE_INACTIVE", "An active warehouse is required.");
         }
         return warehouse;
     }
