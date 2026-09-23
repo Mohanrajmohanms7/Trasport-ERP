@@ -186,6 +186,7 @@ public class WorkOrderService {
         order.setPriority(priority);
         order.setName(name);
         order.setDescription(trimToNull(request.getDescription()));
+        order.setDiagnosis(trimToNull(request.getDiagnosis()));
         order.setStatus(STATUS_OPEN);
         order.setOpenedAt(LocalDateTime.now());
         order.setRequestedDate(request.getRequestedDate());

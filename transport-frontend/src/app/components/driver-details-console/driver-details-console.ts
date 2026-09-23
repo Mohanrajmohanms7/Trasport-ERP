@@ -40,6 +40,7 @@ import {
   FfToastComponent
 } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
+import { MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
 @Component({
   selector: 'app-driver-details-console',
@@ -77,6 +78,10 @@ export class DriverDetailsConsoleComponent implements OnInit {
   private dialog = inject(FfDialogService);
   private notify = inject(FfNotificationService);
   private loadingSvc = inject(FfLoadingService);
+  private maintenanceRequests = inject(MaintenanceRequestService);
+
+  loginUserId = signal('');
+  loginMessage = signal<string | null>(null);
 
   private companyId = resolveTenantCompanyId();
 
@@ -145,7 +150,8 @@ export class DriverDetailsConsoleComponent implements OnInit {
     { id: 'documents', label: 'Documents', icon: 'description' },
     { id: 'attendance', label: 'Attendance', icon: 'event_available' },
     { id: 'salary', label: 'Payroll Config', icon: 'payments' },
-    { id: 'payrolls', label: 'Salary Slips', icon: 'receipt_long' }
+    { id: 'payrolls', label: 'Salary Slips', icon: 'receipt_long' },
+    { id: 'login', label: 'Login', icon: 'link' }
   ];
 
   editorForm = this.fb.group({
@@ -424,6 +430,8 @@ export class DriverDetailsConsoleComponent implements OnInit {
 
   openOps(driver: Driver): void {
     this.selectedDriver.set(driver);
+    this.loginUserId.set(driver.appUserId != null ? String(driver.appUserId) : '');
+    this.loginMessage.set(null);
     this.opsTab.set('documents');
     this.showOps.set(true);
     if (driver.id) {
@@ -432,6 +440,34 @@ export class DriverDetailsConsoleComponent implements OnInit {
       this.loadSalary(driver.id);
       this.loadPayrolls(driver.id);
     }
+  }
+
+  saveDriverLogin(): void {
+    const driver = this.selectedDriver();
+    if (!driver?.id) return;
+    const raw = this.loginUserId().trim();
+    const appUserId = raw === '' ? null : Number(raw);
+    if (raw !== '' && !Number.isFinite(appUserId)) {
+      this.loginMessage.set('Enter a numeric user id, or leave it blank to unlink.');
+      return;
+    }
+    this.maintenanceRequests.linkDriver(driver.id, appUserId).subscribe({
+      next: res => {
+        if (!res?.success) {
+          this.loginMessage.set(res?.message || 'Unable to update the login link.');
+          return;
+        }
+        const updated = {
+          ...driver,
+          appUserId: res.data?.appUserId ?? null,
+          appUserName: res.data?.appUserName ?? null,
+          companyId: res.data?.companyId ?? driver.companyId
+        };
+        this.selectedDriver.set(updated);
+        this.loginMessage.set(appUserId == null ? 'Login unlinked.' : 'Login linked.');
+      },
+      error: err => this.loginMessage.set(maintenanceRequestError(err))
+    });
   }
 
   closeOps(): void {

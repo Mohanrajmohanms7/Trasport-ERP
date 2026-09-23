@@ -1,12 +1,15 @@
 package com.transport.erp.controller;
 
 import com.transport.erp.dto.ApiResponse;
+import com.transport.erp.dto.DriverAppUserRequest;
+import com.transport.erp.dto.DriverAppUserResponse;
 import com.transport.erp.model.Driver;
 import com.transport.erp.security.TenantAccessService;
 import com.transport.erp.service.DriverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.Collections;
 
@@ -77,6 +80,24 @@ public class DriverController {
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete driver");
         }
+    }
+
+    @PutMapping("/{id}/app-user")
+    public ApiResponse<DriverAppUserResponse> linkAppUser(
+            @PathVariable Long id,
+            @RequestBody DriverAppUserRequest request,
+            Authentication auth) {
+        Driver linked = driverService.linkAppUser(
+                id,
+                request == null ? null : request.getAppUserId(),
+                auth != null ? auth.getName() : "SYSTEM");
+        DriverAppUserResponse body = new DriverAppUserResponse();
+        body.setDriverId(linked.getId());
+        body.setCompanyId(linked.getCompanyId());
+        body.setAppUserId(linked.getAppUserId());
+        body.setAppUserName(linked.getAppUserName());
+        body.setMappingStatus(linked.getAppUserId() == null ? "NOT_LINKED" : "LINKED");
+        return ApiResponse.success(body, "Driver login updated successfully");
     }
 
     @PutMapping("/{id}/toggle-status")

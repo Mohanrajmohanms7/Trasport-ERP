@@ -142,6 +142,11 @@
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">history</span> Service History
             </button>
+            <button type="button" (click)="activeTab.set('maintenance-requests')" 
+                    [class]="activeTab() === 'maintenance-requests' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
+                    class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
+              <span class="material-icons text-sm">report</span> Requests
+            </button>
             <button type="button" (click)="activeTab.set('work-orders')" 
                     [class]="activeTab() === 'work-orders' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
@@ -395,6 +400,55 @@
                     } @empty {
                       <tr>
                         <td colspan="8" class="p-8 text-center text-slate-500">No service history for this vehicle.</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          @if (activeTab() === 'maintenance-requests') {
+            <div class="flex flex-col shrink-0">
+              <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Maintenance Requests</span>
+              <p class="text-[10px] text-slate-400 dark:text-slate-550">Reported problems for this vehicle. Work orders stay on their own tab.</p>
+            </div>
+            @if (maintenanceRequestsLoading()) {
+              <div class="p-8 text-center text-xs text-slate-500">Loading requests…</div>
+            } @else if (maintenanceRequestsError()) {
+              <div class="p-4 text-xs text-rose-700">{{ maintenanceRequestsError() }}</div>
+            } @else {
+              <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-auto">
+                <table class="w-full text-xs">
+                  <thead class="text-left text-slate-500">
+                    <tr>
+                      <th class="p-3">Request No</th>
+                      <th class="p-3">Date</th>
+                      <th class="p-3">Priority</th>
+                      <th class="p-3">Description</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3">Work Order</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of maintenanceRequests(); track row.id) {
+                      <tr class="border-t border-slate-100 dark:border-slate-800">
+                        <td class="p-3"><a class="text-blue-700" [routerLink]="['/maintenance-requests', row.id]">{{ row.requestNumber }}</a></td>
+                        <td class="p-3">{{ row.requestedAt ? (row.requestedAt | date:'mediumDate') : '—' }}</td>
+                        <td class="p-3">{{ row.priority }}</td>
+                        <td class="p-3">{{ row.description }}</td>
+                        <td class="p-3">{{ row.status }}</td>
+                        <td class="p-3">
+                          @if (row.workOrderId) {
+                            <a class="text-blue-700" [routerLink]="['/work-orders', row.workOrderId]">{{ row.workOrderNumber }}</a>
+                          } @else {
+                            —
+                          }
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">No maintenance requests for this vehicle.</td>
                       </tr>
                     }
                   </tbody>

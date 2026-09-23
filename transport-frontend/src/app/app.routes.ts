@@ -14,6 +14,9 @@ import { WorkOrderListComponent } from './components/work-orders/work-order-list
 import { WorkOrderFormComponent } from './components/work-orders/work-order-form';
 import { WorkOrderDetailComponent } from './components/work-orders/work-order-detail';
 import { SparePartCatalogComponent } from './components/spare-parts/spare-part-catalog';
+import { MaintenanceRequestListComponent } from './components/maintenance-requests/maintenance-request-list';
+import { MaintenanceRequestFormComponent } from './components/maintenance-requests/maintenance-request-form';
+import { MaintenanceRequestDetailComponent } from './components/maintenance-requests/maintenance-request-detail';
 import { DriverDetailsConsoleComponent } from './components/driver-details-console/driver-details-console';
 import { CustomerDetailsConsoleComponent } from './components/customer-details-console/customer-details-console';
 import { MaterialQuarryConsoleComponent } from './components/material-quarry-console/material-quarry-console';
@@ -59,6 +62,10 @@ export const routes: Routes = [
       { path: 'work-orders/new', component: WorkOrderFormComponent },
       { path: 'work-orders/:id', component: WorkOrderDetailComponent },
       { path: 'spare-parts', component: SparePartCatalogComponent },
+      { path: 'maintenance-requests', component: MaintenanceRequestListComponent },
+      { path: 'maintenance-requests/new', component: MaintenanceRequestFormComponent },
+      { path: 'maintenance-requests/:id/edit', component: MaintenanceRequestFormComponent },
+      { path: 'maintenance-requests/:id', component: MaintenanceRequestDetailComponent },
       { path: 'drivers', component: DriverDetailsConsoleComponent }, 
       { path: 'customers', component: CustomerDetailsConsoleComponent },
       { path: 'materials-quarries', component: MaterialQuarryConsoleComponent },

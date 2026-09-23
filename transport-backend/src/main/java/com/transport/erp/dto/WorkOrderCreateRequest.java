@@ -20,6 +20,7 @@ public class WorkOrderCreateRequest {
     private String maintenanceType;
     private String name;
     private String description;
+    private String diagnosis;
     private String priority;
     private Long supplierId;
     private Long assignedUserId;

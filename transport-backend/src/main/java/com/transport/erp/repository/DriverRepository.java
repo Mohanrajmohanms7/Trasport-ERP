@@ -26,6 +26,10 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     Optional<Driver> findByCompanyIdAndLicenseNumberAndIsDeletedFalse(Long companyId, String licenseNumber);
 
+    Optional<Driver> findByAppUserIdAndIsDeletedFalse(Long appUserId);
+
+    Optional<Driver> findByAppUserIdAndIdNotAndIsDeletedFalse(Long appUserId, Long id);
+
     Page<Driver> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
     Page<Driver> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

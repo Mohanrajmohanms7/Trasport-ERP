@@ -38,6 +38,8 @@ export interface Driver extends BaseMaster {
   licenseNumber: string;
   licenseExpiryDate?: string;
   phoneNumber?: string;
+  appUserId?: number | null;
+  appUserName?: string | null;
 }
 
 export interface Customer extends BaseMaster {
