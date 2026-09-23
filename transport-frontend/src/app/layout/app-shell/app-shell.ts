@@ -123,6 +123,9 @@ export class AppShellComponent implements OnDestroy {
         { label: 'Fuel Management', route: '/fuel-logs', icon: 'local_gas_station' },
         { label: 'Work Orders', route: '/work-orders', icon: 'handyman' },
         { label: 'Maintenance Requests', route: '/maintenance-requests', icon: 'report' },
+        { label: 'Warehouses', route: '/inventory/warehouses', icon: 'warehouse' },
+        { label: 'Stock', route: '/inventory/stock', icon: 'inventory' },
+        { label: 'Inventory Transactions', route: '/inventory/transactions', icon: 'receipt' },
         { label: 'Expense Management', route: '/expense-logs', icon: 'account_balance_wallet' }
       ]
     },
@@ -180,6 +183,11 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'work-orders') return 'Work Orders';
       if (segment === 'maintenance-requests') return 'Maintenance Requests';
       if (segment === 'spare-parts') return 'Spare Parts';
+      if (segment === 'inventory') return 'Inventory';
+      if (segment === 'warehouses') return 'Warehouses';
+      if (segment === 'stock') return 'Stock';
+      if (segment === 'transactions') return 'Inventory Transactions';
+      if (segment === 'opening-balance') return 'Opening Stock';
       if (segment === 'expense-logs') return 'Expense Management';
       if (segment === 'billing-invoices') return 'Invoice';
       if (segment === 'payment-logs') return 'Payments';

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface SparePartRepository extends JpaRepository<SparePart, Long> {
 
@@ -16,4 +18,7 @@ public interface SparePartRepository extends JpaRepository<SparePart, Long> {
                     + "WHERE p.companyId = :companyId AND p.isDeleted = false",
             countQuery = "SELECT COUNT(p) FROM SparePart p WHERE p.companyId = :companyId AND p.isDeleted = false")
     Page<SparePart> findActiveByCompany(@Param("companyId") Long companyId, Pageable pageable);
+
+    @Query("SELECT p FROM SparePart p JOIN FETCH p.defaultUom WHERE p.id = :id")
+    Optional<SparePart> findDetailById(@Param("id") Long id);
 }

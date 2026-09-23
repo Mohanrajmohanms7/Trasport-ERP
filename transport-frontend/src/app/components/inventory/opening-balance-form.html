@@ -1,0 +1,41 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+  <div>
+    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Add Opening Stock</h1>
+    <p class="text-xs text-slate-500">Creates an auditable OPENING_BALANCE transaction and adds to on-hand quantity. The server is the source of truth.</p>
+  </div>
+
+  @if (error()) {
+    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+  }
+
+  <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl" (ngSubmit)="save()">
+    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event); refreshCurrent()" name="warehouse">
+      <option value="">Warehouse</option>
+      @for (row of warehouses(); track row.id) {
+        <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
+      }
+    </select>
+    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
+      <option value="">Spare part</option>
+      @for (part of parts(); track part.id) {
+        <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
+      }
+    </select>
+    <input type="number" min="0.001" step="0.001" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" placeholder="Quantity" />
+    <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description" />
+    <div class="md:col-span-2 text-slate-600">
+      @if (loadingCurrent()) {
+        Checking current quantity…
+      } @else if (currentQuantity() != null) {
+        Current Quantity: {{ currentQuantity() }}
+        @if (quantity()) {
+          · Opening Quantity: {{ quantity() }}
+          @if (previewNew() != null) {
+            · Preview New Quantity: {{ previewNew() }}
+          }
+        }
+      }
+    </div>
+    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Post opening stock</button>
+  </form>
+</div>
