@@ -1,0 +1,53 @@
+version: "1"
+
+services:
+  # 1. Spring Boot Backend Web Service
+  - type: web
+    name: transport-backend
+    runtime: docker
+    dockerfilePath: ./transport-backend/Dockerfile
+    dockerContext: ./transport-backend
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DATABASE_URL
+        value: jdbc:postgresql://transport-db:5432/transport_erp
+      - key: DATABASE_USERNAME
+        fromDatabase:
+          name: transport-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: transport-db
+          property: password
+      - key: JWT_SECRET
+        generateWith: true
+      - key: JWT_EXPIRATION
+        value: "86400000"
+      - key: APP_BOOTSTRAP_ENABLED
+        value: "true"
+      - key: APP_BOOTSTRAP_ADMIN_PASSWORD
+        generateWith: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://transport-frontend.onrender.com
+
+  # 2. Angular Frontend Static Site
+  - type: web
+    name: transport-frontend
+    runtime: static
+    buildCommand: cd transport-frontend && npm install && npm run build
+    staticPublishPath: ./transport-frontend/dist/transport-frontend/browser
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://transport-backend.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  # 3. PostgreSQL Database Service
+  - name: transport-db
+    databaseName: transport_erp
+    user: transport_admin
+    plan: free

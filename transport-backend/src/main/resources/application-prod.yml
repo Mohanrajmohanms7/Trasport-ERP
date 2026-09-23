@@ -17,6 +17,8 @@ jwt:
   expiration: ${JWT_EXPIRATION:86400000}
 
 app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*,https://localhost:*,https://127.0.0.1:*,https://transport-frontend.onrender.com}
   bootstrap:
     enabled: ${APP_BOOTSTRAP_ENABLED:false}
     admin-password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:ChangeMe@123}
