@@ -56,9 +56,16 @@
                   {{ selectedVehicle()?.name || 'Unnamed Vehicle' }}
                 </h2>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
-                {{ selectedVehicle()?.ownerType || 'OWNED' }}
-              </span>
+              <div class="flex items-center gap-2">
+                @if (selectedVehicle()?.underMaintenance) {
+                  <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide">
+                    Under Maintenance
+                  </span>
+                }
+                <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase tracking-wide">
+                  {{ selectedVehicle()?.ownerType || 'OWNED' }}
+                </span>
+              </div>
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">

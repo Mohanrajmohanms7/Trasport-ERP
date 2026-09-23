@@ -106,4 +106,25 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
             @Param("baselineDate") LocalDate baselineDate);
 
     Optional<WorkOrder> findFirstByAttachmentPathContainingAndIsDeletedFalse(String attachmentPath);
+
+    /**
+     * Phase 8 maintenance state. OPEN, COMPLETED, CANCELLED, and deleted rows do not match.
+     */
+    @Query("""
+            SELECT CASE WHEN COUNT(w.id) > 0 THEN true ELSE false END
+            FROM WorkOrder w
+            WHERE w.vehicle.id = :vehicleId
+              AND w.status = 'IN_PROGRESS'
+              AND w.isDeleted = false
+            """)
+    boolean existsInProgressForVehicle(@Param("vehicleId") Long vehicleId);
+
+    @Query("""
+            SELECT DISTINCT w.vehicle.id
+            FROM WorkOrder w
+            WHERE w.vehicle.id IN :vehicleIds
+              AND w.status = 'IN_PROGRESS'
+              AND w.isDeleted = false
+            """)
+    List<Long> findVehicleIdsUnderMaintenance(@Param("vehicleIds") Collection<Long> vehicleIds);
 }

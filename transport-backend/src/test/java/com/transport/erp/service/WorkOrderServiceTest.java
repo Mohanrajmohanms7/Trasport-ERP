@@ -129,6 +129,14 @@ class WorkOrderServiceTest {
         when(workOrderRepository.findDetailById(anyLong())).thenAnswer(inv -> Optional.ofNullable(persisted.get()));
         when(workOrderPartRepository.findActiveByWorkOrderId(any())).thenReturn(List.of());
         when(workOrderLabourRepository.findActiveByWorkOrderId(any())).thenReturn(List.of());
+        when(vehicleRepository.findByIdForUpdate(anyLong())).thenAnswer(inv -> {
+            WorkOrder current = persisted.get();
+            if (current != null && current.getVehicle() != null
+                    && inv.getArgument(0).equals(current.getVehicle().getId())) {
+                return Optional.of(current.getVehicle());
+            }
+            return Optional.empty();
+        });
     }
 
     @Test
@@ -139,6 +147,10 @@ class WorkOrderServiceTest {
         assertEquals(WorkOrderService.STATUS_IN_PROGRESS, response.getStatus());
         assertEquals(WorkOrderService.STATUS_IN_PROGRESS, order.getStatus());
         assertTrue(order.getStartedAt() != null);
+        InOrder locks = inOrder(workOrderRepository, vehicleRepository);
+        locks.verify(workOrderRepository).findByIdForUpdate(10L);
+        locks.verify(vehicleRepository).findByIdForUpdate(VEHICLE_ID);
+        locks.verify(workOrderRepository).save(order);
         verify(auditService).log(eq("admin"), eq("WORK_ORDER_STARTED"), eq("work_orders"), eq(10L), isNull(), any());
     }
 

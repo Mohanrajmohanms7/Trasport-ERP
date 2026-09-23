@@ -1,9 +1,12 @@
 package com.transport.erp.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Formula;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -62,4 +65,25 @@ public class Vehicle extends BaseEntity {
 
     @Column(name = "odometer_updated_at")
     private LocalDateTime odometerUpdatedAt;
+
+    /**
+     * Derived read model of {@code VehicleMaintenanceStateService}.
+     * True only when a non-deleted work order for this vehicle is IN_PROGRESS.
+     * Not a column, and not a substitute for the trip-creation check.
+     */
+    @Formula("""
+            (SELECT CASE WHEN COUNT(wo.id) > 0 THEN true ELSE false END
+               FROM work_orders wo
+              WHERE wo.vehicle_id = id
+                AND wo.status = 'IN_PROGRESS'
+                AND wo.is_deleted = false)
+            """)
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private boolean underMaintenance;
+
+    @JsonProperty(value = "underMaintenance", access = JsonProperty.Access.READ_ONLY)
+    public boolean isUnderMaintenance() {
+        return underMaintenance;
+    }
 }

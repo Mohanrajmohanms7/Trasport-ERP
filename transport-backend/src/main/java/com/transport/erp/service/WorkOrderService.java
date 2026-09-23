@@ -254,6 +254,12 @@ public class WorkOrderService {
         if (!STATUS_OPEN.equals(order.getStatus())) {
             throw invalidTransition("Only an open work order can be started.");
         }
+        // Same vehicle row lock trip creation takes, so a new trip cannot commit
+        // between this check and the IN_PROGRESS write.
+        if (order.getVehicle() == null || order.getVehicle().getId() == null) {
+            throw vehicleInvalid();
+        }
+        vehicleRepository.findByIdForUpdate(order.getVehicle().getId()).orElseThrow(this::vehicleInvalid);
         order.setStatus(STATUS_IN_PROGRESS);
         order.setStartedAt(LocalDateTime.now());
         order.setUpdatedBy(username);
