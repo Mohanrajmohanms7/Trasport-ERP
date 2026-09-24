@@ -21,6 +21,9 @@ import java.util.List;
 public class FuelRequestService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private FuelRequestRepository requestRepository;
 
     @Autowired
@@ -95,7 +98,7 @@ public class FuelRequestService {
         }
 
         req.setTrip(trip);
-        req.setRequestNumber("FREQ-" + System.currentTimeMillis());
+        req.setRequestNumber(documentNumberService.next(trip.getCompanyId(), DocumentNumberService.FUEL_REQUEST, "FREQ-", java.time.LocalDate.now()));
         req.setStatus("PENDING");
         req.setIsDeleted(false);
         req.setFulfilledQuantity(BigDecimal.ZERO);

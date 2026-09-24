@@ -185,6 +185,15 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
     @Query("SELECT COUNT(i) FROM SalesInvoice i JOIN i.details d WHERE d.trip.id = :tripId AND i.isDeleted = false AND i.status != 'CANCELLED'")
     long countByTripIdAndIsDeletedFalse(@Param("tripId") Long tripId);
 
+    @Query("""
+            SELECT DISTINCT d.trip.id FROM SalesInvoiceDetail d
+            WHERE d.trip.id IN :tripIds
+              AND d.invoice.isDeleted = false AND d.invoice.status <> 'CANCELLED'
+              AND d.invoice.id <> :excludeInvoiceId
+            """)
+    List<Long> findTripIdsOnActiveInvoices(@Param("tripIds") java.util.Collection<Long> tripIds,
+                                           @Param("excludeInvoiceId") Long excludeInvoiceId);
+
     @Query("SELECT COUNT(i) FROM SalesInvoice i JOIN i.details d WHERE d.trip.booking.id = :bookingId AND i.isDeleted = false AND i.status != 'CANCELLED'")
     long countByBookingIdAndIsDeletedFalse(@Param("bookingId") Long bookingId);
 }

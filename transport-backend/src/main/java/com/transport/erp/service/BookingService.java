@@ -20,6 +20,9 @@ import com.transport.erp.security.TenantParentAccess;
 public class BookingService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private BookingRepository bookingRepository;
 
     @Autowired
@@ -65,7 +68,8 @@ public class BookingService {
         String prefix = settingService.getByKey("PREFIX_BOOKING").map(s -> s.getValueData()).orElse("BKG-");
         String defaultStatus = settingService.getByKey("DEFAULT_BOOKING_STATUS").map(s -> s.getValueData()).orElse("PENDING");
         
-        booking.setBookingNumber(prefix + System.currentTimeMillis());
+        booking.setBookingNumber(documentNumberService.next(tenantAccess.resolveCompanyId(booking.getCompanyId()),
+                DocumentNumberService.BOOKING, prefix, LocalDate.now()));
         booking.setBookingDate(LocalDate.now());
         if (booking.getStatus() == null || booking.getStatus().trim().isEmpty()) {
             booking.setStatus(defaultStatus);

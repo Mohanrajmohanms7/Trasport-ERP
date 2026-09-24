@@ -39,4 +39,25 @@ public class TripDetail extends BaseEntity {
 
     @Column(name = "arrival_time")
     private LocalDateTime arrivalTime;
+
+    /** Weighbridge weight at the quarry / loading point. */
+    @Column(name = "loaded_quantity", precision = 12, scale = 2)
+    private BigDecimal loadedQuantity;
+
+    /** Weighbridge weight at the customer site. Billed when present. */
+    @Column(name = "delivered_quantity", precision = 12, scale = 2)
+    private BigDecimal deliveredQuantity;
+
+    /** Quantity used for billing and booking balance: delivered if recorded, else planned. */
+    @Transient
+    public BigDecimal getBillableQuantity() {
+        return deliveredQuantity != null && deliveredQuantity.signum() > 0 ? deliveredQuantity : quantity;
+    }
+
+    /** loaded - delivered when both are recorded. */
+    @Transient
+    public BigDecimal getShortageQuantity() {
+        if (loadedQuantity == null || deliveredQuantity == null) return null;
+        return loadedQuantity.subtract(deliveredQuantity);
+    }
 }

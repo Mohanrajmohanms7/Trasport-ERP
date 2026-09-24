@@ -23,6 +23,9 @@ import java.util.List;
 public class ExpenseService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private ExpenseRepository expenseRepository;
 
     @Autowired
@@ -68,7 +71,8 @@ public class ExpenseService {
         String prefix = settingService.getByKey("PREFIX_EXPENSE").map(s -> s.getValueData()).orElse("EXP-");
         String defaultStatus = settingService.getByKey("DEFAULT_EXPENSE_STATUS").map(s -> s.getValueData()).orElse("SUBMITTED");
         
-        expense.setExpenseNumber(prefix + System.currentTimeMillis());
+        expense.setExpenseNumber(documentNumberService.next(tenantAccess.resolveCompanyId(expense.getCompanyId()),
+                DocumentNumberService.EXPENSE, prefix, LocalDate.now()));
         expense.setExpenseDate(LocalDate.now());
         expense.setStatus(defaultStatus);
         expense.setIsDeleted(false);

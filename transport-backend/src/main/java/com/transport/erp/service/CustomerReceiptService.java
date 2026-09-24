@@ -61,6 +61,9 @@ import java.time.LocalDate;
 public class CustomerReceiptService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private CustomerReceiptAuditRepository auditTrailRepository;
 
     @Autowired
@@ -141,7 +144,8 @@ public class CustomerReceiptService {
     @Transactional
     public CustomerReceipt createReceipt(CustomerReceipt receipt, String username) {
         String prefix = settingService.getByKey("PREFIX_RECEIPT").map(s -> s.getValueData()).orElse("RCT-");
-        receipt.setReceiptNumber(prefix + System.currentTimeMillis());
+        receipt.setReceiptNumber(documentNumberService.next(tenantAccess.resolveCompanyId(receipt.getCompanyId()),
+                DocumentNumberService.RECEIPT, prefix, LocalDate.now()));
         receipt.setReceiptDate(LocalDate.now());
         receipt.setIsDeleted(false);
         receipt.setCreatedBy(username);
@@ -219,8 +223,8 @@ public class CustomerReceiptService {
 
         CustomerReceipt receipt = new CustomerReceipt();
         String prefix = settingService.getByKey("PREFIX_RECEIPT").map(s -> s.getValueData()).orElse("RCT-");
-        receipt.setReceiptNumber(prefix + System.currentTimeMillis());
         receipt.setReceiptDate(dto.getReceiptDate() != null ? dto.getReceiptDate() : LocalDate.now());
+        receipt.setReceiptNumber(documentNumberService.next(companyId, DocumentNumberService.RECEIPT, prefix, receipt.getReceiptDate()));
         receipt.setCustomer(customer);
         receipt.setAmountReceived(dto.getAmountReceived());
         receipt.setPaymentMethod(dto.getPaymentMethod() != null ? dto.getPaymentMethod() : "CASH");

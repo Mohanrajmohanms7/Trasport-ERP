@@ -17,6 +17,9 @@ import java.time.LocalDate;
 public class JournalVoucherService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private JournalVoucherRepository voucherRepository;
 
     @Autowired
@@ -41,10 +44,11 @@ public class JournalVoucherService {
 
     @Transactional
     public JournalVoucher createVoucher(JournalVoucher voucher, String username) {
-        voucher.setVoucherNumber("JV-" + System.currentTimeMillis());
         if (voucher.getVoucherDate() == null) {
             voucher.setVoucherDate(LocalDate.now());
         }
+        voucher.setVoucherNumber(documentNumberService.next(tenantAccess.resolveCompanyId(voucher.getCompanyId()),
+                DocumentNumberService.JOURNAL_VOUCHER, "JV-", voucher.getVoucherDate()));
         voucher.setIsDeleted(false);
         voucher.setCreatedBy(username);
         voucher.setUpdatedBy(username);

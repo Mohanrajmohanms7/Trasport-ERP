@@ -17,6 +17,8 @@ public class SalesInvoicePrintDTO {
     private String status; // DRAFT, PENDING, APPROVED, GENERATED, CANCELLED
     private String paymentTerms;
     private String paymentStatus; // UNPAID, PARTIALLY_PAID, PAID
+    private String supplyType; // INTRA_STATE (CGST+SGST), INTER_STATE (IGST)
+    private String placeOfSupply; // 2-digit GST state code
 
     // Customer Information
     private Long customerId;
@@ -74,6 +76,8 @@ public class SalesInvoicePrintDTO {
         private BigDecimal sgst = BigDecimal.ZERO;
         private BigDecimal igst = BigDecimal.ZERO;
         private BigDecimal lineSubtotal = BigDecimal.ZERO;
+        private BigDecimal lineDiscount = BigDecimal.ZERO;
+        private BigDecimal lineTaxable = BigDecimal.ZERO;
         private BigDecimal lineTax = BigDecimal.ZERO;
         private BigDecimal netAmount = BigDecimal.ZERO;
     }

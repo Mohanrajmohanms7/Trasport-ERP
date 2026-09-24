@@ -23,6 +23,9 @@ import java.util.Optional;
 public class FuelEntryService {
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
     private FuelEntryRepository fuelEntryRepository;
 
     @Autowired
@@ -171,7 +174,8 @@ public class FuelEntryService {
         }
 
         String prefix = settingService.getByKey("PREFIX_FUEL").map(AppSetting::getValueData).orElse("FUEL-");
-        entry.setFuelEntryNumber(prefix + System.currentTimeMillis());
+        entry.setFuelEntryNumber(documentNumberService.next(vehicle.getCompanyId(), DocumentNumberService.FUEL_ENTRY, prefix,
+                entry.getFuelDate() != null ? entry.getFuelDate() : LocalDate.now()));
         entry.setFuelDate(entry.getFuelDate() != null ? entry.getFuelDate() : LocalDate.now());
         entry.setStatus("DRAFT");
         entry.setIsDeleted(false);

@@ -32,6 +32,14 @@ public class Trip extends BaseEntity {
     @JoinColumn(name = "driver_id")
     private Driver driver;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "quarry_id")
+    private Quarry quarry;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "loading_location_id")
+    private LoadingLocation loadingLocation;
+
     @Column(nullable = false, length = 50)
     private String status = "PLANNED"; // PLANNED, DISPATCHED, COMPLETED, CANCELLED
 
