@@ -15,6 +15,8 @@ export interface SalesInvoiceDetail {
   cgst?: number;
   sgst?: number;
   igst?: number;
+  discountAmount?: number;
+  taxableAmount?: number;
   netAmount?: number;
 }
 
@@ -27,6 +29,10 @@ export interface SalesInvoice {
   paymentTerms?: string;
   subtotal?: number;
   discount: number;
+  taxableAmount?: number;
+  taxAmount?: number;
+  supplyType?: 'INTRA_STATE' | 'INTER_STATE';
+  placeOfSupply?: string | null;
   netAmount?: number;
   details: SalesInvoiceDetail[];
 }

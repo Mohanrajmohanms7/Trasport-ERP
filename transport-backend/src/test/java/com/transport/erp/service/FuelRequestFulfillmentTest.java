@@ -60,6 +60,9 @@ class FuelRequestFulfillmentTest {
     @Mock
     private AppSettingService settingService;
 
+    @Mock
+    private DocumentNumberService documentNumberService;
+
     @InjectMocks
     private FuelRequestService requestService;
 
@@ -74,6 +77,7 @@ class FuelRequestFulfillmentTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(documentNumberService.next(any(), any(), any(), any())).thenReturn("DOC-2627/00001");
         mockTrip = new Trip();
         mockTrip.setId(10L);
         mockTrip.setTripNumber("TRIP-100");

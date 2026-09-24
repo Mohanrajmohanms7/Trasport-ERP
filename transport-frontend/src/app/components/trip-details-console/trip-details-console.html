@@ -112,12 +112,16 @@
                         <span class="material-icons text-sm">receipt</span>
                       </button>
                     }
+                    @if (trip.billingStatus !== 'INVOICED' && trip.billingStatus !== 'INVOICE_DRAFT') {
                     <button (click)="openEditTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Trip Allocations">
                       <span class="material-icons text-sm">edit</span>
                     </button>
+                    }
+                    @if (trip.status === 'PLANNED') {
                     <button (click)="deleteTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Cancel Itinerary">
                       <span class="material-icons text-sm">delete</span>
                     </button>
+                    }
                   </div>
                 </td>
               </tr>
@@ -164,29 +168,50 @@
               <div formGroupName="driver">
                 <ff-dropdown formControlName="id" label="Allocate Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
+              <ff-datepicker formControlName="tripDate" label="Trip Date" [max]="today" [required]="true" />
+              <div formGroupName="quarry">
+                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
+              </div>
+              <div formGroupName="loadingLocation">
+                <ff-dropdown formControlName="id" label="Loading Point" [options]="loadingLocationOptions" searchPlaceholder="Search loading points..." />
+              </div>
               <div class="pt-[9px]">
                 <ff-textbox formControlName="remarks" label="Transit Instructions" placeholder="Unloading route tips, safety instructions" prefixIcon="notes" />
               </div>
             </div>
 
+            @if (isCompletedEdit) {
+              <div class="text-xs rounded-[8px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-hover)] px-3 py-2 text-[var(--ff-text-secondary)]">
+                This trip is completed. You can record weighbridge weights, the trip date and loading source. The delivered quantity is what gets billed.
+              </div>
+            }
+
             <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
                 <span class="text-xs font-bold text-[var(--ff-text-primary)] uppercase tracking-wider">Allocated Materials Payload details</span>
-                <button type="button" (click)="addDetail()" class="text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
+                <button type="button" (click)="addDetail()" [disabled]="isCompletedEdit" class="disabled:opacity-40 text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
                   <span class="material-icons text-sm">add</span> Add Material Detail
                 </button>
               </div>
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
-                    <ff-number formControlName="quantity" label="Payload Quantity (Tons)" [min]="0" [required]="true" />
-                    <ff-number formControlName="loadingCharges" label="Loading Charges" [min]="0" [required]="true" />
+                    <ff-number formControlName="quantity" label="Planned Payload (Tons)" [min]="0" [required]="true" />
+                    <ff-number formControlName="loadedQuantity" label="Loaded Wt. (Tons)" [min]="0" />
+                    <ff-number formControlName="deliveredQuantity" label="Delivered Wt. (Tons)" [min]="0" />
+                    <div class="flex flex-col gap-1">
+                      <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Shortage</span>
+                      <div class="h-10 px-3 rounded-[8px] border border-[var(--ff-border-default)] flex items-center justify-end font-mono text-xs tabular-nums"
+                           [style.color]="(getShortage(row) ?? 0) > 0 ? 'var(--ff-color-danger-500)' : null">
+                        {{ getShortage(row) === null ? '—' : (getShortage(row) | number:'1.2-2') + ' t' }}
+                      </div>
+                    </div>
                     <div class="flex items-center justify-end gap-2 lg:pb-2">
-                      <button type="button" (click)="removeDetail(idx)" class="text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Row">
+                      <button type="button" (click)="removeDetail(idx)" [disabled]="isCompletedEdit" class="disabled:opacity-40 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
