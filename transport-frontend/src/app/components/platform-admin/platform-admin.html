@@ -582,6 +582,7 @@
                     <option [ngValue]="null">-- Select Plan --</option>
                     <option *ngFor="let p of plans()" [ngValue]="p.id">{{ p.name }} · {{ p.billingPeriod }} · ₹{{ p.price }}</option>
                   </select>
+                  <p *ngIf="!plans().length" class="text-[10px] text-slate-500">Loading subscription plans…</p>
                   <p *ngIf="!companyForm.value.subscriptionPlanId && errorMsg()" class="text-[10px] text-rose-600">Please select a subscription plan</p>
                 </div>
                 <ff-datepicker label="Start Date (optional)" formControlName="subscriptionStartDate"></ff-datepicker>
@@ -741,6 +742,7 @@
                 <option [ngValue]="null">-- Select Plan --</option>
                 <option *ngFor="let p of plans()" [ngValue]="p.id">{{ p.name }} (₹{{ p.price }})</option>
               </select>
+              <p *ngIf="!plans().length" class="text-[10px] text-slate-500">Loading subscription plans…</p>
             </div>
 
             <ff-datepicker label="Subscription Start Date" formControlName="subscriptionStartDate"></ff-datepicker>

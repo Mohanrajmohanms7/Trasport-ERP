@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
 import { PlatformAdminService, PlatformStats, SaaSPlan, TenantSubscription, SaaSLicense, SupportTicket, SupportReply, Announcement, BackupLog, BillingInvoice } from '../../services/platform-admin.service';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
 import {
   FfDropdownComponent,
@@ -291,6 +292,7 @@ import {
 })
 export class PlatformAdminComponent implements OnInit {
   private platformService = inject(PlatformAdminService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
 
@@ -429,6 +431,7 @@ export class PlatformAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForms();
+    this.loadPlans();
     this.loadDashboardData();
   }
 
@@ -721,14 +724,47 @@ export class PlatformAdminComponent implements OnInit {
     else if (tab === 'audit') this.loadAuditLogs();
   }
 
+  /** Loads subscription plans for Client and Subscriptions dropdowns. */
+  loadPlans(): void {
+    this.platformService.getPlans(0, 1000).subscribe({
+      next: (res) => {
+        if (res?.success && this.applyPlanPayload(res.data)) {
+          return;
+        }
+        this.loadPublicPlans();
+      },
+      error: () => this.loadPublicPlans()
+    });
+  }
+
+  private loadPublicPlans(): void {
+    this.authService.getActivePlans().subscribe({
+      next: (res) => {
+        if (!res?.success || !this.applyPlanPayload(res.data)) {
+          this.errorMsg.set('Subscription plans could not be loaded. Refresh the page and try again.');
+        }
+      },
+      error: (e) => this.handleError(e)
+    });
+  }
+
+  private applyPlanPayload(data: any): boolean {
+    const rows = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.content)
+        ? data.content
+        : [];
+    if (!rows.length) {
+      return false;
+    }
+    this.plans.set(rows);
+    return true;
+  }
+
   // 2. SaaS Client Operations
   loadClients(): void {
     this.loading.set(true);
-    this.platformService.getPlans(0, 1000).subscribe({
-      next: (res) => {
-        if (res.success) this.plans.set(res.data.content);
-      }
-    });
+    this.loadPlans();
     
     this.platformService.getClients(this.companySearch(), this.clientFilterStatus(), this.companyPage(), 10).subscribe({
       next: (res) => {
@@ -768,6 +804,7 @@ export class PlatformAdminComponent implements OnInit {
     this.companyForm.reset();
     this.companyForm.patchValue(client);
     this.showCompanyForm.set(true);
+    this.loadPlans();
   }
 
   openOnboardingWizard(): void {
@@ -785,13 +822,7 @@ export class PlatformAdminComponent implements OnInit {
       billingMonths: 1
     });
     this.showOnboardingWizard.set(true);
-    if (!this.plans().length) {
-      this.platformService.getPlans(0, 1000).subscribe({
-        next: (res) => {
-          if (res.success) this.plans.set(res.data.content);
-        }
-      });
-    }
+    this.loadPlans();
   }
 
   closeOnboardingWizard(): void {
@@ -1085,12 +1116,7 @@ export class PlatformAdminComponent implements OnInit {
   // 4. Plan & Subscriptions
   loadSubscriptions(): void {
     this.loading.set(true);
-    this.platformService.getPlans().subscribe({
-      next: (res) => {
-        if (res.success) this.plans.set(res.data.content);
-      },
-      error: (e) => this.handleError(e)
-    });
+    this.loadPlans();
 
     this.platformService.getTenantSubscriptions().subscribe({
       next: (res) => {
