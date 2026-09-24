@@ -5,12 +5,13 @@ import { Router } from '@angular/router';
 import { TripMgmtService, Trip, TripDetail } from '../../services/trip-mgmt.service';
 import { InvoiceMgmtService } from '../../services/invoice-mgmt.service';
 import { MasterService } from '../../services/master.service';
+import { MaterialMgmtService, LoadingLocation } from '../../services/material-mgmt.service';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
-import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
+import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent, FfDatepickerComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
@@ -28,7 +29,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     FfDropdownComponent,
     FfTextboxComponent,
     FfNumberComponent,
-    FfButtonComponent
+    FfButtonComponent,
+    FfDatepickerComponent
   ],
   templateUrl: './trip-details-console.html',
   styles: []
@@ -38,6 +40,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   private invoiceMgmtService = inject(InvoiceMgmtService);
   private router = inject(Router);
   private masterService = inject(MasterService);
+  private materialMgmtService = inject(MaterialMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -51,9 +54,16 @@ export class TripDetailsConsoleComponent implements OnInit {
   vehicles = signal<any[]>([]);
   drivers = signal<any[]>([]);
   materials = signal<any[]>([]);
+  quarries = signal<any[]>([]);
+  loadingLocations = signal<LoadingLocation[]>([]);
+  readonly today = new Date().toISOString().slice(0, 10);
 
   get bookingOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Booking Reference --', value: '' }, ...this.bookings().map(booking => ({ label: booking.bookingNumber || booking.code, value: booking.id }))];
+    // Only approved bookings can be dispatched; keep the current booking visible while editing.
+    const currentBookingId = this.editingTrip()?.booking?.id;
+    return [{ label: '-- Choose Booking Reference --', value: '' }, ...this.bookings()
+      .filter(booking => booking.status === 'APPROVED' || booking.id === currentBookingId)
+      .map(booking => ({ label: [booking.bookingNumber || booking.code, booking.customer?.name].filter(Boolean).join(' — '), value: booking.id }))];
   }
   get vehicleOptions(): FfSelectOption[] {
     const currentVehicleId = this.editingTrip()?.vehicle?.id;
@@ -66,6 +76,23 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
   get driverOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Driver Assignment --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
+  }
+  get quarryOptions(): FfSelectOption[] {
+    return [{ label: '-- Not recorded --', value: '' }, ...this.quarries().map(q => ({ label: q.name, value: q.id }))];
+  }
+  get loadingLocationOptions(): FfSelectOption[] {
+    return [{ label: '-- Not recorded --', value: '' }, ...this.loadingLocations().map(l => ({ label: [l.locationCode, l.loadingPoint].filter(Boolean).join(' — '), value: l.id! }))];
+  }
+  /** Weighbridge shortage (loaded - delivered) for a trip line form row. */
+  getShortage(row: any): number | null {
+    const loaded = row.get('loadedQuantity')?.value;
+    const delivered = row.get('deliveredQuantity')?.value;
+    if (loaded === null || loaded === '' || loaded === undefined || delivered === null || delivered === '' || delivered === undefined) return null;
+    return Number(loaded) - Number(delivered);
+  }
+  /** Material/quantity/vehicle are locked once the truck has delivered; only weighbridge values stay editable. */
+  get isCompletedEdit(): boolean {
+    return this.editingTrip()?.status === 'COMPLETED';
   }
   get materialOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Material --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
@@ -107,6 +134,16 @@ export class TripDetailsConsoleComponent implements OnInit {
         this.materials.set(res.data.content || res.data);
       }
     });
+    this.masterService.getMasters<any>('quarries', this.companyId, { size: 100 }).subscribe(res => {
+      if (res.success && res.data) {
+        this.quarries.set((res.data as any).content || res.data);
+      }
+    });
+    this.materialMgmtService.getLocations().subscribe(res => {
+      if (res.success && res.data) {
+        this.loadingLocations.set(res.data);
+      }
+    });
   }
 
   initForm() {
@@ -120,8 +157,25 @@ export class TripDetailsConsoleComponent implements OnInit {
       driver: this.fb.group({
         id: ['', Validators.required]
       }),
+      tripDate: [this.today, Validators.required],
+      quarry: this.fb.group({ id: [''] }),
+      loadingLocation: this.fb.group({ id: [''] }),
       remarks: [''],
       details: this.fb.array([])
+    });
+  }
+
+  private buildDetailRow(d?: any) {
+    return this.fb.group({
+      material: this.fb.group({
+        id: [d?.material?.id ?? '', Validators.required]
+      }),
+      quantity: [d?.quantity ?? 1, [Validators.required, Validators.min(0.01)]],
+      loadedQuantity: [d?.loadedQuantity ?? null, Validators.min(0)],
+      deliveredQuantity: [d?.deliveredQuantity ?? null, Validators.min(0)],
+      rate: [d?.rate ?? 0],
+      loadingCharges: [d?.loadingCharges ?? 0, Validators.min(0)],
+      royalty: [d?.royalty ?? 0]
     });
   }
 
@@ -130,17 +184,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
 
   addDetail() {
-    const detailGroup = this.fb.group({
-      material: this.fb.group({
-        id: ['', Validators.required]
-      }),
-      quantity: [1, [Validators.required, Validators.min(1)]],
-      rate: [0, Validators.required],
-      loadingCharges: [0, Validators.required],
-      royalty: [0, Validators.required]
-    });
-
-    this.detailsArray.push(detailGroup);
+    this.detailsArray.push(this.buildDetailRow());
   }
 
   removeDetail(index: number) {
@@ -169,7 +213,8 @@ export class TripDetailsConsoleComponent implements OnInit {
 
   openAddTrip() {
     this.editingTrip.set(null);
-    this.tripForm.reset();
+    this.tripForm.enable();
+    this.tripForm.reset({ tripDate: this.today, quarry: { id: '' }, loadingLocation: { id: '' } });
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
     }
@@ -183,6 +228,9 @@ export class TripDetailsConsoleComponent implements OnInit {
       booking: { id: trip.booking?.id },
       vehicle: { id: trip.vehicle?.id },
       driver: { id: trip.driver?.id },
+      tripDate: trip.tripDate || this.today,
+      quarry: { id: trip.quarry?.id ?? '' },
+      loadingLocation: { id: trip.loadingLocation?.id ?? '' },
       remarks: trip.remarks
     });
 
@@ -192,17 +240,22 @@ export class TripDetailsConsoleComponent implements OnInit {
 
     if (trip.details) {
       for (const d of trip.details) {
-        const row = this.fb.group({
-          material: this.fb.group({
-            id: [d.material?.id, Validators.required]
-          }),
-          quantity: [d.quantity, [Validators.required, Validators.min(1)]],
-          rate: [d.rate, Validators.required],
-          loadingCharges: [d.loadingCharges, Validators.required],
-          royalty: [d.royalty, Validators.required]
-        });
-        this.detailsArray.push(row);
+        this.detailsArray.push(this.buildDetailRow(d));
       }
+    }
+
+    // After delivery only the weighbridge readings, dates and loading source can be corrected.
+    this.tripForm.enable();
+    if (trip.status === 'COMPLETED') {
+      this.tripForm.get('booking')?.disable();
+      this.tripForm.get('vehicle')?.disable();
+      this.tripForm.get('driver')?.disable();
+      this.detailsArray.controls.forEach(row => {
+        row.get('material')?.disable();
+        row.get('quantity')?.disable();
+      });
+    } else {
+      this.tripForm.get('booking')?.disable(); // a trip never moves to another booking
     }
 
     this.showEditor.set(true);
@@ -214,6 +267,12 @@ export class TripDetailsConsoleComponent implements OnInit {
     this.loading.set(true);
     const val = this.tripForm.getRawValue();
     const tripObj = this.editingTrip();
+    if (!val.quarry?.id) val.quarry = null;
+    if (!val.loadingLocation?.id) val.loadingLocation = null;
+    for (const d of val.details || []) {
+      if (d.loadedQuantity === '' ) d.loadedQuantity = null;
+      if (d.deliveredQuantity === '') d.deliveredQuantity = null;
+    }
 
     if (tripObj && tripObj.id) {
       this.tripMgmtService.updateTrip(tripObj.id, val).subscribe({
@@ -225,7 +284,7 @@ export class TripDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to update trip');
+          this.notify.error(this.tripError(err, 'Failed to update trip'));
         }
       });
     } else {
@@ -244,16 +303,15 @@ export class TripDetailsConsoleComponent implements OnInit {
     }
   }
 
+  /** Business errors carry a short title in `message` and the actual reason in `errors[0]`. */
   private tripError(err: any, fallback: string): string {
-    const message = err?.error?.message;
-    if (message) {
-      return message;
-    }
     const errors = err?.error?.errors;
-    if (Array.isArray(errors) && errors.length) {
-      return String(errors[0]);
+    const detail = Array.isArray(errors) && errors.length ? String(errors[0]) : '';
+    const message = err?.error?.message || '';
+    if (message && detail && !detail.startsWith(message)) {
+      return `${message}: ${detail}`;
     }
-    return fallback;
+    return detail || message || fallback;
   }
 
   dispatchTrip(trip: Trip) {
@@ -263,7 +321,7 @@ export class TripDetailsConsoleComponent implements OnInit {
         this.notify.success('Trip dispatched successfully');
         this.loadTrips();
       },
-      error: () => this.notify.error('Failed to dispatch trip')
+      error: (err) => this.notify.error(this.tripError(err, 'Failed to dispatch trip'))
     });
   }
 
@@ -274,7 +332,7 @@ export class TripDetailsConsoleComponent implements OnInit {
         this.notify.success('Trip completed successfully');
         this.loadTrips();
       },
-      error: () => this.notify.error('Failed to complete trip')
+      error: (err) => this.notify.error(this.tripError(err, 'Failed to complete trip'))
     });
   }
 
@@ -296,7 +354,7 @@ export class TripDetailsConsoleComponent implements OnInit {
             this.notify.success('Trip canceled successfully');
             this.loadTrips();
           },
-          error: () => this.notify.error('Failed to cancel trip')
+          error: (err) => this.notify.error(this.tripError(err, 'Failed to cancel trip'))
         });
       }
     });
@@ -321,7 +379,7 @@ export class TripDetailsConsoleComponent implements OnInit {
             this.router.navigate(['/billing-invoices']);
           },
           error: (err) => {
-            this.notify.error(err.error?.message || 'Failed to generate invoice');
+            this.notify.error(this.tripError(err, 'Failed to generate invoice'));
           }
         });
       }

@@ -39,3 +39,33 @@ Configured schemas using Flyway `V14__sales_invoices.sql`:
 - **`InvoiceDetailsConsoleComponent`** (SCR-241 & SCR-242): Unified operations viewport split into:
   - **Invoices Ledger**: Displays sales tax invoices.
   - **Billing Form Editor**: Creates/edits itemized billing rows mapping trips/materials.
+
+---
+
+## GST calculation, numbering and posting (V61)
+
+**Exists** as of migration `V61__invoice_gst_numbering_trip_integrity.sql`.
+
+- **Line taxable value** = quantity × (rate + freight + loading + royalty), rounded to 2 decimals.
+- **Discount** is split across lines in proportion to taxable value and is taken off **before** GST
+  (`sales_invoice_details.discount_amount`, `taxable_amount`).
+- **Place of supply**: the invoice's `place_of_supply` (2-digit state code) if entered, else the first two
+  digits of the customer GSTIN. Supplier state = branch GSTIN, else company GSTIN.
+  Different states → `supply_type = INTER_STATE` and **IGST**; otherwise **CGST + SGST** (half each).
+- Header totals: `subtotal` (pre-discount), `discount`, `taxable_amount`, `tax_amount`, `net_amount = taxable + tax`.
+  Logic lives in `InvoiceTaxCalculator` (unit-tested in `InvoiceTaxCalculatorTest`).
+- **Approval posting**: Dr Customer Receivables / Cr Transport Freight Income for `taxable_amount`, and
+  Dr Customer Receivables / Cr GST Liability for `tax_amount`, dated on the invoice date. Drafts are
+  recalculated on approval. (Before V61 the whole tax-inclusive amount was posted to income and GST
+  liability was never posted.)
+- **Invoice date** may be back-dated, never in the future, never before a billed trip's date, and must stay in
+  the financial year of its number.
+- **Trip lines**: only COMPLETED trips of the same customer, not on another non-cancelled invoice (row-locked).
+  Invoice-from-trip bills the weighbridge **delivered** quantity when recorded and falls back to booking
+  rates when the trip rate is 0.
+- **Document numbers**: `DocumentNumberService` issues `PREFIX + FY + "/" + 5 digits` (e.g. `INV-2627/00001`)
+  from `document_sequences`, per company, document type and April–March year, for invoices, receipts,
+  bookings, trips, expenses, fuel entries/requests and journal vouchers.
+
+**Planned / configurable**: a separate GST rate for freight (GTA) vs material. Confirm the tax treatment with
+the company's CA before adding it; today one GST % applies to the whole line.

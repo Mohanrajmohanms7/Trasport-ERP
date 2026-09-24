@@ -256,13 +256,22 @@ public class SalesInvoicePdfGenerator {
         calcTable.addCell(createLabelCell("Taxable Amount:", boldFont));
         calcTable.addCell(createValueCell(curFormat.format(data.getTaxableAmount()), normalFont, Element.ALIGN_RIGHT));
 
-        calcTable.addCell(createLabelCell("CGST (9%):", boldFont));
-        calcTable.addCell(createValueCell(curFormat.format(data.getTotalCGST()), normalFont, Element.ALIGN_RIGHT));
+        boolean interState = "INTER_STATE".equals(data.getSupplyType())
+                || (data.getTotalIGST() != null && data.getTotalIGST().compareTo(BigDecimal.ZERO) > 0);
+        if (!interState) {
+            calcTable.addCell(createLabelCell("CGST:", boldFont));
+            calcTable.addCell(createValueCell(curFormat.format(data.getTotalCGST()), normalFont, Element.ALIGN_RIGHT));
 
-        calcTable.addCell(createLabelCell("SGST (9%):", boldFont));
-        calcTable.addCell(createValueCell(curFormat.format(data.getTotalSGST()), normalFont, Element.ALIGN_RIGHT));
+            calcTable.addCell(createLabelCell("SGST:", boldFont));
+            calcTable.addCell(createValueCell(curFormat.format(data.getTotalSGST()), normalFont, Element.ALIGN_RIGHT));
+        }
 
-        if (data.getTotalIGST() != null && data.getTotalIGST().compareTo(BigDecimal.ZERO) > 0) {
+        if (data.getPlaceOfSupply() != null) {
+            calcTable.addCell(createLabelCell("Place of Supply:", boldFont));
+            calcTable.addCell(createValueCell(data.getPlaceOfSupply(), normalFont, Element.ALIGN_RIGHT));
+        }
+
+        if (interState) {
             calcTable.addCell(createLabelCell("IGST:", boldFont));
             calcTable.addCell(createValueCell(curFormat.format(data.getTotalIGST()), normalFont, Element.ALIGN_RIGHT));
         }

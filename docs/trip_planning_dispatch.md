@@ -39,3 +39,22 @@ Configured schemas using Flyway `V10__trip_planning_dispatch.sql`:
   - **Planned Trips Grid**: Displays planned transits list.
   - **Allocation Form Editor**: Allocates vehicles, drivers, and payloads.
   - **Workflow Controls**: Toggles Dispatch transit start and Complete delivery confirmations.
+
+---
+
+## Trip rules (V61)
+
+**Exists**:
+
+- Trips can only be created for **APPROVED** bookings. The booking row is locked while a trip is saved.
+- Every trip line must be a material on the booking. Total quantity moved per material across non-cancelled
+  trips (delivered if recorded, else planned) cannot exceed the booked quantity plus the
+  `BOOKING_QTY_TOLERANCE_PERCENT` app setting (default 0).
+- Missing rate / royalty / loading on a trip line is copied from the booking line.
+- **Weighbridge**: `trip_details.loaded_quantity` and `delivered_quantity`; shortage = loaded − delivered
+  (API field `shortageQuantity`). Delivered cannot exceed loaded. `billableQuantity` = delivered if recorded.
+- **Loading source**: optional `trips.quarry_id` and `trips.loading_location_id` (same company only).
+- **Trip date** can be back-dated, not in the future and not before the booking date.
+- **Status flow** is enforced: PLANNED → DISPATCHED (needs vehicle + driver) → COMPLETED.
+- A **completed** trip can still get weighbridge values, date and loading source corrected; vehicle, driver,
+  material and planned quantity are locked. Once the trip is on an active invoice, it cannot be edited.

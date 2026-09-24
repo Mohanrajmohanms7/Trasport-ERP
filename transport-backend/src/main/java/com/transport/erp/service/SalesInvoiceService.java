@@ -1,6 +1,7 @@
 package com.transport.erp.service;
 
 import com.transport.erp.security.TenantAccessService;
+import com.transport.erp.exception.BusinessValidationException;
 
 import com.transport.erp.model.SalesInvoice;
 import com.transport.erp.model.SalesInvoiceDetail;
@@ -55,6 +56,12 @@ public class SalesInvoiceService {
     private TripRepository tripRepository;
 
     @Autowired
+    private DocumentNumberService documentNumberService;
+
+    @Autowired
+    private com.transport.erp.security.TenantParentAccess tenantParentAccess;
+
+    @Autowired
     private TenantAccessService tenantAccess;
 
     @Autowired
@@ -102,51 +109,40 @@ public class SalesInvoiceService {
     public SalesInvoice createInvoice(SalesInvoice invoice, String username) {
         String prefix = settingService.getByKey("PREFIX_INVOICE").map(s -> s.getValueData()).orElse("INV-");
         String defaultStatus = settingService.getByKey("DEFAULT_INVOICE_STATUS").map(s -> s.getValueData()).orElse("DRAFT");
-        
-        invoice.setInvoiceNumber(prefix + System.currentTimeMillis());
-        invoice.setInvoiceDate(LocalDate.now());
-        invoice.setStatus(defaultStatus);
-        invoice.setIsDeleted(false);
-        invoice.setCreatedBy(username);
-        invoice.setUpdatedBy(username);
 
         invoice.setCompanyId(tenantAccess.resolveCompanyId(invoice.getCompanyId()));
         invoice.setBranchId(tenantAccess.resolveBranchId(invoice.getBranchId()));
 
+        if (invoice.getCustomer() == null || invoice.getCustomer().getId() == null) {
+            throw new IllegalArgumentException("Customer is required for an invoice.");
+        }
+        invoice.setCustomer(tenantParentAccess.requireCustomer(invoice.getCustomer().getId()));
 
-        BigDecimal subtotal = BigDecimal.ZERO;
+        invoice.setInvoiceDate(resolveDocumentDate(invoice.getInvoiceDate(), "Invoice"));
+        invoice.setInvoiceNumber(documentNumberService.next(invoice.getCompanyId(), DocumentNumberService.INVOICE,
+                prefix, invoice.getInvoiceDate()));
+        invoice.setStatus(defaultStatus);
+        invoice.setIsDeleted(false);
+        invoice.setCreatedBy(username);
+        invoice.setUpdatedBy(username);
+        if (invoice.getCode() == null) invoice.setCode(invoice.getInvoiceNumber());
+        if (invoice.getName() == null) invoice.setName("Sales Invoice");
 
-        if (invoice.getDetails() != null) {
-            for (SalesInvoiceDetail detail : invoice.getDetails()) {
-                detail.setInvoice(invoice);
-                detail.setIsDeleted(false);
-                detail.setCreatedBy(username);
-                detail.setUpdatedBy(username);
-                detail.setCompanyId(invoice.getCompanyId());
-                detail.setBranchId(invoice.getBranchId());
-
-                // Calculate base amount = quantity * (rate + freight + loading + royalty)
-                BigDecimal basePrice = detail.getRate()
-                        .add(detail.getFreightCharges())
-                        .add(detail.getLoadingCharges())
-                        .add(detail.getRoyalty());
-                BigDecimal lineSub = detail.getQuantity().multiply(basePrice);
-
-                // Calculate GST components (default CGST = 9%, SGST = 9%)
-                BigDecimal totalTaxRate = detail.getGstPercentage().divide(BigDecimal.valueOf(100));
-                BigDecimal taxVal = lineSub.multiply(totalTaxRate);
-
-                detail.setCgst(taxVal.divide(BigDecimal.valueOf(2)));
-                detail.setSgst(taxVal.divide(BigDecimal.valueOf(2)));
-                detail.setIgst(BigDecimal.ZERO);
-                detail.setNetAmount(lineSub.add(taxVal));
-
-                subtotal = subtotal.add(detail.getNetAmount());
-            }
+        if (invoice.getDetails() == null || invoice.getDetails().isEmpty()) {
+            throw new IllegalArgumentException("Add at least one billing line to the invoice.");
+        }
+        for (SalesInvoiceDetail detail : invoice.getDetails()) {
+            detail.setInvoice(invoice);
+            detail.setIsDeleted(false);
+            detail.setCreatedBy(username);
+            detail.setUpdatedBy(username);
+            detail.setCompanyId(invoice.getCompanyId());
+            detail.setBranchId(invoice.getBranchId());
+            fillLineIdentity(detail);
         }
 
-        invoice.setSubtotal(subtotal);
-        invoice.setNetAmount(subtotal.subtract(invoice.getDiscount()));
+        validateTripLines(invoice, null);
+        recalculate(invoice);
 
         SalesInvoice saved = invoiceRepository.save(invoice);
 
@@ -161,43 +157,39 @@ public class SalesInvoiceService {
         SalesInvoice existing = getInvoiceById(id);
         validationService.validateInvoiceUpdate(existing);
 
+        LocalDate newDate = resolveDocumentDate(
+                details.getInvoiceDate() != null ? details.getInvoiceDate() : existing.getInvoiceDate(), "Invoice");
+        if (existing.getInvoiceDate() != null && !DocumentNumberService.financialYearLabel(newDate)
+                .equals(DocumentNumberService.financialYearLabel(existing.getInvoiceDate()))) {
+            throw new BusinessValidationException(
+                    "Invoice Date Outside Financial Year",
+                    "INVOICE_DATE_FY_CHANGE",
+                    "Invoice number " + existing.getInvoiceNumber() + " belongs to another financial year than " + newDate + ".",
+                    "Keep the date inside the same financial year, or delete this draft and create a new invoice.");
+        }
+        existing.setInvoiceDate(newDate);
         existing.setDiscount(details.getDiscount());
         existing.setPaymentTerms(details.getPaymentTerms());
+        existing.setPlaceOfSupply(details.getPlaceOfSupply());
         existing.setUpdatedBy(username);
 
         existing.getDetails().clear();
-        BigDecimal subtotal = BigDecimal.ZERO;
-
-        if (details.getDetails() != null) {
-            for (SalesInvoiceDetail d : details.getDetails()) {
-                d.setInvoice(existing);
-                d.setIsDeleted(false);
-                d.setCreatedBy(username);
-                d.setUpdatedBy(username);
-                d.setCompanyId(existing.getCompanyId());
-                d.setBranchId(existing.getBranchId());
-
-                BigDecimal basePrice = d.getRate()
-                        .add(d.getFreightCharges())
-                        .add(d.getLoadingCharges())
-                        .add(d.getRoyalty());
-                BigDecimal lineSub = d.getQuantity().multiply(basePrice);
-
-                BigDecimal totalTaxRate = d.getGstPercentage().divide(BigDecimal.valueOf(100));
-                BigDecimal taxVal = lineSub.multiply(totalTaxRate);
-
-                d.setCgst(taxVal.divide(BigDecimal.valueOf(2)));
-                d.setSgst(taxVal.divide(BigDecimal.valueOf(2)));
-                d.setIgst(BigDecimal.ZERO);
-                d.setNetAmount(lineSub.add(taxVal));
-
-                subtotal = subtotal.add(d.getNetAmount());
-                existing.getDetails().add(d);
-            }
+        if (details.getDetails() == null || details.getDetails().isEmpty()) {
+            throw new IllegalArgumentException("Add at least one billing line to the invoice.");
+        }
+        for (SalesInvoiceDetail d : details.getDetails()) {
+            d.setInvoice(existing);
+            d.setIsDeleted(false);
+            d.setCreatedBy(username);
+            d.setUpdatedBy(username);
+            d.setCompanyId(existing.getCompanyId());
+            d.setBranchId(existing.getBranchId());
+            fillLineIdentity(d);
+            existing.getDetails().add(d);
         }
 
-        existing.setSubtotal(subtotal);
-        existing.setNetAmount(subtotal.subtract(existing.getDiscount()));
+        validateTripLines(existing, existing.getId());
+        recalculate(existing);
 
         SalesInvoice saved = invoiceRepository.save(existing);
 
@@ -205,6 +197,100 @@ public class SalesInvoiceService {
                 "Modified details for invoice voucher: " + saved.getInvoiceNumber());
 
         return saved;
+    }
+
+    /** Recomputes GST, discount split and totals from the lines. */
+    private void recalculate(SalesInvoice invoice) {
+        String customerGstin = invoice.getCustomer() != null ? invoice.getCustomer().getGstNumber() : null;
+        InvoiceTaxCalculator.apply(invoice, resolveSupplierStateCode(invoice), invoice.getPlaceOfSupply(), customerGstin);
+    }
+
+    /** State code of the billing branch GSTIN, else the company GSTIN. */
+    private String resolveSupplierStateCode(SalesInvoice invoice) {
+        if (invoice.getBranchId() != null) {
+            String fromBranch = branchRepository.findById(invoice.getBranchId())
+                    .map(b -> InvoiceTaxCalculator.stateCodeFromGstin(b.getGstNumber())).orElse(null);
+            if (fromBranch != null) return fromBranch;
+        }
+        if (invoice.getCompanyId() != null) {
+            return companyRepository.findById(invoice.getCompanyId())
+                    .map(c -> InvoiceTaxCalculator.stateCodeFromGstin(c.getGstNumber())).orElse(null);
+        }
+        return null;
+    }
+
+    /** Defaults to today; future dates are rejected. */
+    private LocalDate resolveDocumentDate(LocalDate requested, String label) {
+        LocalDate date = requested != null ? requested : LocalDate.now();
+        if (date.isAfter(LocalDate.now())) {
+            throw new BusinessValidationException(
+                    label + " Date In Future",
+                    "DOCUMENT_DATE_IN_FUTURE",
+                    label + " date " + date + " is in the future.",
+                    "Use today's date or an earlier date.");
+        }
+        return date;
+    }
+
+    private void fillLineIdentity(SalesInvoiceDetail d) {
+        if (d.getCode() == null) d.setCode("INV-LINE");
+        if (d.getName() == null) d.setName("Invoice Line");
+        if (d.getTrip() != null && d.getTrip().getId() == null) d.setTrip(null);
+    }
+
+    /**
+     * Trip lines must point to completed trips of the same customer and company,
+     * dated on or before the invoice, and not billed on another active invoice.
+     * The trips are row-locked so two invoices cannot bill the same trip at once.
+     */
+    private void validateTripLines(SalesInvoice invoice, Long excludeInvoiceId) {
+        java.util.Set<Long> tripIds = new java.util.LinkedHashSet<>();
+        for (SalesInvoiceDetail d : invoice.getDetails()) {
+            if (d.getTrip() != null && d.getTrip().getId() != null) tripIds.add(d.getTrip().getId());
+        }
+        if (tripIds.isEmpty()) return;
+
+        java.util.Map<Long, Trip> trips = new java.util.HashMap<>();
+        for (Trip t : tripRepository.findAndLockAllByIds(tripIds)) trips.put(t.getId(), t);
+
+        List<Long> alreadyBilled = invoiceRepository.findTripIdsOnActiveInvoices(tripIds,
+                excludeInvoiceId != null ? excludeInvoiceId : -1L);
+
+        for (Long tripId : tripIds) {
+            Trip trip = trips.get(tripId);
+            if (trip == null) {
+                throw new IllegalArgumentException("Trip not found or deleted with ID: " + tripId);
+            }
+            tenantAccess.assertOwned(trip.getCompanyId());
+            if (!"COMPLETED".equals(trip.getStatus())) {
+                throw new BusinessValidationException("Trip Not Completed", "INVOICE_TRIP_NOT_COMPLETED",
+                        "Trip " + trip.getTripNumber() + " is " + trip.getStatus() + " and cannot be billed yet.",
+                        "Complete the trip before adding it to an invoice.");
+            }
+            if (alreadyBilled.contains(tripId)) {
+                throw new BusinessValidationException("Trip Already Invoiced", "INVOICE_TRIP_ALREADY_BILLED",
+                        "Trip " + trip.getTripNumber() + " is already on another active invoice.",
+                        "Remove the trip from this invoice, or cancel the other invoice first.");
+            }
+            Long tripCustomerId = trip.getBooking() != null && trip.getBooking().getCustomer() != null
+                    ? trip.getBooking().getCustomer().getId() : null;
+            if (tripCustomerId != null && invoice.getCustomer() != null
+                    && !tripCustomerId.equals(invoice.getCustomer().getId())) {
+                throw new BusinessValidationException("Trip Customer Mismatch", "INVOICE_TRIP_CUSTOMER_MISMATCH",
+                        "Trip " + trip.getTripNumber() + " belongs to a different customer.",
+                        "Bill each trip to the customer on its booking.");
+            }
+            if (trip.getTripDate() != null && invoice.getInvoiceDate() != null
+                    && invoice.getInvoiceDate().isBefore(trip.getTripDate())) {
+                throw new BusinessValidationException("Invoice Before Trip", "INVOICE_DATE_BEFORE_TRIP",
+                        "Invoice date " + invoice.getInvoiceDate() + " is before trip " + trip.getTripNumber()
+                                + " date " + trip.getTripDate() + ".",
+                        "Use an invoice date on or after the trip date.");
+            }
+        }
+        for (SalesInvoiceDetail d : invoice.getDetails()) {
+            if (d.getTrip() != null && d.getTrip().getId() != null) d.setTrip(trips.get(d.getTrip().getId()));
+        }
     }
 
     @Transactional
@@ -261,6 +347,9 @@ public class SalesInvoiceService {
             );
         }
 
+        // Recompute with the current GST rules so drafts saved before a rule change post correctly.
+        recalculate(invoice);
+
         invoice.setStatus("APPROVED");
         invoice.setUpdatedBy(username);
 
@@ -282,14 +371,16 @@ public class SalesInvoiceService {
         ChartOfAccount arAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "1100", "Customer Receivables", "ASSET");
         ChartOfAccount incomeAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "4000", "Transport Freight Income", "INCOME");
 
-        BigDecimal subtotal = saved.getSubtotal() != null ? saved.getSubtotal() : saved.getNetAmount();
-        if (subtotal.compareTo(BigDecimal.ZERO) > 0) {
+        // Revenue = taxable value (after discount, before GST). GST goes to the liability account.
+        BigDecimal taxableValue = saved.getTaxableAmount() != null ? saved.getTaxableAmount() : BigDecimal.ZERO;
+        BigDecimal gstAmount = saved.getTaxAmount() != null ? saved.getTaxAmount() : BigDecimal.ZERO;
+        if (taxableValue.compareTo(BigDecimal.ZERO) > 0) {
             JournalVoucher jvIncome = new JournalVoucher();
             jvIncome.setVoucherNumber("JV-INV-" + saved.getId() + "-INC");
-            jvIncome.setVoucherDate(LocalDate.now());
+            jvIncome.setVoucherDate(invoicePostingDate);
             jvIncome.setDebitAccount(arAcc);
             jvIncome.setCreditAccount(incomeAcc);
-            jvIncome.setAmount(subtotal);
+            jvIncome.setAmount(taxableValue);
             jvIncome.setReferenceNumber(saved.getInvoiceNumber());
             jvIncome.setDescription("Auto-posted sales invoice revenue JV for " + saved.getInvoiceNumber());
             jvIncome.setCompanyId(saved.getCompanyId());
@@ -302,12 +393,11 @@ public class SalesInvoiceService {
             jvService.createVoucher(jvIncome, username);
         }
 
-        BigDecimal gstAmount = saved.getNetAmount().subtract(subtotal);
         if (gstAmount.compareTo(BigDecimal.ZERO) > 0) {
             ChartOfAccount gstAcc = coaService.getOrCreateAccount(saved.getCompanyId(), saved.getBranchId(), "2200", "GST Liability", "LIABILITY");
             JournalVoucher jvGst = new JournalVoucher();
             jvGst.setVoucherNumber("JV-INV-" + saved.getId() + "-GST");
-            jvGst.setVoucherDate(LocalDate.now());
+            jvGst.setVoucherDate(invoicePostingDate);
             jvGst.setDebitAccount(arAcc);
             jvGst.setCreditAccount(gstAcc);
             jvGst.setAmount(gstAmount);
@@ -456,10 +546,11 @@ public class SalesInvoiceService {
             if (td.getMaterial() == null) {
                 throw new IllegalArgumentException("Material information is missing from trip details.");
             }
-            if (td.getQuantity() == null || td.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            BigDecimal billQty = td.getBillableQuantity();
+            if (billQty == null || billQty.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Quantity is invalid for material: " + td.getMaterial().getName());
             }
-            if (td.getRate() == null || td.getRate().compareTo(BigDecimal.ZERO) < 0) {
+            if (td.getRate() != null && td.getRate().compareTo(BigDecimal.ZERO) < 0) {
                 throw new IllegalArgumentException("Rate/freight amount is invalid for material: " + td.getMaterial().getName());
             }
 
@@ -482,10 +573,11 @@ public class SalesInvoiceService {
             SalesInvoiceDetail detail = new SalesInvoiceDetail();
             detail.setTrip(trip);
             detail.setMaterial(td.getMaterial());
-            detail.setQuantity(td.getQuantity());
-            detail.setRate(td.getRate()); // Base rate
-            detail.setLoadingCharges(td.getLoadingCharges() != null ? td.getLoadingCharges() : BigDecimal.ZERO);
-            detail.setRoyalty(td.getRoyalty() != null ? td.getRoyalty() : BigDecimal.ZERO);
+            // Bill the weighbridge delivered quantity when recorded; trip-level rates win, booking rates fill gaps.
+            detail.setQuantity(billQty);
+            detail.setRate(positiveOr(td.getRate(), bookingDetail.getRate()));
+            detail.setLoadingCharges(positiveOr(td.getLoadingCharges(), bookingDetail.getLoadingCharge()));
+            detail.setRoyalty(positiveOr(td.getRoyalty(), bookingDetail.getRoyaltyRate()));
             detail.setFreightCharges(bookingDetail.getTransportRate());
             detail.setGstPercentage(bookingDetail.getGstPercentage());
 
@@ -494,6 +586,11 @@ public class SalesInvoiceService {
 
         // Delegate to existing createInvoice to reuse calculation logic, save record, and write logs.
         return createInvoice(invoice, username);
+    }
+
+    private static BigDecimal positiveOr(BigDecimal preferred, BigDecimal fallback) {
+        if (preferred != null && preferred.signum() > 0) return preferred;
+        return fallback != null ? fallback : BigDecimal.ZERO;
     }
 
     public List<SalesInvoice> getOutstandingInvoices(Long customerId, Long companyId, Long branchId) {
@@ -517,6 +614,8 @@ public class SalesInvoiceService {
         dto.setStatus(invoice.getStatus());
         dto.setPaymentTerms(invoice.getPaymentTerms());
         dto.setPaymentStatus(invoice.getPaymentStatus());
+        dto.setSupplyType(invoice.getSupplyType());
+        dto.setPlaceOfSupply(invoice.getPlaceOfSupply());
 
         // Customer details
         Customer customer = invoice.getCustomer();
@@ -596,13 +695,15 @@ public class SalesInvoiceService {
                 idto.setSgst(detail.getSgst() != null ? detail.getSgst() : BigDecimal.ZERO);
                 idto.setIgst(detail.getIgst() != null ? detail.getIgst() : BigDecimal.ZERO);
 
-                BigDecimal basePrice = idto.getRate().add(idto.getFreightCharges()).add(idto.getLoadingCharges()).add(idto.getRoyalty());
-                BigDecimal lineSub = idto.getQuantity().multiply(basePrice);
                 BigDecimal lineTax = idto.getCgst().add(idto.getSgst()).add(idto.getIgst());
+                BigDecimal lineDiscount = detail.getDiscountAmount() != null ? detail.getDiscountAmount() : BigDecimal.ZERO;
+                BigDecimal lineTaxable = detail.getTaxableAmount() != null ? detail.getTaxableAmount() : BigDecimal.ZERO;
 
-                idto.setLineSubtotal(lineSub);
+                idto.setLineSubtotal(lineTaxable.add(lineDiscount));
+                idto.setLineDiscount(lineDiscount);
+                idto.setLineTaxable(lineTaxable);
                 idto.setLineTax(lineTax);
-                idto.setNetAmount(detail.getNetAmount() != null ? detail.getNetAmount() : lineSub.add(lineTax));
+                idto.setNetAmount(detail.getNetAmount() != null ? detail.getNetAmount() : lineTaxable.add(lineTax));
 
                 totalCGST = totalCGST.add(idto.getCgst());
                 totalSGST = totalSGST.add(idto.getSgst());
@@ -617,7 +718,7 @@ public class SalesInvoiceService {
         dto.setTotalSGST(totalSGST);
         dto.setTotalIGST(totalIGST);
         BigDecimal totalTax = totalCGST.add(totalSGST).add(totalIGST);
-        dto.setTaxableAmount(subtotal.subtract(totalTax));
+        dto.setTaxableAmount(invoice.getTaxableAmount() != null ? invoice.getTaxableAmount() : netAmount.subtract(totalTax));
 
         return dto;
     }

@@ -60,6 +60,24 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT t FROM Trip t WHERE t.id = :id AND t.isDeleted = false")
     Optional<Trip> findAndLockById(@Param("id") Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT t FROM Trip t WHERE t.id IN :ids AND t.isDeleted = false")
+    List<Trip> findAndLockAllByIds(@Param("ids") java.util.Collection<Long> ids);
+
+    /** Quantity already moved per material for a booking (delivered if recorded, else planned), excluding one trip. */
+    @Query("""
+            SELECT d.material.id,
+                   COALESCE(SUM(CASE WHEN d.deliveredQuantity IS NOT NULL AND d.deliveredQuantity > 0
+                                     THEN d.deliveredQuantity ELSE d.quantity END), 0)
+            FROM TripDetail d
+            WHERE d.trip.booking.id = :bookingId
+              AND d.trip.isDeleted = false AND d.isDeleted = false
+              AND d.trip.status <> 'CANCELLED'
+              AND d.trip.id <> :excludeTripId
+            GROUP BY d.material.id
+            """)
+    List<Object[]> sumQuantityByMaterialForBooking(@Param("bookingId") Long bookingId, @Param("excludeTripId") Long excludeTripId);
+
     long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
 
     long countByDriverIdAndIsDeletedFalse(Long driverId);

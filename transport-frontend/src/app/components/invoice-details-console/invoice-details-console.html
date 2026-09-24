@@ -207,8 +207,13 @@
                 <ff-dropdown formControlName="id" label="Select Corporate Customer" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-dropdown formControlName="paymentTerms" label="Payment Terms" [options]="paymentTermsOptions" [required]="true" searchPlaceholder="Search options..." />
-              <ff-number formControlName="discount" label="Adjustment Discount Amount" placeholder="0.00" [min]="0" />
+              <ff-number formControlName="discount" label="Discount (before GST)" placeholder="0.00" [min]="0" />
+              <ff-datepicker formControlName="invoiceDate" label="Invoice Date" [max]="today" [required]="true" />
+              <ff-textbox formControlName="placeOfSupply" label="Place of Supply (State Code)" placeholder="Auto from customer GSTIN, e.g. 33" prefixIcon="place" />
             </div>
+            <p class="text-[11px] text-[var(--ff-text-muted)] -mt-3">
+              Same state as your GSTIN → CGST + SGST. Different state → IGST. Leave place of supply empty to use the customer's GSTIN.
+            </p>
 
             <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
@@ -220,7 +225,7 @@
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-2 lg:grid-cols-5 xl:grid-cols-10 gap-3 items-end">
                     <div formGroupName="trip">
                       <ff-dropdown formControlName="id" label="Trip reference" [options]="tripOptions" searchPlaceholder="Search options..." />
                     </div>
@@ -229,13 +234,16 @@
                     </div>
                     <ff-number formControlName="quantity" label="Quantity (Tons)" [min]="0" [required]="true" />
                     <ff-number formControlName="rate" label="Rate (INR)" [min]="0" [required]="true" />
-                    <ff-number formControlName="freightCharges" label="Freight Charge" [min]="0" [required]="true" />
-                    
+                    <ff-number formControlName="freightCharges" label="Freight / Ton" [min]="0" [required]="true" />
+                    <ff-number formControlName="loadingCharges" label="Loading / Ton" [min]="0" [required]="true" />
+                    <ff-number formControlName="royalty" label="Royalty / Ton" [min]="0" [required]="true" />
+                    <ff-number formControlName="gstPercentage" label="GST %" [min]="0" [max]="28" [required]="true" />
+
                     <div class="flex flex-col gap-1">
                       <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Line Amount (INR)</span>
                       <div class="h-10 px-3 rounded-[8px] bg-[var(--ff-color-primary-50)] border border-[var(--ff-border-default)] flex items-center justify-end font-mono font-bold text-[var(--ff-color-primary-600)] text-xs tabular-nums">
                         <span>₹{{ getItemTotalAmount(row) | number:'1.2-2' }}</span>
-                        <span class="text-[10px] text-[var(--ff-text-muted)] font-sans font-semibold ml-2">(Incl. 18% GST)</span>
+                        <span class="text-[10px] text-[var(--ff-text-muted)] font-sans font-semibold ml-2">(Incl. {{ row.get('gstPercentage')?.value || 0 }}% GST)</span>
                       </div>
                     </div>
 
@@ -251,18 +259,25 @@
                   <div class="p-4 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] flex flex-wrap items-end justify-between text-xs gap-4">
                     <div class="flex items-end gap-6">
                       <span class="flex flex-col gap-0.5 text-right">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Material Subtotal</span>
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Subtotal</span>
                         <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandSubtotal | number:'1.2-2' }}</strong>
-                      </span>
-                      <span class="flex flex-col gap-0.5 text-right">
-                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Freight</span>
-                        <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandFreight | number:'1.2-2' }}</strong>
                       </span>
                       @if (grandDiscount > 0) {
                         <span class="flex flex-col gap-0.5 text-right">
                           <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Discount</span>
                           <strong class="text-[var(--ff-color-danger-500)] font-mono tabular-nums text-sm">-₹{{ grandDiscount | number:'1.2-2' }}</strong>
                         </span>
+                      }
+                      <span class="flex flex-col gap-0.5 text-right">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">Taxable</span>
+                        <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandTaxable | number:'1.2-2' }}</strong>
+                      </span>
+                      <span class="flex flex-col gap-0.5 text-right">
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-[var(--ff-text-muted)]">GST</span>
+                        <strong class="text-[var(--ff-text-secondary)] font-mono tabular-nums text-sm">₹{{ grandGst | number:'1.2-2' }}</strong>
+                      </span>
+                      @if (discountTooHigh) {
+                        <span class="text-[11px] font-semibold text-[var(--ff-color-danger-500)]">Discount is more than the subtotal</span>
                       }
                     </div>
                     <div class="flex flex-col items-end gap-0.5 text-right">
@@ -277,7 +292,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
-            <ff-button type="submit" label="Generate Billing Voucher" icon="save" variant="primary" [disabled]="invoiceForm.invalid || detailsArray.length === 0" />
+            <ff-button type="submit" label="Generate Billing Voucher" icon="save" variant="primary" [disabled]="invoiceForm.invalid || detailsArray.length === 0 || discountTooHigh" />
           </div>
         </form>
       </div>

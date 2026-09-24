@@ -9,6 +9,10 @@ export interface TripDetail {
   rate: number;
   loadingCharges: number;
   royalty: number;
+  loadedQuantity?: number | null;
+  deliveredQuantity?: number | null;
+  billableQuantity?: number;
+  shortageQuantity?: number | null;
   dispatchTime?: string;
   arrivalTime?: string;
 }
@@ -20,6 +24,8 @@ export interface Trip {
   booking: { id: number; bookingNumber?: string };
   vehicle?: { id: number; registrationNumber?: string };
   driver?: { id: number; name?: string };
+  quarry?: { id: number; name?: string } | null;
+  loadingLocation?: { id: number; loadingPoint?: string; name?: string } | null;
   status?: string; // PLANNED, DISPATCHED, COMPLETED, CANCELLED
   remarks?: string;
   details: TripDetail[];

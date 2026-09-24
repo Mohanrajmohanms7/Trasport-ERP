@@ -10,7 +10,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
-import { FfDropdownComponent, FfSelectOption, FfNumberComponent, FfButtonComponent } from '@ff/ui';
+import { FfDropdownComponent, FfSelectOption, FfNumberComponent, FfButtonComponent, FfDatepickerComponent, FfTextboxComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
@@ -26,7 +26,9 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     MatDialogModule,
     FfDropdownComponent,
     FfNumberComponent,
-    FfButtonComponent
+    FfButtonComponent,
+    FfDatepickerComponent,
+    FfTextboxComponent
   ],
   templateUrl: './invoice-details-console.html',
   styles: []
@@ -40,6 +42,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   private notify = inject(FfNotificationService);
 
   private companyId = resolveTenantCompanyId();
+  readonly today = new Date().toISOString().slice(0, 10);
 
   // States
   activeTab = signal<string>('list'); // 'list' | 'editor'
@@ -70,7 +73,10 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         ];
   }
   get tripOptions(): FfSelectOption[] {
-    return [{ label: '-- General --', value: '' }, ...this.trips().map(trip => ({ label: trip.tripNumber, value: trip.id }))];
+    // Only completed trips can be billed; the backend also blocks trips already on another invoice.
+    return [{ label: '-- General --', value: '' }, ...this.trips()
+      .filter(trip => trip.status === 'COMPLETED')
+      .map(trip => ({ label: trip.tripNumber, value: trip.id }))];
   }
   get materialOptions(): FfSelectOption[] {
     return [{ label: '-- Choose --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
@@ -115,6 +121,8 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       customer: this.fb.group({
         id: ['', Validators.required]
       }),
+      invoiceDate: [this.today, Validators.required],
+      placeOfSupply: ['', Validators.pattern(/^\d{2}$/)],
       paymentTerms: ['NET_30', Validators.required],
       discount: [0, [Validators.required, Validators.min(0)]],
       details: this.fb.array([])
@@ -125,60 +133,85 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     return this.invoiceForm.get('details') as FormArray;
   }
 
-  getItemSubtotal(row: any): number {
-    const qty = Number(row.get('quantity')?.value || 0);
-    const rate = Number(row.get('rate')?.value || 0);
-    return qty * rate;
+  // Mirrors backend InvoiceTaxCalculator: taxable = qty x (rate + freight + loading + royalty);
+  // the invoice discount is split across lines by taxable value and taken off BEFORE GST.
+  private round2(v: number): number {
+    return Math.round((v + Number.EPSILON) * 100) / 100;
   }
 
-  getItemFreight(row: any): number {
-    return Number(row.get('freightCharges')?.value || 0);
+  getItemSubtotal(row: any): number {
+    const qty = Number(row.get('quantity')?.value || 0);
+    const base = Number(row.get('rate')?.value || 0) + Number(row.get('freightCharges')?.value || 0)
+      + Number(row.get('loadingCharges')?.value || 0) + Number(row.get('royalty')?.value || 0);
+    return this.round2(qty * base);
+  }
+
+  private getItemDiscountShare(row: any): number {
+    const subtotal = this.grandSubtotal;
+    if (subtotal <= 0) return 0;
+    return this.round2(Math.min(this.grandDiscount, subtotal) * this.getItemSubtotal(row) / subtotal);
+  }
+
+  getItemGst(row: any): number {
+    const gstPct = Number(row.get('gstPercentage')?.value ?? 0);
+    return this.round2((this.getItemSubtotal(row) - this.getItemDiscountShare(row)) * gstPct / 100);
   }
 
   getItemTotalAmount(row: any): number {
-    const subtotal = this.getItemSubtotal(row);
-    const freight = this.getItemFreight(row);
-    const gstPct = Number(row.get('gstPercentage')?.value || 18);
-    const lineNet = subtotal + freight;
-    const gstAmt = (lineNet * gstPct) / 100;
-    return lineNet + gstAmt;
+    return this.getItemSubtotal(row) - this.getItemDiscountShare(row) + this.getItemGst(row);
   }
 
   get grandSubtotal(): number {
-    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemSubtotal(row), 0);
-  }
-
-  get grandFreight(): number {
-    return this.detailsArray.controls.reduce((sum, row) => sum + this.getItemFreight(row), 0);
+    return this.round2(this.detailsArray.controls.reduce((sum, row) => sum + this.getItemSubtotal(row), 0));
   }
 
   get grandDiscount(): number {
     return Number(this.invoiceForm.get('discount')?.value || 0);
   }
 
-  get grandTotal(): number {
-    const itemsTotal = this.detailsArray.controls.reduce((sum, row) => sum + this.getItemTotalAmount(row), 0);
-    return Math.max(0, itemsTotal - this.grandDiscount);
+  get grandTaxable(): number {
+    return this.round2(this.grandSubtotal - Math.min(this.grandDiscount, this.grandSubtotal));
   }
 
+  get grandGst(): number {
+    return this.round2(this.detailsArray.controls.reduce((sum, row) => sum + this.getItemGst(row), 0));
+  }
 
-  addDetail() {
-    const detailGroup = this.fb.group({
+  get grandTotal(): number {
+    return this.round2(this.grandTaxable + this.grandGst);
+  }
+
+  get discountTooHigh(): boolean {
+    return this.grandDiscount > this.grandSubtotal && this.grandSubtotal > 0;
+  }
+
+  private apiError(err: any, fallback: string): string {
+    const errors = err?.error?.errors;
+    const detail = Array.isArray(errors) && errors.length ? String(errors[0]) : '';
+    const message = err?.error?.message || '';
+    if (message && detail && !detail.startsWith(message)) return `${message}: ${detail}`;
+    return detail || message || fallback;
+  }
+
+  private buildDetailRow(d?: any) {
+    return this.fb.group({
       trip: this.fb.group({
-        id: ['']
+        id: [d?.trip?.id || '']
       }),
       material: this.fb.group({
-        id: ['', Validators.required]
+        id: [d?.material?.id ?? '', Validators.required]
       }),
-      quantity: [1, [Validators.required, Validators.min(1)]],
-      rate: [0, [Validators.required, Validators.min(0)]],
-      freightCharges: [0, [Validators.required, Validators.min(0)]],
-      loadingCharges: [0, [Validators.required, Validators.min(0)]],
-      royalty: [0, [Validators.required, Validators.min(0)]],
-      gstPercentage: [18, Validators.required]
+      quantity: [d?.quantity ?? 1, [Validators.required, Validators.min(0.01)]],
+      rate: [d?.rate ?? 0, [Validators.required, Validators.min(0)]],
+      freightCharges: [d?.freightCharges ?? 0, [Validators.required, Validators.min(0)]],
+      loadingCharges: [d?.loadingCharges ?? 0, [Validators.required, Validators.min(0)]],
+      royalty: [d?.royalty ?? 0, [Validators.required, Validators.min(0)]],
+      gstPercentage: [d?.gstPercentage ?? 5, [Validators.required, Validators.min(0), Validators.max(28)]]
     });
+  }
 
-    this.detailsArray.push(detailGroup);
+  addDetail() {
+    this.detailsArray.push(this.buildDetailRow());
   }
 
   removeDetail(index: number) {
@@ -207,7 +240,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
 
   openAddInvoice() {
     this.editingInvoice.set(null);
-    this.invoiceForm.reset({ paymentTerms: 'NET_30', discount: 0 });
+    this.invoiceForm.reset({ paymentTerms: 'NET_30', discount: 0, invoiceDate: this.today, placeOfSupply: '' });
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
     }
@@ -220,7 +253,9 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     this.invoiceForm.patchValue({
       customer: { id: inv.customer?.id },
       paymentTerms: inv.paymentTerms,
-      discount: inv.discount
+      discount: inv.discount,
+      invoiceDate: inv.invoiceDate || this.today,
+      placeOfSupply: inv.placeOfSupply || ''
     });
 
     while (this.detailsArray.length !== 0) {
@@ -229,21 +264,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
 
     if (inv.details) {
       for (const d of inv.details) {
-        const row = this.fb.group({
-          trip: this.fb.group({
-            id: [d.trip?.id || '']
-          }),
-          material: this.fb.group({
-            id: [d.material?.id, Validators.required]
-          }),
-          quantity: [d.quantity, [Validators.required, Validators.min(1)]],
-          rate: [d.rate, [Validators.required, Validators.min(0)]],
-          freightCharges: [d.freightCharges, [Validators.required, Validators.min(0)]],
-          loadingCharges: [d.loadingCharges, [Validators.required, Validators.min(0)]],
-          royalty: [d.royalty, [Validators.required, Validators.min(0)]],
-          gstPercentage: [d.gstPercentage, Validators.required]
-        });
-        this.detailsArray.push(row);
+        this.detailsArray.push(this.buildDetailRow(d));
       }
     }
 
@@ -257,6 +278,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     const val = this.invoiceForm.getRawValue();
     const invObj = this.editingInvoice();
 
+    if (!val.placeOfSupply) val.placeOfSupply = null;
     // Clean details trips if empty
     if (val.details) {
       for (const d of val.details) {
@@ -274,7 +296,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to update invoice');
+          this.notify.error(this.apiError(err, 'Failed to update invoice'));
         }
       });
     } else {
@@ -287,7 +309,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to generate invoice');
+          this.notify.error(this.apiError(err, 'Failed to generate invoice'));
         }
       });
     }
@@ -300,7 +322,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         this.notify.success('Invoice approved successfully');
         this.loadInvoices();
       },
-      error: () => this.notify.error('Failed to approve invoice')
+      error: (err) => this.notify.error(this.apiError(err, 'Failed to approve invoice'))
     });
   }
 
@@ -311,7 +333,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         this.notify.success('Invoice cancelled successfully');
         this.loadInvoices();
       },
-      error: () => this.notify.error('Failed to cancel invoice')
+      error: (err) => this.notify.error(this.apiError(err, 'Failed to cancel invoice'))
     });
   }
 
@@ -334,7 +356,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
             this.loadInvoices();
             this.loadReadyTrips();
           },
-          error: () => this.notify.error('Failed to delete invoice record')
+          error: (err) => this.notify.error(this.apiError(err, 'Failed to delete invoice record'))
         });
       }
     });
@@ -390,7 +412,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
           },
           error: (err) => {
             this.loading.set(false);
-            this.notify.error(err.error?.message || 'Failed to generate invoice');
+            this.notify.error(this.apiError(err, 'Failed to generate invoice'));
           }
         });
       }
@@ -436,6 +458,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   }
 
   private buildPrintHtml(data: any): string {
+    const interState = data.supplyType === 'INTER_STATE' || (data.totalIGST || 0) > 0;
     const itemsHtml = (data.items || []).map((item: any, index: number) => `
       <tr>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${index + 1}</td>
@@ -444,6 +467,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.quantity}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.rate || 0).toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${((item.freightCharges || 0) + (item.loadingCharges || 0) + (item.royalty || 0)).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.lineTaxable || 0).toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.gstPercentage}%</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.lineTax || 0).toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right; font-weight: bold;">₹${(item.netAmount || 0).toFixed(2)}</td>
@@ -503,6 +527,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
             <div>Invoice No: <strong>${data.invoiceNumber || ''}</strong></div>
             <div>Invoice Date: ${data.invoiceDate || ''}</div>
             <div>Payment Terms: ${data.paymentTerms || ''}</div>
+            <div>Place of Supply: ${data.placeOfSupply || 'N/A'} (${interState ? 'Inter-state' : 'Intra-state'})</div>
             <div>Status: <strong>${data.status || ''}</strong> (${data.paymentStatus || ''})</div>
           </div>
         </div>
@@ -516,6 +541,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
               <th style="text-align: right;">Qty</th>
               <th style="text-align: right;">Rate</th>
               <th style="text-align: right;">Add. Charges</th>
+              <th style="text-align: right;">Taxable</th>
               <th style="text-align: right;">GST %</th>
               <th style="text-align: right;">GST Amt</th>
               <th style="text-align: right;">Net Total</th>
@@ -534,8 +560,11 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
           <div class="summary-card">
             <div class="summary-row"><span>Subtotal:</span><span>₹${(data.subtotal || 0).toFixed(2)}</span></div>
             <div class="summary-row"><span>Discount:</span><span>₹${(data.discount || 0).toFixed(2)}</span></div>
-            <div class="summary-row"><span>CGST (9%):</span><span>₹${(data.totalCGST || 0).toFixed(2)}</span></div>
-            <div class="summary-row"><span>SGST (9%):</span><span>₹${(data.totalSGST || 0).toFixed(2)}</span></div>
+            <div class="summary-row"><span>Taxable Value:</span><span>₹${(data.taxableAmount || 0).toFixed(2)}</span></div>
+            ${interState
+              ? `<div class="summary-row"><span>IGST:</span><span>₹${(data.totalIGST || 0).toFixed(2)}</span></div>`
+              : `<div class="summary-row"><span>CGST:</span><span>₹${(data.totalCGST || 0).toFixed(2)}</span></div>
+                 <div class="summary-row"><span>SGST:</span><span>₹${(data.totalSGST || 0).toFixed(2)}</span></div>`}
             <div class="summary-row grand-total"><span>Grand Total:</span><span>₹${(data.netAmount || 0).toFixed(2)}</span></div>
             <div class="summary-row"><span>Paid Amount:</span><span>₹${(data.paidAmount || 0).toFixed(2)}</span></div>
             <div class="summary-row"><span>Balance Due:</span><span><strong>₹${(data.balanceDue || 0).toFixed(2)}</strong></span></div>

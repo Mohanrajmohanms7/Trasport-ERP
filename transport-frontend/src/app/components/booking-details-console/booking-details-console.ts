@@ -197,10 +197,12 @@ export class BookingDetailsConsoleComponent implements OnInit {
     return this.bookingForm.get('details') as FormArray;
   }
 
+  // Same formula as the backend: quantity x (material rate + transport + royalty + loading), all per ton.
   getItemSubtotal(row: any): number {
     const qty = Number(row.get('quantity')?.value || 0);
-    const rate = Number(row.get('rate')?.value || 0);
-    return qty * rate;
+    const base = Number(row.get('rate')?.value || 0) + Number(row.get('transportRate')?.value || 0)
+      + Number(row.get('royaltyRate')?.value || 0) + Number(row.get('loadingCharge')?.value || 0);
+    return Math.round(qty * base * 100) / 100;
   }
 
   getItemGstAmount(row: any): number {
@@ -231,7 +233,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
       material: this.fb.group({
         id: ['', Validators.required]
       }),
-      quantity: [1, [Validators.required, Validators.min(1)]],
+      quantity: [1, [Validators.required, Validators.min(0.01)]],
       rate: [0, Validators.required],
       transportRate: [0, Validators.required],
       royaltyRate: [0, Validators.required],
@@ -315,7 +317,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
           material: this.fb.group({
             id: [d.material?.id, Validators.required]
           }),
-          quantity: [d.quantity, [Validators.required, Validators.min(1)]],
+          quantity: [d.quantity, [Validators.required, Validators.min(0.01)]],
           rate: [d.rate, Validators.required],
           transportRate: [d.transportRate, Validators.required],
           royaltyRate: [d.royaltyRate, Validators.required],

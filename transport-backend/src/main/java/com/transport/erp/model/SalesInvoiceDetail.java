@@ -54,4 +54,12 @@ public class SalesInvoiceDetail extends BaseEntity {
 
     @Column(name = "net_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal netAmount = BigDecimal.ZERO;
+
+    /** Share of the invoice discount applied to this line (before GST). */
+    @Column(name = "discount_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    /** quantity x (rate + freight + loading + royalty) - discountAmount. */
+    @Column(name = "taxable_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal taxableAmount = BigDecimal.ZERO;
 }

@@ -18,6 +18,9 @@ public class JacksonConfig {
         module.disable(Hibernate6Module.Feature.FORCE_LAZY_LOADING);
         // Emit id for unloaded lazy associations instead of failing
         module.enable(Hibernate6Module.Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS);
+        // @Transient here means "not a DB column", not "hide from the API". Without this, computed
+        // fields such as Trip.billingStatus and TripDetail.shortageQuantity never reach the UI.
+        module.disable(Hibernate6Module.Feature.USE_TRANSIENT_ANNOTATION);
         return module;
     }
 }

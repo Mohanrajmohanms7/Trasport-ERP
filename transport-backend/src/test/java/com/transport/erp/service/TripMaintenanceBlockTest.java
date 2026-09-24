@@ -51,6 +51,9 @@ class TripMaintenanceBlockTest {
     @Mock private BusinessDependencyValidationService validationService;
     @Mock private AuditService auditService;
     @Mock private AppSettingService settingService;
+    @Mock private DocumentNumberService documentNumberService;
+    @Mock private com.transport.erp.repository.QuarryRepository quarryRepository;
+    @Mock private com.transport.erp.repository.LoadingLocationRepository loadingLocationRepository;
 
     @InjectMocks
     private TripService tripService;
@@ -58,6 +61,10 @@ class TripMaintenanceBlockTest {
     @BeforeEach
     void setUp() {
         when(settingService.getByKey(any())).thenReturn(Optional.empty());
+        when(settingService.getByKey(any(), any())).thenReturn(Optional.empty());
+        when(documentNumberService.next(any(), any(), any(), any())).thenReturn("TRIP-2627/00001");
+        when(bookingRepository.findAndLockById(anyLong())).thenReturn(Optional.of(approvedBooking()));
+        when(tripRepository.sumQuantityByMaterialForBooking(anyLong(), anyLong())).thenReturn(new java.util.ArrayList<>());
         when(tenantAccess.resolveCompanyId(nullable(Long.class))).thenReturn(1L);
         when(tenantAccess.resolveBranchId(nullable(Long.class))).thenReturn(1L);
         when(assignmentRepository.findByVehicleIdAndDriverIdAndRemovalDateIsNullAndIsDeletedFalse(anyLong(), anyLong()))
@@ -201,6 +208,7 @@ class TripMaintenanceBlockTest {
         trip.setIsDeleted(false);
         trip.setStatus("PLANNED");
         when(tripRepository.findById(70L)).thenReturn(Optional.of(trip));
+        when(tripRepository.findAndLockById(70L)).thenReturn(Optional.of(trip));
         return trip;
     }
 
@@ -216,7 +224,35 @@ class TripMaintenanceBlockTest {
         trip.setDriver(driver);
         trip.setCompanyId(1L);
         trip.setBranchId(1L);
+        com.transport.erp.model.Booking ref = new com.transport.erp.model.Booking();
+        ref.setId(30L);
+        trip.setBooking(ref);
+        com.transport.erp.model.TripDetail line = new com.transport.erp.model.TripDetail();
+        com.transport.erp.model.Material m = new com.transport.erp.model.Material();
+        m.setId(40L);
+        line.setMaterial(m);
+        line.setQuantity(java.math.BigDecimal.TEN);
+        trip.getDetails().add(line);
         return trip;
+    }
+
+    private com.transport.erp.model.Booking approvedBooking() {
+        com.transport.erp.model.Booking booking = new com.transport.erp.model.Booking();
+        booking.setId(30L);
+        booking.setBookingNumber("BKG-2627/00001");
+        booking.setStatus("APPROVED");
+        booking.setCompanyId(1L);
+        booking.setBranchId(1L);
+        booking.setBookingDate(java.time.LocalDate.now().minusDays(1));
+        com.transport.erp.model.BookingDetail bd = new com.transport.erp.model.BookingDetail();
+        com.transport.erp.model.Material m = new com.transport.erp.model.Material();
+        m.setId(40L);
+        m.setName("M-Sand");
+        bd.setMaterial(m);
+        bd.setQuantity(java.math.BigDecimal.valueOf(100));
+        bd.setRate(java.math.BigDecimal.valueOf(900));
+        booking.getDetails().add(bd);
+        return booking;
     }
 
     private boolean hasField(Class<?> type, String name) {
