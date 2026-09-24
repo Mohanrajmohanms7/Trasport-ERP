@@ -5,9 +5,12 @@ import com.transport.erp.dto.InventoryTransactionResponse;
 import com.transport.erp.dto.OpeningBalanceRequest;
 import com.transport.erp.dto.StockIssueRequest;
 import com.transport.erp.dto.StockMovementResponse;
+import com.transport.erp.dto.StockReceiptRequest;
+import com.transport.erp.dto.StockReceiptResponse;
 import com.transport.erp.dto.StockReturnRequest;
 import com.transport.erp.dto.WarehouseStockResponse;
 import com.transport.erp.service.InventoryIssueService;
+import com.transport.erp.service.InventoryReceiptService;
 import com.transport.erp.service.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -34,6 +37,9 @@ public class InventoryController {
 
     @Autowired
     private InventoryIssueService inventoryIssueService;
+
+    @Autowired
+    private InventoryReceiptService inventoryReceiptService;
 
     @GetMapping("/stock")
     public ApiResponse<Page<WarehouseStockResponse>> listStock(
@@ -83,6 +89,16 @@ public class InventoryController {
                 "Stock returned successfully");
     }
 
+    @PostMapping("/stock/receipt")
+    public ApiResponse<StockReceiptResponse> receipt(
+            @RequestBody StockReceiptRequest request,
+            Authentication auth) {
+        String username = auth != null ? auth.getName() : "SYSTEM";
+        return ApiResponse.success(
+                inventoryReceiptService.receive(request, username),
+                "Stock received successfully");
+    }
+
     @GetMapping("/transactions")
     public ApiResponse<Page<InventoryTransactionResponse>> listTransactions(
             @RequestParam(required = false) Long companyId,
@@ -95,6 +111,7 @@ public class InventoryController {
             @RequestParam(required = false) String createdBy,
             @RequestParam(required = false) LocalDateTime fromDate,
             @RequestParam(required = false) LocalDateTime toDate,
+            @RequestParam(required = false) Long supplierId,
             Pageable pageable) {
         return ApiResponse.success(
                 inventoryService.listTransactions(
@@ -108,6 +125,7 @@ public class InventoryController {
                         createdBy,
                         fromDate,
                         toDate,
+                        supplierId,
                         pageable),
                 "Inventory transactions fetched successfully");
     }

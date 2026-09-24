@@ -2,10 +2,13 @@
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
       <h1 class="text-lg font-bold text-slate-900 dark:text-white">Stock</h1>
-      <p class="text-xs text-slate-500">On-hand spare-part quantity by warehouse. Opening balance, issue, and return change this quantity.</p>
+      <p class="text-xs text-slate-500">On-hand spare-part quantity by warehouse. Opening balance, receipt, issue, and return change this quantity.</p>
     </div>
     @if (canWrite()) {
-      <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer" (click)="opening()">Add Opening Stock</button>
+      <div class="flex gap-2">
+        <button type="button" class="px-4 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold border-none cursor-pointer" (click)="receive()">Receive Stock</button>
+        <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer" (click)="opening()">Add Opening Stock</button>
+      </div>
     }
   </div>
 

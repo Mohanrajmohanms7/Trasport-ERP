@@ -18,6 +18,7 @@ import { WarehouseListComponent } from './components/inventory/warehouse-list';
 import { WarehouseFormComponent } from './components/inventory/warehouse-form';
 import { StockListComponent } from './components/inventory/stock-list';
 import { OpeningBalanceFormComponent } from './components/inventory/opening-balance-form';
+import { StockReceiptFormComponent } from './components/inventory/stock-receipt-form';
 import { InventoryTransactionListComponent } from './components/inventory/inventory-transaction-list';
 import { MaintenanceRequestListComponent } from './components/maintenance-requests/maintenance-request-list';
 import { MaintenanceRequestFormComponent } from './components/maintenance-requests/maintenance-request-form';
@@ -72,6 +73,7 @@ export const routes: Routes = [
       { path: 'inventory/warehouses/:id', component: WarehouseFormComponent },
       { path: 'inventory/stock', component: StockListComponent },
       { path: 'inventory/stock/opening-balance', component: OpeningBalanceFormComponent },
+      { path: 'inventory/stock/receipt', component: StockReceiptFormComponent },
       { path: 'inventory/transactions', component: InventoryTransactionListComponent },
       { path: 'maintenance-requests', component: MaintenanceRequestListComponent },
       { path: 'maintenance-requests/new', component: MaintenanceRequestFormComponent },

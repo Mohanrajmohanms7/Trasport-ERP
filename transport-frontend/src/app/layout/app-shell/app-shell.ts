@@ -188,6 +188,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'stock') return 'Stock';
       if (segment === 'transactions') return 'Inventory Transactions';
       if (segment === 'opening-balance') return 'Opening Stock';
+      if (segment === 'receipt') return 'Receive Stock';
       if (segment === 'expense-logs') return 'Expense Management';
       if (segment === 'billing-invoices') return 'Invoice';
       if (segment === 'payment-logs') return 'Payments';

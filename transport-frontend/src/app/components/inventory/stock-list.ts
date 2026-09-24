@@ -69,4 +69,8 @@ export class StockListComponent implements OnInit {
   opening() {
     this.router.navigate(['/inventory/stock/opening-balance']);
   }
+
+  receive() {
+    this.router.navigate(['/inventory/stock/receipt']);
+  }
 }

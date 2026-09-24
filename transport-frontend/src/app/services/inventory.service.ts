@@ -56,6 +56,11 @@ export interface InventoryTransaction {
   workOrderPartId?: number;
   createdBy?: string;
   description?: string;
+  unitRate?: number;
+  supplierId?: number;
+  supplierCode?: string;
+  supplierName?: string;
+  externalReference?: string;
 }
 
 export interface StockMovement {
@@ -78,6 +83,27 @@ export interface StockMovement {
   remainingToIssue?: number;
   returnableQuantity?: number;
   availableQuantity?: number;
+}
+
+export interface StockReceipt {
+  transactionId?: number;
+  transactionCode?: string;
+  transactionType?: string;
+  warehouseId?: number;
+  warehouseCode?: string;
+  warehouseName?: string;
+  sparePartId?: number;
+  sparePartCode?: string;
+  sparePartName?: string;
+  quantity?: number;
+  unitRate?: number;
+  supplierId?: number;
+  supplierCode?: string;
+  supplierName?: string;
+  externalReference?: string;
+  availableQuantity?: number;
+  createdDate?: string;
+  createdBy?: string;
 }
 
 export interface PageResult<T> {
@@ -146,6 +172,24 @@ export class InventoryService {
     return this.http.post<ApiResponse<WarehouseStock>>(`${this.inventoryUrl}/stock/opening-balance`, body);
   }
 
+  receiveStock(body: {
+    warehouseId: number;
+    sparePartId: number;
+    quantity: number;
+    unitRate?: number | null;
+    supplierId?: number | null;
+    referenceNumber?: string | null;
+    description?: string | null;
+  }): Observable<ApiResponse<StockReceipt>> {
+    return this.http.post<ApiResponse<StockReceipt>>(`${this.inventoryUrl}/stock/receipt`, body);
+  }
+
+  listSuppliers(search?: string | null): Observable<ApiResponse<PageResult<{ id: number; code?: string; name?: string }>>> {
+    let params = new HttpParams().set('page', '0').set('size', '100');
+    if (search) params = params.set('search', search);
+    return this.http.get<ApiResponse<PageResult<{ id: number; code?: string; name?: string }>>>('/api/v1/suppliers', { params });
+  }
+
   listTransactions(filters: {
     warehouseId?: number | null;
     sparePartId?: number | null;
@@ -153,6 +197,7 @@ export class InventoryService {
     transactionType?: string | null;
     workOrderId?: number | null;
     reference?: string | null;
+    supplierId?: number | null;
     page?: number;
     size?: number;
   } = {}): Observable<ApiResponse<PageResult<InventoryTransaction>>> {
@@ -165,6 +210,7 @@ export class InventoryService {
     if (filters.transactionType) params = params.set('transactionType', filters.transactionType);
     if (filters.workOrderId) params = params.set('workOrderId', String(filters.workOrderId));
     if (filters.reference) params = params.set('reference', filters.reference);
+    if (filters.supplierId) params = params.set('supplierId', String(filters.supplierId));
     return this.http.get<ApiResponse<PageResult<InventoryTransaction>>>(`${this.inventoryUrl}/transactions`, { params });
   }
 

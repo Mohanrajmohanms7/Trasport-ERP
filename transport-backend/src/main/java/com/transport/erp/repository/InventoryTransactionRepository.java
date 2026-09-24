@@ -29,6 +29,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
               AND (:workOrderId IS NULL OR t.workOrder.id = :workOrderId)
               AND (:reference = '' OR LOWER(t.code) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
               AND (:createdBy = '' OR t.createdBy = :createdBy)
+              AND (:supplierId IS NULL OR t.supplier.id = :supplierId)
               AND t.createdDate >= :fromDate
               AND t.createdDate <= :toDate
             """,
@@ -44,6 +45,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
               AND (:workOrderId IS NULL OR t.workOrder.id = :workOrderId)
               AND (:reference = '' OR LOWER(t.code) LIKE LOWER(CONCAT('%', CAST(:reference AS string), '%')))
               AND (:createdBy = '' OR t.createdBy = :createdBy)
+              AND (:supplierId IS NULL OR t.supplier.id = :supplierId)
               AND t.createdDate >= :fromDate
               AND t.createdDate <= :toDate
             """)
@@ -58,6 +60,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("createdBy") String createdBy,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
+            @Param("supplierId") Long supplierId,
             Pageable pageable);
 
     @Query("""
@@ -66,6 +69,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             JOIN FETCH w.branch
             JOIN FETCH t.sparePart p
             LEFT JOIN FETCH t.workOrder
+            LEFT JOIN FETCH t.supplier
             WHERE t.id IN :ids
             """)
     List<InventoryTransaction> findDetailsByIds(@Param("ids") Collection<Long> ids);
@@ -76,6 +80,7 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             JOIN FETCH w.branch
             JOIN FETCH t.sparePart p
             LEFT JOIN FETCH t.workOrder
+            LEFT JOIN FETCH t.supplier
             WHERE t.id = :id AND t.isDeleted = false
             """)
     Optional<InventoryTransaction> findDetailById(@Param("id") Long id);
@@ -91,4 +96,26 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("warehouseId") Long warehouseId,
             @Param("workOrderPartId") Long workOrderPartId,
             @Param("transactionType") String transactionType);
+
+    @Query("""
+            SELECT COALESCE(SUM(CASE WHEN t.transactionType = 'ISSUE' THEN -t.quantity ELSE t.quantity END), 0)
+            FROM InventoryTransaction t
+            WHERE t.warehouse.id = :warehouseId
+              AND t.sparePart.id = :sparePartId
+              AND t.isDeleted = false
+            """)
+    BigDecimal sumSignedQuantity(
+            @Param("warehouseId") Long warehouseId,
+            @Param("sparePartId") Long sparePartId);
+
+    @Query("""
+            SELECT COUNT(t) FROM InventoryTransaction t
+            WHERE t.companyId = :companyId
+              AND t.transactionType = 'RECEIPT'
+              AND t.isDeleted = false
+              AND LOWER(t.externalReference) = LOWER(:externalReference)
+            """)
+    long countReceiptExternalReference(
+            @Param("companyId") Long companyId,
+            @Param("externalReference") String externalReference);
 }

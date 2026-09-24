@@ -178,6 +178,16 @@ public class WarehouseService {
         return warehouse;
     }
 
+    Warehouse requireActive(Long id, AppUser user) {
+        Warehouse warehouse = warehouseRepository.findDetailById(id)
+                .orElseThrow(() -> invalid("WAREHOUSE_NOT_FOUND", "Warehouse was not found."));
+        assertReadable(warehouse, user);
+        if (!"ACTIVE".equalsIgnoreCase(warehouse.getStatus())) {
+            throw invalid("WAREHOUSE_INACTIVE", "An active warehouse is required.");
+        }
+        return warehouse;
+    }
+
     private Warehouse requireReadable(Long id) {
         AppUser user = tenantAccess.requireCurrentUser();
         Warehouse warehouse = warehouseRepository.findDetailById(id)

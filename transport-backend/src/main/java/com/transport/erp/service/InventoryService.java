@@ -7,6 +7,7 @@ import com.transport.erp.exception.BusinessValidationException;
 import com.transport.erp.model.AppUser;
 import com.transport.erp.model.InventoryTransaction;
 import com.transport.erp.model.SparePart;
+import com.transport.erp.model.Supplier;
 import com.transport.erp.model.Warehouse;
 import com.transport.erp.model.WarehouseStock;
 import com.transport.erp.model.WorkOrder;
@@ -156,6 +157,7 @@ public class InventoryService {
             String createdBy,
             LocalDateTime fromDate,
             LocalDateTime toDate,
+            Long supplierId,
             Pageable pageable) {
         AppUser user = tenantAccess.requireCurrentUser();
         Long companyId = tenantAccess.resolveCompanyId(requestedCompanyId);
@@ -178,6 +180,7 @@ public class InventoryService {
                 blankToEmpty(createdBy),
                 fromDate != null ? fromDate : LocalDateTime.of(1970, 1, 1, 0, 0),
                 toDate != null ? toDate : LocalDateTime.of(2999, 12, 31, 23, 59, 59),
+                supplierId,
                 sorted);
         if (ids.isEmpty()) {
             return new PageImpl<>(List.of(), sorted, ids.getTotalElements());
@@ -372,6 +375,14 @@ public class InventoryService {
         }
         if (row.getWorkOrderPart() != null) {
             dto.setWorkOrderPartId(row.getWorkOrderPart().getId());
+        }
+        dto.setUnitRate(row.getUnitRate());
+        dto.setExternalReference(row.getExternalReference());
+        Supplier supplier = row.getSupplier();
+        if (supplier != null) {
+            dto.setSupplierId(supplier.getId());
+            dto.setSupplierCode(supplier.getCode());
+            dto.setSupplierName(supplier.getName());
         }
         return dto;
     }

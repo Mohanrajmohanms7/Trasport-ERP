@@ -339,6 +339,28 @@ class InventoryOpeningBalanceServiceTest {
         assertEquals("INVENTORY_INSUFFICIENT_STOCK", ex.getErrorCode());
     }
 
+    @Test
+    @DisplayName("Receipt increase then issue decrease nets without overwrite")
+    void receiptThenIssueNets() {
+        WarehouseStock existing = stockWithMasters(new BigDecimal("100.000"));
+        when(stockRepository.findActiveForUpdate(1L, 5L)).thenReturn(Optional.of(existing));
+        inventoryService.increaseAvailable(warehouse, part, new BigDecimal("20.000"), "admin");
+        assertEquals(new BigDecimal("120.000"), existing.getAvailableQuantity());
+        inventoryService.decreaseAvailable(warehouse, part, new BigDecimal("5.000"), "admin");
+        assertEquals(new BigDecimal("115.000"), existing.getAvailableQuantity());
+    }
+
+    @Test
+    @DisplayName("Signed transaction sum query matches stock invariant")
+    void signedQuantityQueryMatchesStockInvariant() throws Exception {
+        String signed = InventoryTransactionRepository.class
+                .getMethod("sumSignedQuantity", Long.class, Long.class)
+                .getAnnotation(Query.class).value();
+        assertTrue(signed.contains("OPENING") || signed.contains("ELSE t.quantity"));
+        assertTrue(signed.contains("ISSUE"));
+        assertTrue(signed.contains("-t.quantity"));
+    }
+
     private OpeningBalanceRequest opening(Long warehouseId, Long sparePartId, BigDecimal quantity) {
         OpeningBalanceRequest request = new OpeningBalanceRequest();
         request.setWarehouseId(warehouseId);

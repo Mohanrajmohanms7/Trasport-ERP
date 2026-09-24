@@ -48,4 +48,11 @@ export class InventoryTransactionListComponent implements OnInit {
       }
     });
   }
+
+  signedQuantity(row: InventoryTransaction): string {
+    const qty = Number(row.quantity ?? 0);
+    const signed = row.transactionType === 'ISSUE' ? -qty : qty;
+    const formatted = signed.toFixed(3);
+    return signed > 0 ? '+' + formatted : formatted;
+  }
 }

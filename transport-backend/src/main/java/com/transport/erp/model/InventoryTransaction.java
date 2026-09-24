@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 public class InventoryTransaction extends BaseEntity {
 
     public static final String TYPE_OPENING_BALANCE = "OPENING_BALANCE";
+    public static final String TYPE_RECEIPT = "RECEIPT";
     public static final String TYPE_ISSUE = "ISSUE";
     public static final String TYPE_RETURN = "RETURN";
 
@@ -50,4 +51,14 @@ public class InventoryTransaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "work_order_part_id")
     private WorkOrderPart workOrderPart;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    @Column(name = "unit_rate", precision = 14, scale = 2)
+    private BigDecimal unitRate;
+
+    @Column(name = "external_reference", length = 100)
+    private String externalReference;
 }
