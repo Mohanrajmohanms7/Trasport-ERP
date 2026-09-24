@@ -14,6 +14,12 @@ import { WorkOrderListComponent } from './components/work-orders/work-order-list
 import { WorkOrderFormComponent } from './components/work-orders/work-order-form';
 import { WorkOrderDetailComponent } from './components/work-orders/work-order-detail';
 import { SparePartCatalogComponent } from './components/spare-parts/spare-part-catalog';
+import { WarehouseListComponent } from './components/inventory/warehouse-list';
+import { WarehouseFormComponent } from './components/inventory/warehouse-form';
+import { StockListComponent } from './components/inventory/stock-list';
+import { OpeningBalanceFormComponent } from './components/inventory/opening-balance-form';
+import { StockReceiptFormComponent } from './components/inventory/stock-receipt-form';
+import { InventoryTransactionListComponent } from './components/inventory/inventory-transaction-list';
 import { MaintenanceRequestListComponent } from './components/maintenance-requests/maintenance-request-list';
 import { MaintenanceRequestFormComponent } from './components/maintenance-requests/maintenance-request-form';
 import { MaintenanceRequestDetailComponent } from './components/maintenance-requests/maintenance-request-detail';
@@ -62,6 +68,13 @@ export const routes: Routes = [
       { path: 'work-orders/new', component: WorkOrderFormComponent },
       { path: 'work-orders/:id', component: WorkOrderDetailComponent },
       { path: 'spare-parts', component: SparePartCatalogComponent },
+      { path: 'inventory/warehouses', component: WarehouseListComponent },
+      { path: 'inventory/warehouses/new', component: WarehouseFormComponent },
+      { path: 'inventory/warehouses/:id', component: WarehouseFormComponent },
+      { path: 'inventory/stock', component: StockListComponent },
+      { path: 'inventory/stock/opening-balance', component: OpeningBalanceFormComponent },
+      { path: 'inventory/stock/receipt', component: StockReceiptFormComponent },
+      { path: 'inventory/transactions', component: InventoryTransactionListComponent },
       { path: 'maintenance-requests', component: MaintenanceRequestListComponent },
       { path: 'maintenance-requests/new', component: MaintenanceRequestFormComponent },
       { path: 'maintenance-requests/:id/edit', component: MaintenanceRequestFormComponent },

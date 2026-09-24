@@ -662,6 +662,10 @@ public class WorkOrderService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private BigDecimal zeroQty(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
     private WorkOrderResponse toDetail(WorkOrder order) {
         WorkOrderResponse dto = toResponse(order);
         List<WorkOrderPart> parts = workOrderPartRepository.findActiveByWorkOrderId(order.getId());
@@ -688,6 +692,11 @@ public class WorkOrderService {
         dto.setId(line.getId());
         dto.setCode(line.getCode());
         dto.setQuantity(line.getQuantity());
+        dto.setIssuedQuantity(zeroQty(line.getIssuedQuantity()));
+        dto.setReturnedQuantity(zeroQty(line.getReturnedQuantity()));
+        dto.setNetIssuedQuantity(zeroQty(line.getIssuedQuantity()).subtract(zeroQty(line.getReturnedQuantity())));
+        dto.setRemainingToIssue(line.getQuantity().subtract(zeroQty(line.getIssuedQuantity())));
+        dto.setReturnableQuantity(zeroQty(line.getIssuedQuantity()).subtract(zeroQty(line.getReturnedQuantity())));
         dto.setUnitRate(line.getUnitRate());
         dto.setLineTotal(line.getLineTotal());
         dto.setNotes(line.getNotes());

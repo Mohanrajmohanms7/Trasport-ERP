@@ -1,0 +1,70 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-bold text-slate-900 dark:text-white">Stock</h1>
+      <p class="text-xs text-slate-500">On-hand spare-part quantity by warehouse. Opening balance, receipt, issue, and return change this quantity.</p>
+    </div>
+    @if (canWrite()) {
+      <div class="flex gap-2">
+        <button type="button" class="px-4 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold border-none cursor-pointer" (click)="receive()">Receive Stock</button>
+        <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer" (click)="opening()">Add Opening Stock</button>
+      </div>
+    }
+  </div>
+
+  <form class="grid grid-cols-1 md:grid-cols-4 gap-2" (ngSubmit)="load()">
+    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
+      <option value="">All warehouses</option>
+      @for (row of warehouses(); track row.id) {
+        <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
+      }
+    </select>
+    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event)" name="part">
+      <option value="">All spare parts</option>
+      @for (part of parts(); track part.id) {
+        <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
+      }
+    </select>
+    <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Spare part code" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer w-fit">Filter</button>
+  </form>
+
+  @if (error()) {
+    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="p-8 text-xs text-slate-500">Loading stock…</div>
+  } @else {
+    <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-auto">
+      <table class="w-full text-xs">
+        <thead class="text-left text-slate-500">
+          <tr>
+            <th class="p-3">Spare Part</th>
+            <th class="p-3">Code</th>
+            <th class="p-3">UOM</th>
+            <th class="p-3">Warehouse</th>
+            <th class="p-3">Branch</th>
+            <th class="p-3">Available Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr class="border-t border-slate-100 dark:border-slate-800">
+              <td class="p-3">{{ row.sparePartName }}</td>
+              <td class="p-3 font-bold">{{ row.sparePartCode }}</td>
+              <td class="p-3">{{ row.uomCode || row.uomName || '—' }}</td>
+              <td class="p-3">{{ row.warehouseCode || row.warehouseName }}</td>
+              <td class="p-3">{{ row.branchCode || row.branchName || row.branchId || '—' }}</td>
+              <td class="p-3">{{ row.availableQuantity }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="p-3 text-slate-500" colspan="6">No stock balances yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

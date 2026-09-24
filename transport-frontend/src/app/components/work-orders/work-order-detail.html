@@ -132,6 +132,65 @@
     </section>
 
     <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-3">
+      <h2 class="font-bold uppercase tracking-wider text-slate-500">Material issue</h2>
+      <p class="text-slate-500">Issue spare parts from warehouse stock to this work order. Unused quantity can be returned to the same warehouse.</p>
+      @if (canMoveInventory(order)) {
+        <select class="border border-slate-200 rounded-lg px-3 py-2 max-w-sm" [ngModel]="warehouseId()" (ngModelChange)="onWarehouseChange($event)" name="issueWarehouse">
+          <option value="">Warehouse</option>
+          @for (row of warehouses(); track row.id) {
+            <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
+          }
+        </select>
+      }
+      <table class="w-full">
+        <thead class="text-left text-slate-500">
+          <tr>
+            <th class="py-1">Part</th>
+            <th class="py-1">Requested</th>
+            <th class="py-1">Issued</th>
+            <th class="py-1">Returned</th>
+            <th class="py-1">Net</th>
+            <th class="py-1">Remaining</th>
+            <th class="py-1">Available</th>
+            @if (canMoveInventory(order)) {
+              <th class="py-1">Issue</th>
+              <th class="py-1">Return</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of order.parts || []; track line.id) {
+            <tr class="border-t border-slate-100 dark:border-slate-800">
+              <td class="py-1">{{ line.sparePartCode }} — {{ line.sparePartName }}</td>
+              <td class="py-1">{{ line.quantity }}</td>
+              <td class="py-1">{{ line.issuedQuantity || 0 }}</td>
+              <td class="py-1">{{ line.returnedQuantity || 0 }}</td>
+              <td class="py-1">{{ line.netIssuedQuantity != null ? line.netIssuedQuantity : ((line.issuedQuantity || 0) - (line.returnedQuantity || 0)) }}</td>
+              <td class="py-1">{{ remaining(line) }}</td>
+              <td class="py-1">{{ warehouseId() ? availableFor(line) : '—' }}</td>
+              @if (canMoveInventory(order)) {
+                <td class="py-1">
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="0" step="0.001" class="border border-slate-200 rounded-lg px-2 py-1 w-20" [(ngModel)]="issueQty[line.id]" [name]="'issue-' + line.id" [disabled]="remaining(line) <= 0 || !warehouseId()" />
+                    <button type="button" class="text-blue-700 bg-transparent border-none cursor-pointer" [disabled]="remaining(line) <= 0 || !warehouseId() || availableFor(line) <= 0" (click)="issue(line)">Issue</button>
+                  </div>
+                </td>
+                <td class="py-1">
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="0" step="0.001" class="border border-slate-200 rounded-lg px-2 py-1 w-20" [(ngModel)]="returnQty[line.id]" [name]="'return-' + line.id" [disabled]="returnable(line) <= 0 || !warehouseId()" />
+                    <button type="button" class="text-rose-700 bg-transparent border-none cursor-pointer" [disabled]="returnable(line) <= 0 || !warehouseId()" (click)="returnStock(line)">Return</button>
+                  </div>
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr><td class="py-2 text-slate-500" colspan="9">No parts to issue.</td></tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-3">
       <h2 class="font-bold uppercase tracking-wider text-slate-500">Labour</h2>
       <table class="w-full">
         <thead class="text-left text-slate-500">

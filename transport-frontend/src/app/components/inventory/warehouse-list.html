@@ -1,0 +1,56 @@
+<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-bold text-slate-900 dark:text-white">Warehouses</h1>
+      <p class="text-xs text-slate-500">Branch stores that hold spare-part stock.</p>
+    </div>
+    @if (canWrite()) {
+      <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer" (click)="create()">New warehouse</button>
+    }
+  </div>
+
+  <form class="grid grid-cols-1 md:grid-cols-3 gap-2" (ngSubmit)="load()">
+    <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Code" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">
+      <option value="">All statuses</option>
+      <option value="ACTIVE">Active</option>
+      <option value="INACTIVE">Inactive</option>
+    </select>
+    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer w-fit">Filter</button>
+  </form>
+
+  @if (error()) {
+    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="p-8 text-xs text-slate-500">Loading warehouses…</div>
+  } @else {
+    <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-auto">
+      <table class="w-full text-xs">
+        <thead class="text-left text-slate-500">
+          <tr>
+            <th class="p-3">Code</th>
+            <th class="p-3">Name</th>
+            <th class="p-3">Branch</th>
+            <th class="p-3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr class="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/40 cursor-pointer" (click)="open(row)">
+              <td class="p-3 font-bold">{{ row.code }}</td>
+              <td class="p-3">{{ row.name }}</td>
+              <td class="p-3">{{ row.branchCode || row.branchName || row.branchId || '—' }}</td>
+              <td class="p-3">{{ row.status }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="p-3 text-slate-500" colspan="4">No warehouses yet.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

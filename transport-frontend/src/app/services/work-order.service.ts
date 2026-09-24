@@ -89,6 +89,11 @@ export interface WorkOrderPartLine {
   sparePartCode?: string;
   sparePartName?: string;
   quantity: number;
+  issuedQuantity?: number;
+  returnedQuantity?: number;
+  netIssuedQuantity?: number;
+  remainingToIssue?: number;
+  returnableQuantity?: number;
   unitRate: number;
   lineTotal: number;
   uomId?: number;

@@ -31,6 +31,12 @@ public class WorkOrderPart extends OperationalLineEntity {
     @Column(nullable = false, precision = 12, scale = 3)
     private BigDecimal quantity;
 
+    @Column(name = "issued_quantity", nullable = false, precision = 12, scale = 3)
+    private BigDecimal issuedQuantity = BigDecimal.ZERO;
+
+    @Column(name = "returned_quantity", nullable = false, precision = 12, scale = 3)
+    private BigDecimal returnedQuantity = BigDecimal.ZERO;
+
     @Column(name = "unit_rate", nullable = false, precision = 14, scale = 2)
     private BigDecimal unitRate;
 
