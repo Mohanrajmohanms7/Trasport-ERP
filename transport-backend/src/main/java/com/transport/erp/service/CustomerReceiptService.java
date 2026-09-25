@@ -60,6 +60,9 @@ import java.time.LocalDate;
 @Service
 public class CustomerReceiptService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ApprovalPolicyService approvalPolicy;
+
     @Autowired
     private DocumentNumberService documentNumberService;
 
@@ -504,6 +507,7 @@ public class CustomerReceiptService {
 
         // 2. Validate tenant & branch security
         tenantAccess.assertOwned(receipt.getCompanyId());
+        approvalPolicy.assertDifferentApprover(receipt.getCompanyId(), receipt.getCreatedBy(), username, "Receipt " + receipt.getReceiptNumber());
         if (currentUser.getBranchId() != null && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }

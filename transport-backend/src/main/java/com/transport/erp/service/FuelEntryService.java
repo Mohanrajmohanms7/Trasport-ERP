@@ -22,6 +22,9 @@ import java.util.Optional;
 @Service
 public class FuelEntryService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ApprovalPolicyService approvalPolicy;
+
     @Autowired
     private DocumentNumberService documentNumberService;
 
@@ -237,6 +240,8 @@ public class FuelEntryService {
                         "Fuel Entry not found with ID: " + id,
                         "Verify the fuel entry ID."
                 ));
+        tenantAccess.assertOwned(entry.getCompanyId());
+        approvalPolicy.assertDifferentApprover(entry.getCompanyId(), entry.getCreatedBy(), username, "Fuel entry " + entry.getFuelEntryNumber());
 
         tenantAccess.assertOwned(entry.getCompanyId());
         AppUser currentUser = tenantAccess.requireCurrentUser();

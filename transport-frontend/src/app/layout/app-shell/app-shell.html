@@ -29,7 +29,7 @@
     <nav class="flex-1 py-3 flex flex-col overflow-y-auto px-2">
       
       <!-- Top Level Dashboard item (independent of groups) -->
-      @if (!isSuperAdmin()) {
+      @if (!isSuperAdmin() && !isDriverOnly()) {
         <a routerLink="/dashboard" 
            routerLinkActive="app-nav-item--active"
            [routerLinkActiveOptions]="{exact: true}"
@@ -139,7 +139,7 @@
         </button>
 
         <!-- System Settings -->
-        @if (!isSuperAdmin()) {
+        @if (!isSuperAdmin() && isCompanyAdmin()) {
           <button routerLink="/company-admin" 
                   class="p-1.5 text-slate-500 dark:text-slate-455 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition duration-150 cursor-pointer" 
                   title="System Settings">
@@ -172,7 +172,7 @@
             <span class="material-symbols-outlined text-lg text-slate-400">person</span>
             Profile Settings
           </button>
-          @if (!isSuperAdmin()) {
+          @if (!isSuperAdmin() && isCompanyAdmin()) {
             <button mat-menu-item routerLink="/company-admin" class="hover:bg-slate-50 text-slate-650 flex items-center gap-2">
               <span class="material-symbols-outlined text-lg text-slate-400">corporate_fare</span>
               Company Settings

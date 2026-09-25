@@ -38,6 +38,9 @@ import java.util.*;
 @Service
 public class DriverPayrollService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ApprovalPolicyService approvalPolicy;
+
     /** Trip statuses that earn pay. Only fully delivered trips; PLANNED/DISPATCHED/CANCELLED do not. */
     public static final List<String> ELIGIBLE_TRIP_STATUSES = List.of("COMPLETED");
     private static final Set<String> DEDUCTION_TYPES = Set.of("FINE", "DAMAGE", "OTHER");
@@ -59,6 +62,7 @@ public class DriverPayrollService {
     @Autowired private DriverAdvanceRecoveryRepository recoveryRepository;
     @Autowired private DriverRepository driverRepository;
     @Autowired private DocumentNumberService documentNumberService;
+    @Autowired private ExpenseRepository expenseRepository;
 
     // ------------------------------------------------------------------ queries
 
@@ -285,6 +289,8 @@ public class DriverPayrollService {
             }
         }
 
+        BigDecimal bata = expenseRepository.sumDriverBata(payroll.getDriver().getId(), period.atDay(1), period.atEndOfMonth());
+        payroll.setBataPaid(DriverPayrollCalculator.money(bata));
         payroll.setTotalTrips(result.totalTrips());
         payroll.setTripDays(result.tripDays());
         payroll.setTripEarnings(result.tripEarnings());
@@ -305,6 +311,7 @@ public class DriverPayrollService {
     public DriverPayroll approvePayroll(Long id, String username) {
         DriverPayroll payroll = lockPayroll(id);
         requireStatus(payroll, "DRAFT", "approved");
+        approvalPolicy.assertDifferentApprover(payroll.getCompanyId(), payroll.getCreatedBy(), username, "Payroll " + payroll.getPayrollNumber());
         recalculate(payroll, username); // approve what the trips say right now
         payroll.setStatus("APPROVED");
         payroll.setApprovedBy(username);
@@ -647,6 +654,7 @@ public class DriverPayrollService {
         dto.setTripDays(payroll.getTripDays());
         dto.setGrossEarnings(payroll.getGrossAmount() != null && payroll.getGrossAmount().signum() > 0
                 ? payroll.getGrossAmount() : basic.add(allowance).add(tripEarnings));
+        dto.setBataPaid(payroll.getBataPaid() != null ? payroll.getBataPaid() : BigDecimal.ZERO);
         dto.setPostingDate(payroll.getPostingDate());
         dto.setPaidDate(payroll.getPaidDate());
         dto.setPaymentReference(payroll.getPaymentReference());

@@ -150,6 +150,14 @@ public class DriverSalarySlipPdfGenerator {
             document.add(new Paragraph(" "));
         }
 
+        if (data.getBataPaid() != null && data.getBataPaid().signum() > 0) {
+            Paragraph bata = new Paragraph(String.format(
+                    "Driver bata already paid during the month: Rs. %,.2f (paid separately, not included in net payable).",
+                    data.getBataPaid()), normalFont);
+            bata.setSpacingAfter(8);
+            document.add(bata);
+        }
+
         // 4. Earnings & Deductions Breakdown Table
         Paragraph salaryBreakdownHeader = new Paragraph("SALARY COMPONENTS BREAKDOWN", sectionHeaderFont);
         salaryBreakdownHeader.setSpacingAfter(6);

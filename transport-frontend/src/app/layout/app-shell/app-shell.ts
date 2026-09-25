@@ -276,7 +276,35 @@ export class AppShellComponent implements OnDestroy {
         }
       ];
     }
+    const staffRoles = roles.filter(r => r !== 'DRIVER');
+    // Driver app login: only what the server lets a driver use.
+    if (roles.includes('DRIVER') && staffRoles.length === 0) {
+      return [{
+        groupName: 'MY WORK',
+        items: [
+          { label: 'Maintenance Requests', route: '/maintenance-requests', icon: 'report' },
+          { label: 'My Salary', route: '/driver-payroll', icon: 'badge' }
+        ]
+      }];
+    }
+    // Users, roles and company settings are for admins only (the API enforces the same).
+    const isAdmin = roles.some(r => r === 'COMPANY_ADMIN' || r === 'ADMIN');
+    if (!isAdmin) {
+      return groups
+        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin'].includes(i.route)) }))
+        .filter(g => g.items.length > 0);
+    }
     return groups;
+  });
+
+  /** Dashboard and settings shortcuts are hidden for driver-only logins. */
+  readonly isDriverOnly = computed(() => {
+    const roles = this.auth.currentUser()?.roles || [];
+    return roles.includes('DRIVER') && roles.every(r => r === 'DRIVER');
+  });
+  readonly isCompanyAdmin = computed(() => {
+    const roles = this.auth.currentUser()?.roles || [];
+    return roles.some(r => r === 'COMPANY_ADMIN' || r === 'ADMIN' || r === 'SUPER_ADMIN');
   });
 
   breadcrumbs = computed(() => {

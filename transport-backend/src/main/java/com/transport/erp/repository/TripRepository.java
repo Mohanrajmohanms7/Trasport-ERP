@@ -91,6 +91,22 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     List<Object[]> sumQuantityByMaterialForBooking(@Param("bookingId") Long bookingId, @Param("excludeTripId") Long excludeTripId);
 
+    /** Quantity delivered per material by COMPLETED trips of a booking. */
+    @Query("""
+            SELECT d.material.id,
+                   COALESCE(SUM(CASE WHEN d.deliveredQuantity IS NOT NULL AND d.deliveredQuantity > 0
+                                     THEN d.deliveredQuantity ELSE d.quantity END), 0)
+            FROM TripDetail d
+            WHERE d.trip.booking.id = :bookingId
+              AND d.trip.isDeleted = false AND d.isDeleted = false
+              AND d.trip.status = 'COMPLETED'
+            GROUP BY d.material.id
+            """)
+    List<Object[]> sumDeliveredByMaterialForBooking(@Param("bookingId") Long bookingId);
+
+    @Query("SELECT COUNT(t) FROM Trip t WHERE t.booking.id = :bookingId AND t.isDeleted = false AND t.status IN ('PLANNED', 'DISPATCHED')")
+    long countOpenTripsForBooking(@Param("bookingId") Long bookingId);
+
     long countByVehicleIdAndIsDeletedFalse(Long vehicleId);
 
     long countByDriverIdAndIsDeletedFalse(Long driverId);

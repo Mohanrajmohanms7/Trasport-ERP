@@ -44,6 +44,8 @@ export class LoginComponent {
           const roles = res.data?.roles || [];
           if (roles.includes('SUPER_ADMIN')) {
             this.router.navigate(['/platform-admin']);
+          } else if (roles.length > 0 && roles.every((r: string) => r === 'DRIVER')) {
+            this.router.navigate(['/maintenance-requests']);
           } else {
             this.router.navigate(['/dashboard']);
           }

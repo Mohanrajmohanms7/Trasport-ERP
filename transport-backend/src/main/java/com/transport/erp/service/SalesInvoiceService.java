@@ -40,6 +40,9 @@ import com.transport.erp.model.Branch;
 @Service
 public class SalesInvoiceService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ApprovalPolicyService approvalPolicy;
+
     @Autowired
     private SalesInvoiceRepository invoiceRepository;
 
@@ -299,6 +302,7 @@ public class SalesInvoiceService {
                 .orElseThrow(() -> new IllegalArgumentException("Sales Invoice not found with ID: " + id));
 
         tenantAccess.assertOwned(invoice.getCompanyId());
+        approvalPolicy.assertDifferentApprover(invoice.getCompanyId(), invoice.getCreatedBy(), username, "Invoice " + invoice.getInvoiceNumber());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
             if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {

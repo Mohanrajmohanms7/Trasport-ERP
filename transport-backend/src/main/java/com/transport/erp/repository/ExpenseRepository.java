@@ -40,4 +40,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT e FROM Expense e WHERE e.id = :id AND e.isDeleted = false")
     Optional<Expense> findAndLockById(@Param("id") Long id);
+
+    /** Driver bata paid through approved/paid expenses in a date range. */
+    @Query("""
+            SELECT COALESCE(SUM(COALESCE(e.totalAmount, e.amount)), 0) FROM Expense e
+            WHERE e.driver.id = :driverId AND e.isDeleted = false AND e.category = 'DRIVER_BATA'
+              AND e.status IN ('APPROVED', 'PAID') AND e.expenseDate BETWEEN :fromDate AND :toDate
+            """)
+    BigDecimal sumDriverBata(@Param("driverId") Long driverId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 }

@@ -17,6 +17,13 @@ export const authGuard: CanActivateFn = (route, state) => {
         router.navigate(['/platform-admin']);
         return false;
       }
+    } else if (roles.length > 0 && roles.every((r: string) => r === 'DRIVER')) {
+      // Driver app login: only the driver screens
+      const allowed = ['/maintenance-requests', '/driver-payroll', '/profile'];
+      if (!allowed.some(p => url.startsWith(p))) {
+        router.navigate(['/maintenance-requests']);
+        return false;
+      }
     } else {
       // Tenant users are not allowed on /platform-admin
       if (url.startsWith('/platform-admin')) {

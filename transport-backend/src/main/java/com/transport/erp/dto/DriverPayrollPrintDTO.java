@@ -59,6 +59,8 @@ public class DriverPayrollPrintDTO {
     private Integer totalTrips = 0;
     private Integer tripDays = 0;
     private BigDecimal tripEarnings = BigDecimal.ZERO;
+    /** Bata already paid via expenses in the month (not in net). */
+    private BigDecimal bataPaid = BigDecimal.ZERO;
     private java.time.LocalDate postingDate;
     private java.time.LocalDate paidDate;
     private String paymentReference;

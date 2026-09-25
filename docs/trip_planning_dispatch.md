@@ -58,3 +58,11 @@ Configured schemas using Flyway `V10__trip_planning_dispatch.sql`:
 - **Status flow** is enforced: PLANNED → DISPATCHED (needs vehicle + driver) → COMPLETED.
 - A **completed** trip can still get weighbridge values, date and loading source corrected; vehicle, driver,
   material and planned quantity are locked. Once the trip is on an active invoice, it cannot be edited.
+
+## Booking completion (V63)
+
+- A booking becomes **COMPLETED** automatically when completed trips have delivered every booked material in full
+  and no trips are still planned/dispatched. A later weighbridge correction below the booked quantity reopens an
+  auto-completed booking to APPROVED.
+- **Close** (`POST /api/v1/bookings/{id}/close`): an APPROVED booking with no open trips can be closed early when the customer needs no more loads.
+- No new trips on COMPLETED bookings. Driver bata paid via expenses in the pay month is shown on the payroll and salary slip (`driver_payrolls.bata_paid`), outside gross/net.

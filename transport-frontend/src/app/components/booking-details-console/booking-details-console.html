@@ -86,12 +86,21 @@
                         <span class="material-icons text-sm">cancel</span> Reject
                       </button>
                     }
-                    <button (click)="openEditBooking(bkg)" class="bkg-btn-outline" title="Edit Booking">
-                      <span class="material-icons text-sm">edit</span>
-                    </button>
-                    <button (click)="deleteBooking(bkg)" class="bkg-btn-outline" title="Cancel Booking">
-                      <span class="material-icons text-sm">delete</span> Cancel
-                    </button>
+                    @if (bkg.status === 'APPROVED') {
+                      <button (click)="closeBooking(bkg)" class="bkg-btn-outline" title="No more loads needed">
+                        <span class="material-icons text-sm">task_alt</span> Close
+                      </button>
+                    }
+                    @if (bkg.status !== 'COMPLETED' && bkg.status !== 'REJECTED') {
+                      <button (click)="openEditBooking(bkg)" class="bkg-btn-outline" title="Edit Booking">
+                        <span class="material-icons text-sm">edit</span>
+                      </button>
+                    }
+                    @if (bkg.status === 'PENDING' || bkg.status === 'DRAFT') {
+                      <button (click)="deleteBooking(bkg)" class="bkg-btn-outline" title="Cancel Booking">
+                        <span class="material-icons text-sm">delete</span> Cancel
+                      </button>
+                    }
                   </div>
                 </td>
               </tr>

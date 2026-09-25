@@ -50,6 +50,7 @@ export interface SlabPayroll {
   deductionAmount: number;
   advanceAdjustment: number;
   netSalaryPayable: number;
+  bataPaid?: number;
   description?: string;
   approvedBy?: string;
   approvedAt?: string;

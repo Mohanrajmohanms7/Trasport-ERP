@@ -368,6 +368,25 @@ export class BookingDetailsConsoleComponent implements OnInit {
     }
   }
 
+  private apiError(err: any, fallback: string): string {
+    const errors = err?.error?.errors;
+    const detail = Array.isArray(errors) && errors.length ? String(errors[0]) : '';
+    const title = err?.error?.message || '';
+    if (title && detail && !detail.startsWith(title)) return `${title}: ${detail}`;
+    return detail || title || fallback;
+  }
+
+  closeBooking(bkg: Booking) {
+    if (!bkg.id) return;
+    this.bookingMgmtService.closeBooking(bkg.id).subscribe({
+      next: () => {
+        this.notify.success('Booking closed — no more trips can be planned on it');
+        this.loadBookings();
+      },
+      error: (e) => this.notify.error(this.apiError(e, 'Failed to close booking'))
+    });
+  }
+
   approveBooking(bkg: Booking) {
     if (!bkg.id) return;
     this.bookingMgmtService.approveBooking(bkg.id).subscribe({
@@ -375,7 +394,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
         this.notify.success('Booking approved successfully');
         this.loadBookings();
       },
-      error: () => this.notify.error('Failed to approve booking')
+      error: (e) => this.notify.error(this.apiError(e, 'Failed to approve booking'))
     });
   }
 
@@ -386,7 +405,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
         this.notify.success('Booking rejected successfully');
         this.loadBookings();
       },
-      error: () => this.notify.error('Failed to reject booking')
+      error: (e) => this.notify.error(this.apiError(e, 'Failed to reject booking'))
     });
   }
 
