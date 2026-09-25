@@ -224,7 +224,7 @@ public class ExpenseService {
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             JournalVoucher jv = new JournalVoucher();
             jv.setVoucherNumber("JV-EXP-" + saved.getId());
-            jv.setVoucherDate(LocalDate.now());
+            jv.setVoucherDate(expensePostingDate);
             jv.setDebitAccount(expenseCategoryAcc);
             jv.setCreditAccount(creditAcc);
             jv.setAmount(amount);

@@ -308,7 +308,7 @@ public class FuelEntryService {
         if (amount.compareTo(BigDecimal.ZERO) > 0) {
             JournalVoucher jv = new JournalVoucher();
             jv.setVoucherNumber("JV-FUEL-" + saved.getId());
-            jv.setVoucherDate(LocalDate.now());
+            jv.setVoucherDate(fuelPostingDate);
             jv.setDebitAccount(fuelExpenseAcc);
             jv.setCreditAccount(creditAcc);
             jv.setAmount(amount);

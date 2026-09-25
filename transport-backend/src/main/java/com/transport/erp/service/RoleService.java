@@ -26,13 +26,16 @@ public class RoleService {
                 .toList();
     }
 
+    /** A tenant sees its own roles plus global roles (never SUPER_ADMIN); only a super admin sees everything. */
     public List<AppRole> getRoles(Long companyId) {
-        if (companyId == null) {
+        if (companyId == null && tenantAccess.isSuperAdmin()) {
             return getRoles();
         }
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        boolean superAdmin = tenantAccess.isSuperAdmin();
         return roleRepository.findAll().stream()
-                .filter(r -> !r.getIsDeleted())
-                .filter(r -> companyId.equals(r.getCompanyId()))
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .filter(r -> cid.equals(r.getCompanyId()) || (r.getCompanyId() == null && (superAdmin || !"SUPER_ADMIN".equals(r.getCode()))))
                 .toList();
     }
 
@@ -50,6 +53,14 @@ public class RoleService {
 
     @Transactional
     public AppRole createRole(AppRole role, String createdByUsername) {
+        // Tenants create roles only in their own company, and never a reserved platform code.
+        if (!tenantAccess.isSuperAdmin()) {
+            role.setCompanyId(tenantAccess.resolveCompanyId(null));
+            if (role.getCode() == null || "SUPER_ADMIN".equalsIgnoreCase(role.getCode().trim())) {
+                throw new IllegalArgumentException("Role code SUPER_ADMIN is reserved for the platform.");
+            }
+        }
+        if (role.getCode() != null) role.setCode(role.getCode().trim().toUpperCase());
         boolean codeTaken = role.getCompanyId() == null
                 ? roleRepository.findAllByCodeAndIsDeletedFalse(role.getCode()).stream()
                     .anyMatch(r -> r.getCompanyId() == null)
