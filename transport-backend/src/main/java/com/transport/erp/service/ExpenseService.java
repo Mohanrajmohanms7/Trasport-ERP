@@ -71,9 +71,15 @@ public class ExpenseService {
         String prefix = settingService.getByKey("PREFIX_EXPENSE").map(s -> s.getValueData()).orElse("EXP-");
         String defaultStatus = settingService.getByKey("DEFAULT_EXPENSE_STATUS").map(s -> s.getValueData()).orElse("SUBMITTED");
         
+        // Bills can be entered after the day they were paid; never in the future.
+        LocalDate expenseDate = expense.getExpenseDate() != null ? expense.getExpenseDate() : LocalDate.now();
+        if (expenseDate.isAfter(LocalDate.now())) {
+            throw new BusinessValidationException("Expense Date In Future", "EXPENSE_DATE_IN_FUTURE",
+                    "Expense date " + expenseDate + " is in the future.", "Use the date the money was spent (today or earlier).");
+        }
+        expense.setExpenseDate(expenseDate);
         expense.setExpenseNumber(documentNumberService.next(tenantAccess.resolveCompanyId(expense.getCompanyId()),
-                DocumentNumberService.EXPENSE, prefix, LocalDate.now()));
-        expense.setExpenseDate(LocalDate.now());
+                DocumentNumberService.EXPENSE, prefix, expenseDate));
         expense.setStatus(defaultStatus);
         expense.setIsDeleted(false);
         expense.setCreatedBy(username);
@@ -111,6 +117,13 @@ public class ExpenseService {
             );
         }
 
+        if (details.getExpenseDate() != null) {
+            if (details.getExpenseDate().isAfter(LocalDate.now())) {
+                throw new BusinessValidationException("Expense Date In Future", "EXPENSE_DATE_IN_FUTURE",
+                        "Expense date " + details.getExpenseDate() + " is in the future.", "Use today's date or earlier.");
+            }
+            existing.setExpenseDate(details.getExpenseDate());
+        }
         existing.setCategory(details.getCategory());
         existing.setVehicle(details.getVehicle());
         existing.setDriver(details.getDriver());
