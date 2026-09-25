@@ -1,3 +1,4 @@
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-accounts-details-console',
   standalone: true,
-  imports: [
+  imports: [ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

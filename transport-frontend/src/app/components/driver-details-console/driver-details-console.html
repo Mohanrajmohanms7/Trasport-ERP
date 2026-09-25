@@ -11,7 +11,9 @@
       { label: 'Driver Master' }
     ]"
     [actions]="headerActions"
-    (actionClick)="onHeaderAction($event)" />
+    (actionClick)="onHeaderAction($event)">
+    <app-export-buttons ffActions module="drivers" />
+  </ff-page-header>
 
   <div class="driver-kpis">
     <ff-dashboard-card label="Total Drivers" [value]="totalElements()" icon="people" color="primary" />
@@ -84,6 +86,7 @@
 
   @if (selectedDriver(); as driver) {
     <div class="driver-ops-meta flex items-center gap-3 mb-4 px-3 py-2 rounded-[8px] bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)]">
+      <app-entity-photo type="drivers" [entityId]="driver.id" [photoFile]="$any(driver).photoFile" icon="person" [round]="true" [size]="64" alt="Driver photo" (changed)="$any(driver).photoFile = $event" />
       <ff-status-badge [label]="driver.status" [color]="driver.status === 'ACTIVE' ? 'success' : 'danger'" />
       <span class="driver-ops-meta__code text-[11px] font-semibold text-[var(--ff-text-muted)]">{{ driver.code }} · {{ driver.licenseNumber }}</span>
     </div>

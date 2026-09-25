@@ -1,3 +1,5 @@
+import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -19,7 +21,7 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [
+  imports: [EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

@@ -4,6 +4,7 @@
       <h1 class="text-lg font-bold text-slate-900 dark:text-white">Maintenance Requests</h1>
       <p class="text-xs text-slate-500">Reported vehicle problems before a work order exists.</p>
     </div>
+    <app-export-buttons module="maintenance-requests" />
     @if (canCreate()) {
       <a routerLink="/maintenance-requests/new" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold no-underline">New request</a>
     }

@@ -18,5 +18,6 @@ public class SparePartResponse {
     private String defaultUomCode;
     private String defaultUomName;
     private BigDecimal defaultRate;
+    private String photoFile;
     private Integer version;
 }

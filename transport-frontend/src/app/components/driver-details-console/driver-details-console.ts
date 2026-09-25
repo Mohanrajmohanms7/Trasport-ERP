@@ -1,3 +1,5 @@
+import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -45,7 +47,7 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
 @Component({
   selector: 'app-driver-details-console',
   standalone: true,
-  imports: [
+  imports: [EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FfPageContainerComponent,

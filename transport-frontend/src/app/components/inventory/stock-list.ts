@@ -1,3 +1,4 @@
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-stock-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {
