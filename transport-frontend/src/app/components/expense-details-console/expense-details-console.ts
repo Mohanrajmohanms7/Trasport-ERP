@@ -8,7 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/confirmation-dialog';
-import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
+import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent, FfDatepickerComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
@@ -25,6 +25,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
     FfDropdownComponent,
     FfTextboxComponent,
     FfNumberComponent,
+    FfDatepickerComponent,
     FfButtonComponent
   ],
   templateUrl: './expense-details-console.html',
@@ -83,6 +84,8 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   // Forms
   expenseForm!: FormGroup;
 
+  readonly today = new Date().toISOString().slice(0, 10);
+
   ngOnInit() {
     this.initForm();
     this.loadExpenses();
@@ -119,6 +122,7 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
 
   initForm() {
     this.expenseForm = this.fb.group({
+      expenseDate: [new Date().toISOString().slice(0, 10), Validators.required],
       category: ['TOLL', Validators.required],
       vehicle: this.fb.group({
         id: ['']
@@ -150,13 +154,14 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
 
   openAddExpense() {
     this.editingExpense.set(null);
-    this.expenseForm.reset({ category: 'TOLL', paymentMethod: 'CASH', amount: 0, gstAmount: 0 });
+    this.expenseForm.reset({ expenseDate: this.today, category: 'TOLL', paymentMethod: 'CASH', amount: 0, gstAmount: 0 });
     this.showEditor.set(true);
   }
 
   openEditExpense(exp: Expense) {
     this.editingExpense.set(exp);
     this.expenseForm.patchValue({
+      expenseDate: (exp as any).expenseDate || this.today,
       category: exp.category,
       vehicle: { id: exp.vehicle?.id || '' },
       driver: { id: exp.driver?.id || '' },

@@ -244,7 +244,7 @@ public class VehicleServiceLogService {
         BigDecimal amount = saved.getCost();
         JournalVoucher jv = new JournalVoucher();
         jv.setVoucherNumber("JV-SRV-" + saved.getId());
-        jv.setVoucherDate(LocalDate.now());
+        jv.setVoucherDate(servicePostingDate);
         jv.setDebitAccount(repairExpenseAcc);
         jv.setCreditAccount(creditAcc);
         jv.setAmount(amount);

@@ -76,6 +76,14 @@ public class SecurityConfig {
         return source;
     }
 
+    static final String[] ADMIN_ROLES = {"SUPER_ADMIN", "COMPANY_ADMIN", "ADMIN"};
+    static final String[] ADMIN_WRITE_PATHS = {
+            "/api/v1/users/**", "/api/v1/roles/**", "/api/v1/permissions/**", "/api/v1/companies/**",
+            "/api/v1/branches/**", "/api/v1/settings/**", "/api/v1/financial-years/**", "/api/v1/setup/**"
+    };
+    static final String[] ACCOUNTING_ROLES = {"SUPER_ADMIN", "COMPANY_ADMIN", "ADMIN", "ACCOUNTANT"};
+    static final String[] ACCOUNTING_WRITE_PATHS = {"/api/v1/journal/**", "/api/v1/accounts/**"};
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -94,7 +102,17 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/api/v1/platform-admin/**").hasRole("SUPER_ADMIN")
-                .anyRequest().authenticated()
+                // Tenant administration: only admins may change users, roles, company, branches, settings, years.
+                .requestMatchers(HttpMethod.POST, ADMIN_WRITE_PATHS).hasAnyRole(ADMIN_ROLES)
+                .requestMatchers(HttpMethod.PUT, ADMIN_WRITE_PATHS).hasAnyRole(ADMIN_ROLES)
+                .requestMatchers(HttpMethod.PATCH, ADMIN_WRITE_PATHS).hasAnyRole(ADMIN_ROLES)
+                .requestMatchers(HttpMethod.DELETE, ADMIN_WRITE_PATHS).hasAnyRole(ADMIN_ROLES)
+                // Manual journal entries and chart of accounts: accounts staff only.
+                .requestMatchers(HttpMethod.POST, ACCOUNTING_WRITE_PATHS).hasAnyRole(ACCOUNTING_ROLES)
+                .requestMatchers(HttpMethod.PUT, ACCOUNTING_WRITE_PATHS).hasAnyRole(ACCOUNTING_ROLES)
+                .requestMatchers(HttpMethod.DELETE, ACCOUNTING_WRITE_PATHS).hasAnyRole(ACCOUNTING_ROLES)
+                // Everyone else must be signed in; a DRIVER-only login is limited to the driver app APIs.
+                .anyRequest().access(new DriverScopeAuthorizationManager())
 
             )
             .exceptionHandling(ex -> ex

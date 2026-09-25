@@ -606,7 +606,7 @@ public class CustomerReceiptService {
 
             JournalVoucher jv = new JournalVoucher();
             jv.setVoucherNumber("JV-" + System.currentTimeMillis());
-            jv.setVoucherDate(LocalDate.now());
+            jv.setVoucherDate(receiptPostingDate);
             jv.setDebitAccount(debitAcc);
             jv.setCreditAccount(creditAcc);
             jv.setAmount(savedReceipt.getAmountReceived());

@@ -43,6 +43,15 @@ public class FinancialYearPeriodValidationService {
             );
         }
 
+        if (transactionDate.isAfter(LocalDate.now())) {
+            throw new BusinessValidationException(
+                "Future-Dated Posting",
+                "POSTING_DATE_IN_FUTURE",
+                "Accounting date " + transactionDate + " is in the future. Entries can only be posted up to today.",
+                "Correct the document date, or post it on or after " + transactionDate + "."
+            );
+        }
+
         Long resolvedCompanyId = tenantAccess.resolveCompanyId(companyId);
 
         List<FinancialYear> companyFys = fyRepository.findByCompanyIdAndIsDeletedFalse(resolvedCompanyId);

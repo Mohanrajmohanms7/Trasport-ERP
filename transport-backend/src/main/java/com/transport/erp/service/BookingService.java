@@ -26,6 +26,9 @@ public class BookingService {
     private BookingRepository bookingRepository;
 
     @Autowired
+    private com.transport.erp.repository.TripRepository tripRepository;
+
+    @Autowired
     private TenantAccessService tenantAccess;
 
     @Autowired
@@ -97,13 +100,7 @@ public class BookingService {
                 detail.setBranchId(booking.getBranchId());
 
                 // Calculate Net Amount = quantity * (rate + transportRate + royaltyRate + loadingCharge) + GST
-                BigDecimal base = detail.getRate()
-                        .add(detail.getTransportRate())
-                        .add(detail.getRoyaltyRate())
-                        .add(detail.getLoadingCharge());
-                BigDecimal subTotal = detail.getQuantity().multiply(base);
-                BigDecimal taxFactor = BigDecimal.ONE.add(detail.getGstPercentage().divide(BigDecimal.valueOf(100)));
-                detail.setNetAmount(subTotal.multiply(taxFactor));
+                detail.setNetAmount(lineAmount(detail));
             }
         }
 
@@ -117,7 +114,40 @@ public class BookingService {
 
     @Transactional
     public Booking updateBooking(Long id, Booking details, String updatedByUsername) {
-        Booking existing = getBookingById(id);
+        Booking existing = bookingRepository.findAndLockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + id));
+        tenantAccess.assertOwned(existing.getCompanyId());
+        String st = existing.getStatus() == null ? "" : existing.getStatus().toUpperCase();
+        if ("REJECTED".equals(st) || "CANCELLED".equals(st) || "COMPLETED".equals(st) || "CLOSED".equals(st)) {
+            throw new com.transport.erp.exception.BusinessValidationException("Booking Locked", "BOOKING_UPDATE_BLOCKED",
+                    "Booking " + existing.getBookingNumber() + " is " + existing.getStatus() + " and cannot be edited.",
+                    "Create a new booking instead.");
+        }
+        // Quantity already moved per material by active trips: a material with trips must stay, and its
+        // booked quantity cannot drop below what was already moved.
+        java.util.Map<Long, BigDecimal> moved = new java.util.HashMap<>();
+        for (Object[] row : tripRepository.sumQuantityByMaterialForBooking(existing.getId(), -1L)) {
+            moved.put((Long) row[0], (BigDecimal) row[1]);
+        }
+        if (!moved.isEmpty()) {
+            java.util.Map<Long, BigDecimal> newQty = new java.util.HashMap<>();
+            if (details.getDetails() != null) {
+                for (BookingDetail d : details.getDetails()) {
+                    if (d.getMaterial() != null && d.getMaterial().getId() != null) {
+                        newQty.merge(d.getMaterial().getId(), nz(d.getQuantity()), BigDecimal::add);
+                    }
+                }
+            }
+            for (java.util.Map.Entry<Long, BigDecimal> e : moved.entrySet()) {
+                BigDecimal q = newQty.get(e.getKey());
+                if (q == null || q.compareTo(e.getValue()) < 0) {
+                    throw new com.transport.erp.exception.BusinessValidationException("Quantity Below Delivered", "BOOKING_QTY_BELOW_MOVED",
+                            "Trips on booking " + existing.getBookingNumber() + " already moved " + e.getValue().toPlainString()
+                                    + " of material ID " + e.getKey() + "; the booked quantity cannot be lower or removed.",
+                            "Keep the material and set its quantity to at least what has been moved.");
+                }
+            }
+        }
 
         existing.setPriority(details.getPriority());
         existing.setRemarks(details.getRemarks());
@@ -134,13 +164,7 @@ public class BookingService {
                 d.setCompanyId(existing.getCompanyId());
                 d.setBranchId(existing.getBranchId());
 
-                BigDecimal base = d.getRate()
-                        .add(d.getTransportRate())
-                        .add(d.getRoyaltyRate())
-                        .add(d.getLoadingCharge());
-                BigDecimal subTotal = d.getQuantity().multiply(base);
-                BigDecimal taxFactor = BigDecimal.ONE.add(d.getGstPercentage().divide(BigDecimal.valueOf(100)));
-                d.setNetAmount(subTotal.multiply(taxFactor));
+                d.setNetAmount(lineAmount(d));
                 existing.getDetails().add(d);
             }
         }
@@ -156,6 +180,20 @@ public class BookingService {
     @Transactional
     public Booking approveBooking(Long id, String approvedByUsername) {
         Booking booking = getBookingById(id);
+        String st = booking.getStatus() == null ? "" : booking.getStatus().toUpperCase();
+        if ("APPROVED".equals(st)) {
+            throw new com.transport.erp.exception.BusinessValidationException("Already Approved", "BOOKING_ALREADY_APPROVED",
+                    "Booking " + booking.getBookingNumber() + " is already approved.", "No action needed.");
+        }
+        if ("REJECTED".equals(st) || "CANCELLED".equals(st)) {
+            throw new com.transport.erp.exception.BusinessValidationException("Booking Closed", "BOOKING_APPROVE_BLOCKED",
+                    "Booking " + booking.getBookingNumber() + " is " + booking.getStatus() + " and cannot be approved.",
+                    "Create a new booking.");
+        }
+        if (booking.getDetails() == null || booking.getDetails().isEmpty()) {
+            throw new com.transport.erp.exception.BusinessValidationException("Empty Booking", "BOOKING_NO_LINES",
+                    "Booking " + booking.getBookingNumber() + " has no material lines.", "Add at least one material before approving.");
+        }
         booking.setStatus("APPROVED");
         booking.setUpdatedBy(approvedByUsername);
         
@@ -170,6 +208,12 @@ public class BookingService {
     @Transactional
     public Booking rejectBooking(Long id, String rejectedByUsername) {
         Booking booking = getBookingById(id);
+        long activeTrips = tripRepository.countByBookingIdAndIsDeletedFalse(booking.getId());
+        if (activeTrips > 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Booking Has Trips", "BOOKING_REJECT_HAS_TRIPS",
+                    "Booking " + booking.getBookingNumber() + " already has " + activeTrips + " trip(s) and cannot be rejected.",
+                    "Cancel the planned trips first.");
+        }
         booking.setStatus("REJECTED");
         booking.setUpdatedBy(rejectedByUsername);
 
@@ -193,5 +237,21 @@ public class BookingService {
 
         auditService.log(deletedByUsername, "BOOKING_DELETED", "bookings", booking.getId(), null,
                 "Soft deleted booking: " + booking.getBookingNumber());
+    }
+
+    private static BigDecimal nz(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
+    /** quantity x (rate + transport + royalty + loading) x (1 + GST%), rounded to paise. */
+    private static BigDecimal lineAmount(BookingDetail d) {
+        if (d.getQuantity() == null || d.getQuantity().signum() <= 0) {
+            throw new IllegalArgumentException("Booking quantity must be greater than zero.");
+        }
+        BigDecimal base = nz(d.getRate()).add(nz(d.getTransportRate())).add(nz(d.getRoyaltyRate())).add(nz(d.getLoadingCharge()));
+        if (base.signum() < 0) throw new IllegalArgumentException("Booking rates cannot be negative.");
+        BigDecimal taxable = d.getQuantity().multiply(base).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal tax = taxable.multiply(nz(d.getGstPercentage())).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        return taxable.add(tax);
     }
 }
