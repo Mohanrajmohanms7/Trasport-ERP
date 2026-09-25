@@ -122,6 +122,34 @@ public class DriverSalarySlipPdfGenerator {
         document.add(driverTable);
         document.add(new Paragraph(" "));
 
+        // 4a. Daily trip earnings (daily slab payroll)
+        if (data.getDays() != null && !data.getDays().isEmpty()) {
+            Paragraph dayHeader = new Paragraph("DAILY TRIP EARNINGS", sectionHeaderFont);
+            dayHeader.setSpacingAfter(6);
+            document.add(dayHeader);
+
+            PdfPTable dayTable = new PdfPTable(4);
+            dayTable.setWidthPercentage(100);
+            dayTable.setWidths(new float[]{25, 20, 30, 25});
+            dayTable.addCell(createHeaderCell("Date", boldFont, primaryColor));
+            dayTable.addCell(createHeaderCell("Trips", boldFont, primaryColor));
+            dayTable.addCell(createHeaderCell("Slab", boldFont, primaryColor));
+            dayTable.addCell(createHeaderCell("Earning (₹)", boldFont, primaryColor));
+            java.time.format.DateTimeFormatter df = java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy");
+            for (com.transport.erp.dto.DriverPayrollPrintDTO.DayLine d : data.getDays()) {
+                dayTable.addCell(createBodyCell(d.getWorkDate() != null ? d.getWorkDate().format(df) : "", normalFont));
+                dayTable.addCell(createBodyCell(String.valueOf(d.getTripCount()), normalFont));
+                dayTable.addCell(createBodyCell(d.getSlab() != null ? d.getSlab() : "", normalFont));
+                dayTable.addCell(createAmountCell(d.getDailyAmount(), normalFont));
+            }
+            dayTable.addCell(createTotalHeaderCell("Trip days: " + data.getTripDays(), boldFont));
+            dayTable.addCell(createTotalHeaderCell("Trips: " + data.getTotalTrips(), boldFont));
+            dayTable.addCell(createTotalHeaderCell("Trip earnings", boldFont));
+            dayTable.addCell(createTotalAmountCell(data.getTripEarnings(), boldFont));
+            document.add(dayTable);
+            document.add(new Paragraph(" "));
+        }
+
         // 4. Earnings & Deductions Breakdown Table
         Paragraph salaryBreakdownHeader = new Paragraph("SALARY COMPONENTS BREAKDOWN", sectionHeaderFont);
         salaryBreakdownHeader.setSpacingAfter(6);
@@ -137,10 +165,16 @@ public class DriverSalarySlipPdfGenerator {
         componentTable.addCell(createHeaderCell("Deductions Description", boldFont, primaryColor));
         componentTable.addCell(createHeaderCell("Amount (₹)", boldFont, primaryColor));
 
+        // Line 0: Trip earnings
+        componentTable.addCell(createBodyCell("Trip Earnings (daily slab)", normalFont));
+        componentTable.addCell(createAmountCell(data.getTripEarnings(), normalFont));
+        componentTable.addCell(createBodyCell("", normalFont));
+        componentTable.addCell(createBodyCell("", normalFont));
+
         // Line 1: Basic Salary vs Deductions
         componentTable.addCell(createBodyCell("Basic Salary", normalFont));
         componentTable.addCell(createAmountCell(data.getBasicSalary(), normalFont));
-        componentTable.addCell(createBodyCell("Standard Deductions", normalFont));
+        componentTable.addCell(createBodyCell("Fines / Damage / Other", normalFont));
         componentTable.addCell(createAmountCell(data.getDeductionAmount(), normalFont));
 
         // Line 2: Allowances vs Advance Adjustments

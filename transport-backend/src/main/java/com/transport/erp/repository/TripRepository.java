@@ -64,6 +64,19 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Query("SELECT t FROM Trip t WHERE t.id IN :ids AND t.isDeleted = false")
     List<Trip> findAndLockAllByIds(@Param("ids") java.util.Collection<Long> ids);
 
+    /** Completed trips per business date for one driver in a date range (one grouped query per payroll). */
+    @Query("""
+            SELECT t.tripDate, COUNT(t) FROM Trip t
+            WHERE t.driver.id = :driverId AND t.companyId = :companyId
+              AND t.isDeleted = false AND t.status IN :statuses
+              AND t.tripDate BETWEEN :fromDate AND :toDate
+            GROUP BY t.tripDate
+            ORDER BY t.tripDate
+            """)
+    List<Object[]> countTripsByDate(@Param("driverId") Long driverId, @Param("companyId") Long companyId,
+                                    @Param("statuses") Collection<String> statuses,
+                                    @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
+
     /** Quantity already moved per material for a booking (delivered if recorded, else planned), excluding one trip. */
     @Query("""
             SELECT d.material.id,

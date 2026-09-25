@@ -1,3 +1,4 @@
+import { DriverPayrollConsoleComponent } from './components/driver-payroll-console/driver-payroll-console';
 import { Routes } from '@angular/router';
 import { AppShellComponent } from './layout/app-shell/app-shell';
 import { LoginComponent } from './auth/login/login';
@@ -80,6 +81,7 @@ export const routes: Routes = [
       { path: 'maintenance-requests/:id/edit', component: MaintenanceRequestFormComponent },
       { path: 'maintenance-requests/:id', component: MaintenanceRequestDetailComponent },
       { path: 'drivers', component: DriverDetailsConsoleComponent }, 
+      { path: 'driver-payroll', component: DriverPayrollConsoleComponent },
       { path: 'customers', component: CustomerDetailsConsoleComponent },
       { path: 'materials-quarries', component: MaterialQuarryConsoleComponent },
       { path: 'bookings', component: BookingDetailsConsoleComponent },

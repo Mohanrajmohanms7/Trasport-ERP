@@ -268,7 +268,8 @@ export class DriverDetailsConsoleComponent implements OnInit {
       { field: 'payrollNumber', header: 'Payroll No' },
       { field: 'payYear', header: 'Year' },
       { field: 'payMonth', header: 'Month' },
-      { field: 'basicSalary', header: 'Basic Salary (₹)', type: 'currency' },
+      { field: 'totalTrips', header: 'Trips' },
+      { field: 'grossAmount', header: 'Gross (₹)', type: 'currency' },
       { field: 'netSalaryPayable', header: 'Net Salary (₹)', type: 'currency' },
       {
         field: 'status',

@@ -31,12 +31,14 @@ export interface DriverPayroll {
   payYear: number;
   payMonth: number;
   basicSalary: number;
+  totalTrips?: number;
+  grossAmount?: number;
   allowanceAmount?: number;
   deductionAmount?: number;
   advanceAdjustment?: number;
   netSalaryPayable?: number;
   paymentMethod?: string;
-  status?: string; // DRAFT, APPROVED, PAID, CANCELLED
+  status?: string; // DRAFT, APPROVED, POSTED, PAID, CANCELLED
   accrualJvNumber?: string;
   paymentJvNumber?: string;
   cancellationJvNumber?: string;

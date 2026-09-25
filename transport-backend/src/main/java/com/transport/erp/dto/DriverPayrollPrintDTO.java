@@ -54,4 +54,34 @@ public class DriverPayrollPrintDTO {
     private Long branchId;
     private String branchName;
     private String branchAddress;
+
+    // Daily slab payroll
+    private Integer totalTrips = 0;
+    private Integer tripDays = 0;
+    private BigDecimal tripEarnings = BigDecimal.ZERO;
+    private java.time.LocalDate postingDate;
+    private java.time.LocalDate paidDate;
+    private String paymentReference;
+    private String recoveryJvNumber;
+    private String deductionJvNumber;
+    private java.util.List<DayLine> days = new java.util.ArrayList<>();
+    private java.util.List<DeductionLine> deductions = new java.util.ArrayList<>();
+
+    @Getter
+    @Setter
+    public static class DayLine {
+        private java.time.LocalDate workDate;
+        private Integer tripCount;
+        private String slab;
+        private BigDecimal dailyAmount;
+    }
+
+    @Getter
+    @Setter
+    public static class DeductionLine {
+        private String deductionType;
+        private java.time.LocalDate deductionDate;
+        private BigDecimal amount;
+        private String remarks;
+    }
 }

@@ -217,6 +217,7 @@ export class AppShellComponent implements OnDestroy {
       items: [
         { label: 'Invoice', route: '/billing-invoices', icon: 'description' },
         { label: 'Payments', route: '/payment-logs', icon: 'payments' },
+        { label: 'Driver Payroll', route: '/driver-payroll', icon: 'badge' },
         { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' },
         { label: 'Reports', route: '/reports-bi', icon: 'assessment' }
       ]

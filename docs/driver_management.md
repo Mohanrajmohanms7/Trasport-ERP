@@ -41,3 +41,43 @@ Configured schemas using Flyway `V6__driver_management.sql`:
   - **Documents List**: Toggles uploads and deletes.
   - **Attendance Logs**: Logs daily statuses.
   - **Salary Configurations**: Updates salary rates and advances.
+
+---
+
+## Driver Daily Slab Payroll (V62)
+
+**Exists.** Screen: *Finance → Driver Payroll* (`/driver-payroll`). Drivers with a linked app user see *My Salary* (own POSTED/PAID slips only).
+
+**Earning rule.** Completed trips (`trips.status = 'COMPLETED'`, driver = `trips.driver_id`, date = `trips.trip_date`)
+are counted per calendar day with one grouped query. Each day earns ONE amount from the company's
+`driver_pay_slabs` (e.g. 1 trip = 500, 2+ trips = 1000). Trips are never multiplied individually.
+PLANNED / DISPATCHED / CANCELLED trips do not count.
+
+**Gross** = trip earnings + basic salary (from `driver_salaries.basic_salary`, 0 for pure slab drivers) + other allowance.
+**Net** = gross − deductions (FINE / DAMAGE / OTHER, `driver_payroll_deductions`) − advance recovery. Net cannot go below 0.
+The day-by-day breakdown is stored in `driver_payroll_days` for the slip and audits.
+
+**Lifecycle.** DRAFT (recalculate / edit / delete) → APPROVED (trips re-read) → POSTED (accounting, locked) → PAID.
+APPROVED / POSTED / PAID can be CANCELLED; posted entries are reversed and advance recoveries returned.
+One active payroll per driver per month (partial unique index; deleted and cancelled ones don't block a redo).
+Numbers: `PAY-<FY>/<seq>` per company.
+
+**Accounting** (existing JV table, fixed references per payroll → retries never duplicate):
+
+| Step | Debit | Credit | Amount |
+|---|---|---|---|
+| Advance given | 1150 Driver Advances | 1000 Cash / 1010 Bank | advance |
+| Payroll POST | 5150 Driver Salary Expense | 2050 Driver Salary Payable | gross |
+| Payroll POST | 2050 Driver Salary Payable | 1150 Driver Advances | advance recovered (FIFO over open advances) |
+| Payroll POST | 2050 Driver Salary Payable | 4900 Driver Recoveries | deductions |
+| Salary PAY | 2050 Driver Salary Payable | 1000 Cash / 1010 Bank | net |
+
+Posting date = last day of the pay month (today if the month is not over). Salary expense is recorded once, at POST.
+
+**Advances** (`driver_advances`, `driver_advance_recoveries`): issued from the payroll screen; outstanding = amount − recovered.
+An advance can be cancelled only while nothing has been recovered.
+
+**Roles.** ADMIN / COMPANY_ADMIN / BRANCH_MANAGER / ACCOUNTANT generate, approve and pay; POST and slab changes are
+ADMIN / COMPANY_ADMIN / ACCOUNTANT. Branch-bound users only see their branch. DRIVER: own slips via `/api/v1/driver-payrolls/my`.
+
+**Not in scope:** attendance, overtime, PF/ESI/TDS, bonuses.
