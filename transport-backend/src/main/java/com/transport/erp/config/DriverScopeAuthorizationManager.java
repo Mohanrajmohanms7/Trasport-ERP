@@ -25,7 +25,8 @@ public class DriverScopeAuthorizationManager implements AuthorizationManager<Req
             "/api/v1/maintenance-requests/**",
             "/api/v1/driver-payrolls/my/**",
             "/api/v1/driver-payrolls/my",
-            "/api/v1/files/**"
+            "/api/v1/files/**",
+            "/api/v1/attachments/**"
     );
 
     /** Read-only lookups the driver app needs for its forms. */

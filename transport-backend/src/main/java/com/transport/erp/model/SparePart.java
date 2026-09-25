@@ -23,4 +23,8 @@ public class SparePart extends BaseEntity {
 
     @Column(name = "default_rate", nullable = false, precision = 14, scale = 2)
     private BigDecimal defaultRate = BigDecimal.ZERO;
+
+    /** Stored file name of the photo (download via /api/v1/files/download/{photoFile}). */
+    @Column(name = "photo_file", length = 255)
+    private String photoFile;
 }

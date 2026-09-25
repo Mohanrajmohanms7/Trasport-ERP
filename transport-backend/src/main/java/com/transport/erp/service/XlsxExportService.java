@@ -36,6 +36,16 @@ public class XlsxExportService {
     @Autowired private CustomerReceiptRepository customerReceiptRepository;
     @Autowired private CustomerLedgerService customerLedgerService;
     @Autowired private ReportTemplateService reportTemplateService;
+    @Autowired private CompanyRepository companyRepository;
+    @Autowired private WorkOrderRepository workOrderRepository;
+    @Autowired private MaintenanceRequestRepository maintenanceRequestRepository;
+    @Autowired private SparePartRepository sparePartRepository;
+    @Autowired private WarehouseStockRepository warehouseStockRepository;
+    @Autowired private InventoryTransactionRepository inventoryTransactionRepository;
+    @Autowired private DriverAdvanceRepository driverAdvanceRepository;
+    @Autowired private JournalVoucherRepository journalVoucherRepository;
+    @Autowired private ChartOfAccountRepository chartOfAccountRepository;
+    @Autowired private SupplierRepository supplierRepository;
 
     // =========================================================================
     // EXPORT METHODS
@@ -43,6 +53,11 @@ public class XlsxExportService {
 
     @Transactional(readOnly = true)
     public byte[] exportMaterials(Long companyId) {
+        return exportMaterials(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMaterials(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Material> list = materialRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -64,11 +79,16 @@ public class XlsxExportService {
                     m.getStatus()
             });
         }
-        return buildExcelWorkbook("Materials", headers, rows);
+        return render(format, "Materials", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportVehicles(Long companyId) {
+        return exportVehicles(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportVehicles(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Vehicle> list = vehicleRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -95,11 +115,16 @@ public class XlsxExportService {
                     v.getStatus()
             });
         }
-        return buildExcelWorkbook("Vehicles", headers, rows);
+        return render(format, "Vehicles", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportDrivers(Long companyId) {
+        return exportDrivers(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportDrivers(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Driver> list = driverRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -117,11 +142,16 @@ public class XlsxExportService {
                     d.getStatus()
             });
         }
-        return buildExcelWorkbook("Drivers", headers, rows);
+        return render(format, "Drivers", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportCustomers(Long companyId) {
+        return exportCustomers(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportCustomers(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Customer> list = customerRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -141,11 +171,16 @@ public class XlsxExportService {
                     c.getStatus()
             });
         }
-        return buildExcelWorkbook("Customers", headers, rows);
+        return render(format, "Customers", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportBookings(Long companyId) {
+        return exportBookings(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportBookings(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Booking> list = bookingRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -164,11 +199,16 @@ public class XlsxExportService {
                     b.getStatus()
             });
         }
-        return buildExcelWorkbook("Bookings", headers, rows);
+        return render(format, "Bookings", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportTrips(Long companyId) {
+        return exportTrips(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportTrips(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Trip> list = tripRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -187,11 +227,16 @@ public class XlsxExportService {
                     t.getStatus()
             });
         }
-        return buildExcelWorkbook("Trips", headers, rows);
+        return render(format, "Trips", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportFuelEntries(Long companyId) {
+        return exportFuelEntries(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportFuelEntries(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<FuelEntry> list = fuelEntryRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -215,11 +260,16 @@ public class XlsxExportService {
                     f.getStatus()
             });
         }
-        return buildExcelWorkbook("Fuel Entries", headers, rows);
+        return render(format, "Fuel Entries", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportExpenses(Long companyId) {
+        return exportExpenses(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportExpenses(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<Expense> list = expenseRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -242,11 +292,16 @@ public class XlsxExportService {
                     e.getStatus()
             });
         }
-        return buildExcelWorkbook("Expenses", headers, rows);
+        return render(format, "Expenses", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportDriverPayroll(Long companyId) {
+        return exportDriverPayroll(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportDriverPayroll(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<DriverPayroll> list = driverPayrollRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -269,11 +324,16 @@ public class XlsxExportService {
                     p.getStatus()
             });
         }
-        return buildExcelWorkbook("Driver Payroll", headers, rows);
+        return render(format, "Driver Payroll", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportSalesInvoices(Long companyId) {
+        return exportSalesInvoices(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportSalesInvoices(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<SalesInvoice> list = salesInvoiceRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -295,11 +355,16 @@ public class XlsxExportService {
                     i.getStatus()
             });
         }
-        return buildExcelWorkbook("Sales Invoices", headers, rows);
+        return render(format, "Sales Invoices", headers, rows);
     }
 
     @Transactional(readOnly = true)
     public byte[] exportCustomerReceipts(Long companyId) {
+        return exportCustomerReceipts(companyId, "xlsx");
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportCustomerReceipts(Long companyId, String format) {
         Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
         List<CustomerReceipt> list = customerReceiptRepository
                 .findByCompanyIdAndIsDeletedFalse(scopedCompanyId, PageRequest.of(0, 5000))
@@ -320,7 +385,7 @@ public class XlsxExportService {
                     r.getStatus()
             });
         }
-        return buildExcelWorkbook("Customer Receipts", headers, rows);
+        return render(format, "Customer Receipts", headers, rows);
     }
 
     @Transactional(readOnly = true)
@@ -377,6 +442,138 @@ public class XlsxExportService {
     // =========================================================================
     // POI HELPER METHODS
     // =========================================================================
+
+    /** Same table as Excel or as a landscape PDF. */
+    public byte[] render(String format, String title, String[] headers, List<Object[]> rows) {
+        if ("pdf".equalsIgnoreCase(format)) {
+            return com.transport.erp.util.TablePdfGenerator.render(title, companyName(), headers, rows);
+        }
+        return buildExcelWorkbook(title, headers, rows);
+    }
+
+    private String companyName() {
+        try {
+            Long cid = tenantAccess.resolveCompanyId(null);
+            return companyRepository.findById(cid).map(Company::getName).orElse("");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    // ---------------------------------------------------------------- additional list exports
+
+    @Transactional(readOnly = true)
+    public byte[] exportWorkOrders(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"WO No", "Vehicle", "Type", "Priority", "Status", "Opened", "Completed", "Supplier", "Estimated", "Actual"};
+        List<Object[]> rows = new ArrayList<>();
+        for (WorkOrder w : workOrderRepository.findByCompanyIdAndIsDeletedFalseOrderByIdDesc(cid)) {
+            rows.add(new Object[]{w.getWorkOrderNumber(), w.getVehicle() != null ? w.getVehicle().getName() : "",
+                    w.getMaintenanceType(), w.getPriority(), w.getStatus(), w.getOpenedAt(), w.getCompletedAt(),
+                    w.getSupplier() != null ? w.getSupplier().getName() : "", w.getEstimatedCost(), w.getActualCost()});
+        }
+        return render(format, "Work Orders", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportMaintenanceRequests(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Request No", "Vehicle", "Driver", "Priority", "Status", "Requested", "Odometer (km)", "Description"};
+        List<Object[]> rows = new ArrayList<>();
+        for (MaintenanceRequest m : maintenanceRequestRepository.findByCompanyIdAndIsDeletedFalseOrderByIdDesc(cid)) {
+            rows.add(new Object[]{m.getRequestNumber(), m.getVehicle() != null ? m.getVehicle().getName() : "",
+                    m.getDriver() != null ? m.getDriver().getName() : "", m.getPriority(), m.getStatus(), m.getRequestedAt(),
+                    m.getReportedOdometerKm(), m.getDescription()});
+        }
+        return render(format, "Maintenance Requests", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportSpareParts(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Code", "Name", "UOM", "Default Rate", "Status"};
+        List<Object[]> rows = new ArrayList<>();
+        for (SparePart p : sparePartRepository.findActiveByCompany(cid, PageRequest.of(0, 5000)).getContent()) {
+            rows.add(new Object[]{p.getCode(), p.getName(), p.getDefaultUom() != null ? p.getDefaultUom().getName() : "",
+                    p.getDefaultRate(), p.getStatus()});
+        }
+        return render(format, "Spare Parts", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportStock(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Warehouse", "Part Code", "Part", "Available Qty"};
+        List<Object[]> rows = new ArrayList<>();
+        for (WarehouseStock st : warehouseStockRepository.findByCompanyIdAndIsDeletedFalse(cid)) {
+            rows.add(new Object[]{st.getWarehouse() != null ? st.getWarehouse().getName() : "",
+                    st.getSparePart() != null ? st.getSparePart().getCode() : "",
+                    st.getSparePart() != null ? st.getSparePart().getName() : "", st.getAvailableQuantity()});
+        }
+        return render(format, "Stock", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportInventoryTransactions(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Date", "Warehouse", "Part", "Type", "Qty", "Unit Rate", "Reference"};
+        List<Object[]> rows = new ArrayList<>();
+        for (InventoryTransaction t : inventoryTransactionRepository.findByCompanyIdAndIsDeletedFalseOrderByIdDesc(cid)) {
+            rows.add(new Object[]{t.getCreatedDate(), t.getWarehouse() != null ? t.getWarehouse().getName() : "",
+                    t.getSparePart() != null ? t.getSparePart().getName() : "", t.getTransactionType(), t.getQuantity(),
+                    t.getUnitRate(), t.getExternalReference()});
+        }
+        return render(format, "Inventory Transactions", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportDriverAdvances(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Advance No", "Driver", "Date", "Amount", "Recovered", "Outstanding", "Method", "Status"};
+        List<Object[]> rows = new ArrayList<>();
+        for (DriverAdvance a : driverAdvanceRepository.search(cid, null, null, null, PageRequest.of(0, 5000)).getContent()) {
+            rows.add(new Object[]{a.getAdvanceNumber(), a.getDriver() != null ? a.getDriver().getName() : "", a.getAdvanceDate(),
+                    a.getAmount(), a.getRecoveredAmount(), a.getOutstandingAmount(), a.getPaymentMethod(), a.getStatus()});
+        }
+        return render(format, "Driver Advances", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportJournal(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Voucher No", "Date", "Debit Account", "Credit Account", "Amount", "Reference", "Narration"};
+        List<Object[]> rows = new ArrayList<>();
+        for (JournalVoucher v : journalVoucherRepository.findByCompanyIdAndIsDeletedFalse(cid,
+                PageRequest.of(0, 10000, org.springframework.data.domain.Sort.by("voucherDate").descending())).getContent()) {
+            rows.add(new Object[]{v.getVoucherNumber(), v.getVoucherDate(),
+                    v.getDebitAccount() != null ? v.getDebitAccount().getAccountCode() + " " + v.getDebitAccount().getAccountName() : "",
+                    v.getCreditAccount() != null ? v.getCreditAccount().getAccountCode() + " " + v.getCreditAccount().getAccountName() : "",
+                    v.getAmount(), v.getReferenceNumber(), v.getDescription()});
+        }
+        return render(format, "Journal (Day Book)", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportChartOfAccounts(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Code", "Account", "Type", "Opening Balance", "Current Balance"};
+        List<Object[]> rows = new ArrayList<>();
+        for (ChartOfAccount a : chartOfAccountRepository.findByCompanyIdAndIsDeletedFalseOrderByAccountCodeAsc(cid)) {
+            rows.add(new Object[]{a.getAccountCode(), a.getAccountName(), a.getAccountType(), a.getOpeningBalance(), a.getRunningBalance()});
+        }
+        return render(format, "Chart of Accounts", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportSuppliers(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Code", "Name", "Phone", "Email", "GSTIN", "Status"};
+        List<Object[]> rows = new ArrayList<>();
+        for (Supplier s : supplierRepository.findByCompanyIdAndIsDeletedFalse(cid, PageRequest.of(0, 5000)).getContent()) {
+            rows.add(new Object[]{s.getCode(), s.getName(), s.getPhone(), s.getEmail(), s.getGstNumber(), s.getStatus()});
+        }
+        return render(format, "Suppliers", headers, rows);
+    }
 
     public byte[] buildExcelWorkbook(String sheetName, String[] headers, List<Object[]> rows) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {

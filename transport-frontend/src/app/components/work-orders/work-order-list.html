@@ -4,6 +4,7 @@
       <h1 class="text-lg font-bold text-slate-900 dark:text-white">Work Orders</h1>
       <p class="text-xs text-slate-500">Preventive and manual maintenance jobs. Newest opened first.</p>
     </div>
+    <app-export-buttons module="work-orders" />
     @if (canWrite()) {
       <a routerLink="/work-orders/new" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold no-underline">New work order</a>
     }

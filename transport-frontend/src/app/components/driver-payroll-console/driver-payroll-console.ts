@@ -1,3 +1,5 @@
+import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -19,7 +21,7 @@ type Tab = 'payrolls' | 'advances' | 'slabs';
 @Component({
   selector: 'app-driver-payroll-console',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
+  imports: [AttachmentsPanelComponent, ExportButtonsComponent, CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
   templateUrl: './driver-payroll-console.html'
 })
 export class DriverPayrollConsoleComponent implements OnInit {

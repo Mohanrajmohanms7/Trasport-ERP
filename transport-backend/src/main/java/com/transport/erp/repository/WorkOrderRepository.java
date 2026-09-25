@@ -127,4 +127,6 @@ public interface WorkOrderRepository extends JpaRepository<WorkOrder, Long> {
               AND w.isDeleted = false
             """)
     List<Long> findVehicleIdsUnderMaintenance(@Param("vehicleIds") Collection<Long> vehicleIds);
+
+    java.util.List<com.transport.erp.model.WorkOrder> findByCompanyIdAndIsDeletedFalseOrderByIdDesc(Long companyId);
 }

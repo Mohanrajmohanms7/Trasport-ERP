@@ -1,3 +1,5 @@
+import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,10 +10,12 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-spare-part-catalog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [EntityPhotoComponent, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './spare-part-catalog.html'
 })
 export class SparePartCatalogComponent implements OnInit {
+  /** Photo edit is available inline; the server checks company access. */
+  readonly canWritePhoto = true;
   private spareParts = inject(SparePartService);
   private auth = inject(AuthService);
 

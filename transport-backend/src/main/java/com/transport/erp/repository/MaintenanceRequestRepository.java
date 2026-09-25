@@ -116,4 +116,6 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
             WHERE r.id = :id AND r.isDeleted = false
             """)
     Optional<MaintenanceRequest> findByIdForUpdate(@Param("id") Long id);
+
+    java.util.List<com.transport.erp.model.MaintenanceRequest> findByCompanyIdAndIsDeletedFalseOrderByIdDesc(Long companyId);
 }

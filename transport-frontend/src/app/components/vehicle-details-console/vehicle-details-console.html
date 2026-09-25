@@ -9,6 +9,7 @@
       </h1>
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage vehicle registration documentation, workshop service schedules, and driver active assignments logs</p>
     </div>
+    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="vehicles" /></div>
   </header>
 
   <!-- Main workspace layouts -->
@@ -51,6 +52,7 @@
           <div class="flex flex-col gap-4 h-full justify-between">
             <div class="flex justify-between items-start border-b border-[var(--ff-border-divider)] pb-2">
               <div>
+                <div class="mb-2"><app-entity-photo type="vehicles" [entityId]="selectedVehicle()?.id" [photoFile]="$any(selectedVehicle())?.photoFile" icon="local_shipping" [size]="88" alt="Vehicle photo" (changed)="$any(selectedVehicle()).photoFile = $event" /></div>
                 <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Fleet Specifications</span>
                 <h2 class="text-base font-bold text-[var(--ff-text-primary)] mt-0.5">
                   {{ selectedVehicle()?.name || 'Unnamed Vehicle' }}

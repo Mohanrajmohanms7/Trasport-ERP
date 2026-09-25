@@ -1,3 +1,5 @@
+import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
@@ -16,7 +18,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-payment-details-console',
   standalone: true,
-  imports: [
+  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

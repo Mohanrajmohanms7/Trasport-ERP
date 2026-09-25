@@ -1,3 +1,4 @@
+import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +9,7 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
 @Component({
   selector: 'app-maintenance-request-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './maintenance-request-detail.html'
 })
 export class MaintenanceRequestDetailComponent implements OnInit {

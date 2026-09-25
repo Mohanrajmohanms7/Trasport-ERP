@@ -166,6 +166,7 @@ public class SparePartService {
         dto.setVersion(part.getVersion());
         if (part.getDefaultUom() != null) {
             dto.setDefaultUomId(part.getDefaultUom().getId());
+        dto.setPhotoFile(part.getPhotoFile());
             dto.setDefaultUomCode(part.getDefaultUom().getCode());
             dto.setDefaultUomName(part.getDefaultUom().getName());
         }

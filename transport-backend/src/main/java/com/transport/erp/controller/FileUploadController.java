@@ -32,11 +32,13 @@ public class FileUploadController {
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
         Resource resource = fileStorageService.loadFileAsResource(fileName);
 
-        String contentType = null;
-        try {
-            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-        } catch (IOException ex) {
-            // fallback
+        String contentType = fileStorageService.storedMimeType(fileName).orElse(null);
+        if (contentType == null) {
+            try {
+                contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+            } catch (IOException ex) {
+                // fallback
+            }
         }
 
         if (contentType == null) {

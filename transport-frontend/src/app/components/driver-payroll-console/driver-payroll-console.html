@@ -13,9 +13,11 @@
     @if (!isDriverOnly()) {
       <div class="flex gap-2 self-start md:self-auto">
         @if (tab() === 'payrolls') {
+          <app-export-buttons module="payroll" />
           <ff-button label="Generate Payroll" icon="calculate" variant="primary" (ffClick)="openGenerate()" />
         }
         @if (tab() === 'advances') {
+          <app-export-buttons module="driver-advances" />
           <ff-button label="Give Advance" icon="savings" variant="primary" (ffClick)="openAdvance()" />
         }
       </div>
@@ -206,6 +208,9 @@
                 }
               </div>
             </div>
+            @if (!isDriverOnly()) {
+              <app-attachments-panel entityType="DRIVER_PAYROLL" [entityId]="p.id" title="Signed salary vouchers" [categories]="['SIGNED_VOUCHER', 'BANK_PROOF', 'OTHER']" />
+            }
           </section>
         }
       }

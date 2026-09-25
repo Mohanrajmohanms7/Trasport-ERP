@@ -3,6 +3,7 @@
     <h1 class="text-lg font-bold text-slate-900 dark:text-white">Inventory transactions</h1>
     <p class="text-xs text-slate-500">OPENING_BALANCE, RECEIPT, ISSUE, and RETURN movements.</p>
   </div>
+    <app-export-buttons module="inventory-transactions" />
 
   <form class="grid grid-cols-1 md:grid-cols-4 gap-2" (ngSubmit)="load()">
     <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">

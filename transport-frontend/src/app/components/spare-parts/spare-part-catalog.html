@@ -4,6 +4,7 @@
       <h1 class="text-lg font-bold text-slate-900 dark:text-white">Spare parts</h1>
       <p class="text-xs text-slate-500">Catalog used by work order parts. This is not an inventory balance.</p>
     </div>
+    <app-export-buttons module="spare-parts" />
   </div>
 
   @if (error()) {
@@ -37,6 +38,7 @@
       <table class="w-full text-xs">
         <thead class="text-left text-slate-500">
           <tr>
+            <th class="p-3">Photo</th>
             <th class="p-3">Code</th>
             <th class="p-3">Name</th>
             <th class="p-3">Unit</th>
@@ -47,6 +49,7 @@
         <tbody>
           @for (row of rows(); track row.id) {
             <tr class="border-t border-slate-100 dark:border-slate-800">
+              <td class="p-2"><app-entity-photo type="spare-parts" [entityId]="row.id" [photoFile]="$any(row).photoFile" icon="settings" [size]="44" [readonly]="!canWritePhoto" alt="Part photo" /></td>
               <td class="p-3">{{ row.code }}</td>
               <td class="p-3">{{ row.name }}</td>
               <td class="p-3">{{ row.defaultUomCode || row.defaultUomName || '—' }}</td>
@@ -55,7 +58,7 @@
             </tr>
           } @empty {
             <tr>
-              <td class="p-3 text-slate-500" colspan="5">No spare parts yet.</td>
+              <td class="p-3 text-slate-500" colspan="6">No spare parts yet.</td>
             </tr>
           }
         </tbody>

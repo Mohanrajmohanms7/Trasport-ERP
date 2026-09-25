@@ -1,3 +1,4 @@
+import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,7 +9,7 @@ import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work
 @Component({
   selector: 'app-work-order-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-list.html'
 })
 export class WorkOrderListComponent implements OnInit {
