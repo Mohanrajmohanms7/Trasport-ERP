@@ -205,6 +205,31 @@ public class BookingService {
         return saved;
     }
 
+    /** Short-close: the customer needs no more loads. Only APPROVED bookings with no planned/dispatched trips. */
+    @Transactional
+    public Booking closeBooking(Long id, String username) {
+        Booking booking = bookingRepository.findAndLockById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + id));
+        tenantAccess.assertOwned(booking.getCompanyId());
+        if (!"APPROVED".equalsIgnoreCase(booking.getStatus())) {
+            throw new com.transport.erp.exception.BusinessValidationException("Booking Not Open", "BOOKING_CLOSE_BLOCKED",
+                    "Booking " + booking.getBookingNumber() + " is " + booking.getStatus() + "; only approved bookings can be closed.",
+                    "No action needed.");
+        }
+        long open = tripRepository.countOpenTripsForBooking(booking.getId());
+        if (open > 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Trips Still Running", "BOOKING_CLOSE_OPEN_TRIPS",
+                    "Booking " + booking.getBookingNumber() + " has " + open + " planned or dispatched trip(s).",
+                    "Complete or cancel those trips first.");
+        }
+        booking.setStatus("COMPLETED");
+        booking.setUpdatedBy(username);
+        Booking saved = bookingRepository.save(booking);
+        auditService.log(username, "BOOKING_CLOSED", "bookings", saved.getId(), null,
+                "Closed booking " + saved.getBookingNumber() + " (no more loads)");
+        return saved;
+    }
+
     @Transactional
     public Booking rejectBooking(Long id, String rejectedByUsername) {
         Booking booking = getBookingById(id);

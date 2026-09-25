@@ -76,6 +76,12 @@ public class BookingController {
         return ApiResponse.success(approved, "Booking approved successfully");
     }
 
+    @PostMapping("/{id}/close")
+    public ApiResponse<com.transport.erp.model.Booking> closeBooking(@PathVariable Long id, java.security.Principal principal) {
+        String username = principal != null ? principal.getName() : "system";
+        return ApiResponse.success(bookingService.closeBooking(id, username), "Booking closed");
+    }
+
     @PostMapping("/{id}/reject")
     public ApiResponse<Booking> reject(@PathVariable Long id) {
         String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();

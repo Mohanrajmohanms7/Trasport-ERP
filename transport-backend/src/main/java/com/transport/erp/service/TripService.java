@@ -251,11 +251,54 @@ public class TripService {
         applyBookingLines(existing, booking, existing.getId());
 
         Trip saved = tripRepository.save(existing);
+        refreshBookingCompletion(booking.getId(), updatedByUsername);
 
         auditService.log(updatedByUsername, "TRIP_UPDATED", "trips", saved.getId(), null,
                 "Updated allocations for trip: " + saved.getTripNumber());
 
         return saved;
+    }
+
+    /**
+     * A booking becomes COMPLETED automatically once completed trips have delivered every booked material
+     * in full; if a later weighbridge correction drops below that, an auto-completed booking goes back to APPROVED.
+     */
+    public void refreshBookingCompletion(Long bookingId, String username) {
+        if (bookingId == null) return;
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) return;
+        String st = booking.getStatus() == null ? "" : booking.getStatus().toUpperCase();
+        if (!"APPROVED".equals(st) && !"COMPLETED".equals(st)) return;
+
+        Map<Long, BigDecimal> booked = new HashMap<>();
+        for (BookingDetail bd : booking.getDetails()) {
+            if (bd.getMaterial() == null || Boolean.TRUE.equals(bd.getIsDeleted())) continue;
+            booked.merge(bd.getMaterial().getId(), nz(bd.getQuantity()), BigDecimal::add);
+        }
+        if (booked.isEmpty()) return;
+        Map<Long, BigDecimal> delivered = new HashMap<>();
+        for (Object[] row : tripRepository.sumDeliveredByMaterialForBooking(bookingId)) {
+            delivered.put((Long) row[0], (BigDecimal) row[1]);
+        }
+        boolean full = booked.entrySet().stream()
+                .allMatch(e -> delivered.getOrDefault(e.getKey(), BigDecimal.ZERO).compareTo(e.getValue()) >= 0);
+        boolean openTrips = tripRepository.countOpenTripsForBooking(bookingId) > 0;
+
+        String next = st;
+        if ("APPROVED".equals(st) && full && !openTrips) next = "COMPLETED";
+        else if ("COMPLETED".equals(st) && !full && booking.getRemarks() != null && booking.getRemarks().contains("[auto-completed]")) next = "APPROVED";
+        if (next.equals(st)) return;
+
+        booking.setStatus(next);
+        if ("COMPLETED".equals(next)) {
+            booking.setRemarks((booking.getRemarks() == null ? "" : booking.getRemarks() + " ") + "[auto-completed]");
+        } else {
+            booking.setRemarks(booking.getRemarks().replace("[auto-completed]", "").trim());
+        }
+        booking.setUpdatedBy(username);
+        bookingRepository.save(booking);
+        auditService.log(username, "BOOKING_" + next, "bookings", booking.getId(), null,
+                "Booking " + booking.getBookingNumber() + " is now " + next + " (delivery " + (full ? "complete" : "incomplete") + ")");
     }
 
     /** Defaults to today; no future dates and not before the booking date. */
@@ -465,6 +508,7 @@ public class TripService {
         }
 
         Trip saved = tripRepository.save(trip);
+        refreshBookingCompletion(trip.getBooking() != null ? trip.getBooking().getId() : null, completedByUsername);
 
         auditService.log(completedByUsername, "TRIP_COMPLETED", "trips", saved.getId(), null,
                 "Completed customer delivery for trip: " + saved.getTripNumber());

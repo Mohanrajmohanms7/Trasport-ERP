@@ -63,6 +63,10 @@ export class BookingMgmtService {
     return this.http.post<ApiResponse<Booking>>(`/api/v1/bookings/${id}/approve`, {});
   }
 
+  closeBooking(id: number): Observable<ApiResponse<Booking>> {
+    return this.http.post<ApiResponse<Booking>>(`/api/v1/bookings/${id}/close`, {});
+  }
+
   rejectBooking(id: number): Observable<ApiResponse<Booking>> {
     return this.http.post<ApiResponse<Booking>>(`/api/v1/bookings/${id}/reject`, {});
   }

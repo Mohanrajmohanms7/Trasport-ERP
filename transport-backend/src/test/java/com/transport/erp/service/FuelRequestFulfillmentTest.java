@@ -63,6 +63,9 @@ class FuelRequestFulfillmentTest {
     @Mock
     private DocumentNumberService documentNumberService;
 
+    @Mock
+    private ApprovalPolicyService approvalPolicy;
+
     @InjectMocks
     private FuelRequestService requestService;
 

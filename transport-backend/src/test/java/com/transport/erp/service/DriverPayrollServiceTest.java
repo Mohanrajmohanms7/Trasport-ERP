@@ -49,6 +49,10 @@ class DriverPayrollServiceTest {
     @Mock private DriverAdvanceRecoveryRepository recoveryRepository;
     @Mock private DriverRepository driverRepository;
     @Mock private DocumentNumberService documentNumberService;
+    @Mock private ExpenseRepository expenseRepository;
+
+    @Mock
+    private ApprovalPolicyService approvalPolicy;
 
     @InjectMocks
     private DriverPayrollService payrollService;

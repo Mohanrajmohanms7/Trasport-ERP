@@ -81,6 +81,10 @@ public class DriverPayroll extends BaseEntity {
     @Column(name = "gross_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal grossAmount = BigDecimal.ZERO;
 
+    /** Bata already paid to the driver via expenses in this month. Information only: not in gross or net. */
+    @Column(name = "bata_paid", nullable = false, precision = 12, scale = 2)
+    private BigDecimal bataPaid = BigDecimal.ZERO;
+
     @Column(name = "approved_by", length = 100)
     private String approvedBy;
 

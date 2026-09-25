@@ -22,6 +22,9 @@ import java.util.List;
 @Service
 public class ExpenseService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ApprovalPolicyService approvalPolicy;
+
     @Autowired
     private DocumentNumberService documentNumberService;
 
@@ -152,6 +155,7 @@ public class ExpenseService {
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found with ID: " + id));
 
         tenantAccess.assertOwned(expense.getCompanyId());
+        approvalPolicy.assertDifferentApprover(expense.getCompanyId(), expense.getCreatedBy(), username, "Expense " + expense.getExpenseNumber());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
             if (currentUser.getBranchId() != null && expense.getBranchId() != null && !currentUser.getBranchId().equals(expense.getBranchId())) {
