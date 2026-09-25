@@ -39,7 +39,7 @@
   --color-slate-750: #1e293b;
   --color-slate-850: #0f172a;
 
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 
   --animate-skeleton: skeleton 1.5s ease-in-out infinite;
@@ -61,7 +61,7 @@ html, body, app-root {
   padding: 0;
   background-color: var(--ff-surface-page, #f8fafc);
   color: var(--ff-text-primary, #0f172a);
-  font-family: var(--ff-font-sans, 'Inter', system-ui, -apple-system, sans-serif);
+  font-family: var(--ff-font-sans, 'IBM Plex Sans', system-ui, -apple-system, sans-serif);
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -500,4 +500,44 @@ header .material-icons.text-3xl {
 .mat-mdc-table-sticky-container,
 .mat-mdc-dialog-container {
   max-height: none;
+}
+
+
+/* ==========================================================================
+   Responsive + accessibility layer (applies to every console screen)
+   ========================================================================== */
+
+/* Tabular figures everywhere money and counts are shown. */
+td, th, .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* Visible keyboard focus. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--ff-border-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Page titles scale down on small screens instead of wrapping into 3 lines. */
+.app-outlet-host h1 { font-size: clamp(1.25rem, 1rem + 1.4vw, 1.875rem); line-height: 1.2; }
+.app-outlet-host h1 .material-icons { font-size: 1.1em; }
+
+@media (max-width: 767px) {
+  /* Every data table scrolls sideways inside its own box instead of being crushed. */
+  .app-outlet-host *:has(> table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .app-outlet-host table { min-width: 640px; }
+  .app-outlet-host th, .app-outlet-host td { white-space: nowrap; }
+
+  /* Long descriptions under page titles are hidden on phones; the title says enough. */
+  .app-outlet-host header > div > p, .app-outlet-host .ff-page-header__subtitle { display: none; }
+
+  /* Header actions and tab strips wrap/scroll instead of overflowing. */
+  .app-outlet-host > header { gap: 0.5rem; }
+  .app-outlet-host [role="tablist"], .app-outlet-host .mat-mdc-tab-header { overflow-x: auto; }
+
+  /* Full-screen editors use the whole phone screen. */
+  .app-outlet-host .fixed.inset-0 { padding: 0 !important; }
+  .app-outlet-host .fixed.inset-0 > * { border-radius: 0; }
 }
