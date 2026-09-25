@@ -260,7 +260,7 @@ class DriverPayrollServiceTest {
     @DisplayName("Concurrent generate: unique index violation becomes a clean duplicate error")
     void concurrentGenerateRejected() {
         tripsPerDay(1);
-        when(payrollRepository.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("uq_driver_payroll_active_period"));
+        doThrow(new DataIntegrityViolationException("uq_driver_payroll_active_period")).when(payrollRepository).saveAndFlush(any());
         BusinessValidationException ex = assertThrows(BusinessValidationException.class,
                 () -> payrollService.createPayroll(request(), "acc"));
         assertEquals("PAYROLL_DUPLICATE_PAY_PERIOD", ex.getErrorCode());
