@@ -27,10 +27,10 @@
   --ff-color-info-500: #0ea5e9;
   --ff-color-info-700: #0e7490;
 
-  /* Surfaces */
-  --ff-surface-page: #f4f6f9;
+  /* Surfaces — granite page, white work surfaces */
+  --ff-surface-page: #edf0f3;
   --ff-surface-card: #ffffff;
-  --ff-surface-sidebar: #ffffff;
+  --ff-surface-sidebar: #172231;
   --ff-surface-input: #ffffff;
   --ff-surface-hover: #f8fafc;
   --ff-surface-toolbar: #ffffff;
@@ -49,9 +49,18 @@
   --ff-border-focus: #2653eb;
   --ff-border-divider: #edf1f5;
 
+  /* Navigation — truck-cab slate with an amber load marker */
+  --ff-nav-bg: #172231;
+  --ff-nav-text: #c9d3df;
+  --ff-nav-muted: #7f8ea1;
+  --ff-nav-hover: #212f42;
+  --ff-nav-active: #25354b;
+  --ff-nav-border: #22303f;
+  --ff-accent-amber: #f5a524;
+
   /* Typography */
-  --ff-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --ff-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  --ff-font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ff-font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
   --ff-font-variant-numeric: tabular-nums;
   --ff-text-xs: 0.75rem;
   --ff-text-sm: 0.875rem;
@@ -115,7 +124,11 @@
 
   --ff-surface-page: #0b1220;
   --ff-surface-card: #131b2c;
-  --ff-surface-sidebar: #131b2c;
+  --ff-surface-sidebar: #0e1624;
+  --ff-nav-bg: #0e1624;
+  --ff-nav-hover: #172234;
+  --ff-nav-active: #1d2a40;
+  --ff-nav-border: #1a2536;
   --ff-surface-input: #131b2c;
   --ff-surface-hover: #1b2438;
   --ff-surface-toolbar: #131b2c;

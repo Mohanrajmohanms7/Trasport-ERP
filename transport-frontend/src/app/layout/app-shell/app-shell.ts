@@ -53,21 +53,41 @@ import { FfToastComponent } from '@ff/ui';
       overflow: hidden;
     }
 
+    /* Cab-dashboard sidebar: dark slate, amber "load" marker on the active item. */
     .app-nav {
-      background-color: var(--ff-surface-sidebar);
-      border-right: 1px solid var(--ff-border-default);
+      background-color: var(--ff-nav-bg);
+      color: var(--ff-nav-text);
+      border-right: 1px solid var(--ff-nav-border);
+    }
+    .app-nav--drawer {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(18rem, 86vw);
+      transform: translateX(-100%);
+      transition: transform 220ms var(--ff-easing);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+    }
+    .app-nav--drawer.app-nav--open { transform: translateX(0); }
+    .app-nav-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 16, 26, 0.55);
+      z-index: 45;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .app-nav--drawer { transition: none; }
     }
 
     .app-nav-lockup {
-      border-bottom: 1px solid var(--ff-border-divider);
+      border-bottom: 1px solid var(--ff-nav-border);
     }
 
     .app-nav-chip {
       width: 40px;
       height: 40px;
-      border-radius: 8px;
-      background-color: var(--ff-color-primary-50);
-      color: var(--ff-color-primary-600);
+      border-radius: 10px;
+      background-color: var(--ff-accent-amber);
+      color: #1a1405;
     }
 
     .app-nav-group {
@@ -78,11 +98,9 @@ import { FfToastComponent } from '@ff/ui';
     }
 
     .app-nav-group-label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--ff-text-muted);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ff-nav-muted);
     }
 
     .app-nav-item {
@@ -93,23 +111,29 @@ import { FfToastComponent } from '@ff/ui';
       padding: 0 10px;
       border-radius: 8px;
       border-left: 3px solid transparent;
-      color: var(--ff-text-secondary);
+      color: var(--ff-nav-text);
       font-size: 0.875rem;
+      min-height: 44px;
       text-decoration: none;
       position: relative;
       transition: background-color 120ms ease;
     }
     .app-nav-item:hover:not(.app-nav-item--active) {
-      background-color: var(--ff-surface-hover);
+      background-color: var(--ff-nav-hover);
+      color: #fff;
+    }
+    .app-nav-item:focus-visible {
+      outline: 2px solid var(--ff-accent-amber);
+      outline-offset: -2px;
     }
     .app-nav-item--active {
-      background-color: var(--ff-color-primary-50);
-      color: var(--ff-color-primary-600);
-      border-left-color: var(--ff-color-primary-600);
-      font-weight: 500;
+      background-color: var(--ff-nav-active);
+      color: #fff;
+      border-left-color: var(--ff-accent-amber);
+      font-weight: 600;
     }
     .app-nav-item--active .material-symbols-outlined {
-      color: var(--ff-color-primary-600);
+      color: var(--ff-accent-amber);
     }
 
     .app-nav-badge {
@@ -123,17 +147,17 @@ import { FfToastComponent } from '@ff/ui';
     }
 
     .app-nav-collapse {
-      border-top: 1px solid var(--ff-border-divider);
+      border-top: 1px solid var(--ff-nav-border);
     }
     .app-nav-collapse-btn {
       height: 40px;
       border-radius: 8px;
-      color: var(--ff-text-secondary);
+      color: var(--ff-nav-muted);
       transition: background-color 120ms ease;
     }
     .app-nav-collapse-btn:hover {
-      background-color: var(--ff-surface-hover);
-      color: var(--ff-text-primary);
+      background-color: var(--ff-nav-hover);
+      color: #fff;
     }
   `]
 })
@@ -150,6 +174,12 @@ export class AppShellComponent implements OnDestroy {
   @ViewChild('paletteInput') paletteInput?: ElementRef<HTMLInputElement>;
 
   sidebarCollapsed = signal<boolean>(false);
+  /** Below 1024px the sidebar becomes an off-canvas drawer. */
+  private mobileQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)') : null;
+  isMobile = signal<boolean>(this.mobileQuery?.matches ?? false);
+  mobileNavOpen = signal<boolean>(false);
+  /** Collapsed rail only on desktop; the phone drawer always shows labels. */
+  navCollapsed = computed(() => !this.isMobile() && this.sidebarCollapsed());
   activeRoute = signal<string>('/');
   readonly isDarkMode = this.theme.isDark;
 
@@ -293,6 +323,11 @@ export class AppShellComponent implements OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe((event: any) => {
       this.activeRoute.set(event.urlAfterRedirects);
+      this.mobileNavOpen.set(false);
+    });
+    this.mobileQuery?.addEventListener('change', e => {
+      this.isMobile.set(e.matches);
+      if (!e.matches) this.mobileNavOpen.set(false);
     });
 
     this.searchTerm$.pipe(
@@ -471,7 +506,15 @@ export class AppShellComponent implements OnDestroy {
   }
 
   toggleSidebar() {
+    if (this.isMobile()) {
+      this.mobileNavOpen.update(v => !v);
+      return;
+    }
     this.sidebarCollapsed.update(val => !val);
+  }
+
+  closeMobileNav() {
+    this.mobileNavOpen.set(false);
   }
 
   toggleTheme() {
