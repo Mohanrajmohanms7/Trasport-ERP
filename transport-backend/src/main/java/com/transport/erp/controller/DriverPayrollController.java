@@ -31,9 +31,11 @@ public class DriverPayrollController {
     public ApiResponse<Page<DriverPayroll>> getPayrolls(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long driverId,
+            @RequestParam(required = false) Integer payYear,
+            @RequestParam(required = false) Integer payMonth,
             Pageable pageable) {
-        Long resolvedCompanyId = tenantAccess.resolveCompanyId(companyId);
-        Page<DriverPayroll> payrolls = payrollService.getPayrolls(resolvedCompanyId, status, pageable);
+        Page<DriverPayroll> payrolls = payrollService.searchPayrolls(companyId, driverId, payYear, payMonth, status, pageable);
         return ApiResponse.success(payrolls, "Driver payrolls retrieved successfully");
     }
 
@@ -51,12 +53,48 @@ public class DriverPayrollController {
         return ApiResponse.success(payrolls, "Driver payrolls retrieved successfully");
     }
 
-    @PostMapping
+    /** Driver self-service: own POSTED / PAID payrolls. */
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('DRIVER')")
+    public ApiResponse<List<DriverPayroll>> getMyPayrolls() {
+        return ApiResponse.success(payrollService.getMyPayrolls(), "Your salary records");
+    }
+
+    @GetMapping("/my/{id}/print")
+    @PreAuthorize("hasRole('DRIVER')")
+    public ApiResponse<com.transport.erp.dto.DriverPayrollPrintDTO> getMySalarySlip(@PathVariable Long id) {
+        return ApiResponse.success(payrollService.getMySalarySlip(id), "Your salary slip");
+    }
+
+    @GetMapping("/my/{id}/pdf")
+    @PreAuthorize("hasRole('DRIVER')")
+    public void downloadMySalarySlipPdf(@PathVariable Long id, jakarta.servlet.http.HttpServletResponse response) throws Exception {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "inline; filename=\"Salary_Slip_" + id + ".pdf\"");
+        payrollService.generateMySalarySlipPdf(id, response.getOutputStream());
+        response.getOutputStream().flush();
+    }
+
+    @PostMapping({"", "/generate"})
     @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> createPayroll(@RequestBody DriverPayrollCreateDTO dto, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll created = payrollService.createPayroll(dto, username);
-        return ApiResponse.success(created, "Driver payroll DRAFT created successfully");
+        return ApiResponse.success(created, "Driver payroll DRAFT generated from completed trips");
+    }
+
+    @PostMapping("/{id}/recalculate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    public ApiResponse<DriverPayroll> recalculatePayroll(@PathVariable Long id, Principal principal) {
+        String username = principal != null ? principal.getName() : "system";
+        return ApiResponse.success(payrollService.recalculatePayroll(id, username), "Driver payroll recalculated from trips");
+    }
+
+    @PostMapping("/{id}/post")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
+    public ApiResponse<DriverPayroll> postPayroll(@PathVariable Long id, Principal principal) {
+        String username = principal != null ? principal.getName() : "system";
+        return ApiResponse.success(payrollService.postPayroll(id, username), "Driver payroll posted to accounts");
     }
 
     @PutMapping("/{id}")
@@ -80,7 +118,7 @@ public class DriverPayrollController {
     public ApiResponse<DriverPayroll> approvePayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll approved = payrollService.approvePayroll(id, username);
-        return ApiResponse.success(approved, "Driver payroll approved and salary expense JV posted");
+        return ApiResponse.success(approved, "Driver payroll approved. Post it to create the accounting entries.");
     }
 
     @PostMapping("/{id}/pay")
@@ -88,7 +126,7 @@ public class DriverPayrollController {
     public ApiResponse<DriverPayroll> payPayroll(@PathVariable Long id, @RequestBody(required = false) DriverPayrollPaymentDTO paymentDto, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll paid = payrollService.payPayroll(id, paymentDto, username);
-        return ApiResponse.success(paid, "Driver payroll marked PAID and payment JV posted");
+        return ApiResponse.success(paid, "Driver salary paid and payment JV posted");
     }
 
     @PostMapping("/{id}/cancel")

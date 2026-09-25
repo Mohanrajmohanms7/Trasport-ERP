@@ -24,6 +24,30 @@ public interface DriverPayrollRepository extends JpaRepository<DriverPayroll, Lo
 
     Optional<DriverPayroll> findByDriverIdAndPayYearAndPayMonthAndIsDeletedFalse(Long driverId, Integer payYear, Integer payMonth);
 
+    /** The active (not deleted, not cancelled) payroll for a driver and month, if any. */
+    @Query("""
+            SELECT p FROM DriverPayroll p
+            WHERE p.driver.id = :driverId AND p.payYear = :payYear AND p.payMonth = :payMonth
+              AND p.isDeleted = false AND p.status <> 'CANCELLED'
+            """)
+    Optional<DriverPayroll> findActiveForPeriod(@Param("driverId") Long driverId, @Param("payYear") Integer payYear,
+                                                @Param("payMonth") Integer payMonth);
+
+    @Query("""
+            SELECT p FROM DriverPayroll p
+            WHERE p.companyId = :companyId AND p.isDeleted = false
+              AND (:branchId IS NULL OR p.branchId = :branchId)
+              AND (:driverId IS NULL OR p.driver.id = :driverId)
+              AND (:payYear IS NULL OR p.payYear = :payYear)
+              AND (:payMonth IS NULL OR p.payMonth = :payMonth)
+              AND (:status IS NULL OR p.status = :status)
+            """)
+    Page<DriverPayroll> search(@Param("companyId") Long companyId, @Param("branchId") Long branchId,
+                               @Param("driverId") Long driverId, @Param("payYear") Integer payYear,
+                               @Param("payMonth") Integer payMonth, @Param("status") String status, Pageable pageable);
+
+    List<DriverPayroll> findByDriverIdAndStatusInAndIsDeletedFalseOrderByPayYearDescPayMonthDesc(Long driverId, List<String> statuses);
+
     Optional<DriverPayroll> findByPayrollNumberAndIsDeletedFalse(String payrollNumber);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

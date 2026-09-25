@@ -53,6 +53,11 @@ class DriverSalarySlipPdfPrintTest {
 
     @BeforeEach
     void setUp() {
+        com.transport.erp.model.AppUser admin = new com.transport.erp.model.AppUser();
+        admin.setId(1L);
+        admin.setCompanyId(1L);
+        org.mockito.Mockito.lenient().when(tenantAccess.requireCurrentUser()).thenReturn(admin);
+        org.mockito.Mockito.lenient().when(tenantAccess.isSuperAdmin(org.mockito.ArgumentMatchers.any(com.transport.erp.model.AppUser.class))).thenReturn(true);
         sampleDriver = new Driver();
         sampleDriver.setId(10L);
         sampleDriver.setName("Muthu Kumar");
