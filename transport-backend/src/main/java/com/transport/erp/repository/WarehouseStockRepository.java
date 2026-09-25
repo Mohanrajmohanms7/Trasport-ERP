@@ -75,4 +75,6 @@ public interface WarehouseStockRepository extends JpaRepository<WarehouseStock, 
     Optional<WarehouseStock> findActiveForUpdate(
             @Param("warehouseId") Long warehouseId,
             @Param("sparePartId") Long sparePartId);
+
+    java.util.List<com.transport.erp.model.WarehouseStock> findByCompanyIdAndIsDeletedFalse(Long companyId);
 }

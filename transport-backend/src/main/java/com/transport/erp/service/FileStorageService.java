@@ -56,6 +56,9 @@ public class FileStorageService {
     @Autowired
     private WorkOrderRepository workOrderRepository;
 
+    @Autowired
+    private com.transport.erp.repository.StoredFileRepository storedFileRepository;
+
     public FileStorageService(@Value("${app.file.upload-dir:uploads}") String uploadDir) {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
@@ -94,11 +97,25 @@ public class FileStorageService {
         }
 
         String storedFileName = UUID.randomUUID().toString() + "_" + originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (storedFileName.length() > 200) storedFileName = storedFileName.substring(0, 190) + "." + ext;
         try {
-            Path targetLocation = this.fileStorageLocation.resolve(storedFileName);
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
-            }
+            // Kept in PostgreSQL so files survive redeploys; stamped with the uploader's company/branch.
+            AppUser uploader = tenantAccess.requireCurrentUser();
+            com.transport.erp.model.StoredFile sf = new com.transport.erp.model.StoredFile();
+            sf.setStoredName(storedFileName);
+            sf.setOriginalName(originalFileName.length() > 250 ? originalFileName.substring(0, 250) : originalFileName);
+            sf.setMimeType(contentType != null ? contentType.toLowerCase() : "application/octet-stream");
+            sf.setFileSize(file.getSize());
+            sf.setContent(file.getBytes());
+            sf.setCompanyId(uploader.getCompanyId());
+            sf.setBranchId(uploader.getBranchId());
+            sf.setCode("FILE");
+            sf.setName("Uploaded file");
+            sf.setStatus("ACTIVE");
+            sf.setIsDeleted(false);
+            sf.setCreatedBy(uploader.getUsername());
+            sf.setUpdatedBy(uploader.getUsername());
+            storedFileRepository.save(sf);
 
             String fileUrl = "/api/v1/files/download/" + storedFileName;
 
@@ -127,6 +144,21 @@ public class FileStorageService {
         }
 
         AppUser currentUser = tenantAccess.requireCurrentUser();
+
+        Optional<com.transport.erp.model.StoredFile> stored = storedFileRepository.findFirstByStoredNameAndIsDeletedFalse(cleanName);
+        if (stored.isPresent()) {
+            com.transport.erp.model.StoredFile f = stored.get();
+            if (!tenantAccess.isSuperAdmin(currentUser)) {
+                tenantAccess.assertCompanyAccess(f.getCompanyId());
+            }
+            return new org.springframework.core.io.ByteArrayResource(f.getContent()) {
+                @Override
+                public String getFilename() {
+                    return f.getOriginalName();
+                }
+            };
+        }
+
         validateFileAccess(cleanName, currentUser);
 
         try {
@@ -239,6 +271,13 @@ public class FileStorageService {
         if (owningBranchId != null && currentUser.getBranchId() != null) {
             tenantAccess.assertBranchAccess(owningBranchId);
         }
+    }
+
+    /** MIME type of a database-stored file, if it is one. */
+    @Transactional(readOnly = true)
+    public Optional<String> storedMimeType(String fileName) {
+        return storedFileRepository.findFirstByStoredNameAndIsDeletedFalse(StringUtils.cleanPath(fileName))
+                .map(com.transport.erp.model.StoredFile::getMimeType);
     }
 
     private String getFileExtension(String fileName) {

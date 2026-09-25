@@ -86,4 +86,8 @@ public class Vehicle extends BaseEntity {
     public boolean isUnderMaintenance() {
         return underMaintenance;
     }
+
+    /** Stored file name of the photo (download via /api/v1/files/download/{photoFile}). */
+    @Column(name = "photo_file", length = 255)
+    private String photoFile;
 }
