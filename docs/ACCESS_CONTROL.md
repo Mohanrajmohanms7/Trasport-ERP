@@ -19,3 +19,13 @@ Role assignment rules (`UserService`, `RoleService`):
 
 Accounting dates: every auto-posted JV uses the document date (invoice, receipt, expense, fuel, service, payroll);
 no posting may be dated after today (`FinancialYearPeriodValidationService`).
+
+## Second-person approval (maker-checker)
+
+Company setting `REQUIRE_SEPARATE_APPROVER` = `true` → the user who created an invoice, receipt, expense, fuel entry
+or driver payroll cannot approve it (`ApprovalPolicyService`). Default `false` (single-person offices).
+
+## Menu and landing by role (UI convenience; the API enforces the real rules)
+
+- Driver-only login lands on Maintenance Requests and sees only Maintenance Requests and My Salary.
+- User & Roles and System Settings are shown only to COMPANY_ADMIN / ADMIN.
