@@ -1,0 +1,1 @@
+spare-parts,work-orders,maintenance-requests,inventory/warehouses,inventory/stock,inventory/transactions
