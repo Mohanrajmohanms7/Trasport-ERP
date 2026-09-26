@@ -326,29 +326,29 @@ R=$(api POST /inventory/stock/$SID/initial-cost '{"unitCost":300}'); echo "$R" |
 
 
 # ---------------- Reports hub ----------------
-FROM=$(date -d "$(date +%Y-%m-01) -3 month" +%F); TO=$(date +%F)
+RF=$(date -d "$(date +%Y-%m-01) -3 month" +%F); RT=$(date +%F)
 KEYS=$(curl -s "${H[@]}" $API/report-hub/catalog | j "' '.join(r['key'] for r in d['data'])")
 NK=$(echo $KEYS | wc -w); [ "$NK" -ge 35 ] && pass "report catalog has $NK reports" || fail "catalog" "$NK"
 for k in $KEYS; do
-  R=$(curl -s "${H[@]}" "$API/report-hub/run/$k?from=$FROM&to=$TO"); OK=$(echo "$R" | j "d['success']" 2>/dev/null)
+  R=$(curl -s "${H[@]}" "$API/report-hub/run/$k?from=$RF&to=$RT"); OK=$(echo "$R" | j "d['success']" 2>/dev/null)
   [ "$OK" = "True" ] && pass "report $k ($(echo "$R" | j "d['data']['rowCount']") rows)" || fail "report $k" "$(echo $R | cut -c1-220)"
   for f in xlsx pdf; do
-    CT=$(curl -s -o /tmp/r.bin -w "%{http_code}" "${H[@]}" "$API/report-hub/export/$k?format=$f&from=$FROM&to=$TO"); SZ=$(stat -c%s /tmp/r.bin)
+    CT=$(curl -s -o /tmp/r.bin -w "%{http_code}" "${H[@]}" "$API/report-hub/export/$k?format=$f&from=$RF&to=$RT"); SZ=$(stat -c%s /tmp/r.bin)
     [ "$CT" = "200" ] && [ "$SZ" -gt 400 ] || fail "export $k.$f" "$CT $SZ $(head -c 200 /tmp/r.bin)"
   done
 done
-T1=$(curl -s "${H[@]}" "$API/report-hub/run/sales-register?from=$FROM&to=$TO" | j "d['data']['totals']['taxable']")
-D1=$($PSQL "SELECT COALESCE(SUM(taxable_amount),0) FROM sales_invoices WHERE company_id=1 AND is_deleted=false AND status NOT IN ('DRAFT','CANCELLED') AND invoice_date BETWEEN '$FROM' AND '$TO'")
+T1=$(curl -s "${H[@]}" "$API/report-hub/run/sales-register?from=$RF&to=$RT" | j "d['data']['totals']['taxable']")
+D1=$($PSQL "SELECT COALESCE(SUM(taxable_amount),0) FROM sales_invoices WHERE company_id=1 AND is_deleted=false AND status NOT IN ('DRAFT','CANCELLED') AND invoice_date BETWEEN '$RF' AND '$RT'")
 python3 -c "import sys; sys.exit(0 if abs(float('$T1')-float('$D1'))<0.01 else 1)" && pass "sales register taxable total = DB ($D1)" || fail "sales total" "$T1 vs $D1"
 T2=$(curl -s "${H[@]}" "$API/report-hub/run/stock-valuation" | j "d['data']['totals']['value']")
 D2=$($PSQL "SELECT COALESCE(ROUND(SUM(available_quantity*average_cost),2),0) FROM warehouse_stock WHERE company_id=1 AND is_deleted=false")
 python3 -c "import sys; sys.exit(0 if abs(float('$T2')-float('$D2'))<0.05 else 1)" && pass "stock valuation total = DB ($D2)" || fail "stock value" "$T2 vs $D2"
-T3=$(curl -s "${H[@]}" "$API/report-hub/run/unbilled-trips?from=2000-01-01&to=$TO" | j "d['data']['rowCount']")
+T3=$(curl -s "${H[@]}" "$API/report-hub/run/unbilled-trips?from=$(date -d "-2 year" +%F)&to=$RT" | j "d['data']['rowCount']")
 D3=$($PSQL "SELECT COUNT(*) FROM trips t JOIN trip_details td ON td.trip_id=t.id AND td.is_deleted=false WHERE t.company_id=1 AND t.is_deleted=false AND t.status='COMPLETED' AND NOT EXISTS (SELECT 1 FROM sales_invoice_details sd JOIN sales_invoices si ON si.id=sd.invoice_id WHERE sd.trip_id=t.id AND sd.is_deleted=false AND si.is_deleted=false AND si.status<>'CANCELLED')")
 [ "$T3" = "$D3" ] && pass "unbilled trips = DB ($D3)" || fail "unbilled" "$T3 vs $D3"
-K=$(curl -s "${H[@]}" "$API/report-hub/run/management-kpis?from=$FROM&to=$TO" | j "len(d['data']['rows'])"); [ "$K" = "19" ] && pass "19 management KPIs" || fail "kpis" "$K"
-C=$(as "$TO" GET "/report-hub/run/sales-register?from=$FROM&to=$TO"); [ "$C" = "403" ] && pass "operator cannot run finance report" || fail "finance guard" "$C"
-C=$(as "$TO" GET "/report-hub/run/trip-register?from=$FROM&to=$TO"); [ "$C" = "200" ] && pass "operator can run trip register" || fail "ops report" "$C"
+K=$(curl -s "${H[@]}" "$API/report-hub/run/management-kpis?from=$RF&to=$RT" | j "len(d['data']['rows'])"); [ "$K" = "19" ] && pass "19 management KPIs" || fail "kpis" "$K"
+C=$(as "$RT" GET "/report-hub/run/sales-register?from=$RF&to=$RT"); [ "$C" = "403" ] && pass "operator cannot run finance report" || fail "finance guard" "$C"
+C=$(as "$RT" GET "/report-hub/run/trip-register?from=$RF&to=$RT"); [ "$C" = "200" ] && pass "operator can run trip register" || fail "ops report" "$C"
 C=$(as "$TD" GET "/report-hub/catalog"); [ "$C" = "403" ] && pass "driver login cannot open reports" || fail "driver reports" "$C"
 R=$(curl -s "${H[@]}" "$API/report-hub/run/trip-register?from=2026-05-01&to=2026-04-01"); echo "$R" | grep -q "Invalid Period" && pass "bad period rejected" || fail "period" "$(echo $R | cut -c1-120)"
 
