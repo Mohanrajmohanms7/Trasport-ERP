@@ -63,7 +63,7 @@ rep("vehicle-performance","Vehicles & trips","Vehicle performance & profitabilit
    JOIN trips t ON t.id = sd.trip_id WHERE si.company_id = :companyId AND si.is_deleted = false AND sd.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED')
    AND {DATE('t.trip_date')} GROUP BY t.vehicle_id),
  fu AS (SELECT f.vehicle_id, SUM(f.fuel_quantity) litres, SUM(f.total_amount) cost, MAX(f.current_odometer) - MIN(COALESCE(f.previous_odometer, f.current_odometer)) km
-   FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND {DATE('f.fuel_date')} GROUP BY f.vehicle_id),
+   FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND {DATE('f.fuel_date')} GROUP BY f.vehicle_id),
  ex AS (SELECT e.vehicle_id, SUM(COALESCE(e.total_amount, e.amount)) amt FROM expenses e WHERE e.company_id = :companyId AND e.is_deleted = false
    AND e.status IN ('APPROVED','PAID') AND {DATE('e.expense_date')} GROUP BY e.vehicle_id),
  mt AS (SELECT w.vehicle_id, SUM(COALESCE(w.actual_cost,0)) amt FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false
@@ -102,7 +102,7 @@ rep("driver-performance","Drivers & settlement","Driver performance","Per driver
    FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
    WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND {DATE('t.trip_date')} GROUP BY t.driver_id),
  fu AS (SELECT f.driver_id, SUM(f.fuel_quantity) litres FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false
-   AND f.status NOT IN ('REJECTED','CANCELLED') AND {DATE('f.fuel_date')} GROUP BY f.driver_id),
+   AND f.status = 'APPROVED' AND {DATE('f.fuel_date')} GROUP BY f.driver_id),
  bt AS (SELECT e.driver_id, SUM(COALESCE(e.total_amount, e.amount)) amt FROM expenses e WHERE e.company_id = :companyId AND e.is_deleted = false
    AND e.category = 'DRIVER_BATA' AND e.status IN ('APPROVED','PAID') AND {DATE('e.expense_date')} GROUP BY e.driver_id),
  pr AS (SELECT p.driver_id, SUM(p.gross_amount) gross FROM driver_payrolls p WHERE p.company_id = :companyId AND p.is_deleted = false
@@ -159,7 +159,7 @@ rep("fuel-efficiency","Fuel & expenses","Fuel efficiency by vehicle","Km per lit
  ROUND(SUM(f.total_amount) / NULLIF(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END),0), 2) cost_per_km,
  ROUND(SUM(f.total_amount) / NULLIF(SUM(f.fuel_quantity),0), 2) avg_rate
  FROM fuel_entries f JOIN vehicles v ON v.id = f.vehicle_id
- WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND {DATE('f.fuel_date')} AND {B('f')} AND {OPT('f.vehicle_id','vehicleId')}
+ WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND {DATE('f.fuel_date')} AND {B('f')} AND {OPT('f.vehicle_id','vehicleId')}
  GROUP BY v.name ORDER BY km_per_litre NULLS LAST""")
 
 rep("expense-register","Fuel & expenses","Expense register","All expense vouchers with category, vehicle, driver, GST and status.",
@@ -181,7 +181,7 @@ rep("expense-summary","Fuel & expenses","Expense summary by category","Approved 
  FROM expenses e WHERE e.company_id = :companyId AND e.is_deleted = false AND e.status IN ('APPROVED','PAID') AND {DATE('e.expense_date')} AND {B('e')} AND {OPT('e.vehicle_id','vehicleId')}
  GROUP BY e.category
  UNION ALL SELECT 'FUEL', COUNT(*), SUM(f.total_amount), 0, SUM(f.total_amount) FROM fuel_entries f
- WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND {DATE('f.fuel_date')} AND {B('f')} AND {OPT('f.vehicle_id','vehicleId')})
+ WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND {DATE('f.fuel_date')} AND {B('f')} AND {OPT('f.vehicle_id','vehicleId')})
  SELECT category, vouchers, amount, gst, total, ROUND(100 * total / NULLIF(SUM(total) OVER (),0), 2) share_pct FROM x WHERE vouchers > 0 ORDER BY total DESC""")
 
 # ---------------- MAINTENANCE ----------------
@@ -476,7 +476,7 @@ rep("monthly-summary","Monthly & management","Monthly business summary","Month b
    WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN m.m0 AND m.m1 AND {B('t')}) qty,
  (SELECT COALESCE(SUM(si.taxable_amount),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND {INV_OK} AND si.invoice_date BETWEEN m.m0 AND m.m1 AND {B('si')}) billed,
  (SELECT COALESCE(SUM(r.amount_received),0) FROM customer_receipts r WHERE r.company_id = :companyId AND r.is_deleted = false AND r.status = 'APPROVED' AND r.receipt_date BETWEEN m.m0 AND m.m1 AND {B('r')}) collected,
- (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND f.fuel_date BETWEEN m.m0 AND m.m1 AND {B('f')}) fuel,
+ (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN m.m0 AND m.m1 AND {B('f')}) fuel,
  (SELECT COALESCE(SUM(COALESCE(e.total_amount, e.amount)),0) FROM expenses e WHERE e.company_id = :companyId AND e.is_deleted = false AND e.status IN ('APPROVED','PAID') AND e.expense_date BETWEEN m.m0 AND m.m1 AND {B('e')}) expenses,
  (SELECT COALESCE(SUM(w.actual_cost),0) FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status = 'COMPLETED' AND CAST(w.completed_at AS DATE) BETWEEN m.m0 AND m.m1 AND {B('w')}) maintenance,
  (SELECT COALESCE(SUM(p.gross_amount),0) FROM driver_payrolls p WHERE p.company_id = :companyId AND p.is_deleted = false AND p.status IN ('POSTED','PAID') AND make_date(p.pay_year,p.pay_month,1) = m.m0 AND {B('p')}) payroll
@@ -497,8 +497,8 @@ rep("management-kpis","Monthly & management","Management KPIs","Headline numbers
  UNION ALL SELECT 8, 'Operations', 'Pending delivery quantity (approved bookings)', (SELECT COALESCE(SUM(GREATEST(bd.quantity - (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false),0)),0) FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND {B('bk')}), 'qty'
  UNION ALL SELECT 9, 'Operations', 'Weighbridge shortage %', (SELECT ROUND(100 * SUM(td.loaded_quantity - td.delivered_quantity) / NULLIF(SUM(td.loaded_quantity),0), 2) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), '%'
  UNION ALL SELECT 10, 'Fleet', 'Vehicles used / active', (SELECT ROUND(100.0 * COUNT(DISTINCT t.vehicle_id) / NULLIF((SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND v.status = 'ACTIVE' AND {B('v')}),0), 1) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), '%'
- UNION ALL SELECT 11, 'Fleet', 'Average km per litre', (SELECT ROUND(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END) / NULLIF(SUM(f.fuel_quantity),0), 2) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND f.fuel_date BETWEEN p.d0 AND p.d1 AND {B('f')}), 'km/L'
- UNION ALL SELECT 12, 'Fleet', 'Fuel cost', (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status NOT IN ('REJECTED','CANCELLED') AND f.fuel_date BETWEEN p.d0 AND p.d1 AND {B('f')}), '₹'
+ UNION ALL SELECT 11, 'Fleet', 'Average km per litre', (SELECT ROUND(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END) / NULLIF(SUM(f.fuel_quantity),0), 2) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND {B('f')}), 'km/L'
+ UNION ALL SELECT 12, 'Fleet', 'Fuel cost', (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND {B('f')}), '₹'
  UNION ALL SELECT 13, 'Maintenance', 'Open work orders', (SELECT COUNT(*) FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status IN ('OPEN','IN_PROGRESS') AND {B('w')}), 'jobs'
  UNION ALL SELECT 14, 'Maintenance', 'Maintenance cost', (SELECT COALESCE(SUM(w.actual_cost),0) FROM work_orders w, p WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status = 'COMPLETED' AND CAST(w.completed_at AS DATE) BETWEEN p.d0 AND p.d1 AND {B('w')}), '₹'
  UNION ALL SELECT 15, 'Stores', 'Stock value', (SELECT COALESCE(ROUND(SUM(s.available_quantity * s.average_cost), 2),0) FROM warehouse_stock s WHERE s.company_id = :companyId AND s.is_deleted = false AND {B('s')}), '₹'
@@ -511,5 +511,8 @@ rep("management-kpis","Monthly & management","Management KPIs","Headline numbers
 for r in R:
     if r['key']=='monthly-summary':
         r['sql']="SELECT x.*, x.billed - x.fuel - x.expenses - x.maintenance - x.payroll AS margin, ROUND(100 * (x.billed - x.fuel - x.expenses - x.maintenance - x.payroll) / NULLIF(x.billed,0), 1) AS margin_pct FROM (" + r['sql'].replace(' ORDER BY m.m0','') + ") x"
-json.dump(R, open('/home/claude/rep/report-catalog.json','w'), indent=1, ensure_ascii=False)
+import os
+out=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','transport-backend','src','main','resources','reports','report-catalog.json')
+json.dump(R, open(out,'w'), indent=1, ensure_ascii=False)
+json.dump(R, open('/tmp/report-catalog.json','w'), indent=1, ensure_ascii=False)
 print(len(R))

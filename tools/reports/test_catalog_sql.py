@@ -1,5 +1,6 @@
 import json, re, subprocess, sys
-R=json.load(open('/home/claude/rep/report-catalog.json'))
+import os
+R=json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','transport-backend','src','main','resources','reports','report-catalog.json')))
 params=dict(companyId='1',branchId='NULL',**{'from':"'2026-01-01'",'to':"'2026-09-30'"},vehicleId='NULL',driverId='NULL',customerId='NULL',status='NULL',
             warehouseId='NULL',sparePartId='NULL',category='NULL',accountCode='NULL',days='NULL')
 bad=0

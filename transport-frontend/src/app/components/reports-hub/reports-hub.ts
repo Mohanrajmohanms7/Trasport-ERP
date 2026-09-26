@@ -24,7 +24,7 @@ const STATUS_OPTIONS: Record<string, string[]> = {
   'booking-register': ['PENDING', 'APPROVED', 'COMPLETED', 'REJECTED'],
   'driver-payroll-register': ['DRAFT', 'APPROVED', 'POSTED', 'PAID', 'CANCELLED'],
   'driver-advances': ['ISSUED', 'CANCELLED'],
-  'fuel-register': ['PENDING', 'APPROVED', 'REJECTED'],
+  'fuel-register': ['DRAFT', 'APPROVED', 'CANCELLED'],
   'expense-register': ['SUBMITTED', 'APPROVED', 'PAID', 'REJECTED'],
   'work-order-register': ['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
   'maintenance-request-register': ['OPEN', 'UNDER_REVIEW', 'APPROVED', 'CONVERTED', 'CANCELLED'],
