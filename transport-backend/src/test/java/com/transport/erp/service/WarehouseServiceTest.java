@@ -212,7 +212,7 @@ class WarehouseServiceTest {
     }
 
     @Test
-    @DisplayName("Phase 1-8 services do not depend on inventory")
+    @DisplayName("Maintenance services touch inventory only through InventoryValuationService")
     void noInventoryCoupling() {
         for (Class<?> type : List.of(
                 SparePartService.class,
@@ -224,6 +224,8 @@ class WarehouseServiceTest {
                 MaintenanceRequestService.class)) {
             for (Field field : type.getDeclaredFields()) {
                 String name = field.getType().getName();
+                // Work-order costing reads parts cost via the valuation service; no direct stock/warehouse access.
+                if (name.equals(InventoryValuationService.class.getName())) continue;
                 assertFalse(name.contains("Warehouse"), type.getSimpleName());
                 assertFalse(name.contains("Inventory"), type.getSimpleName());
                 assertFalse(name.contains("WarehouseStock"), type.getSimpleName());

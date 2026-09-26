@@ -183,10 +183,11 @@ class WorkOrderFinancialPostingTest {
     }
 
     @Test
-    @DisplayName("Posting does not depend on expenses, service logs, inventory, or payments")
+    @DisplayName("Posting does not depend on expenses, service logs, stock tables or payments (parts cost via valuation service only)")
     void noExpenseServiceLogOrInventory() {
         for (Field field : WorkOrderFinancialPosting.class.getDeclaredFields()) {
             String name = field.getType().getName();
+            if (name.equals(InventoryValuationService.class.getName())) continue;
             assertFalse(name.contains("Expense"));
             assertFalse(name.contains("VehicleServiceLog"));
             assertFalse(name.contains("VehicleOdometer"));
