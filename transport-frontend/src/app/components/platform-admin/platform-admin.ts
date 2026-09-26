@@ -481,7 +481,7 @@ export class PlatformAdminComponent implements OnInit {
   /** Same rule as the server: "PKC Transport" -> PKC, "Sri Murugan Transports" -> SMT. */
   suggestShortName(name: string | null | undefined): string {
     const noise = new Set(['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CO', 'COMPANY', 'THE', 'AND', '&', 'OF', 'M/S', 'MS']);
-    const words = (name || '').trim().split(/[^A-Za-z0-9&]+/).filter(w => w && !noise.has(w.toUpperCase()));
+    const words = (name || '').trim().replace(/^m\s*\/\s*s\.?\s+/i, '').split(/[^A-Za-z0-9&]+/).filter(w => w && !noise.has(w.toUpperCase()));
     if (!words.length) return '';
     const first = words[0];
     if (first.length >= 2 && first.length <= 5 && /^[A-Z0-9]+$/.test(first)) return first;

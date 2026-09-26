@@ -39,7 +39,8 @@ public final class CompanyShortName {
     public static String derive(String companyName) {
         if (companyName == null || companyName.isBlank()) return null;
         List<String> words = new ArrayList<>();
-        for (String w : companyName.trim().split("[^A-Za-z0-9&]+")) {
+        String cleaned = companyName.trim().replaceFirst("(?i)^m\\s*/\\s*s\\.?\\s+", "");
+        for (String w : cleaned.split("[^A-Za-z0-9&]+")) {
             if (w.isEmpty() || NOISE.contains(w.toUpperCase(Locale.ROOT))) continue;
             words.add(w);
         }
