@@ -771,6 +771,10 @@ export class PlatformAdminComponent implements OnInit {
     this.successMsg.set('');
     this.errorMsg.set('');
     
+    // Header counters (tenants, tickets badge) come from stats; load them once for any section.
+    if (tab !== 'dashboard' && !this.stats()) {
+      this.platformService.getStats().subscribe({ next: (res: any) => { if (res.success) this.stats.set(res.data); } });
+    }
     if (tab === 'dashboard') this.loadDashboardData();
     else if (tab === 'companies') this.loadClients();
     else if (tab === 'subscriptions') this.loadSubscriptions();

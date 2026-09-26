@@ -29,3 +29,15 @@ or driver payroll cannot approve it (`ApprovalPolicyService`). Default `false` (
 
 - Driver-only login lands on Maintenance Requests and sees only Maintenance Requests and My Salary.
 - User & Roles and System Settings are shown only to COMPANY_ADMIN / ADMIN.
+
+## Platform Admin (SUPER_ADMIN)
+
+Sections are routed (`/platform-admin/{section}`) and listed in the main sidebar:
+Overview (Dashboard) · Tenants (Clients & Companies, Subscriptions & Plans, Licenses, Billing Invoices) ·
+Access & Security (Users & Sessions, Audit Logs) · Support (Tickets, Announcements) · System (Settings, Backup & Data Export).
+
+- **Company short name** (`companies.short_name`, 2–6 letters/digits/&): entered on onboarding / edit, upper-cased; blank = derived
+  from the name ("PKC Transport" → PKC). Returned at login (`companyShortName`) and by `GET /api/v1/auth/tenant-brand`;
+  shown in amber above "TransaFlow" in the sidebar (and as a pill in the phone header). Platform operators see "PLATFORM".
+- **Backups**: the app records checkpoints only; real database backups come from the PostgreSQL host.
+  `GET /api/v1/platform-admin/companies/{id}/data-export` downloads a ZIP of 18 Excel lists for one tenant.
