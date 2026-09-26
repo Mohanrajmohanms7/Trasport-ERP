@@ -15,6 +15,18 @@ import { workOrderError } from '../../services/work-order.service';
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {
+  /** One-time cost for stock entered before costing existed (posts it to the inventory account). */
+  setCost(row: any): void {
+    const v = prompt(`Unit cost (₹) for ${row.sparePartName} in ${row.warehouseCode || row.warehouseName}\nQuantity on hand: ${row.availableQuantity}`);
+    if (v === null) return;
+    const cost = Number(v);
+    if (!(cost > 0)) { alert('Enter a cost greater than zero.'); return; }
+    this.inventory.setInitialCost(row.id, cost).subscribe({
+      next: () => this.load(),
+      error: (e: any) => alert(e?.error?.errors?.[0] || e?.error?.message || 'Could not set cost')
+    });
+  }
+
   lowOnly = signal(false);
 
   visibleRows() {

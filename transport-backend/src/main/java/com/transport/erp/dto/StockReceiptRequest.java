@@ -13,6 +13,8 @@ public class StockReceiptRequest {
     private BigDecimal quantity;
     private BigDecimal unitRate;
     private Long supplierId;
+    /** CREDIT (default), CASH or BANK. */
+    private String paymentMode;
     private String referenceNumber;
     private String description;
 }

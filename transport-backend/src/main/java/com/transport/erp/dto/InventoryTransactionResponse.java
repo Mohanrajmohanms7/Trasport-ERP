@@ -32,6 +32,7 @@ public class InventoryTransactionResponse {
     private String createdBy;
     private String description;
     private BigDecimal unitRate;
+    private String paymentMode;
     private Long supplierId;
     private String supplierCode;
     private String supplierName;

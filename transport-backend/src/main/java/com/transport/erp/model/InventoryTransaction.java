@@ -61,4 +61,8 @@ public class InventoryTransaction extends BaseEntity {
 
     @Column(name = "external_reference", length = 100)
     private String externalReference;
+
+    /** Receipts only: CREDIT (supplier bill), CASH or BANK (paid immediately). */
+    @Column(name = "payment_mode", length = 10)
+    private String paymentMode;
 }
