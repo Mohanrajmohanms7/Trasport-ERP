@@ -109,6 +109,13 @@ public class AuthController {
         return ApiResponse.success(null, "Password changed successfully");
     }
 
+    /** Company name + initials of the signed-in user (header branding). */
+    @GetMapping("/tenant-brand")
+    public ApiResponse<java.util.Map<String, Object>> tenantBrand(java.security.Principal principal) {
+        com.transport.erp.model.AppUser user = authService.getProfile(principal.getName());
+        return ApiResponse.success(authService.tenantBrand(user.getCompanyId()), "Tenant brand");
+    }
+
     @GetMapping("/profile")
     public ApiResponse<AppUser> getProfile() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();

@@ -1,4 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -429,10 +431,67 @@ export class PlatformAdminComponent implements OnInit {
     { label: 'High', value: 'HIGH' }
   ];
 
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
+  /** Sections are routed (/platform-admin/companies ...) so the main sidebar can list them. */
+  static readonly SECTIONS: Record<string, string> = {
+    dashboard: 'Dashboard & Analytics', companies: 'Clients & Companies', subscriptions: 'Subscriptions & Plans',
+    licenses: 'Licenses', billing: 'Billing Invoices', users: 'Users & Sessions', audit: 'Audit Logs',
+    tickets: 'Support Tickets', announcements: 'Announcements', settings: 'System Settings', backups: 'Backup & Data Export'
+  };
+  readonly sectionTitle = computed(() => PlatformAdminComponent.SECTIONS[this.activeTab()] ?? 'Platform Administration');
+
   ngOnInit(): void {
     this.initForms();
     this.loadPlans();
-    this.loadDashboardData();
+    this.route.paramMap.subscribe(p => {
+      const section = p.get('section') || 'dashboard';
+      this.switchTab(PlatformAdminComponent.SECTIONS[section] ? section : 'dashboard');
+    });
+  }
+
+  exportCompanyId = signal<number | null>(null);
+  exportingData = signal(false);
+  private http = inject(HttpClient);
+
+  downloadCompanyData(): void {
+    const id = this.exportCompanyId();
+    if (!id) return;
+    this.exportingData.set(true);
+    this.http.get(`/api/v1/platform-admin/companies/${id}/data-export`, { responseType: 'blob' }).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `company_${id}_data_${new Date().toISOString().slice(0, 10)}.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.exportingData.set(false);
+      },
+      error: () => { this.exportingData.set(false); this.errorMsg.set('Company data export failed.'); }
+    });
+  }
+
+  /** In-page links go through the router so the sidebar highlight and browser back button work. */
+  openTab(tab: string): void {
+    this.router.navigate(['/platform-admin', tab]);
+  }
+
+  /** Same rule as the server: "PKC Transport" -> PKC, "Sri Murugan Transports" -> SMT. */
+  suggestShortName(name: string | null | undefined): string {
+    const noise = new Set(['PVT', 'PRIVATE', 'LTD', 'LIMITED', 'LLP', 'INC', 'CO', 'COMPANY', 'THE', 'AND', '&', 'OF', 'M/S', 'MS']);
+    const words = (name || '').trim().split(/[^A-Za-z0-9&]+/).filter(w => w && !noise.has(w.toUpperCase()));
+    if (!words.length) return '';
+    const first = words[0];
+    if (first.length >= 2 && first.length <= 5 && /^[A-Z0-9]+$/.test(first)) return first;
+    if (words.length === 1) return first.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+    return words.slice(0, 4).map(w => w[0].toUpperCase()).join('');
+  }
+
+  get shortNamePreview(): string {
+    const v = this.companyForm?.get('shortName')?.value;
+    return (v || this.suggestShortName(this.companyForm?.get('name')?.value)).toUpperCase();
   }
 
   initForms(): void {
@@ -440,6 +499,7 @@ export class PlatformAdminComponent implements OnInit {
       id: [null],
       code: [''],
       name: ['', [Validators.required, Validators.maxLength(150)]],
+      shortName: ['', [Validators.pattern(/^[A-Za-z0-9&]{2,6}$/)]],
       ownerName: ['', [Validators.required, Validators.maxLength(150)]],
       businessType: ['', [Validators.required]],
       phone: ['', [Validators.required]],
@@ -923,6 +983,7 @@ export class PlatformAdminComponent implements OnInit {
     const v = this.companyForm.value;
     const payload = {
       name: v.name,
+      shortName: (v.shortName || '').toUpperCase() || null,
       ownerName: v.ownerName,
       businessType: v.businessType,
       phone: v.phone,
@@ -1018,6 +1079,7 @@ export class PlatformAdminComponent implements OnInit {
     this.loading.set(true);
 
     const formVal = { ...this.companyForm.value };
+    formVal.shortName = (formVal.shortName || '').toUpperCase() || null;
     if (formVal.subscriptionPlanId) {
       formVal.subscriptionPlan = { id: formVal.subscriptionPlanId };
     }
@@ -1496,6 +1558,11 @@ export class PlatformAdminComponent implements OnInit {
 
   // 10. Backups
   loadBackups(): void {
+    if (!this.companiesList().length) {
+      this.platformService.getCompanies('', '', 0, 1000).subscribe({
+        next: (res) => { if (res.success) this.companiesList.set(res.data.content || []); }
+      });
+    }
     this.loading.set(true);
     this.platformService.getBackups().subscribe({
       next: (res) => {

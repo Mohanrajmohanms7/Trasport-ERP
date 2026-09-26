@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class SaaSClientDTO {
     private Long id;
     private String name; // Company Name
+    private String shortName; // Initials shown in the app header
     private String code; // Company Code
     private String ownerName;
     private String businessType;

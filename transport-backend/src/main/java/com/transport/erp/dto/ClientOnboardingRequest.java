@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class ClientOnboardingRequest {
     private String name;
+    private String shortName;
     private String ownerName;
     private String businessType;
     private String phone;

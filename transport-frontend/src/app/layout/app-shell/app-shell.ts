@@ -82,6 +82,38 @@ import { FfToastComponent } from '@ff/ui';
       border-bottom: 1px solid var(--ff-nav-border);
     }
 
+    /* Tenant identity: bold amber initials above the product name. */
+    .app-tenant-initials {
+      font-size: 1.5rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ff-accent-amber);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .app-tenant-initials--long { font-size: 1.2rem; letter-spacing: 0.05em; }
+    .app-product-name {
+      margin-top: 4px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #e6ebf2;
+    }
+    .app-tenant-chip-text { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em; }
+    .app-tenant-chip-text--long { font-size: 0.62rem; }
+    .app-tenant-pill {
+      flex-shrink: 0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--ff-nav-bg);
+      color: var(--ff-accent-amber);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
     .app-nav-chip {
       width: 40px;
       height: 40px;
@@ -178,6 +210,19 @@ export class AppShellComponent implements OnDestroy {
   private mobileQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 1023px)') : null;
   isMobile = signal<boolean>(this.mobileQuery?.matches ?? false);
   mobileNavOpen = signal<boolean>(false);
+  /** Company initials for the signed-in user ("PKC"); platform operators see PLATFORM. */
+  readonly tenantInitials = computed(() => {
+    const roles = this.auth.currentUser()?.roles || [];
+    if (roles.includes('SUPER_ADMIN')) return 'PLATFORM';
+    const b = this.auth.tenantBrand();
+    return (b?.shortName || '').toUpperCase();
+  });
+  readonly tenantFullName = computed(() => {
+    const roles = this.auth.currentUser()?.roles || [];
+    if (roles.includes('SUPER_ADMIN')) return 'TransaFlow platform administration';
+    return this.auth.tenantBrand()?.companyName || '';
+  });
+
   /** Collapsed rail only on desktop; the phone drawer always shows labels. */
   navCollapsed = computed(() => !this.isMobile() && this.sidebarCollapsed());
   activeRoute = signal<string>('/');
@@ -267,13 +312,29 @@ export class AppShellComponent implements OnDestroy {
     const roles = currentUser?.roles || [];
     
     if (roles.includes('SUPER_ADMIN')) {
+      // Platform operator menu: grouped by what a SaaS operator does day to day.
       return [
-        {
-          groupName: 'SAAS PLATFORM',
-          items: [
-            { label: 'Platform Admin', route: '/platform-admin', icon: 'admin_panel_settings' }
-          ]
-        }
+        { groupName: 'OVERVIEW', items: [
+          { label: 'Dashboard', route: '/platform-admin/dashboard', icon: 'space_dashboard' }
+        ]},
+        { groupName: 'TENANTS', items: [
+          { label: 'Clients & Companies', route: '/platform-admin/companies', icon: 'business' },
+          { label: 'Subscriptions & Plans', route: '/platform-admin/subscriptions', icon: 'card_membership' },
+          { label: 'Licenses', route: '/platform-admin/licenses', icon: 'vpn_key' },
+          { label: 'Billing Invoices', route: '/platform-admin/billing', icon: 'receipt' }
+        ]},
+        { groupName: 'ACCESS & SECURITY', items: [
+          { label: 'Users & Sessions', route: '/platform-admin/users', icon: 'people' },
+          { label: 'Audit Logs', route: '/platform-admin/audit', icon: 'history' }
+        ]},
+        { groupName: 'SUPPORT', items: [
+          { label: 'Support Tickets', route: '/platform-admin/tickets', icon: 'contact_support' },
+          { label: 'Announcements', route: '/platform-admin/announcements', icon: 'campaign' }
+        ]},
+        { groupName: 'SYSTEM', items: [
+          { label: 'System Settings', route: '/platform-admin/settings', icon: 'settings_suggest' },
+          { label: 'Backup & Data Export', route: '/platform-admin/backups', icon: 'backup' }
+        ]}
       ];
     }
     const staffRoles = roles.filter(r => r !== 'DRIVER');
@@ -345,6 +406,7 @@ export class AppShellComponent implements OnDestroy {
   constructor() {
     this.theme.loadPersisted();
     this.refreshProfile();
+    this.auth.refreshTenantBrand();
 
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),

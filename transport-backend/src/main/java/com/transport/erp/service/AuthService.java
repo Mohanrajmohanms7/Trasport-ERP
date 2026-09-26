@@ -132,6 +132,7 @@ public class AuthService {
             response.put("companyId", user.getCompanyId());
             response.put("branchId", user.getBranchId());
             response.put("subscriptionExpired", subscriptionExpired);
+            response.putAll(tenantBrand(user.getCompanyId()));
 
             return response;
         } catch (BadCredentialsException e) {
@@ -223,6 +224,17 @@ public class AuthService {
         userRepository.save(user);
 
         auditService.log(username, "PASSWORD_CHANGE", "app_users", user.getId(), ipAddress, "User changed password successfully");
+    }
+
+    /** Company name and initials for the app header. */
+    public Map<String, Object> tenantBrand(Long companyId) {
+        Map<String, Object> brand = new HashMap<>();
+        if (companyId == null) return brand;
+        companyRepository.findById(companyId).ifPresent(c -> {
+            brand.put("companyName", c.getName());
+            brand.put("companyShortName", c.getDisplayShortName());
+        });
+        return brand;
     }
 
     public AppUser getProfile(String username) {

@@ -10,16 +10,22 @@
          [attr.aria-hidden]="isMobile() && !mobileNavOpen() ? 'true' : null"
          class="app-nav flex flex-col transition-all duration-300 ease-in-out shrink-0 select-none z-50">
     
-    <!-- Branding Header Logo -->
-    <div class="app-nav-lockup shrink-0 px-3 pt-4 pb-3" [class.px-2]="navCollapsed()">
-      <div class="flex flex-col overflow-hidden" [class.items-center]="navCollapsed()">
+    <!-- Branding: tenant initials above the product name -->
+    <div class="app-nav-lockup shrink-0 px-3 pt-4 pb-3" [class.px-2]="navCollapsed()" [attr.title]="tenantFullName()">
+      <div class="flex items-center gap-3 overflow-hidden" [class.justify-center]="navCollapsed()">
         <div class="app-nav-chip flex items-center justify-center shrink-0 select-none">
-          <span class="material-symbols-outlined text-[22px] select-none">local_shipping</span>
+          @if (navCollapsed() && tenantInitials()) {
+            <span class="app-tenant-chip-text" [class.app-tenant-chip-text--long]="tenantInitials().length > 3">{{ tenantInitials() }}</span>
+          } @else {
+            <span class="material-symbols-outlined text-[22px] select-none">local_shipping</span>
+          }
         </div>
         @if (!navCollapsed()) {
-          <div class="flex flex-col select-none mt-3">
-            <span class="text-base font-semibold tracking-tight leading-none" style="color:#ffffff">TransaFlow</span>
-            <span class="text-[11px] mt-1 leading-snug text-[var(--ff-nav-muted)]">Quarry-to-site transport</span>
+          <div class="flex flex-col select-none min-w-0">
+            @if (tenantInitials()) {
+              <span class="app-tenant-initials" [class.app-tenant-initials--long]="tenantInitials().length > 4">{{ tenantInitials() }}</span>
+            }
+            <span class="app-product-name">TransaFlow</span>
           </div>
         }
       </div>
@@ -104,6 +110,9 @@
         }
         
         <!-- Breadcrumbs Navigation path -->
+        @if (isMobile() && tenantInitials()) {
+          <span class="app-tenant-pill" [attr.title]="tenantFullName()">{{ tenantInitials() }}</span>
+        }
         <div class="flex items-center gap-1 text-xs font-medium text-slate-400 dark:text-slate-500 select-none min-w-0">
           @for (bc of breadcrumbs(); track bc; let last = $last) {
             <span class="truncate" [class.hidden]="!last && isMobile()" [class.text-sm]="last && isMobile()"
