@@ -22,6 +22,7 @@ export class OpeningBalanceFormComponent implements OnInit {
   warehouseId = signal('');
   sparePartId = signal('');
   quantity = signal('');
+  unitRate = signal<string | number>('');
   description = signal('');
   currentQuantity = signal<number | null>(null);
   error = signal<string | null>(null);
@@ -81,6 +82,7 @@ export class OpeningBalanceFormComponent implements OnInit {
       warehouseId: Number(this.warehouseId()),
       sparePartId: Number(this.sparePartId()),
       quantity: Number(this.quantity()),
+      unitRate: this.unitRate() !== '' && this.unitRate() !== null ? Number(this.unitRate()) : null,
       description: this.description().trim() || null
     }).subscribe({
       next: res => {

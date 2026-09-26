@@ -68,6 +68,7 @@ class InventoryOpeningBalanceServiceTest {
     @Mock private TenantAccessService tenantAccess;
     @Mock private AuditService auditService;
 
+    @Mock private InventoryValuationService valuationService;
     @InjectMocks private InventoryService inventoryService;
 
     private AppUser companyAdmin;

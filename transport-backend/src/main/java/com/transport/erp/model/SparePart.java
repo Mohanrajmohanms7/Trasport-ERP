@@ -27,4 +27,8 @@ public class SparePart extends BaseEntity {
     /** Stored file name of the photo (download via /api/v1/files/download/{photoFile}). */
     @Column(name = "photo_file", length = 255)
     private String photoFile;
+
+    /** Minimum on-hand quantity; stock at or below this is flagged for reorder. Null = no alert. */
+    @Column(name = "reorder_level", precision = 14, scale = 3)
+    private java.math.BigDecimal reorderLevel;
 }

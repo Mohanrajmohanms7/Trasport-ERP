@@ -46,6 +46,7 @@ public class XlsxExportService {
     @Autowired private JournalVoucherRepository journalVoucherRepository;
     @Autowired private ChartOfAccountRepository chartOfAccountRepository;
     @Autowired private SupplierRepository supplierRepository;
+    @Autowired private WarehouseRepository warehouseRepository;
 
     // =========================================================================
     // EXPORT METHODS
@@ -451,6 +452,12 @@ public class XlsxExportService {
         return buildExcelWorkbook(title, headers, rows);
     }
 
+    private static String stockStatus(WarehouseStock st) {
+        BigDecimal a = st.getAvailableQuantity() == null ? BigDecimal.ZERO : st.getAvailableQuantity();
+        BigDecimal r = st.getSparePart() != null ? st.getSparePart().getReorderLevel() : null;
+        return a.signum() <= 0 ? "Out of stock" : (r != null && a.compareTo(r) <= 0 ? "Reorder" : "OK");
+    }
+
     private String companyName() {
         try {
             Long cid = tenantAccess.resolveCompanyId(null);
@@ -489,13 +496,24 @@ public class XlsxExportService {
     }
 
     @Transactional(readOnly = true)
+    public byte[] exportWarehouses(Long companyId, String format) {
+        Long cid = tenantAccess.resolveCompanyId(companyId);
+        String[] headers = {"Code", "Name", "Description", "Status"};
+        List<Object[]> rows = new ArrayList<>();
+        for (Warehouse w : warehouseRepository.findByCompanyIdAndIsDeletedFalseOrderByCodeAsc(cid)) {
+            rows.add(new Object[]{w.getCode(), w.getName(), w.getDescription(), w.getStatus()});
+        }
+        return render(format, "Warehouses", headers, rows);
+    }
+
+    @Transactional(readOnly = true)
     public byte[] exportSpareParts(Long companyId, String format) {
         Long cid = tenantAccess.resolveCompanyId(companyId);
-        String[] headers = {"Code", "Name", "UOM", "Default Rate", "Status"};
+        String[] headers = {"Code", "Name", "UOM", "Default Rate", "Reorder Level", "Status"};
         List<Object[]> rows = new ArrayList<>();
         for (SparePart p : sparePartRepository.findActiveByCompany(cid, PageRequest.of(0, 5000)).getContent()) {
             rows.add(new Object[]{p.getCode(), p.getName(), p.getDefaultUom() != null ? p.getDefaultUom().getName() : "",
-                    p.getDefaultRate(), p.getStatus()});
+                    p.getDefaultRate(), p.getReorderLevel(), p.getStatus()});
         }
         return render(format, "Spare Parts", headers, rows);
     }
@@ -503,12 +521,13 @@ public class XlsxExportService {
     @Transactional(readOnly = true)
     public byte[] exportStock(Long companyId, String format) {
         Long cid = tenantAccess.resolveCompanyId(companyId);
-        String[] headers = {"Warehouse", "Part Code", "Part", "Available Qty"};
+        String[] headers = {"Warehouse", "Part Code", "Part", "Available Qty", "Reorder Level", "Status"};
         List<Object[]> rows = new ArrayList<>();
         for (WarehouseStock st : warehouseStockRepository.findByCompanyIdAndIsDeletedFalse(cid)) {
             rows.add(new Object[]{st.getWarehouse() != null ? st.getWarehouse().getName() : "",
                     st.getSparePart() != null ? st.getSparePart().getCode() : "",
-                    st.getSparePart() != null ? st.getSparePart().getName() : "", st.getAvailableQuantity()});
+                    st.getSparePart() != null ? st.getSparePart().getName() : "", st.getAvailableQuantity(),
+                    st.getSparePart() != null ? st.getSparePart().getReorderLevel() : null, stockStatus(st)});
         }
         return render(format, "Stock", headers, rows);
     }

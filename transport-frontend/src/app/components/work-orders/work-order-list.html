@@ -1,66 +1,65 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
+<div class="ops-page">
+  <header class="ops-header">
     <div>
-      <h1 class="text-lg font-bold text-slate-900 dark:text-white">Work Orders</h1>
-      <p class="text-xs text-slate-500">Preventive and manual maintenance jobs. Newest opened first.</p>
+      <h1 class="ops-title"><span class="material-icons">build</span>Work orders</h1>
+      <p class="ops-sub">Repair and preventive jobs for vehicles. Newest first. Open a job to add parts, issue stock and complete it.</p>
     </div>
-    <app-export-buttons module="work-orders" />
-    @if (canWrite()) {
-      <a routerLink="/work-orders/new" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold no-underline">New work order</a>
-    }
-  </div>
+    <div class="ops-actions">
+      <app-export-buttons module="work-orders" />
+      @if (canWrite()) {
+        <a routerLink="/work-orders/new" class="ops-btn ops-btn--primary"><span class="material-icons">add</span>New work order</a>
+      }
+    </div>
+  </header>
 
-  <form class="grid grid-cols-1 md:grid-cols-5 gap-2" (ngSubmit)="load()">
-    <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Vehicle id" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event)" name="vehicleId" />
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">
-      <option value="">All statuses</option>
-      <option value="OPEN">Open</option>
-      <option value="IN_PROGRESS">In progress</option>
-      <option value="COMPLETED">Completed</option>
-      <option value="CANCELLED">Cancelled</option>
-    </select>
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="source()" (ngModelChange)="source.set($event)" name="source">
-      <option value="">All sources</option>
-      <option value="PREVENTIVE">Preventive</option>
-      <option value="MANUAL">Manual</option>
-    </select>
-    <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Maintenance type" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType" />
-    <div class="flex gap-2">
-      <input class="flex-1 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Branch id" [ngModel]="branchId()" (ngModelChange)="branchId.set($event)" name="branchId" />
-      <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer">Filter</button>
-    </div>
+  <form class="ops-filters" (ngSubmit)="load()">
+    <label class="ops-field">Vehicle
+      <select class="ops-input" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event)" name="vehicleId">
+        <option value="">All vehicles</option>
+        @for (v of vehicles(); track v.id) { <option [value]="v.id">{{ v.code }}{{ v.name && v.name !== v.code ? ' — ' + v.name : '' }}</option> }
+      </select>
+    </label>
+    <label class="ops-field">Status
+      <select class="ops-input" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">
+        <option value="">All statuses</option><option value="OPEN">Open</option><option value="IN_PROGRESS">In progress</option>
+        <option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option>
+      </select>
+    </label>
+    <label class="ops-field">Source
+      <select class="ops-input" [ngModel]="source()" (ngModelChange)="source.set($event)" name="source">
+        <option value="">All sources</option><option value="PREVENTIVE">Preventive</option><option value="MANUAL">Manual</option>
+      </select>
+    </label>
+    <label class="ops-field">Maintenance type<input class="ops-input" placeholder="e.g. Brake" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType" /></label>
+    <button type="submit" class="ops-btn ops-btn--dark">Apply</button>
   </form>
 
-  @if (loading()) {
-    <div class="p-8 text-center text-xs text-slate-500">Loading work orders…</div>
+@if (loading()) {
+    <div class="ops-empty">Loading work orders…</div>
   } @else if (error()) {
-    <div class="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   } @else if (!rows().length) {
-    <div class="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-2xl">No work orders match these filters.</div>
+    <div class="ops-empty ops-card">No work orders match these filters.</div>
   } @else {
-    <div class="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900">
-      <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+    <div class="ops-table-wrap">
+      <table class="ops-table">
         <thead>
-          <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase tracking-wider font-bold">
-            <th class="p-3">Number</th>
-            <th class="p-3">Vehicle</th>
-            <th class="p-3">Source</th>
-            <th class="p-3">Maintenance</th>
-            <th class="p-3">Status</th>
-            <th class="p-3">Priority</th>
-            <th class="p-3">Opened</th>
+          <tr>
+            <th>Number</th><th>Vehicle</th><th>Job</th><th>Source</th><th>Status</th><th>Priority</th><th class="num">Estimated</th><th class="num">Actual</th><th>Opened</th>
           </tr>
         </thead>
         <tbody>
           @for (row of rows(); track row.id) {
-            <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-950/40 cursor-pointer" (click)="open(row)">
-              <td class="p-3 font-bold text-slate-900 dark:text-white">{{ row.workOrderNumber }}</td>
-              <td class="p-3">{{ vehicleLabel(row) }}</td>
-              <td class="p-3">{{ row.source }}</td>
-              <td class="p-3">{{ row.maintenanceType }}</td>
-              <td class="p-3 font-semibold">{{ row.status }}</td>
-              <td class="p-3">{{ row.priority }}</td>
-              <td class="p-3 whitespace-nowrap">{{ row.openedAt ? (row.openedAt | date:'medium') : '—' }}</td>
+            <tr class="is-clickable" (click)="open(row)">
+              <td class="code">{{ row.workOrderNumber }}</td>
+              <td>{{ vehicleLabel(row) }}</td>
+              <td>{{ $any(row).name || row.maintenanceType }}<div class="ops-sub">{{ row.maintenanceType }}</div></td>
+              <td>{{ row.source === 'PREVENTIVE' ? 'Preventive' : 'Manual' }}</td>
+              <td><span class="ops-pill" [attr.data-s]="row.status">{{ row.status.replace('_', ' ') }}</span></td>
+              <td><span class="ops-pill" [attr.data-s]="row.priority">{{ row.priority }}</span></td>
+              <td class="num">{{ $any(row).estimatedCost != null ? ($any(row).estimatedCost | number:'1.0-2') : '—' }}</td>
+              <td class="num">{{ $any(row).actualCost != null ? ($any(row).actualCost | number:'1.0-2') : '—' }}</td>
+              <td class="whitespace-nowrap">{{ row.openedAt ? (row.openedAt | date:'dd MMM yyyy') : '—' }}</td>
             </tr>
           }
         </tbody>

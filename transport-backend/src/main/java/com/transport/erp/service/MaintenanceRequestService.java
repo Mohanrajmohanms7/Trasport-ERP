@@ -317,8 +317,10 @@ public class MaintenanceRequestService {
         if (STATUS_CONVERTED.equals(row.getStatus()) || row.getWorkOrder() != null) {
             throw alreadyConverted();
         }
-        if (!STATUS_OPEN.equals(row.getStatus()) && !STATUS_UNDER_REVIEW.equals(row.getStatus())) {
-            throw invalidTransition("Only an open or under-review request can be cancelled.");
+        // An approved request can still be dropped (e.g. fixed on the road) as long as no work order exists.
+        if (!STATUS_OPEN.equals(row.getStatus()) && !STATUS_UNDER_REVIEW.equals(row.getStatus())
+                && !STATUS_APPROVED.equals(row.getStatus())) {
+            throw invalidTransition("Only an open, under-review or approved request can be cancelled.");
         }
         row.setStatus(STATUS_CANCELLED);
         row.setCancelledBy(username);
@@ -547,6 +549,7 @@ public class MaintenanceRequestService {
         if (row.getWorkOrder() != null) {
             dto.setWorkOrderId(row.getWorkOrder().getId());
             dto.setWorkOrderNumber(row.getWorkOrder().getWorkOrderNumber());
+            dto.setWorkOrderStatus(row.getWorkOrder().getStatus());
         }
         return dto;
     }

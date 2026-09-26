@@ -98,6 +98,7 @@ public class SparePartService {
         part.setStatus(status);
         part.setDefaultUom(uom);
         part.setDefaultRate(rate);
+        part.setReorderLevel(reorderLevel(request.getReorderLevel()));
         part.setCreatedBy(username);
         part.setUpdatedBy(username);
         part.setIsDeleted(false);
@@ -111,6 +112,41 @@ public class SparePartService {
         }
         auditService.log(username, "SPARE_PART_CREATED", "spare_parts", part.getId(), null, code);
         return toResponse(part);
+    }
+
+    /** Edit name, description, unit, default rate, reorder level and status. The code stays fixed (used on documents). */
+    @Transactional
+    public SparePartResponse update(Long id, SparePartRequest request, String username) {
+        AppUser user = tenantAccess.requireCurrentUser();
+        assertWriteAccess(user);
+        SparePart part = sparePartRepository.findById(id)
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .orElseThrow(() -> invalid("Spare part not found."));
+        tenantAccess.assertCompanyAccess(part.getCompanyId());
+        if (request == null) throw invalid("Spare part name is required.");
+        String name = request.getName() != null ? request.getName().trim() : "";
+        if (name.isEmpty() || name.length() > 150) throw invalid("Spare part name is required.");
+        BigDecimal rate = request.getDefaultRate() == null ? part.getDefaultRate() : money(request.getDefaultRate());
+        if (rate != null && rate.compareTo(BigDecimal.ZERO) < 0) throw invalid("Default rate cannot be negative.");
+        String status = request.getStatus() == null || request.getStatus().isBlank()
+                ? part.getStatus() : request.getStatus().trim().toUpperCase(Locale.ROOT);
+        if (!"ACTIVE".equals(status) && !"INACTIVE".equals(status)) throw invalid("Spare part status must be ACTIVE or INACTIVE.");
+        if (request.getDefaultUomId() != null) part.setDefaultUom(requireUom(request.getDefaultUomId(), part.getCompanyId()));
+        part.setName(name);
+        part.setDescription(trimToNull(request.getDescription()));
+        part.setDefaultRate(rate);
+        part.setReorderLevel(reorderLevel(request.getReorderLevel()));
+        part.setStatus(status);
+        part.setUpdatedBy(username);
+        part = sparePartRepository.saveAndFlush(part);
+        auditService.log(username, "SPARE_PART_UPDATED", "spare_parts", part.getId(), null, part.getCode());
+        return toResponse(part);
+    }
+
+    private BigDecimal reorderLevel(BigDecimal v) {
+        if (v == null) return null;
+        if (v.compareTo(BigDecimal.ZERO) < 0) throw invalid("Reorder level cannot be negative.");
+        return v.setScale(3, RoundingMode.HALF_UP);
     }
 
     private UomMaster requireUom(Long uomId, Long companyId) {
@@ -167,6 +203,7 @@ public class SparePartService {
         if (part.getDefaultUom() != null) {
             dto.setDefaultUomId(part.getDefaultUom().getId());
         dto.setPhotoFile(part.getPhotoFile());
+        dto.setReorderLevel(part.getReorderLevel());
             dto.setDefaultUomCode(part.getDefaultUom().getCode());
             dto.setDefaultUomName(part.getDefaultUom().getName());
         }

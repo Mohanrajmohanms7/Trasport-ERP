@@ -58,6 +58,9 @@ import java.util.stream.Collectors;
 @Service
 public class WorkOrderService {
 
+    @Autowired
+    private InventoryValuationService inventoryValuationService;
+
     static final String SOURCE_PREVENTIVE = "PREVENTIVE";
     static final String SOURCE_MANUAL = "MANUAL";
     static final String STATUS_OPEN = "OPEN";
@@ -326,6 +329,20 @@ public class WorkOrderService {
         }
         if (!STATUS_OPEN.equals(order.getStatus()) && !STATUS_IN_PROGRESS.equals(order.getStatus())) {
             throw invalidTransition("Only an open or in-progress work order can be cancelled.");
+        }
+        // Parts already taken from stock must go back first, or the stock would be lost with the job.
+        java.math.BigDecimal stillIssued = java.math.BigDecimal.ZERO;
+        for (var line : workOrderPartRepository.findActiveByWorkOrderId(order.getId())) {
+            java.math.BigDecimal issued = line.getIssuedQuantity() == null ? java.math.BigDecimal.ZERO : line.getIssuedQuantity();
+            java.math.BigDecimal returned = line.getReturnedQuantity() == null ? java.math.BigDecimal.ZERO : line.getReturnedQuantity();
+            stillIssued = stillIssued.add(issued.subtract(returned));
+        }
+        if (stillIssued.signum() > 0) {
+            throw failure(
+                    "Issued Parts Not Returned",
+                    "WORK_ORDER_CANCEL_ISSUED_STOCK",
+                    "This work order still holds " + stillIssued.stripTrailingZeros().toPlainString() + " unit(s) of parts issued from stock.",
+                    "Return the issued parts to the warehouse, then cancel the work order.");
         }
         order.setStatus(STATUS_CANCELLED);
         order.setCancelledAt(LocalDateTime.now());
@@ -684,6 +701,7 @@ public class WorkOrderService {
         dto.setLabourTotal(labourTotal);
         dto.setOperationalCost(partsTotal.add(labourTotal).setScale(2, RoundingMode.HALF_UP));
         workOrderFinancialPosting.attachAccounting(order, dto);
+        dto.setPartsCostFromStock(inventoryValuationService.netPartsCost(order.getId()));
         return dto;
     }
 

@@ -1,286 +1,288 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
-  <a routerLink="/work-orders" class="text-xs text-blue-700 no-underline">Back to work orders</a>
+<div class="ops-page">
+  <a routerLink="/work-orders" class="ops-link inline-flex items-center gap-1 w-fit"><span class="material-icons text-base">arrow_back</span>Work orders</a>
 
   @if (loading()) {
-    <div class="p-8 text-xs text-slate-500">Loading work order…</div>
+    <div class="ops-empty">Loading work order…</div>
   } @else if (error() && !order()) {
-    <div class="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   } @else if (order(); as order) {
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 class="text-lg font-bold text-slate-900 dark:text-white">{{ order.workOrderNumber }}</h1>
-        <p class="text-xs text-slate-500">{{ order.name }}</p>
+    <!-- Header: identity + the one next action -->
+    <header class="ops-header">
+      <div class="min-w-0">
+        <h1 class="ops-title"><span class="material-icons">build_circle</span>{{ order.workOrderNumber }}
+          <span class="ops-pill" [attr.data-s]="order.status">{{ order.status.replace('_', ' ') }}</span>
+          <span class="ops-pill" [attr.data-s]="order.priority">{{ order.priority }}</span>
+        </h1>
+        <p class="ops-sub">{{ order.name }} · {{ order.vehicleCode }} {{ order.vehicleName ? '— ' + order.vehicleName : '' }} · {{ order.source === 'PREVENTIVE' ? 'Preventive' : 'Manual' }}</p>
       </div>
-      <div class="text-xs font-bold text-slate-700">{{ order.status }} · {{ order.priority }}</div>
-    </div>
-    <app-attachments-panel entityType="WORK_ORDER" [entityId]="order.id" [categories]="['GARAGE_BILL', 'PARTS_INVOICE', 'PHOTO', 'OTHER']" />
+      @if (canWrite()) {
+        <div class="ops-actions">
+          @if (order.status === 'OPEN') {
+            <button type="button" class="ops-btn ops-btn--primary" (click)="start()"><span class="material-icons">play_arrow</span>Start work</button>
+          }
+          @if (order.status === 'IN_PROGRESS') {
+            <button type="button" class="ops-btn ops-btn--primary" (click)="panel.set(panel() === 'complete' ? null : 'complete'); prefillActualCost(order)"><span class="material-icons">task_alt</span>Complete</button>
+          }
+          @if (order.status === 'OPEN' || order.status === 'IN_PROGRESS') {
+            <button type="button" class="ops-btn" (click)="panel.set(panel() === 'edit' ? null : 'edit')"><span class="material-icons">edit</span>Edit</button>
+            <button type="button" class="ops-btn ops-btn--danger" (click)="panel.set(panel() === 'cancel' ? null : 'cancel')"><span class="material-icons">block</span>Cancel</button>
+          }
+        </div>
+      }
+    </header>
 
-    @if (feedback()) {
-      <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">{{ feedback() }}</div>
-    }
-    @if (error()) {
-      <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
-    }
+    @if (feedback()) { <div class="ops-alert ops-alert--ok">{{ feedback() }}</div> }
+    @if (error()) { <div class="ops-alert ops-alert--error">{{ error() }}</div> }
 
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Work order</h2>
-        <p>Source: {{ order.source }}</p>
-        <p>Maintenance: {{ order.maintenanceType }}</p>
-        <p>Opened: {{ order.openedAt ? (order.openedAt | date:'medium') : '—' }}</p>
-        <p>Started: {{ order.startedAt ? (order.startedAt | date:'medium') : '—' }}</p>
-        <p>Completed: {{ order.completedAt ? (order.completedAt | date:'medium') : '—' }}</p>
-        <p>Cancelled: {{ order.cancelledAt ? (order.cancelledAt | date:'medium') : '—' }}</p>
-        <p>Requested: {{ order.requestedDate || '—' }}</p>
-        <p>Description: {{ order.description || '—' }}</p>
-      </div>
-      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Vehicle</h2>
-        <p>{{ order.vehicleCode }} — {{ order.vehicleName }}</p>
-        <a class="text-blue-700" [routerLink]="['/vehicles']" [queryParams]="{ vehicleId: order.vehicleId, tab: 'work-orders' }">Open vehicle</a>
-        <p class="mt-2">Odometer at open: {{ order.odometerAtOpen != null ? (order.odometerAtOpen | number) : '—' }}</p>
-        <p>Odometer at completion: {{ order.odometerAtComplete != null ? (order.odometerAtComplete | number) : '—' }}</p>
-        <p>Supplier: {{ order.supplierName || '—' }}</p>
-        <p>Assignee: {{ order.assignedUserName || '—' }}</p>
-        <p>Estimated cost: {{ order.estimatedCost != null ? (order.estimatedCost | number:'1.2-2') : '—' }}</p>
-        <p>Actual cost: {{ order.actualCost != null ? (order.actualCost | number:'1.2-2') : '—' }}</p>
-        <p>Parts total: {{ order.partsTotal != null ? (order.partsTotal | number:'1.2-2') : '—' }}</p>
-        <p>Labour total: {{ order.labourTotal != null ? (order.labourTotal | number:'1.2-2') : '—' }}</p>
-        <p>Operational cost: {{ order.operationalCost != null ? (order.operationalCost | number:'1.2-2') : '—' }}</p>
-        <p>Financial amount: {{ order.financialAmount != null ? (order.financialAmount | number:'1.2-2') : '—' }}</p>
-        <p>Accounting: {{ accountingLabel(order.accountingStatus) }}</p>
-        @if (order.accountingStatus === 'POSTED') {
-          <p>JV reference: {{ order.journalVoucherReference || '—' }}</p>
-          <p>Posted at: {{ order.postedAt ? (order.postedAt | date:'medium') : '—' }}</p>
-        }
-      </div>
-    </section>
-
-    @if (order.source === 'PREVENTIVE') {
-      <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Preventive snapshot</h2>
-        <p>Rule: {{ order.maintenanceRuleName || order.maintenanceRuleId }}</p>
-        <p>Trigger: {{ order.triggerMode || '—' }}</p>
-        <p>Due status at creation: {{ order.dueStatusAtCreation || '—' }}</p>
-        <p>Due KM: {{ order.dueKm != null ? (order.dueKm | number) : '—' }}</p>
-        <p>Due date: {{ order.dueDate || '—' }}</p>
-        <p>Baseline KM: {{ order.baselineLastServiceKm != null ? (order.baselineLastServiceKm | number) : '—' }}</p>
-        <p>Baseline date: {{ order.baselineLastServiceDate || '—' }}</p>
+    <!-- Action panels -->
+    @if (panel() === 'complete' && order.status === 'IN_PROGRESS') {
+      <section class="ops-card">
+        <h2 class="ops-card-title">Complete work order</h2>
+        <div class="ops-form">
+          <label class="ops-field span-all">What was done *
+            <textarea class="ops-input" rows="2" [ngModel]="completionNotes()" (ngModelChange)="completionNotes.set($event)" name="completionNotes" placeholder="e.g. Replaced front brake pads and oil filter"></textarea>
+          </label>
+          <label class="ops-field">Actual cost to post (₹)
+            <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="actualCost()" (ngModelChange)="actualCost.set($event)" name="actualCost" placeholder="Leave empty to not post" />
+          </label>
+          @if ($any(order).partsCostFromStock > 0) {
+            <p class="ops-sub span-all">Parts issued from stock: <strong>₹{{ $any(order).partsCostFromStock | number:'1.2-2' }}</strong> (moved from inventory to repair expense on completion). Enter the full job cost including labour and outside charges; only the amount above the parts cost is posted as payable.</p>
+          }
+          <div class="ops-field">Parts + labour on this job
+            <div class="flex items-center gap-2 h-10">
+              <strong class="tabular-nums">₹{{ (order.operationalCost ?? 0) | number:'1.2-2' }}</strong>
+              <button type="button" class="ops-link" (click)="useOperationalCost(order)">Use this</button>
+            </div>
+          </div>
+          <p class="ops-sub span-all">A positive actual cost is posted once to Vehicle Maintenance expense (Dr) and Accounts Payable (Cr).</p>
+          <div class="ops-form-actions span-all">
+            <button type="button" class="ops-btn" (click)="panel.set(null)">Close</button>
+            <button type="button" class="ops-btn ops-btn--primary" (click)="complete()">Confirm completion</button>
+          </div>
+        </div>
       </section>
     }
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-2">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500">Diagnosis and notes</h2>
-      <p>Diagnosis: {{ order.diagnosis || '—' }}</p>
-      <p>Completion notes: {{ order.completionNotes || '—' }}</p>
-      <p>Cancellation reason: {{ order.cancellationReason || '—' }}</p>
-      @if (order.attachmentPath) {
-        <p>Attachment: {{ order.attachmentPath }}</p>
-      }
-    </section>
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-3">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500">Parts</h2>
-      <table class="w-full">
-        <thead class="text-left text-slate-500">
-          <tr>
-            <th class="py-1">Part</th>
-            <th class="py-1">Quantity</th>
-            <th class="py-1">Unit</th>
-            <th class="py-1">Rate</th>
-            <th class="py-1">Total</th>
-            <th class="py-1">Notes</th>
-            @if (canEditLines(order)) {
-              <th class="py-1"></th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (line of order.parts || []; track line.id) {
-            <tr class="border-t border-slate-100 dark:border-slate-800">
-              <td class="py-1">{{ line.sparePartCode }} — {{ line.sparePartName }}</td>
-              <td class="py-1">{{ line.quantity }}</td>
-              <td class="py-1">{{ line.uomCode || line.uomName || '—' }}</td>
-              <td class="py-1">{{ line.unitRate | number:'1.2-2' }}</td>
-              <td class="py-1">{{ line.lineTotal | number:'1.2-2' }}</td>
-              <td class="py-1">{{ line.notes || '—' }}</td>
-              @if (canEditLines(order)) {
-                <td class="py-1">
-                  <button type="button" class="text-blue-700 bg-transparent border-none cursor-pointer" (click)="editPart(line)">Edit</button>
-                  <button type="button" class="text-rose-700 bg-transparent border-none cursor-pointer" (click)="removePart(line)">Remove</button>
-                </td>
-              }
-            </tr>
-          } @empty {
-            <tr><td class="py-2 text-slate-500" colspan="7">No parts.</td></tr>
-          }
-        </tbody>
-      </table>
-      @if (canEditLines(order)) {
-        <form class="grid grid-cols-1 md:grid-cols-2 gap-2" (ngSubmit)="savePart()">
-          <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="partSparePartId()" (ngModelChange)="partSparePartId.set($event)" name="sparePartId">
-            <option value="">Part</option>
-            @for (part of spareParts(); track part.id) {
-              <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
-            }
-          </select>
-          <input type="number" min="0" step="0.001" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="partQuantity()" (ngModelChange)="partQuantity.set($event)" name="partQuantity" placeholder="Quantity" />
-          <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="partRate()" (ngModelChange)="partRate.set($event)" name="partRate" placeholder="Rate (blank uses part default)" />
-          <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="partNotes()" (ngModelChange)="partNotes.set($event)" name="partNotes" placeholder="Notes" />
-          <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">{{ partEditingId() ? 'Save part' : 'Add part' }}</button>
-        </form>
-      }
-    </section>
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-3">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500">Material issue</h2>
-      <p class="text-slate-500">Issue spare parts from warehouse stock to this work order. Unused quantity can be returned to the same warehouse.</p>
-      @if (canMoveInventory(order)) {
-        <select class="border border-slate-200 rounded-lg px-3 py-2 max-w-sm" [ngModel]="warehouseId()" (ngModelChange)="onWarehouseChange($event)" name="issueWarehouse">
-          <option value="">Warehouse</option>
-          @for (row of warehouses(); track row.id) {
-            <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
-          }
-        </select>
-      }
-      <table class="w-full">
-        <thead class="text-left text-slate-500">
-          <tr>
-            <th class="py-1">Part</th>
-            <th class="py-1">Requested</th>
-            <th class="py-1">Issued</th>
-            <th class="py-1">Returned</th>
-            <th class="py-1">Net</th>
-            <th class="py-1">Remaining</th>
-            <th class="py-1">Available</th>
-            @if (canMoveInventory(order)) {
-              <th class="py-1">Issue</th>
-              <th class="py-1">Return</th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (line of order.parts || []; track line.id) {
-            <tr class="border-t border-slate-100 dark:border-slate-800">
-              <td class="py-1">{{ line.sparePartCode }} — {{ line.sparePartName }}</td>
-              <td class="py-1">{{ line.quantity }}</td>
-              <td class="py-1">{{ line.issuedQuantity || 0 }}</td>
-              <td class="py-1">{{ line.returnedQuantity || 0 }}</td>
-              <td class="py-1">{{ line.netIssuedQuantity != null ? line.netIssuedQuantity : ((line.issuedQuantity || 0) - (line.returnedQuantity || 0)) }}</td>
-              <td class="py-1">{{ remaining(line) }}</td>
-              <td class="py-1">{{ warehouseId() ? availableFor(line) : '—' }}</td>
-              @if (canMoveInventory(order)) {
-                <td class="py-1">
-                  <div class="flex items-center gap-1">
-                    <input type="number" min="0" step="0.001" class="border border-slate-200 rounded-lg px-2 py-1 w-20" [(ngModel)]="issueQty[line.id]" [name]="'issue-' + line.id" [disabled]="remaining(line) <= 0 || !warehouseId()" />
-                    <button type="button" class="text-blue-700 bg-transparent border-none cursor-pointer" [disabled]="remaining(line) <= 0 || !warehouseId() || availableFor(line) <= 0" (click)="issue(line)">Issue</button>
-                  </div>
-                </td>
-                <td class="py-1">
-                  <div class="flex items-center gap-1">
-                    <input type="number" min="0" step="0.001" class="border border-slate-200 rounded-lg px-2 py-1 w-20" [(ngModel)]="returnQty[line.id]" [name]="'return-' + line.id" [disabled]="returnable(line) <= 0 || !warehouseId()" />
-                    <button type="button" class="text-rose-700 bg-transparent border-none cursor-pointer" [disabled]="returnable(line) <= 0 || !warehouseId()" (click)="returnStock(line)">Return</button>
-                  </div>
-                </td>
-              }
-            </tr>
-          } @empty {
-            <tr><td class="py-2 text-slate-500" colspan="9">No parts to issue.</td></tr>
-          }
-        </tbody>
-      </table>
-    </section>
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-3">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500">Labour</h2>
-      <table class="w-full">
-        <thead class="text-left text-slate-500">
-          <tr>
-            <th class="py-1">Person</th>
-            <th class="py-1">Description</th>
-            <th class="py-1">Hours</th>
-            <th class="py-1">Rate</th>
-            <th class="py-1">Total</th>
-            <th class="py-1">Date</th>
-            @if (canEditLines(order)) {
-              <th class="py-1"></th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (line of order.labour || []; track line.id) {
-            <tr class="border-t border-slate-100 dark:border-slate-800">
-              <td class="py-1">{{ line.appUserName || '—' }}</td>
-              <td class="py-1">{{ line.description }}</td>
-              <td class="py-1">{{ line.hours }}</td>
-              <td class="py-1">{{ line.rate | number:'1.2-2' }}</td>
-              <td class="py-1">{{ line.lineTotal | number:'1.2-2' }}</td>
-              <td class="py-1">{{ line.workDate || '—' }}</td>
-              @if (canEditLines(order)) {
-                <td class="py-1">
-                  <button type="button" class="text-blue-700 bg-transparent border-none cursor-pointer" (click)="editLabour(line)">Edit</button>
-                  <button type="button" class="text-rose-700 bg-transparent border-none cursor-pointer" (click)="removeLabour(line)">Remove</button>
-                </td>
-              }
-            </tr>
-          } @empty {
-            <tr><td class="py-2 text-slate-500" colspan="7">No labour.</td></tr>
-          }
-        </tbody>
-      </table>
-      @if (canEditLines(order)) {
-        <form class="grid grid-cols-1 md:grid-cols-2 gap-2" (ngSubmit)="saveLabour()">
-          <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourUserId()" (ngModelChange)="labourUserId.set($event)" name="labourUserId">
-            <option value="">Person (optional)</option>
-            @for (person of people(); track person.id) {
-              <option [value]="person.id">{{ person.name }}</option>
-            }
-          </select>
-          <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourDescription()" (ngModelChange)="labourDescription.set($event)" name="labourDescription" placeholder="Description" />
-          <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourHours()" (ngModelChange)="labourHours.set($event)" name="labourHours" placeholder="Hours" />
-          <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourRate()" (ngModelChange)="labourRate.set($event)" name="labourRate" placeholder="Rate" />
-          <input type="date" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourDate()" (ngModelChange)="labourDate.set($event)" name="labourDate" />
-          <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="labourNotes()" (ngModelChange)="labourNotes.set($event)" name="labourNotes" placeholder="Notes" />
-          <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">{{ labourEditingId() ? 'Save labour' : 'Add labour' }}</button>
-        </form>
-      }
-    </section>
-
-    @if (canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS')) {
-      <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 gap-2 max-w-xl" (ngSubmit)="save()">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500">Update</h2>
-        @if (order.status === 'OPEN') {
-          <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Title" />
-          <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description"></textarea>
-          <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
-            <option value="LOW">Low</option>
-            <option value="NORMAL">Normal</option>
-            <option value="HIGH">High</option>
-          </select>
-          <input type="date" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="requestedDate()" (ngModelChange)="requestedDate.set($event)" name="requestedDate" />
+    @if (panel() === 'cancel') {
+      <section class="ops-card">
+        <h2 class="ops-card-title">Cancel work order</h2>
+        @if (netIssued(order) > 0) {
+          <div class="ops-alert ops-alert--warn mb-3">Parts issued to this job must be returned to stock before it can be cancelled.</div>
         }
-        <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="diagnosis()" (ngModelChange)="diagnosis.set($event)" name="diagnosis" placeholder="Diagnosis"></textarea>
-        <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="estimatedCost()" (ngModelChange)="estimatedCost.set($event)" name="estimatedCost" placeholder="Estimated cost" />
-        <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Save</button>
-      </form>
-
-      <div class="flex flex-col gap-3 max-w-xl text-xs">
-        @if (order.status === 'OPEN') {
-          <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer w-fit" (click)="start()">Start</button>
-        }
-        @if (order.status === 'IN_PROGRESS') {
-          <div class="flex flex-col gap-2">
-            <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="completionNotes()" (ngModelChange)="completionNotes.set($event)" name="completionNotes" placeholder="Completion notes"></textarea>
-            <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="actualCost()" (ngModelChange)="actualCost.set($event)" name="actualCost" placeholder="Actual cost (optional)" />
-            <p class="text-slate-500">A positive actual cost is the amount posted to maintenance expense. Operational cost is not posted in its place.</p>
-            <button type="button" class="px-3 py-2 rounded-lg bg-emerald-700 text-white font-bold border-none cursor-pointer w-fit" (click)="complete()">Complete</button>
+        <div class="ops-form">
+          <label class="ops-field span-all">Reason *
+            <textarea class="ops-input" rows="2" [ngModel]="cancellationReason()" (ngModelChange)="cancellationReason.set($event)" name="cancellationReason" placeholder="Why is this job cancelled?"></textarea>
+          </label>
+          <div class="ops-form-actions span-all">
+            <button type="button" class="ops-btn" (click)="panel.set(null)">Keep work order</button>
+            <button type="button" class="ops-btn ops-btn--danger" (click)="cancel()">Cancel work order</button>
           </div>
-        }
-        <div class="flex flex-col gap-2">
-          <textarea class="border border-slate-200 rounded-lg px-3 py-2" rows="2" [ngModel]="cancellationReason()" (ngModelChange)="cancellationReason.set($event)" name="cancellationReason" placeholder="Cancellation reason"></textarea>
-          <button type="button" class="px-3 py-2 rounded-lg bg-rose-700 text-white font-bold border-none cursor-pointer w-fit" (click)="cancel()">Cancel work order</button>
         </div>
-      </div>
+      </section>
     }
+    @if (panel() === 'edit' && canWrite() && (order.status === 'OPEN' || order.status === 'IN_PROGRESS')) {
+      <form class="ops-card" (ngSubmit)="save(); panel.set(null)">
+        <h2 class="ops-card-title">Edit details</h2>
+        <div class="ops-form">
+          @if (order.status === 'OPEN') {
+            <label class="ops-field">Title<input class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" /></label>
+            <label class="ops-field">Priority
+              <select class="ops-input" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
+                <option value="LOW">Low</option><option value="NORMAL">Normal</option><option value="HIGH">High</option>
+              </select>
+            </label>
+            <label class="ops-field">Requested date<input type="date" class="ops-input" [ngModel]="requestedDate()" (ngModelChange)="requestedDate.set($event)" name="requestedDate" /></label>
+            <label class="ops-field span-all">Description<textarea class="ops-input" rows="2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description"></textarea></label>
+          }
+          <label class="ops-field span-all">Diagnosis<textarea class="ops-input" rows="2" [ngModel]="diagnosis()" (ngModelChange)="diagnosis.set($event)" name="diagnosis"></textarea></label>
+          <label class="ops-field">Estimated cost (₹)<input type="number" min="0" step="0.01" class="ops-input" [ngModel]="estimatedCost()" (ngModelChange)="estimatedCost.set($event)" name="estimatedCost" /></label>
+          <div class="ops-form-actions span-all">
+            <button type="button" class="ops-btn" (click)="panel.set(null)">Close</button>
+            <button type="submit" class="ops-btn ops-btn--primary">Save</button>
+          </div>
+        </div>
+      </form>
+    }
+
+    <!-- Cost summary -->
+    <section class="ops-kpis">
+      <div class="ops-kpi"><div class="ops-kpi-label">Estimated</div><div class="ops-kpi-value">₹{{ (order.estimatedCost ?? 0) | number:'1.0-2' }}</div></div>
+      <div class="ops-kpi"><div class="ops-kpi-label">Parts</div><div class="ops-kpi-value">₹{{ (order.partsTotal ?? 0) | number:'1.0-2' }}</div></div>
+      <div class="ops-kpi"><div class="ops-kpi-label">Labour</div><div class="ops-kpi-value">₹{{ (order.labourTotal ?? 0) | number:'1.0-2' }}</div></div>
+      <div class="ops-kpi"><div class="ops-kpi-label">Parts + labour</div><div class="ops-kpi-value">₹{{ (order.operationalCost ?? 0) | number:'1.0-2' }}</div></div>
+      <div class="ops-kpi"><div class="ops-kpi-label">Posted to accounts</div><div class="ops-kpi-value">{{ order.financialAmount != null ? ('₹' + (order.financialAmount | number:'1.0-2')) : '—' }}</div></div>
+    </section>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <section class="ops-card">
+        <h2 class="ops-card-title">Details
+          <a class="ops-link" [routerLink]="['/vehicles']" [queryParams]="{ vehicleId: order.vehicleId, tab: 'work-orders' }">Open vehicle</a>
+        </h2>
+        <dl class="ops-dl">
+          <div><dt>Vehicle</dt><dd>{{ order.vehicleCode }} {{ order.vehicleName ? '— ' + order.vehicleName : '' }}</dd></div>
+          <div><dt>Maintenance type</dt><dd>{{ order.maintenanceType || '—' }}</dd></div>
+          <div><dt>Workshop / supplier</dt><dd>{{ order.supplierName || '—' }}</dd></div>
+          <div><dt>Assigned to</dt><dd>{{ order.assignedUserName || '—' }}</dd></div>
+          <div><dt>Opened</dt><dd>{{ order.openedAt ? (order.openedAt | date:'dd MMM yyyy, HH:mm') : '—' }}</dd></div>
+          <div><dt>Started</dt><dd>{{ order.startedAt ? (order.startedAt | date:'dd MMM yyyy, HH:mm') : '—' }}</dd></div>
+          <div><dt>Completed</dt><dd>{{ order.completedAt ? (order.completedAt | date:'dd MMM yyyy, HH:mm') : '—' }}</dd></div>
+          <div><dt>Requested date</dt><dd>{{ order.requestedDate || '—' }}</dd></div>
+          <div><dt>Odometer at open</dt><dd>{{ order.odometerAtOpen != null ? (order.odometerAtOpen | number) + ' km' : '—' }}</dd></div>
+          <div><dt>Odometer at completion</dt><dd>{{ order.odometerAtComplete != null ? (order.odometerAtComplete | number) + ' km' : '—' }}</dd></div>
+          <div><dt>Accounting</dt><dd>{{ accountingLabel(order.accountingStatus) }}{{ order.journalVoucherReference ? ' · ' + order.journalVoucherReference : '' }}</dd></div>
+        </dl>
+      </section>
+      <section class="ops-card">
+        <h2 class="ops-card-title">Notes</h2>
+        <dl class="ops-dl">
+          <div class="span-all"><dt>Description</dt><dd>{{ order.description || '—' }}</dd></div>
+          <div class="span-all"><dt>Diagnosis</dt><dd>{{ order.diagnosis || '—' }}</dd></div>
+          <div class="span-all"><dt>Completion notes</dt><dd>{{ order.completionNotes || '—' }}</dd></div>
+          @if (order.cancellationReason) { <div class="span-all"><dt>Cancellation reason</dt><dd>{{ order.cancellationReason }}</dd></div> }
+        </dl>
+        @if (order.source === 'PREVENTIVE') {
+          <div class="ops-section-label mt-4">Preventive rule</div>
+          <dl class="ops-dl">
+            <div><dt>Rule</dt><dd>{{ order.maintenanceRuleName || order.maintenanceRuleId }}</dd></div>
+            <div><dt>Trigger</dt><dd>{{ order.triggerMode || '—' }}</dd></div>
+            <div><dt>Due at</dt><dd>{{ order.dueKm != null ? (order.dueKm | number) + ' km' : '' }} {{ order.dueDate || '' }}</dd></div>
+            <div><dt>Status when opened</dt><dd>{{ order.dueStatusAtCreation || '—' }}</dd></div>
+          </dl>
+        }
+      </section>
+    </div>
+
+    <!-- Parts and stock in one place -->
+    <section class="ops-card flex flex-col gap-3">
+      <h2 class="ops-card-title">Parts &amp; stock
+        @if (canMoveInventory(order)) {
+          <label class="ops-field flex-row items-center gap-2 font-normal">Issue from / return to
+            <select class="ops-input w-56" [ngModel]="warehouseId()" (ngModelChange)="onWarehouseChange($event)" name="issueWarehouse">
+              <option value="">Select warehouse…</option>
+              @for (row of warehouses(); track row.id) { <option [value]="row.id">{{ row.code }} — {{ row.name }}</option> }
+            </select>
+          </label>
+        }
+      </h2>
+      <div class="ops-table-wrap">
+        <table class="ops-table">
+          <thead>
+            <tr>
+              <th>Part</th><th class="num">Requested</th><th class="num">Rate</th><th class="num">Total</th>
+              <th class="num">Issued</th><th class="num">Returned</th><th class="num">Used</th><th class="num">To issue</th>
+              @if (canMoveInventory(order)) { <th class="num">In stock</th><th>Issue</th><th>Return</th> }
+              @if (canEditLines(order)) { <th></th> }
+            </tr>
+          </thead>
+          <tbody>
+            @for (line of order.parts || []; track line.id) {
+              <tr>
+                <td><span class="code">{{ line.sparePartCode }}</span> {{ line.sparePartName }}<div class="ops-sub">{{ line.notes }}</div></td>
+                <td class="num">{{ line.quantity }} {{ line.uomCode || '' }}</td>
+                <td class="num">{{ line.unitRate | number:'1.2-2' }}</td>
+                <td class="num">{{ line.lineTotal | number:'1.2-2' }}</td>
+                <td class="num">{{ line.issuedQuantity || 0 }}</td>
+                <td class="num">{{ line.returnedQuantity || 0 }}</td>
+                <td class="num"><strong>{{ line.netIssuedQuantity != null ? line.netIssuedQuantity : ((line.issuedQuantity || 0) - (line.returnedQuantity || 0)) }}</strong></td>
+                <td class="num">{{ remaining(line) }}</td>
+                @if (canMoveInventory(order)) {
+                  <td class="num">{{ warehouseId() ? availableFor(line) : '—' }}</td>
+                  <td>
+                    <div class="flex items-center gap-1">
+                      <input type="number" min="0" step="0.001" class="ops-input ops-input--sm" [(ngModel)]="issueQty[line.id]" [name]="'issue-' + line.id" [disabled]="remaining(line) <= 0 || !warehouseId()" [placeholder]="remaining(line) > 0 ? remaining(line) + '' : ''" />
+                      <button type="button" class="ops-btn ops-btn--sm" [disabled]="remaining(line) <= 0 || !warehouseId() || availableFor(line) <= 0" (click)="issue(line)">Issue</button>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="flex items-center gap-1">
+                      <input type="number" min="0" step="0.001" class="ops-input ops-input--sm" [(ngModel)]="returnQty[line.id]" [name]="'return-' + line.id" [disabled]="returnable(line) <= 0 || !warehouseId()" />
+                      <button type="button" class="ops-btn ops-btn--sm" [disabled]="returnable(line) <= 0 || !warehouseId()" (click)="returnStock(line)">Return</button>
+                    </div>
+                  </td>
+                }
+                @if (canEditLines(order)) {
+                  <td class="whitespace-nowrap">
+                    <button type="button" class="ops-link" (click)="editPart(line)">Edit</button>
+                    <button type="button" class="ops-link ops-link--danger ml-3" (click)="removePart(line)">Remove</button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr><td class="ops-empty" colspan="12">No parts on this job yet.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (canMoveInventory(order) && !warehouseId() && (order.parts || []).length) {
+        <p class="ops-sub">Select a warehouse to issue or return parts.</p>
+      }
+      @if (canEditLines(order)) {
+        <form class="ops-form" (ngSubmit)="savePart()">
+          <label class="ops-field">Spare part
+            <select class="ops-input" [ngModel]="partSparePartId()" (ngModelChange)="partSparePartId.set($event)" name="sparePartId">
+              <option value="">Select part…</option>
+              @for (part of spareParts(); track part.id) { <option [value]="part.id">{{ part.code }} — {{ part.name }}</option> }
+            </select>
+          </label>
+          <label class="ops-field">Quantity<input type="number" min="0" step="0.001" class="ops-input" [ngModel]="partQuantity()" (ngModelChange)="partQuantity.set($event)" name="partQuantity" /></label>
+          <label class="ops-field">Rate (₹)<input type="number" min="0" step="0.01" class="ops-input" [ngModel]="partRate()" (ngModelChange)="partRate.set($event)" name="partRate" placeholder="Default rate" /></label>
+          <label class="ops-field">Notes<input class="ops-input" [ngModel]="partNotes()" (ngModelChange)="partNotes.set($event)" name="partNotes" /></label>
+          <div class="ops-form-actions span-all">
+            <button type="submit" class="ops-btn ops-btn--dark"><span class="material-icons">add</span>{{ partEditingId() ? 'Save part' : 'Add part' }}</button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <section class="ops-card flex flex-col gap-3">
+      <h2 class="ops-card-title">Labour</h2>
+      <div class="ops-table-wrap">
+        <table class="ops-table">
+          <thead>
+            <tr><th>Person</th><th>Work</th><th class="num">Hours</th><th class="num">Rate</th><th class="num">Total</th><th>Date</th>
+              @if (canEditLines(order)) { <th></th> }</tr>
+          </thead>
+          <tbody>
+            @for (line of order.labour || []; track line.id) {
+              <tr>
+                <td>{{ line.appUserName || '—' }}</td>
+                <td>{{ line.description }}</td>
+                <td class="num">{{ line.hours }}</td>
+                <td class="num">{{ line.rate | number:'1.2-2' }}</td>
+                <td class="num">{{ line.lineTotal | number:'1.2-2' }}</td>
+                <td>{{ line.workDate || '—' }}</td>
+                @if (canEditLines(order)) {
+                  <td class="whitespace-nowrap">
+                    <button type="button" class="ops-link" (click)="editLabour(line)">Edit</button>
+                    <button type="button" class="ops-link ops-link--danger ml-3" (click)="removeLabour(line)">Remove</button>
+                  </td>
+                }
+              </tr>
+            } @empty {
+              <tr><td class="ops-empty" colspan="7">No labour recorded.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (canEditLines(order)) {
+        <form class="ops-form" (ngSubmit)="saveLabour()">
+          <label class="ops-field">Person
+            <select class="ops-input" [ngModel]="labourUserId()" (ngModelChange)="labourUserId.set($event)" name="labourUserId">
+              <option value="">Optional</option>
+              @for (person of people(); track person.id) { <option [value]="person.id">{{ person.name }}</option> }
+            </select>
+          </label>
+          <label class="ops-field">Work done<input class="ops-input" [ngModel]="labourDescription()" (ngModelChange)="labourDescription.set($event)" name="labourDescription" /></label>
+          <label class="ops-field">Hours<input type="number" min="0" step="0.01" class="ops-input" [ngModel]="labourHours()" (ngModelChange)="labourHours.set($event)" name="labourHours" /></label>
+          <label class="ops-field">Rate / hour (₹)<input type="number" min="0" step="0.01" class="ops-input" [ngModel]="labourRate()" (ngModelChange)="labourRate.set($event)" name="labourRate" /></label>
+          <label class="ops-field">Date<input type="date" class="ops-input" [ngModel]="labourDate()" (ngModelChange)="labourDate.set($event)" name="labourDate" /></label>
+          <label class="ops-field">Notes<input class="ops-input" [ngModel]="labourNotes()" (ngModelChange)="labourNotes.set($event)" name="labourNotes" /></label>
+          <div class="ops-form-actions span-all">
+            <button type="submit" class="ops-btn ops-btn--dark"><span class="material-icons">add</span>{{ labourEditingId() ? 'Save labour' : 'Add labour' }}</button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <app-attachments-panel entityType="WORK_ORDER" [entityId]="order.id" title="Bills & photos" [categories]="['GARAGE_BILL', 'PARTS_INVOICE', 'PHOTO', 'OTHER']" />
   }
 </div>

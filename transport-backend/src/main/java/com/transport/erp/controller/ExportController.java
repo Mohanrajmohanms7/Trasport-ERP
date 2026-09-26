@@ -50,7 +50,8 @@ public class ExportController {
                 Map.entry("driver-advances", exports::exportDriverAdvances),
                 Map.entry("journal", exports::exportJournal),
                 Map.entry("chart-of-accounts", exports::exportChartOfAccounts),
-                Map.entry("suppliers", exports::exportSuppliers)
+                Map.entry("suppliers", exports::exportSuppliers),
+                Map.entry("warehouses", exports::exportWarehouses)
         );
     }
 

@@ -1,3 +1,5 @@
+import { MasterService } from '../../services/master.service';
+import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -25,6 +27,8 @@ export class WorkOrderListComponent implements OnInit {
   source = signal('');
   maintenanceType = signal('');
   branchId = signal('');
+  vehicles = signal<any[]>([]);
+  private masters = inject(MasterService);
 
   readonly canWrite = signal(false);
 
@@ -32,6 +36,10 @@ export class WorkOrderListComponent implements OnInit {
     const roles = this.auth.currentUser()?.roles || [];
     this.canWrite.set(roles.some(role =>
       role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || role === 'BRANCH_MANAGER'));
+    this.masters.getMasters<any>('vehicles', resolveTenantCompanyId(), { size: 500 }).subscribe({
+      next: res => this.vehicles.set(res?.success ? ((res.data as any)?.content || res.data || []) : []),
+      error: () => this.vehicles.set([])
+    });
     this.load();
   }
 

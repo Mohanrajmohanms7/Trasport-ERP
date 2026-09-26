@@ -44,12 +44,14 @@ class WorkOrderFinancialPostingTest {
     @Mock private FinancialYearPeriodValidationService periodValidationService;
     @Mock private AuditService auditService;
 
+    @Mock private InventoryValuationService valuationService;
     @InjectMocks private WorkOrderFinancialPosting posting;
 
     private WorkOrder order;
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(valuationService.netPartsCost(org.mockito.ArgumentMatchers.any())).thenReturn(java.math.BigDecimal.ZERO);
         order = new WorkOrder();
         order.setId(10L);
         order.setCompanyId(1L);

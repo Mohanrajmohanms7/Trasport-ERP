@@ -65,4 +65,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
               AND s.availableQuantity > 0
             """)
     long countPositiveStock(@Param("warehouseId") Long warehouseId);
+
+    List<Warehouse> findByCompanyIdAndIsDeletedFalseOrderByCodeAsc(Long companyId);
 }

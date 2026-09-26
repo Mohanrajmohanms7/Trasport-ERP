@@ -60,6 +60,8 @@ public class WorkOrderResponse {
     private BigDecimal labourTotal;
     private BigDecimal operationalCost;
     private BigDecimal financialAmount;
+    /** Net cost of parts issued from own stock (issues - returns, at average cost). */
+    private BigDecimal partsCostFromStock;
     private String accountingStatus;
     private Long journalVoucherId;
     private String journalVoucherReference;

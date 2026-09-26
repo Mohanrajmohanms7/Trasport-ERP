@@ -1,67 +1,82 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
-  <div class="flex flex-wrap items-center justify-between gap-3">
+<div class="ops-page">
+  <header class="ops-header">
     <div>
-      <h1 class="text-lg font-bold text-slate-900 dark:text-white">Stock</h1>
-      <p class="text-xs text-slate-500">On-hand spare-part quantity by warehouse. Opening balance, receipt, issue, and return change this quantity.</p>
+      <h1 class="ops-title"><span class="material-icons">inventory_2</span>Stock</h1>
+      <p class="ops-sub">On-hand spare parts by warehouse. Opening balance and receipts add stock; work-order issues take it out; returns bring it back.</p>
     </div>
-    <app-export-buttons module="stock" />
-    @if (canWrite()) {
-      <div class="flex gap-2">
-        <button type="button" class="px-4 py-2 rounded-xl bg-slate-700 text-white text-xs font-bold border-none cursor-pointer" (click)="receive()">Receive Stock</button>
-        <button type="button" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer" (click)="opening()">Add Opening Stock</button>
-      </div>
-    }
-  </div>
+    <div class="ops-actions">
+      <app-export-buttons module="stock" />
+      @if (canWrite()) {
+        <button type="button" class="ops-btn" (click)="opening()"><span class="material-icons">playlist_add</span>Opening stock</button>
+        <button type="button" class="ops-btn ops-btn--primary" (click)="receive()"><span class="material-icons">move_to_inbox</span>Receive stock</button>
+      }
+    </div>
+  </header>
 
-  <form class="grid grid-cols-1 md:grid-cols-4 gap-2" (ngSubmit)="load()">
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
+  <section class="ops-kpis">
+    <div class="ops-kpi"><div class="ops-kpi-label">Stock lines</div><div class="ops-kpi-value">{{ rows().length }}</div></div>
+    <div class="ops-kpi"><div class="ops-kpi-label">Need reorder</div><div class="ops-kpi-value" style="color:#b45309">{{ countStatus('REORDER') }}</div></div>
+    <div class="ops-kpi"><div class="ops-kpi-label">Out of stock</div><div class="ops-kpi-value" style="color:#b91c1c">{{ countStatus('OUT') }}</div></div>
+  </section>
+
+<form class="ops-filters" (ngSubmit)="load()">
+    <select class="ops-input" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
       <option value="">All warehouses</option>
       @for (row of warehouses(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event)" name="part">
+    <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event)" name="part">
       <option value="">All spare parts</option>
       @for (part of parts(); track part.id) {
         <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
       }
     </select>
-    <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" placeholder="Spare part code" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
-    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer w-fit">Filter</button>
+    <input class="ops-input" placeholder="Spare part code" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    <label class="ops-field flex-row items-center gap-2 h-10"><input type="checkbox" [ngModel]="lowOnly()" (ngModelChange)="lowOnly.set($event)" name="lowOnly" /> Only reorder / out of stock</label>
+    <button type="submit" class="ops-btn ops-btn--dark">Apply</button>
   </form>
 
   @if (error()) {
-    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   }
 
   @if (loading()) {
-    <div class="p-8 text-xs text-slate-500">Loading stock…</div>
+    <div class="ops-empty">Loading stock…</div>
   } @else {
-    <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-auto">
-      <table class="w-full text-xs">
-        <thead class="text-left text-slate-500">
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead>
           <tr>
-            <th class="p-3">Spare Part</th>
-            <th class="p-3">Code</th>
-            <th class="p-3">UOM</th>
-            <th class="p-3">Warehouse</th>
-            <th class="p-3">Branch</th>
-            <th class="p-3">Available Quantity</th>
+            <th>Spare Part</th>
+            <th>Code</th>
+            <th>UOM</th>
+            <th>Warehouse</th>
+            <th>Branch</th>
+            <th class="num">Available</th>
+            <th class="num">Reorder level</th>
+            <th class="num">Avg cost (₹)</th>
+            <th class="num">Value (₹)</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.id) {
-            <tr class="border-t border-slate-100 dark:border-slate-800">
-              <td class="p-3">{{ row.sparePartName }}</td>
-              <td class="p-3 font-bold">{{ row.sparePartCode }}</td>
-              <td class="p-3">{{ row.uomCode || row.uomName || '—' }}</td>
-              <td class="p-3">{{ row.warehouseCode || row.warehouseName }}</td>
-              <td class="p-3">{{ row.branchCode || row.branchName || row.branchId || '—' }}</td>
-              <td class="p-3">{{ row.availableQuantity }}</td>
+          @for (row of visibleRows(); track row.id) {
+            <tr>
+              <td>{{ row.sparePartName }}</td>
+              <td class="code">{{ row.sparePartCode }}</td>
+              <td>{{ row.uomCode || row.uomName || '—' }}</td>
+              <td>{{ row.warehouseCode || row.warehouseName }}</td>
+              <td>{{ row.branchCode || row.branchName || row.branchId || '—' }}</td>
+              <td class="num"><strong>{{ row.availableQuantity }}</strong></td>
+              <td class="num">{{ row.reorderLevel != null ? row.reorderLevel : '—' }}</td>
+              <td class="num">{{ row.averageCost ? (row.averageCost | number:'1.2-2') : '—' }}</td>
+              <td class="num">{{ row.stockValue ? (row.stockValue | number:'1.2-2') : '—' }}</td>
+              <td><span class="ops-pill" [attr.data-s]="row.stockStatus === 'OK' ? 'LOW' : row.stockStatus">{{ row.stockStatus === 'OUT' ? 'Out of stock' : row.stockStatus === 'REORDER' ? 'Reorder' : 'OK' }}</span></td>
             </tr>
           } @empty {
             <tr>
-              <td class="p-3 text-slate-500" colspan="6">No stock balances yet.</td>
+              <td class="ops-empty" colspan="10">No stock balances yet.</td>
             </tr>
           }
         </tbody>

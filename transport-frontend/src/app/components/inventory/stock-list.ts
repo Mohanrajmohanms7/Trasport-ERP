@@ -15,6 +15,16 @@ import { workOrderError } from '../../services/work-order.service';
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {
+  lowOnly = signal(false);
+
+  visibleRows() {
+    return this.lowOnly() ? this.rows().filter((r: any) => r.stockStatus === 'REORDER' || r.stockStatus === 'OUT') : this.rows();
+  }
+
+  countStatus(status: string): number {
+    return this.rows().filter((r: any) => r.stockStatus === status).length;
+  }
+
   private inventory = inject(InventoryService);
   private spareParts = inject(SparePartService);
   private router = inject(Router);

@@ -34,6 +34,8 @@ public class MaintenanceRequestResponse {
     private LocalDateTime approvedAt;
     private Long workOrderId;
     private String workOrderNumber;
+    /** Current status of the work order this request became (OPEN, IN_PROGRESS, COMPLETED, CANCELLED). */
+    private String workOrderStatus;
     private String cancelledBy;
     private LocalDateTime cancelledAt;
     private String cancellationReason;

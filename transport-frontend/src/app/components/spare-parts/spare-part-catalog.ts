@@ -59,6 +59,58 @@ export class SparePartCatalogComponent implements OnInit {
     });
   }
 
+  editingId = signal<number | null>(null);
+  showForm = signal(false);
+  search = signal('');
+  reorderLevel = signal('');
+  status = signal('ACTIVE');
+
+  filtered(): SparePart[] {
+    const q = this.search().trim().toLowerCase();
+    return q ? this.rows().filter(r => (r.code + ' ' + r.name).toLowerCase().includes(q)) : this.rows();
+  }
+
+  openNew() {
+    this.editingId.set(null);
+    this.code.set(''); this.name.set(''); this.description.set('');
+    this.defaultUomId.set(''); this.defaultRate.set('0'); this.reorderLevel.set(''); this.status.set('ACTIVE');
+    this.showForm.set(true);
+  }
+
+  openEdit(row: SparePart) {
+    this.editingId.set(row.id);
+    this.code.set(row.code); this.name.set(row.name); this.description.set(row.description || '');
+    this.defaultUomId.set(row.defaultUomId ? String(row.defaultUomId) : '');
+    this.defaultRate.set(row.defaultRate != null ? String(row.defaultRate) : '0');
+    this.reorderLevel.set(row.reorderLevel != null ? String(row.reorderLevel) : '');
+    this.status.set(row.status || 'ACTIVE');
+    this.showForm.set(true);
+  }
+
+  save() {
+    if (this.editingId()) {
+      this.error.set(null);
+      this.feedback.set(null);
+      if (!this.name().trim()) { this.error.set('Name is required.'); return; }
+      this.spareParts.update(this.editingId()!, {
+        name: this.name().trim(),
+        description: this.description().trim() || null,
+        defaultUomId: this.defaultUomId() ? Number(this.defaultUomId()) : null,
+        defaultRate: this.defaultRate().trim() ? Number(this.defaultRate()) : 0,
+        reorderLevel: this.reorderLevel().trim() ? Number(this.reorderLevel()) : null,
+        status: this.status()
+      }).subscribe({
+        next: res => {
+          if (res?.success) { this.feedback.set('Spare part updated.'); this.showForm.set(false); this.load(); }
+          else this.error.set(res?.message || 'Unable to update the spare part.');
+        },
+        error: err => this.error.set(workOrderError(err))
+      });
+      return;
+    }
+    this.create();
+  }
+
   create() {
     this.error.set(null);
     this.feedback.set(null);
@@ -71,11 +123,14 @@ export class SparePartCatalogComponent implements OnInit {
       name: this.name().trim(),
       description: this.description().trim() || null,
       defaultUomId: Number(this.defaultUomId()),
-      defaultRate: this.defaultRate().trim() ? Number(this.defaultRate()) : 0
+      defaultRate: this.defaultRate().trim() ? Number(this.defaultRate()) : 0,
+      reorderLevel: this.reorderLevel().trim() ? Number(this.reorderLevel()) : null,
+      status: this.status()
     }).subscribe({
       next: res => {
         if (res?.success) {
           this.feedback.set('Spare part created.');
+          this.showForm.set(false);
           this.code.set('');
           this.name.set('');
           this.description.set('');

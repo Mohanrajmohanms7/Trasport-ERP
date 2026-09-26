@@ -39,6 +39,9 @@ import java.util.stream.Collectors;
 @Service
 public class InventoryService {
 
+    @Autowired
+    private InventoryValuationService valuationService;
+
     static final String UNIQUE_STOCK = "uk_warehouse_stock_warehouse_part";
 
     @Autowired
@@ -119,7 +122,12 @@ public class InventoryService {
         Warehouse warehouse = warehouseService.requireUsable(request.getWarehouseId(), user);
         SparePart part = requireUsablePart(request.getSparePartId(), warehouse.getCompanyId());
 
+        BigDecimal unitRate = request.getUnitRate();
+        if (unitRate != null && unitRate.signum() < 0) {
+            throw invalid("OPENING_BALANCE_RATE_INVALID", "Unit cost cannot be negative.");
+        }
         WarehouseStock stock = addQuantity(warehouse, part, quantity, username);
+        valuationService.blendCost(stock, quantity, unitRate);
         InventoryTransaction transaction = new InventoryTransaction();
         transaction.setCompanyId(warehouse.getCompanyId());
         transaction.setBranchId(warehouse.getBranchId());
@@ -127,6 +135,7 @@ public class InventoryService {
         transaction.setSparePart(part);
         transaction.setTransactionType(InventoryTransaction.TYPE_OPENING_BALANCE);
         transaction.setQuantity(quantity);
+        transaction.setUnitRate(unitRate != null && unitRate.signum() > 0 ? unitRate : null);
         transaction.setReferenceType("WAREHOUSE_STOCK");
         transaction.setReferenceId(stock.getId());
         transaction.setDescription(trimToNull(request.getDescription()));
@@ -139,6 +148,7 @@ public class InventoryService {
         transaction = transactionRepository.saveAndFlush(transaction);
         transaction.setCode("OB-" + String.format("%06d", transaction.getId()));
         transactionRepository.save(transaction);
+        valuationService.postOpening(transaction, username);
 
         auditService.log(username, "OPENING_BALANCE_CREATED", "inventory_transactions", transaction.getId(), null,
                 "warehouseId=" + warehouse.getId() + ", sparePartId=" + part.getId() + ", quantity=" + quantity);
@@ -315,6 +325,13 @@ public class InventoryService {
         dto.setCompanyId(stock.getCompanyId());
         dto.setBranchId(stock.getBranchId());
         dto.setAvailableQuantity(stock.getAvailableQuantity());
+        java.math.BigDecimal reorder = stock.getSparePart() != null ? stock.getSparePart().getReorderLevel() : null;
+        dto.setReorderLevel(reorder);
+        dto.setAverageCost(stock.getAverageCost());
+        dto.setStockValue(stock.getAverageCost() == null || stock.getAvailableQuantity() == null ? null
+                : stock.getAvailableQuantity().multiply(stock.getAverageCost()).setScale(2, java.math.RoundingMode.HALF_UP));
+        java.math.BigDecimal avail = stock.getAvailableQuantity() == null ? java.math.BigDecimal.ZERO : stock.getAvailableQuantity();
+        dto.setStockStatus(avail.signum() <= 0 ? "OUT" : (reorder != null && avail.compareTo(reorder) <= 0 ? "REORDER" : "OK"));
         dto.setVersion(stock.getVersion());
         Warehouse warehouse = stock.getWarehouse();
         if (warehouse != null) {

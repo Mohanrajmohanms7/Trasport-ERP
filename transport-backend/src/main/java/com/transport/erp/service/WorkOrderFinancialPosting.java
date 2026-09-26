@@ -49,11 +49,33 @@ public class WorkOrderFinancialPosting {
     @Autowired
     private AuditService auditService;
 
+    @Autowired
+    private InventoryValuationService valuationService;
+
+    /**
+     * Actual cost = parts taken from our own stock (at cost) + outside cost (labour, workshop, bought-out parts).
+     * Parts from stock move from inventory to expense; only the outside part becomes a payable.
+     */
     public void postCompletion(WorkOrder order, BigDecimal actualCost, String username) {
         if (actualCost != null && actualCost.compareTo(BigDecimal.ZERO) < 0) {
             throw amountInvalid();
         }
-        BigDecimal financialAmount = financialAmount(actualCost);
+        BigDecimal partsCost = valuationService.netPartsCost(order.getId());
+        if (actualCost != null && actualCost.setScale(2, RoundingMode.HALF_UP).compareTo(partsCost) < 0) {
+            throw new BusinessValidationException(
+                    "Actual Cost Too Low",
+                    "WORK_ORDER_COST_BELOW_PARTS",
+                    "Actual cost ₹" + actualCost.setScale(2, RoundingMode.HALF_UP).toPlainString()
+                            + " is less than the parts issued from stock (₹" + partsCost.toPlainString() + ").",
+                    "Enter the full job cost: parts from stock plus labour and outside charges.");
+        }
+        if (partsCost.signum() > 0) {
+            if (findPosted(order, "MAINT-PARTS-" + order.getWorkOrderNumber()) != null) {
+                throw alreadyPosted("MAINT-PARTS-" + order.getWorkOrderNumber());
+            }
+            valuationService.postPartsConsumed(order, partsCost, username);
+        }
+        BigDecimal financialAmount = financialAmount(actualCost == null ? null : actualCost.subtract(partsCost));
         if (financialAmount == null) {
             return;
         }
@@ -88,6 +110,19 @@ public class WorkOrderFinancialPosting {
 
     public void attachAccounting(WorkOrder order, WorkOrderResponse dto) {
         JournalVoucher posted = findPosted(order, referenceFor(order));
+        JournalVoucher parts = findPosted(order, "MAINT-PARTS-" + order.getWorkOrderNumber());
+        if (posted == null && parts != null) {
+            posted = parts;
+            parts = null;
+        }
+        if (posted != null && parts != null) {
+            dto.setAccountingStatus(POSTED);
+            dto.setFinancialAmount(posted.getAmount().add(parts.getAmount()));
+            dto.setJournalVoucherId(posted.getId());
+            dto.setJournalVoucherReference(posted.getReferenceNumber() + ", " + parts.getReferenceNumber());
+            dto.setPostedAt(posted.getCreatedDate());
+            return;
+        }
         if (posted == null) {
             dto.setAccountingStatus(NOT_POSTED);
             dto.setFinancialAmount(null);

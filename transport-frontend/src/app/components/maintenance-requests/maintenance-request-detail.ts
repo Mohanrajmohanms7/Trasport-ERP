@@ -13,6 +13,19 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
   templateUrl: './maintenance-request-detail.html'
 })
 export class MaintenanceRequestDetailComponent implements OnInit {
+  readonly steps = [
+    { key: 'OPEN', label: 'Reported' },
+    { key: 'UNDER_REVIEW', label: 'Under review' },
+    { key: 'APPROVED', label: 'Approved' },
+    { key: 'CONVERTED', label: 'Work order created' }
+  ];
+
+  stepDone(row: any, index: number): boolean {
+    const order = ['OPEN', 'UNDER_REVIEW', 'APPROVED', 'CONVERTED'];
+    const at = order.indexOf(row?.status);
+    return at >= index;
+  }
+
   private requests = inject(MaintenanceRequestService);
   private route = inject(ActivatedRoute);
   private auth = inject(AuthService);
