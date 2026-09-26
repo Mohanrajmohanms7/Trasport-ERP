@@ -370,7 +370,7 @@ export class AppShellComponent implements OnDestroy {
   });
 
   breadcrumbs = computed(() => {
-    const url = this.activeRoute();
+    const url = (this.activeRoute() || "").split("?")[0].split("#")[0];
     if (url === '/' || url === '/dashboard' || url === '') {
       return ['Dashboard'];
     }
