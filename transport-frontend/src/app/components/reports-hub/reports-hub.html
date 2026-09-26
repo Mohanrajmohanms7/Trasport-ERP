@@ -1,0 +1,145 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 shrink-0">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)]">assessment</span>Reports
+      </h1>
+      <p class="text-sm text-[var(--ff-text-secondary)]">{{ catalog().length }} business reports for daily operations and management. Every report exports to Excel and PDF.</p>
+    </div>
+    <a routerLink="/reports-bi" class="rh-btn rh-btn-ghost self-start md:self-auto"><span class="material-icons text-base">account_balance</span>P&amp;L, Balance sheet &amp; Trial balance</a>
+  </header>
+
+  <div class="rh-grid flex-1 min-h-0">
+    <!-- Report list -->
+    <aside class="rh-nav rh-card overflow-y-auto py-2">
+      <div class="px-3 pb-2"><input class="rh-input w-full" placeholder="Search reports…" [ngModel]="search()" (ngModelChange)="search.set($event)" /></div>
+      @for (g of groups(); track g.category) {
+        <div class="rh-cat"><span class="material-icons text-base">{{ g.icon }}</span>{{ g.category }}</div>
+        @for (r of g.reports; track r.key) {
+          <button type="button" class="rh-item" [class.active]="current()?.key === r.key" (click)="select(r)">{{ r.title }}</button>
+        }
+      }
+    </aside>
+
+    <section class="rh-card flex flex-col min-h-0 overflow-hidden">
+      <!-- Phone: report picker -->
+      <div class="lg:hidden p-3 border-b border-[var(--ff-border-divider)]">
+        <select class="rh-input w-full" [ngModel]="current()?.key" (ngModelChange)="selectByKey($event)" aria-label="Report">
+          @for (g of groups(); track g.category) {
+            <optgroup [label]="g.category">
+              @for (r of g.reports; track r.key) { <option [value]="r.key">{{ r.title }}</option> }
+            </optgroup>
+          }
+        </select>
+      </div>
+
+      @if (current(); as r) {
+        <div class="p-4 border-b border-[var(--ff-border-divider)] flex flex-col gap-3">
+          <div class="flex flex-wrap items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-[var(--ff-text-muted)]">{{ r.category }}</div>
+              <h2 class="text-lg font-bold">{{ r.title }}</h2>
+              <p class="text-xs text-[var(--ff-text-secondary)] max-w-3xl">{{ r.purpose }}</p>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" class="rh-btn rh-btn-ghost" (click)="export('xlsx')" [disabled]="exporting() !== null"><span class="material-icons text-base text-emerald-600">table_view</span>{{ exporting() === 'xlsx' ? 'Preparing…' : 'Excel' }}</button>
+              <button type="button" class="rh-btn rh-btn-ghost" (click)="export('pdf')" [disabled]="exporting() !== null"><span class="material-icons text-base text-rose-600">picture_as_pdf</span>{{ exporting() === 'pdf' ? 'Preparing…' : 'PDF' }}</button>
+            </div>
+          </div>
+
+          @if (has('date')) {
+            <div class="flex flex-wrap gap-2">
+              @for (p of [{k:'today',l:'Today'},{k:'month',l:'This month'},{k:'last-month',l:'Last month'},{k:'quarter',l:'Last 3 months'},{k:'fy',l:'This financial year'}]; track p.k) {
+                <button type="button" class="rh-chip" [class.on]="preset() === p.k" (click)="applyPreset(p.k)">{{ p.l }}</button>
+              }
+            </div>
+          }
+
+          <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-2 items-end">
+            @if (has('date')) {
+              <label class="rh-field">From<input type="date" class="rh-input" [(ngModel)]="f['from']" (ngModelChange)="preset.set('')" /></label>
+              <label class="rh-field">To<input type="date" class="rh-input" [(ngModel)]="f['to']" (ngModelChange)="preset.set('')" /></label>
+            } @else if (has('to')) {
+              <label class="rh-field">As on<input type="date" class="rh-input" [(ngModel)]="f['to']" /></label>
+            }
+            @if (has('branch') && branches().length > 1) {
+              <label class="rh-field">Branch<select class="rh-input" [(ngModel)]="f['branchId']"><option value="">All branches</option>@for (o of branches(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('vehicle')) {
+              <label class="rh-field">Vehicle<select class="rh-input" [(ngModel)]="f['vehicleId']"><option value="">All vehicles</option>@for (o of vehicles(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('driver')) {
+              <label class="rh-field">Driver<select class="rh-input" [(ngModel)]="f['driverId']"><option value="">All drivers</option>@for (o of drivers(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('customer')) {
+              <label class="rh-field">Customer<select class="rh-input" [(ngModel)]="f['customerId']"><option value="">All customers</option>@for (o of customers(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('warehouse')) {
+              <label class="rh-field">Warehouse<select class="rh-input" [(ngModel)]="f['warehouseId']"><option value="">All warehouses</option>@for (o of warehouses(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('sparePart')) {
+              <label class="rh-field">Spare part<select class="rh-input" [(ngModel)]="f['sparePartId']"><option value="">All parts</option>@for (o of parts(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+            }
+            @if (has('status') && statusOptions().length) {
+              <label class="rh-field">{{ r.key === 'sales-register' ? 'Payment status' : 'Status' }}<select class="rh-input" [(ngModel)]="f['status']"><option value="">All</option>@for (s of statusOptions(); track s) {<option [value]="s">{{ s.replace('_', ' ') | titlecase }}</option>}</select></label>
+            }
+            @if (has('category')) {
+              <label class="rh-field">Category<select class="rh-input" [(ngModel)]="f['category']"><option value="">All</option>@for (c of expenseCategories; track c) {<option [value]="c">{{ c.replace('_', ' ') | titlecase }}</option>}</select></label>
+            }
+            @if (has('accountCode')) {
+              <label class="rh-field">Account<select class="rh-input" [(ngModel)]="f['accountCode']"><option value="">1000 Cash on Hand</option>@for (a of accounts; track a.id) {<option [value]="a.id">{{ a.label }}</option>}</select></label>
+            }
+            @if (has('days')) {
+              <label class="rh-field">Due within (days)<input type="number" min="0" class="rh-input" placeholder="30" [(ngModel)]="f['days']" /></label>
+            }
+            <div class="flex gap-2 col-span-2 md:col-span-1">
+              <button type="button" class="rh-btn rh-btn-primary flex-1 justify-center" (click)="run()"><span class="material-icons text-base">play_arrow</span>Run</button>
+              <button type="button" class="rh-btn rh-btn-ghost" (click)="clearFilters()" title="Clear filters"><span class="material-icons text-base">filter_alt_off</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto">
+          @if (loading()) {
+            <div class="p-10 text-center text-sm text-[var(--ff-text-muted)]">Running report…</div>
+          } @else if (result(); as res) {
+            @if (isKpi()) {
+              <div class="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                @for (row of res.rows; track $index) {
+                  <div class="rh-kpi">
+                    <div class="text-[11px] font-semibold text-[var(--ff-text-muted)]">{{ row['area'] }}</div>
+                    <div class="text-sm font-medium mt-0.5">{{ row['kpi'] }}</div>
+                    <div class="text-2xl font-bold mt-2 tabular-nums">{{ kpiValue(row) }}</div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <table class="rh-table">
+                <thead><tr>@for (c of res.columns; track c.key) { <th [class.num]="isNum(c)">{{ c.label }}</th> }</tr></thead>
+                <tbody>
+                  @for (row of res.rows; track $index) {
+                    <tr>@for (c of res.columns; track c.key) { <td [class.num]="isNum(c)">{{ fmt(row[c.key], c) }}</td> }</tr>
+                  } @empty {
+                    <tr><td [attr.colspan]="res.columns.length" class="p-10 text-center text-[var(--ff-text-muted)]">No records for these filters.</td></tr>
+                  }
+                </tbody>
+                @if (res.rows.length && (res.totals | keyvalue).length) {
+                  <tfoot><tr>
+                    @for (c of res.columns; track c.key; let i = $index) {
+                      <td [class.num]="isNum(c)">{{ c.total ? fmt(res.totals[c.key], c) : (i === 0 ? 'Total (' + res.rowCount + ')' : '') }}</td>
+                    }
+                  </tr></tfoot>
+                }
+              </table>
+            }
+            @if (res.truncated) {
+              <p class="p-3 text-xs text-amber-700">Showing the first {{ res.rowCount }} rows. Narrow the filters, or export to Excel for the full list.</p>
+            }
+          }
+        </div>
+      } @else {
+        <div class="p-10 text-center text-sm text-[var(--ff-text-muted)]">Loading reports…</div>
+      }
+    </section>
+  </div>
+</div>

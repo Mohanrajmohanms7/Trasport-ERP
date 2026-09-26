@@ -1,3 +1,4 @@
+import { ReportsHubComponent } from './components/reports-hub/reports-hub';
 import { DriverPayrollConsoleComponent } from './components/driver-payroll-console/driver-payroll-console';
 import { Routes } from '@angular/router';
 import { AppShellComponent } from './layout/app-shell/app-shell';
@@ -92,6 +93,7 @@ export const routes: Routes = [
       { path: 'payment-logs', component: PaymentDetailsConsoleComponent },
       { path: 'billing-invoices', component: InvoiceDetailsConsoleComponent },
       { path: 'accounts-ledger', component: AccountsDetailsConsoleComponent },
+      { path: 'reports', component: ReportsHubComponent },
       { path: 'reports-bi', component: ReportDetailsConsoleComponent },
       { path: 'mobility-ai', component: MobilityDetailsConsoleComponent },
       { path: 'ui-playground', component: FfPlaygroundComponent }

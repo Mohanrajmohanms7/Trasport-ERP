@@ -1,1 +1,1 @@
-inventory/stock,dashboard
+reports
