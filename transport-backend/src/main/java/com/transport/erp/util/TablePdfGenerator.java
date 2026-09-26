@@ -25,6 +25,11 @@ public final class TablePdfGenerator {
     }
 
     public static byte[] render(String title, String companyName, String[] headers, List<Object[]> rows) {
+        return render(title, companyName, null, headers, rows);
+    }
+
+    /** subtitle: e.g. applied filters ("01-09-2026 to 30-09-2026 · Vehicle TN01"). */
+    public static byte[] render(String title, String companyName, String subtitle, String[] headers, List<Object[]> rows) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document doc = new Document(PageSize.A4.rotate(), 24, 24, 28, 30);
             PdfWriter writer = PdfWriter.getInstance(doc, out);
@@ -47,6 +52,7 @@ public final class TablePdfGenerator {
             Paragraph t = new Paragraph(title, titleFont);
             doc.add(t);
             Paragraph meta = new Paragraph((companyName == null || companyName.isBlank() ? "" : companyName + "   ")
+                    + (subtitle == null || subtitle.isBlank() ? "" : subtitle + "   ")
                     + "Generated " + LocalDateTime.now().format(DT) + "   Rows: " + rows.size(), metaFont);
             meta.setSpacingAfter(8);
             doc.add(meta);
