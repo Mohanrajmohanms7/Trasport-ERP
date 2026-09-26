@@ -14,7 +14,7 @@ export const authGuard: CanActivateFn = (route, state) => {
     if (isSuperAdmin) {
       // Super Admin is only allowed on /platform-admin and /profile
       if (!url.startsWith('/platform-admin') && !url.startsWith('/profile')) {
-        router.navigate(['/platform-admin']);
+        router.navigate(['/platform-admin/dashboard']);
         return false;
       }
     } else if (roles.length > 0 && roles.every((r: string) => r === 'DRIVER')) {

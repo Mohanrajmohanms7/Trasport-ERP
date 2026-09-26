@@ -389,6 +389,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     public Company createCompany(Company company, String activeUser) {
         ClientOnboardingRequest req = new ClientOnboardingRequest();
         req.setName(company.getName());
+        req.setShortName(company.getShortName());
         req.setOwnerName(company.getOwnerName());
         req.setBusinessType(company.getBusinessType());
         req.setPhone(company.getPhone());
@@ -434,6 +435,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         // --- Create Company ---
         Company company = new Company();
         company.setName(request.getName().trim());
+        company.setShortName(com.transport.erp.util.CompanyShortName.normalize(request.getShortName(), request.getName()));
         company.setOwnerName(request.getOwnerName());
         company.setBusinessType(request.getBusinessType());
         company.setPhone(request.getPhone());
@@ -840,6 +842,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         SaaSClientDTO dto = new SaaSClientDTO();
         dto.setId(company.getId());
         dto.setName(company.getName());
+        dto.setShortName(company.getDisplayShortName());
         dto.setCode(company.getCode());
         dto.setOwnerName(company.getOwnerName());
         dto.setBusinessType(company.getBusinessType());
@@ -899,6 +902,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id " + id));
         
         company.setName(companyDetails.getName());
+        company.setShortName(com.transport.erp.util.CompanyShortName.normalize(companyDetails.getShortName(), companyDetails.getName()));
         company.setOwnerName(companyDetails.getOwnerName());
         company.setBusinessType(companyDetails.getBusinessType());
         company.setPhone(companyDetails.getPhone());

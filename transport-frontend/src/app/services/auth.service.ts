@@ -14,6 +14,14 @@ export interface LoginResponse {
   branchId?: number;
   subscriptionExpired?: boolean;
   description?: string;
+  companyName?: string;
+  companyShortName?: string;
+}
+
+/** Company identity shown in the header ("PKC" above "TransaFlow"). */
+export interface TenantBrand {
+  companyName?: string;
+  shortName?: string;
 }
 
 export interface UserProfile {
@@ -46,6 +54,31 @@ export class AuthService {
   // Auth State signals
   currentUser = signal<LoginResponse | null>(null);
   isAuthenticated = signal<boolean>(false);
+  tenantBrand = signal<TenantBrand | null>(this.readBrand());
+
+  private readBrand(): TenantBrand | null {
+    try {
+      const raw = localStorage.getItem('tenantBrand');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setBrand(brand: TenantBrand | null): void {
+    this.tenantBrand.set(brand);
+    if (brand && (brand.shortName || brand.companyName)) localStorage.setItem('tenantBrand', JSON.stringify(brand));
+    else localStorage.removeItem('tenantBrand');
+  }
+
+  /** Re-reads the company initials (picks up renames made in Platform Admin). */
+  refreshTenantBrand(): void {
+    if (!localStorage.getItem('token')) return;
+    this.http.get<ApiResponse<any>>(`${this.apiUrl}/tenant-brand`).subscribe({
+      next: r => this.setBrand(r?.data ? { companyName: r.data.companyName, shortName: r.data.companyShortName } : null),
+      error: () => {}
+    });
+  }
 
   constructor() {
     this.loadTokenState();
@@ -83,6 +116,7 @@ export class AuthService {
   }
 
   private persistSession(authData: LoginResponse): void {
+    this.setBrand({ companyName: authData.companyName, shortName: authData.companyShortName });
     localStorage.setItem('token', authData.token);
     localStorage.setItem('refreshToken', authData.refreshToken);
     localStorage.setItem('username', authData.username);
@@ -239,6 +273,7 @@ export class AuthService {
   }
 
   clearLocalSession() {
+    this.setBrand(null);
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('username');

@@ -297,6 +297,50 @@ public class PlatformAdminController {
     }
 
     // 10. Backup & Restore
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.service.XlsxExportService xlsxExportService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.service.AuditService auditService;
+
+    /** One ZIP with an Excel file per business list of a tenant: a portable data copy / hand-over. */
+    @GetMapping("/companies/{id}/data-export")
+    public org.springframework.http.ResponseEntity<byte[]> exportCompanyData(@PathVariable Long id) throws java.io.IOException {
+        java.util.LinkedHashMap<String, java.util.function.Function<Long, byte[]>> parts = new java.util.LinkedHashMap<>();
+        parts.put("vehicles", c -> xlsxExportService.exportVehicles(c, "xlsx"));
+        parts.put("drivers", c -> xlsxExportService.exportDrivers(c, "xlsx"));
+        parts.put("customers", c -> xlsxExportService.exportCustomers(c, "xlsx"));
+        parts.put("materials", c -> xlsxExportService.exportMaterials(c, "xlsx"));
+        parts.put("suppliers", c -> xlsxExportService.exportSuppliers(c, "xlsx"));
+        parts.put("bookings", c -> xlsxExportService.exportBookings(c, "xlsx"));
+        parts.put("trips", c -> xlsxExportService.exportTrips(c, "xlsx"));
+        parts.put("fuel", c -> xlsxExportService.exportFuelEntries(c, "xlsx"));
+        parts.put("expenses", c -> xlsxExportService.exportExpenses(c, "xlsx"));
+        parts.put("invoices", c -> xlsxExportService.exportSalesInvoices(c, "xlsx"));
+        parts.put("receipts", c -> xlsxExportService.exportCustomerReceipts(c, "xlsx"));
+        parts.put("driver_payroll", c -> xlsxExportService.exportDriverPayroll(c, "xlsx"));
+        parts.put("driver_advances", c -> xlsxExportService.exportDriverAdvances(c, "xlsx"));
+        parts.put("work_orders", c -> xlsxExportService.exportWorkOrders(c, "xlsx"));
+        parts.put("spare_parts", c -> xlsxExportService.exportSpareParts(c, "xlsx"));
+        parts.put("stock", c -> xlsxExportService.exportStock(c, "xlsx"));
+        parts.put("journal", c -> xlsxExportService.exportJournal(c, "xlsx"));
+        parts.put("chart_of_accounts", c -> xlsxExportService.exportChartOfAccounts(c, "xlsx"));
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        try (java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(bos)) {
+            for (var e : parts.entrySet()) {
+                zip.putNextEntry(new java.util.zip.ZipEntry(e.getKey() + ".xlsx"));
+                zip.write(e.getValue().apply(id));
+                zip.closeEntry();
+            }
+        }
+        auditService.log(getActiveUser(), "COMPANY_DATA_EXPORT", "companies", id, null, "Downloaded company data export ZIP");
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType("application/zip"))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"company_" + id + "_data_" + java.time.LocalDate.now() + ".zip\"")
+                .body(bos.toByteArray());
+    }
+
     @GetMapping("/backups")
     public ApiResponse<Page<SaaSBackup>> getBackups(
             @RequestParam(defaultValue = "0") int page,

@@ -60,6 +60,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent, canActivate: [setupGuard] },
       { path: 'platform-admin', component: PlatformAdminComponent },
+      { path: 'platform-admin/:section', component: PlatformAdminComponent },
       { path: 'masters', component: MasterManagementComponent },
       { path: 'profile', component: UserProfileComponent },
       { path: 'users-roles', component: UserRoleManagementComponent },

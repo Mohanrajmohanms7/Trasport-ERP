@@ -1,6 +1,7 @@
 package com.transport.erp.model;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.ManyToOne;
@@ -51,6 +52,15 @@ public class Company extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String logo;
+
+    /** Initials shown above "TransaFlow" after login (e.g. PKC). Blank = derived from the name. */
+    @Column(name = "short_name", length = 8)
+    private String shortName;
+
+    @Transient
+    public String getDisplayShortName() {
+        return shortName != null && !shortName.isBlank() ? shortName : com.transport.erp.util.CompanyShortName.derive(getName());
+    }
 
     @Column(name = "digital_signature", columnDefinition = "TEXT")
     private String digitalSignature;

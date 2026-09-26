@@ -2,10 +2,10 @@
   <!-- Page Header -->
   <div class="pa-hero flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-4 md:p-5 rounded-2xl shrink-0">
     <div class="relative z-10 pl-2 min-w-0">
-      <p class="pa-hero-kicker text-[10px] font-bold tracking-[0.14em] uppercase mb-1">SaaS Control Center</p>
+      <p class="pa-hero-kicker text-[10px] font-bold tracking-[0.14em] uppercase mb-1">Platform Administration</p>
       <h1 class="pa-hero-title text-lg md:text-xl font-bold tracking-tight flex items-center gap-2 leading-snug m-0">
         <span class="material-icons shrink-0">admin_panel_settings</span>
-        <span>Platform Administration</span>
+        <span>{{ sectionTitle() }}</span>
       </h1>
       <p class="pa-hero-sub text-xs mt-1.5 max-w-xl leading-relaxed m-0">
         Manage tenants, subscriptions, licenses, support, audits, and billing — your global SaaS operations desk.
@@ -30,43 +30,43 @@
   <!-- Main Navigation Tabs Layout Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
     
-    <!-- Left Navigation Bar -->
-    <div class="lg:col-span-3 flex flex-col pa-panel p-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-0.5 sticky top-2">
+    <!-- Left Navigation Bar (sections now live in the main sidebar; kept hidden for reference) -->
+    <div class="hidden flex-col pa-panel p-3 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 space-y-0.5 sticky top-2">
       <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-[0.12em] px-2.5 pb-2.5 pt-1 uppercase">Platform Modules</p>
       
-      <button (click)="switchTab('dashboard')" [class.is-active]="activeTab() === 'dashboard'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('dashboard')" [class.is-active]="activeTab() === 'dashboard'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">dashboard</span> Dashboard & Analytics
       </button>
 
-      <button (click)="switchTab('companies')" [class.is-active]="activeTab() === 'companies'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('companies')" [class.is-active]="activeTab() === 'companies'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">business</span> Clients & Companies
       </button>
 
-      <button (click)="switchTab('subscriptions')" [class.is-active]="activeTab() === 'subscriptions'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('subscriptions')" [class.is-active]="activeTab() === 'subscriptions'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">card_membership</span> Subscriptions
       </button>
 
-      <button (click)="switchTab('licenses')" [class.is-active]="activeTab() === 'licenses'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('licenses')" [class.is-active]="activeTab() === 'licenses'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">vpn_key</span> Licenses
       </button>
 
-      <button (click)="switchTab('users')" [class.is-active]="activeTab() === 'users'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('users')" [class.is-active]="activeTab() === 'users'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">people</span> Users & Sessions
       </button>
 
-      <button (click)="switchTab('settings')" [class.is-active]="activeTab() === 'settings'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('settings')" [class.is-active]="activeTab() === 'settings'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">settings_suggest</span> System Settings
       </button>
 
-      <button (click)="switchTab('audit')" [class.is-active]="activeTab() === 'audit'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('audit')" [class.is-active]="activeTab() === 'audit'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">history_toggle_off</span> Audit Logs
       </button>
 
-      <button (click)="switchTab('backups')" [class.is-active]="activeTab() === 'backups'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('backups')" [class.is-active]="activeTab() === 'backups'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">backup</span> Backup & Restore
       </button>
 
-      <button (click)="switchTab('tickets')" [class.is-active]="activeTab() === 'tickets'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full flex-row justify-between pr-2">
+      <button (click)="openTab('tickets')" [class.is-active]="activeTab() === 'tickets'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full flex-row justify-between pr-2">
         <span class="flex items-center gap-3">
           <span class="material-icons text-sm">contact_support</span> Support Tickets
         </span>
@@ -75,17 +75,17 @@
         </span>
       </button>
 
-      <button (click)="switchTab('announcements')" [class.is-active]="activeTab() === 'announcements'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('announcements')" [class.is-active]="activeTab() === 'announcements'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">campaign</span> Announcements
       </button>
 
-      <button (click)="switchTab('billing')" [class.is-active]="activeTab() === 'billing'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
+      <button (click)="openTab('billing')" [class.is-active]="activeTab() === 'billing'" class="pa-nav-item flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl text-left w-full">
         <span class="material-icons text-sm">receipt</span> Billing Invoices
       </button>
     </div>
 
     <!-- Right Workspace Dashboard Panel -->
-    <div class="lg:col-span-9 pa-panel p-4 md:p-5 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 min-h-[500px]">
+    <div class="lg:col-span-12 pa-panel p-4 md:p-5 rounded-2xl border border-slate-200/70 dark:border-slate-700/60 min-h-[500px]">
       
       <!-- 1. DASHBOARD & SYSTEM METRICS -->
       <div *ngIf="activeTab() === 'dashboard'" class="space-y-4">
@@ -182,7 +182,7 @@
             </div>
             <h3 class="text-xl font-black text-slate-900 dark:text-white mt-1">{{ analytics()?.todaysLogin ?? 0 }}</h3>
           </div>
-          <div class="kpi-card p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 cursor-pointer hover:border-blue-200 dark:hover:border-blue-700 transition" (click)="switchTab('tickets')">
+          <div class="kpi-card p-3 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 cursor-pointer hover:border-blue-200 dark:hover:border-blue-700 transition" (click)="openTab('tickets')">
             <div class="flex items-start justify-between">
               <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Support Tickets</p>
               <span class="material-icons text-rose-500 text-lg opacity-40">contact_support</span>
@@ -526,6 +526,8 @@
               <p class="text-[11px] text-slate-500">Enter company details. Fields marked <span class="text-rose-600 font-bold">*</span> are required. Company code is generated automatically.</p>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <ff-textbox label="Company Name" [required]="true" formControlName="name" placeholder="Enter Company Name"></ff-textbox>
+            <ff-textbox label="Short Name / Initials" formControlName="shortName" [placeholder]="'Auto: ' + (shortNamePreview || 'e.g. PKC')" hint="2–6 letters, shown above TransaFlow for this company's users"></ff-textbox>
+                <ff-textbox label="Short Name / Initials" formControlName="shortName" [placeholder]="'Auto: ' + (shortNamePreview || 'e.g. PKC')" hint="2–6 letters, shown above TransaFlow for this company's users"></ff-textbox>
                 <ff-textbox label="Owner / CEO Name" [required]="true" formControlName="ownerName" placeholder="Enter Owner / CEO Name"></ff-textbox>
                 <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Enter Industry / Description"></ff-textbox>
                 <ff-textbox label="Phone" [required]="true" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
@@ -794,7 +796,7 @@
                 <td class="p-2.5 font-semibold">
                   <div class="flex items-center gap-1.5">
                     <img *ngIf="item.logo" [src]="item.logo" class="w-5 h-5 rounded-full object-cover ring-1 ring-slate-200">
-                    <span *ngIf="!item.logo" class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[9px] font-bold">{{ (item.name || '?').charAt(0) }}</span>
+                    <span *ngIf="!item.logo" class="min-w-[2.25rem] h-6 px-1.5 rounded-md bg-[#172231] text-[#f5a524] flex items-center justify-center text-[10px] font-bold tracking-wide">{{ item.shortName || (item.name || '?').charAt(0) }}</span>
                     <span>{{ item.name }}</span>
                   </div>
                 </td>
@@ -869,7 +871,7 @@
                 <img *ngIf="selectedClient()?.logo" [src]="selectedClient()?.logo" class="w-6 h-6 rounded-full object-cover">
                 <div>
                   <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedClient()?.name }}</h3>
-                  <span class="text-[9px] text-slate-400 font-mono">Tenant Code: {{ selectedClient()?.code }}</span>
+                  <span class="text-[9px] text-slate-400 font-mono">Tenant Code: {{ selectedClient()?.code }} · Short name: <strong class="text-slate-600">{{ selectedClient()?.shortName || '—' }}</strong></span>
                 </div>
               </div>
               <button (click)="showClientViewModal.set(false)" class="text-slate-400 hover:text-slate-600"><span class="material-icons">close</span></button>
@@ -1367,9 +1369,25 @@
       <!-- 10. BACKUP & RESTORE -->
       <div *ngIf="activeTab() === 'backups'" class="space-y-4">
         <div class="flex justify-between items-center">
-          <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Database snapshot registries</h2>
-          <button (click)="runManualBackup()" class="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">
-            <span class="material-icons text-xs">settings_backup_restore</span> Trigger Database Dump
+          <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Backup checkpoints</h2>
+          <button (click)="runManualBackup()" class="flex items-center gap-1.5 px-3 py-1 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">bookmark_add</span> Record checkpoint
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-relaxed">
+          Full database backups are taken by the database host (enable daily backups / point-in-time recovery on your PostgreSQL plan).
+          The list below only records checkpoints (row counts) for audit. To hand a tenant a copy of their own data, use Company data export.
+        </p>
+        <div class="p-3 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-wrap items-end gap-2">
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-slate-500">Company data export (Excel files in a ZIP)
+            <select class="border border-slate-200 dark:border-slate-700 rounded px-2 py-1.5 text-xs bg-white dark:bg-slate-900 min-w-[220px]"
+                    [value]="exportCompanyId() ?? ''" (change)="exportCompanyId.set($any($event.target).value ? +$any($event.target).value : null)">
+              <option value="">Select company…</option>
+              <option *ngFor="let comp of companiesList()" [value]="comp.id">{{ comp.name }} ({{ comp.code }})</option>
+            </select>
+          </label>
+          <button (click)="downloadCompanyData()" [disabled]="!exportCompanyId() || exportingData()" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded text-xs font-semibold">
+            <span class="material-icons text-xs">download</span> {{ exportingData() ? 'Preparing…' : 'Download ZIP' }}
           </button>
         </div>
 
