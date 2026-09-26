@@ -13,6 +13,7 @@ public class SparePartRequest {
     private String description;
     private Long defaultUomId;
     private BigDecimal defaultRate;
+    private BigDecimal reorderLevel;
     private String status;
     private Long companyId;
 }

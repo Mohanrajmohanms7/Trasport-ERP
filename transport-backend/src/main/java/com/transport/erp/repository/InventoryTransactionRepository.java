@@ -120,4 +120,18 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
             @Param("externalReference") String externalReference);
 
     java.util.List<com.transport.erp.model.InventoryTransaction> findByCompanyIdAndIsDeletedFalseOrderByIdDesc(Long companyId);
+
+    @Query("""
+            SELECT COALESCE(SUM(t.quantity * COALESCE(t.unitRate, 0)), 0), COALESCE(SUM(t.quantity), 0)
+            FROM InventoryTransaction t
+            WHERE t.workOrderPart.id = :lineId AND t.transactionType = :type AND t.isDeleted = false
+            """)
+    java.util.List<Object[]> valueAndQuantityForLine(@Param("lineId") Long lineId, @Param("type") String type);
+
+    @Query("""
+            SELECT COALESCE(SUM(t.quantity * COALESCE(t.unitRate, 0)), 0)
+            FROM InventoryTransaction t
+            WHERE t.workOrder.id = :workOrderId AND t.transactionType = :type AND t.isDeleted = false
+            """)
+    java.math.BigDecimal valueForWorkOrder(@Param("workOrderId") Long workOrderId, @Param("type") String type);
 }

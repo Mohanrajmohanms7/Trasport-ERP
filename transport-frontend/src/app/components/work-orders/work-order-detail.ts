@@ -16,6 +16,22 @@ import { WorkOrder, WorkOrderLabourLine, WorkOrderPartLine, WorkOrderService, wo
   templateUrl: './work-order-detail.html'
 })
 export class WorkOrderDetailComponent implements OnInit {
+  /** Which action panel is open: complete, cancel or edit. */
+  panel = signal<'complete' | 'cancel' | 'edit' | null>(null);
+
+  netIssued(order: WorkOrder): number {
+    return (order.parts || []).reduce((sum, l: any) => sum + ((l.issuedQuantity || 0) - (l.returnedQuantity || 0)), 0);
+  }
+
+  prefillActualCost(order: WorkOrder): void {
+    if (!this.actualCost()) this.useOperationalCost(order);
+  }
+
+  useOperationalCost(order: WorkOrder): void {
+    const cost = (order as any).operationalCost;
+    this.actualCost.set(cost != null && Number(cost) > 0 ? String(cost) : '');
+  }
+
   private route = inject(ActivatedRoute);
   private workOrders = inject(WorkOrderService);
   private sparePartsApi = inject(SparePartService);

@@ -1,85 +1,100 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
-  <a routerLink="/maintenance-requests" class="text-xs text-blue-700 no-underline">Back to requests</a>
+<div class="ops-page">
+  <a routerLink="/maintenance-requests" class="ops-link inline-flex items-center gap-1 w-fit"><span class="material-icons text-base">arrow_back</span>Maintenance requests</a>
 
   @if (loading()) {
-    <div class="p-8 text-xs text-slate-500">Loading request…</div>
+    <div class="ops-empty">Loading request…</div>
   } @else if (error() && !request()) {
-    <div class="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   } @else if (request(); as row) {
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 class="text-lg font-bold text-slate-900 dark:text-white">{{ row.requestNumber }}</h1>
-        <p class="text-xs text-slate-500">{{ row.title }}</p>
+    <header class="ops-header">
+      <div class="min-w-0">
+        <h1 class="ops-title"><span class="material-icons">report</span>{{ row.requestNumber }}
+          <span class="ops-pill" [attr.data-s]="row.status">{{ row.status.replace('_', ' ') }}</span>
+          <span class="ops-pill" [attr.data-s]="row.priority">{{ row.priority }}</span>
+        </h1>
+        <p class="ops-sub">{{ row.title }} · {{ row.vehicleRegistrationNumber || row.vehicleCode }}</p>
       </div>
-      <div class="text-xs font-bold text-slate-700">{{ row.status }} · {{ row.priority }}</div>
-    </div>
-    <app-attachments-panel entityType="MAINTENANCE_REQUEST" [entityId]="row.id" [categories]="['DAMAGE_PHOTO', 'OTHER']" />
-
-    @if (feedback()) {
-      <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">{{ feedback() }}</div>
-    }
-    @if (error()) {
-      <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
-    }
-
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Request</h2>
-        <p>Date: {{ row.requestedAt ? (row.requestedAt | date:'medium') : '—' }}</p>
-        <p>Requested by: {{ row.requestedByUsername || '—' }}</p>
-        <p>Driver: {{ row.driverName || '—' }}</p>
-        <p>Company: {{ row.companyId ?? '—' }}</p>
-        <p>Branch: {{ row.branchId ?? '—' }}</p>
-        <p>Reported odometer: {{ row.reportedOdometerKm != null ? (row.reportedOdometerKm | number) : '—' }}</p>
-      </div>
-      <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900">
-        <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Vehicle</h2>
-        <p>{{ row.vehicleRegistrationNumber || row.vehicleCode }} — {{ row.vehicleName }}</p>
-        <a class="text-blue-700" [routerLink]="['/vehicles']" [queryParams]="{ vehicleId: row.vehicleId, tab: 'maintenance-requests' }">Open vehicle</a>
-        @if (row.workOrderId) {
-          <p class="mt-2">Work order: <a class="text-blue-700" [routerLink]="['/work-orders', row.workOrderId]">{{ row.workOrderNumber }}</a></p>
-        }
-      </div>
-    </section>
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Issue</h2>
-      <p>{{ row.description }}</p>
-    </section>
-
-    <section class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs flex flex-col gap-1">
-      <h2 class="font-bold uppercase tracking-wider text-slate-500 mb-2">Review</h2>
-      <p>Reviewed by: {{ row.reviewedBy || '—' }}</p>
-      <p>Reviewed at: {{ row.reviewedAt ? (row.reviewedAt | date:'medium') : '—' }}</p>
-      <p>Remarks: {{ row.reviewRemarks || '—' }}</p>
-      <p>Approved by: {{ row.approvedBy || '—' }}</p>
-      <p>Approved at: {{ row.approvedAt ? (row.approvedAt | date:'medium') : '—' }}</p>
-      <p>Cancelled by: {{ row.cancelledBy || '—' }}</p>
-      <p>Cancelled at: {{ row.cancelledAt ? (row.cancelledAt | date:'medium') : '—' }}</p>
-      <p>Cancellation reason: {{ row.cancellationReason || '—' }}</p>
-    </section>
-
-    @if (row.status === 'OPEN') {
-      <a class="text-xs text-blue-700" [routerLink]="['/maintenance-requests', row.id, 'edit']">Edit request</a>
-    }
-
-    @if (canManage()) {
-      <section class="flex flex-col gap-2 text-xs max-w-xl">
+      <div class="ops-actions">
         @if (row.status === 'OPEN') {
-          <textarea class="border border-slate-200 rounded-lg px-3 py-2 text-xs" placeholder="Review remarks (optional)" [ngModel]="remarks()" (ngModelChange)="remarks.set($event)" name="remarks"></textarea>
-          <button type="button" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer" (click)="review()">Mark under review</button>
+          <a class="ops-btn" [routerLink]="['/maintenance-requests', row.id, 'edit']"><span class="material-icons">edit</span>Edit</a>
         }
-        @if (row.status === 'UNDER_REVIEW') {
-          <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer" (click)="approve()">Approve</button>
+        @if (row.workOrderId) {
+          <a class="ops-btn ops-btn--primary" [routerLink]="['/work-orders', row.workOrderId]"><span class="material-icons">build</span>Open {{ row.workOrderNumber }}</a>
         }
-        @if (row.status === 'APPROVED') {
-          <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer" (click)="convert()">Convert to work order</button>
-        }
-        @if (row.status === 'OPEN' || row.status === 'UNDER_REVIEW') {
-          <input class="border border-slate-200 rounded-lg px-3 py-2 text-xs" placeholder="Cancellation reason" [ngModel]="cancelReason()" (ngModelChange)="cancelReason.set($event)" name="cancelReason" />
-          <button type="button" class="px-3 py-2 rounded-lg bg-rose-700 text-white font-bold border-none cursor-pointer" (click)="cancel()">Cancel request</button>
-        }
+      </div>
+    </header>
+
+    @if (feedback()) { <div class="ops-alert ops-alert--ok">{{ feedback() }}</div> }
+    @if (error()) { <div class="ops-alert ops-alert--error">{{ error() }}</div> }
+
+    <!-- Progress: Reported → Under review → Approved → Work order -->
+    <ol class="ops-card flex flex-wrap gap-x-6 gap-y-2 text-xs list-none m-0">
+      @for (step of steps; track step.key; let i = $index) {
+        <li class="flex items-center gap-2" [style.color]="stepDone(row, i) ? 'var(--ff-text-primary)' : 'var(--ff-text-muted)'">
+          <span class="material-icons text-base" [style.color]="stepDone(row, i) ? '#16a34a' : 'var(--ff-border-default)'">{{ stepDone(row, i) ? 'check_circle' : 'radio_button_unchecked' }}</span>
+          {{ step.label }}
+        </li>
+      }
+      @if (row.status === 'CANCELLED') { <li class="flex items-center gap-2" style="color:#b91c1c"><span class="material-icons text-base">cancel</span>Cancelled</li> }
+    </ol>
+
+    @if (canManage() && (row.status === 'OPEN' || row.status === 'UNDER_REVIEW' || row.status === 'APPROVED')) {
+      <section class="ops-card">
+        <h2 class="ops-card-title">Next step</h2>
+        <div class="ops-form">
+          @if (row.status === 'OPEN') {
+            <label class="ops-field span-all">Review remarks
+              <textarea class="ops-input" rows="2" placeholder="Optional" [ngModel]="remarks()" (ngModelChange)="remarks.set($event)" name="remarks"></textarea>
+            </label>
+            <div class="ops-form-actions span-all"><button type="button" class="ops-btn ops-btn--primary" (click)="review()">Start review</button></div>
+          }
+          @if (row.status === 'UNDER_REVIEW') {
+            <div class="ops-form-actions span-all"><button type="button" class="ops-btn ops-btn--primary" (click)="approve()"><span class="material-icons">thumb_up</span>Approve</button></div>
+          }
+          @if (row.status === 'APPROVED') {
+            <p class="ops-sub span-all">Converting creates an OPEN work order for this vehicle with the same title and priority.</p>
+            <div class="ops-form-actions span-all"><button type="button" class="ops-btn ops-btn--primary" (click)="convert()"><span class="material-icons">build</span>Create work order</button></div>
+          }
+          @if (row.status === 'OPEN' || row.status === 'UNDER_REVIEW' || row.status === 'APPROVED') {
+            <label class="ops-field span-all">Or cancel — reason
+              <input class="ops-input" placeholder="Why is this request not needed?" [ngModel]="cancelReason()" (ngModelChange)="cancelReason.set($event)" name="cancelReason" />
+            </label>
+            <div class="ops-form-actions span-all"><button type="button" class="ops-btn ops-btn--danger" (click)="cancel()">Cancel request</button></div>
+          }
+        </div>
       </section>
     }
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <section class="ops-card">
+        <h2 class="ops-card-title">Problem
+          <a class="ops-link" [routerLink]="['/vehicles']" [queryParams]="{ vehicleId: row.vehicleId, tab: 'maintenance-requests' }">Open vehicle</a>
+        </h2>
+        <p class="text-sm m-0 mb-3 whitespace-pre-line">{{ row.description || '—' }}</p>
+        <dl class="ops-dl">
+          <div><dt>Vehicle</dt><dd>{{ row.vehicleRegistrationNumber || row.vehicleCode }} {{ row.vehicleName ? '— ' + row.vehicleName : '' }}</dd></div>
+          <div><dt>Reported</dt><dd>{{ row.requestedAt ? (row.requestedAt | date:'dd MMM yyyy, HH:mm') : '—' }}</dd></div>
+          <div><dt>Reported by</dt><dd>{{ row.requestedByUsername || '—' }}{{ row.driverName ? ' (driver ' + row.driverName + ')' : '' }}</dd></div>
+          <div><dt>Odometer</dt><dd>{{ row.reportedOdometerKm != null ? (row.reportedOdometerKm | number) + ' km' : '—' }}</dd></div>
+          @if (row.workOrderId) {
+            <div><dt>Work order</dt><dd><a class="ops-link" [routerLink]="['/work-orders', row.workOrderId]">{{ row.workOrderNumber }}</a>{{ $any(row).workOrderStatus ? ' · ' + $any(row).workOrderStatus.replace('_', ' ') : '' }}</dd></div>
+          }
+        </dl>
+      </section>
+      <section class="ops-card">
+        <h2 class="ops-card-title">Review history</h2>
+        <dl class="ops-dl">
+          <div><dt>Reviewed</dt><dd>{{ row.reviewedBy || '—' }}{{ row.reviewedAt ? ' · ' + (row.reviewedAt | date:'dd MMM, HH:mm') : '' }}</dd></div>
+          <div><dt>Approved</dt><dd>{{ row.approvedBy || '—' }}{{ row.approvedAt ? ' · ' + (row.approvedAt | date:'dd MMM, HH:mm') : '' }}</dd></div>
+          <div class="span-all"><dt>Remarks</dt><dd>{{ row.reviewRemarks || '—' }}</dd></div>
+          @if (row.cancelledBy) {
+            <div><dt>Cancelled</dt><dd>{{ row.cancelledBy }}{{ row.cancelledAt ? ' · ' + (row.cancelledAt | date:'dd MMM, HH:mm') : '' }}</dd></div>
+            <div><dt>Reason</dt><dd>{{ row.cancellationReason || '—' }}</dd></div>
+          }
+        </dl>
+      </section>
+    </div>
+
+    <app-attachments-panel entityType="MAINTENANCE_REQUEST" [entityId]="row.id" title="Photos & documents" [categories]="['DAMAGE_PHOTO', 'OTHER']" />
   }
 </div>

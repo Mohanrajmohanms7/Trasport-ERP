@@ -1,27 +1,35 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+<div class="ops-page">
   <div>
-    <h1 class="text-lg font-bold text-slate-900 dark:text-white">{{ id() ? 'Edit warehouse' : 'New warehouse' }}</h1>
-    <p class="text-xs text-slate-500">A warehouse belongs to one company branch and cannot be moved later.</p>
+    <h1 class="ops-title">{{ id() ? 'Edit warehouse' : 'New warehouse' }}</h1>
+    <p class="ops-sub">A warehouse belongs to one company branch and cannot be moved later.</p>
   </div>
 
   @if (error()) {
-    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   }
 
-  <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl" (ngSubmit)="save()">
-    <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" placeholder="Code" />
-    <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="Name" />
-    <input class="md:col-span-2 border border-slate-200 rounded-lg px-3 py-2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description" />
-    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="branchId()" (ngModelChange)="branchId.set($event)" name="branch" [disabled]="branchLocked() || !!id()">
-      <option value="">Branch</option>
+  <form class="ops-card ops-form max-w-3xl" (ngSubmit)="save()">
+    <label class="ops-field">Code
+      <input class="ops-input" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    </label>
+    <label class="ops-field">Name
+      <input class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+    </label>
+    <label class="ops-field span-all">Description
+      <input class="ops-input" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" />
+    </label>
+    <label class="ops-field">Branch
+      <select class="ops-input" [ngModel]="branchId()" (ngModelChange)="branchId.set($event)" name="branch" [disabled]="branchLocked() || !!id()">
+      <option value="">Select…</option>
       @for (branch of branches(); track branch.id) {
         <option [value]="branch.id">{{ branch.code }} — {{ branch.name }}</option>
       }
     </select>
-    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">
+    </label>
+    <select class="ops-input" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">
       <option value="ACTIVE">Active</option>
       <option value="INACTIVE">Inactive</option>
     </select>
-    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Save</button>
+    <button type="submit" class="ops-btn ops-btn--dark">Save</button>
   </form>
 </div>

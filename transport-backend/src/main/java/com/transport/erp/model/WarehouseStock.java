@@ -29,4 +29,8 @@ public class WarehouseStock extends BaseEntity {
 
     @Column(name = "available_quantity", nullable = false, precision = 12, scale = 3)
     private BigDecimal availableQuantity = BigDecimal.ZERO;
+
+    /** Moving average cost per unit (receipts / opening balances with a rate). 0 = not valued. */
+    @Column(name = "average_cost", nullable = false, precision = 14, scale = 4)
+    private BigDecimal averageCost = BigDecimal.ZERO;
 }

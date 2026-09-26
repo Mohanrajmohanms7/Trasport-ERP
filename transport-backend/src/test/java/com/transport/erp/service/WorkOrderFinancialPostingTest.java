@@ -44,12 +44,14 @@ class WorkOrderFinancialPostingTest {
     @Mock private FinancialYearPeriodValidationService periodValidationService;
     @Mock private AuditService auditService;
 
+    @Mock private InventoryValuationService valuationService;
     @InjectMocks private WorkOrderFinancialPosting posting;
 
     private WorkOrder order;
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(valuationService.netPartsCost(org.mockito.ArgumentMatchers.any())).thenReturn(java.math.BigDecimal.ZERO);
         order = new WorkOrder();
         order.setId(10L);
         order.setCompanyId(1L);
@@ -181,10 +183,11 @@ class WorkOrderFinancialPostingTest {
     }
 
     @Test
-    @DisplayName("Posting does not depend on expenses, service logs, inventory, or payments")
+    @DisplayName("Posting does not depend on expenses, service logs, stock tables or payments (parts cost via valuation service only)")
     void noExpenseServiceLogOrInventory() {
         for (Field field : WorkOrderFinancialPosting.class.getDeclaredFields()) {
             String name = field.getType().getName();
+            if (name.equals(InventoryValuationService.class.getName())) continue;
             assertFalse(name.contains("Expense"));
             assertFalse(name.contains("VehicleServiceLog"));
             assertFalse(name.contains("VehicleOdometer"));

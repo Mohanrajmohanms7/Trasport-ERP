@@ -103,6 +103,7 @@ class WorkOrderServiceTest {
     @Mock private EntityManager entityManager;
     @Mock private WorkOrderFinancialPosting workOrderFinancialPosting;
 
+    @Mock private InventoryValuationService inventoryValuationService;
     @InjectMocks
     private WorkOrderService service;
 

@@ -27,6 +27,9 @@ import java.util.Set;
 @Service
 public class InventoryIssueService {
 
+    @Autowired
+    private InventoryValuationService valuationService;
+
     private static final Set<String> MOVABLE = Set.of("OPEN", "IN_PROGRESS");
 
     @Autowired
@@ -60,8 +63,10 @@ public class InventoryIssueService {
                 user);
         BigDecimal quantity = requireQuantity(request == null ? null : request.getQuantity(), false);
         BigDecimal issued = zero(context.line.getIssuedQuantity());
+        BigDecimal netOut = issued.subtract(zero(context.line.getReturnedQuantity()));
         BigDecimal requested = context.line.getQuantity();
-        if (issued.add(quantity).compareTo(requested) > 0) {
+        // A returned part can be issued again: compare what is still out, not the gross issued total.
+        if (netOut.add(quantity).compareTo(requested) > 0) {
             throw invalid("INVENTORY_QUANTITY_INVALID",
                     "Issue quantity exceeds the remaining work order quantity.");
         }
@@ -72,8 +77,9 @@ public class InventoryIssueService {
         context.line.setUpdatedBy(username);
         workOrderPartRepository.saveAndFlush(context.line);
 
+        // Issued at the warehouse's current average cost; this becomes the work order's parts cost.
         InventoryTransaction transaction = saveMovement(
-                context, InventoryTransaction.TYPE_ISSUE, "IS-", "Issue", quantity, username);
+                context, InventoryTransaction.TYPE_ISSUE, "IS-", "Issue", quantity, stock.getAverageCost(), username);
         auditService.log(username, "INVENTORY_ISSUED", "inventory_transactions", transaction.getId(), null,
                 context.order.getWorkOrderNumber()
                         + ", warehouseId=" + context.warehouse.getId()
@@ -106,14 +112,16 @@ public class InventoryIssueService {
                     "Return quantity exceeds the remaining issued quantity.");
         }
 
+        BigDecimal returnCost = valuationService.issueCostForLine(context.line.getId());
         WarehouseStock stock = inventoryService.increaseAvailable(
                 context.warehouse, context.part, quantity, username);
+        valuationService.blendCost(stock, quantity, returnCost);
         context.line.setReturnedQuantity(returned.add(quantity));
         context.line.setUpdatedBy(username);
         workOrderPartRepository.saveAndFlush(context.line);
 
         InventoryTransaction transaction = saveMovement(
-                context, InventoryTransaction.TYPE_RETURN, "RT-", "Return", quantity, username);
+                context, InventoryTransaction.TYPE_RETURN, "RT-", "Return", quantity, returnCost, username);
         auditService.log(username, "INVENTORY_RETURNED", "inventory_transactions", transaction.getId(), null,
                 context.order.getWorkOrderNumber()
                         + ", warehouseId=" + context.warehouse.getId()
@@ -168,6 +176,17 @@ public class InventoryIssueService {
             String name,
             BigDecimal quantity,
             String username) {
+        return saveMovement(context, type, prefix, name, quantity, null, username);
+    }
+
+    private InventoryTransaction saveMovement(
+            Context context,
+            String type,
+            String prefix,
+            String name,
+            BigDecimal quantity,
+            BigDecimal unitCost,
+            String username) {
         InventoryTransaction transaction = new InventoryTransaction();
         transaction.setCompanyId(context.warehouse.getCompanyId());
         transaction.setBranchId(context.warehouse.getBranchId());
@@ -178,6 +197,7 @@ public class InventoryIssueService {
         transaction.setTransactionType(type);
         transaction.setQuantity(quantity);
         transaction.setReferenceType("WORK_ORDER_PART");
+        transaction.setUnitRate(unitCost != null && unitCost.signum() > 0 ? unitCost : null);
         transaction.setReferenceId(context.line.getId());
         transaction.setCode("TMP");
         transaction.setName(name);

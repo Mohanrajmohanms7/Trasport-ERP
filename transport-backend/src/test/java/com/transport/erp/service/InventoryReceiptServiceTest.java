@@ -75,6 +75,7 @@ class InventoryReceiptServiceTest {
     @Mock private TenantAccessService tenantAccess;
     @Mock private AuditService auditService;
 
+    @Mock private InventoryValuationService valuationService;
     @InjectMocks private InventoryReceiptService receiptService;
 
     private AppUser companyAdmin;

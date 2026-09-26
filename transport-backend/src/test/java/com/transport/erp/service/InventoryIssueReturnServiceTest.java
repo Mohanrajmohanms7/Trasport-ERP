@@ -74,6 +74,7 @@ class InventoryIssueReturnServiceTest {
     @Mock private TenantAccessService tenantAccess;
     @Mock private AuditService auditService;
 
+    @Mock private InventoryValuationService valuationService;
     @InjectMocks private InventoryIssueService issueService;
 
     private AppUser companyAdmin;

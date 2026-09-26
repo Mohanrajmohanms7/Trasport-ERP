@@ -26,6 +26,9 @@ import java.util.Locale;
 public class InventoryReceiptService {
 
     @Autowired
+    private InventoryValuationService valuationService;
+
+    @Autowired
     private InventoryTransactionRepository transactionRepository;
 
     @Autowired
@@ -72,6 +75,7 @@ public class InventoryReceiptService {
         }
 
         WarehouseStock stock = inventoryService.increaseAvailable(warehouse, part, quantity, username);
+        valuationService.blendCost(stock, quantity, unitRate);
         InventoryTransaction transaction = new InventoryTransaction();
         transaction.setCompanyId(warehouse.getCompanyId());
         transaction.setBranchId(warehouse.getBranchId());
@@ -101,6 +105,7 @@ public class InventoryReceiptService {
         }
         transaction.setCode("RC-" + String.format("%06d", transaction.getId()));
         transaction = transactionRepository.save(transaction);
+        valuationService.postReceipt(transaction, username);
 
         auditService.log(username, "INVENTORY_RECEIPT_CREATED", "inventory_transactions", transaction.getId(), null,
                 "warehouseId=" + warehouse.getId() + ", sparePartId=" + part.getId() + ", quantity=" + quantity);

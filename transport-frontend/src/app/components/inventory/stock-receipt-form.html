@@ -1,52 +1,66 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
+<div class="ops-page">
   <div>
-    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Receive Stock</h1>
-    <p class="text-xs text-slate-500">Creates an auditable RECEIPT transaction and adds to on-hand quantity. The server is the source of truth. This is not an opening balance.</p>
+    <h1 class="ops-title"><span class="material-icons">move_to_inbox</span>Receive stock</h1>
+    <p class="ops-sub">Adds purchased parts to a warehouse and records a Receipt in inventory transactions. Use this for parts bought from a supplier.</p>
   </div>
 
   @if (error()) {
-    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   }
 
   @if (lastReference()) {
-    <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-xs">
+    <div class="ops-alert ops-alert--ok">
       Received {{ lastReference() }}. Available quantity is now {{ lastAvailable() }}.
     </div>
   }
 
-  <form class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 text-xs grid grid-cols-1 md:grid-cols-2 gap-2 max-w-3xl" (ngSubmit)="save()">
-    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event); refreshCurrent()" name="warehouse">
-      <option value="">Warehouse</option>
+  <form class="ops-card ops-form max-w-3xl" (ngSubmit)="save()">
+    <label class="ops-field">Warehouse
+      <select class="ops-input" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event); refreshCurrent()" name="warehouse">
+      <option value="">Select…</option>
       @for (row of warehouses(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
-    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
-      <option value="">Spare part</option>
+    </label>
+    <label class="ops-field">Spare part
+      <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
+      <option value="">Select…</option>
       @for (part of parts(); track part.id) {
         <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
       }
     </select>
-    <input type="number" min="0.001" step="0.001" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" placeholder="Quantity" />
-    <input type="number" min="0" step="0.01" class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Unit rate (optional)" />
-    <select class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event)" name="supplier">
-      <option value="">Supplier (optional)</option>
+    </label>
+    <label class="ops-field">Quantity
+      <input type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />
+    </label>
+    <label class="ops-field">Unit rate
+      <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Optional" />
+    </label>
+    <label class="ops-field">Supplier
+      <select class="ops-input" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event)" name="supplier">
+      <option value="">None</option>
       @for (row of suppliers(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
-    <input class="border border-slate-200 rounded-lg px-3 py-2" [ngModel]="referenceNumber()" (ngModelChange)="referenceNumber.set($event)" name="referenceNumber" placeholder="External reference (optional)" />
-    <input class="border border-slate-200 rounded-lg px-3 py-2 md:col-span-2" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Description (optional)" />
-    <div class="md:col-span-2 text-slate-600">
+    </label>
+    <label class="ops-field">External reference
+      <input class="ops-input" [ngModel]="referenceNumber()" (ngModelChange)="referenceNumber.set($event)" name="referenceNumber" placeholder="Optional" />
+    </label>
+    <label class="ops-field span-all">Description
+      <input class="ops-input" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" placeholder="Optional" />
+    </label>
+    <div class="span-all">
       @if (loadingCurrent()) {
         Checking current quantity…
       } @else if (currentQuantity() != null) {
-        Current Quantity: {{ currentQuantity() }}
+        Currently in this warehouse: <strong>{{ currentQuantity() }}</strong>
       }
     </div>
-    <div class="md:col-span-2 flex gap-2">
-      <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white font-bold border-none cursor-pointer w-fit">Receive stock</button>
-      <button type="button" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-800 font-bold border-none cursor-pointer w-fit" (click)="back()">Back to stock</button>
+    <div class="span-all ops-form-actions">
+      <button type="submit" class="ops-btn ops-btn--dark">Receive stock</button>
+      <button type="button" class="ops-btn" (click)="back()">Back to stock</button>
     </div>
   </form>
 </div>

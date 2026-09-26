@@ -17,6 +17,8 @@ export interface Warehouse {
 }
 
 export interface WarehouseStock {
+  averageCost?: number | null;
+  stockValue?: number | null;
   id: number;
   companyId?: number;
   branchId?: number;
@@ -31,6 +33,8 @@ export interface WarehouseStock {
   uomCode?: string;
   uomName?: string;
   availableQuantity?: number;
+  reorderLevel?: number | null;
+  stockStatus?: 'OK' | 'REORDER' | 'OUT';
   version?: number;
 }
 
@@ -167,6 +171,7 @@ export class InventoryService {
     warehouseId: number;
     sparePartId: number;
     quantity: number;
+    unitRate?: number | null;
     description?: string | null;
   }): Observable<ApiResponse<WarehouseStock>> {
     return this.http.post<ApiResponse<WarehouseStock>>(`${this.inventoryUrl}/stock/opening-balance`, body);

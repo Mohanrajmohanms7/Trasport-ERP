@@ -1,16 +1,16 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4 max-w-2xl">
-  <a routerLink="/maintenance-requests" class="text-xs text-blue-700 no-underline">Back to requests</a>
-  <h1 class="text-lg font-bold text-slate-900 dark:text-white">{{ requestId() ? 'Edit request' : 'New maintenance request' }}</h1>
-  <p class="text-xs text-slate-500">The request number, requester, company, branch, and odometer are assigned by the server.</p>
+<div class="ops-page">
+  <a routerLink="/maintenance-requests" class="ops-link inline-flex items-center gap-1 w-fit"><span class="material-icons text-base">arrow_back</span>Maintenance requests</a>
+  <h1 class="ops-title">{{ requestId() ? 'Edit request' : 'New maintenance request' }}</h1>
+  <p class="ops-sub">Describe the problem. The request number, date and odometer are filled in automatically.</p>
 
   @if (error()) {
-    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   }
 
   <form class="flex flex-col gap-3" (ngSubmit)="save()">
-    <label class="text-xs font-bold text-slate-600 flex flex-col gap-1">
+    <label class="ops-field">
       Vehicle
-      <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' ? null : +$event)" name="vehicleId">
+      <select class="ops-input" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' ? null : +$event)" name="vehicleId">
         <option value="">Select a vehicle</option>
         @for (vehicle of vehicles(); track vehicle.id) {
           <option [value]="vehicle.id">{{ vehicle.code }} — {{ vehicle.name }}</option>
@@ -18,26 +18,26 @@
       </select>
     </label>
     @if (driverOnly() && !vehicles().length) {
-      <p class="text-xs text-amber-700">No vehicle is on your active assignment.</p>
+      <p class="ops-alert ops-alert--warn">No vehicle is on your active assignment.</p>
     }
-    <label class="text-xs font-bold text-slate-600 flex flex-col gap-1">
+    <label class="ops-field">
       Title
-      <input class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" maxlength="150" />
+      <input class="ops-input" [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" maxlength="150" />
     </label>
-    <label class="text-xs font-bold text-slate-600 flex flex-col gap-1">
+    <label class="ops-field">
       Priority
-      <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
+      <select class="ops-input" [ngModel]="priority()" (ngModelChange)="priority.set($event)" name="priority">
         <option value="LOW">Low</option>
         <option value="MEDIUM">Medium</option>
         <option value="HIGH">High</option>
         <option value="CRITICAL">Critical</option>
       </select>
     </label>
-    <label class="text-xs font-bold text-slate-600 flex flex-col gap-1">
+    <label class="ops-field">
       Description
       <textarea class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900 min-h-28" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description"></textarea>
     </label>
-    <button type="submit" [disabled]="loading()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold border-none cursor-pointer disabled:opacity-60">
+    <button type="submit" [disabled]="loading()" class="ops-btn ops-btn--primary">
       {{ loading() ? 'Saving…' : 'Save request' }}
     </button>
   </form>

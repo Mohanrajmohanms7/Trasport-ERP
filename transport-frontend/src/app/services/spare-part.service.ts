@@ -12,6 +12,8 @@ export interface SparePart {
   companyId?: number;
   defaultUomId?: number;
   defaultUomCode?: string;
+  reorderLevel?: number | null;
+  photoFile?: string | null;
   defaultUomName?: string;
   defaultRate?: number;
 }
@@ -43,5 +45,9 @@ export class SparePartService {
 
   create(body: Record<string, unknown>): Observable<ApiResponse<SparePart>> {
     return this.http.post<ApiResponse<SparePart>>(this.apiUrl, body);
+  }
+
+  update(id: number, body: Record<string, unknown>): Observable<ApiResponse<SparePart>> {
+    return this.http.put<ApiResponse<SparePart>>(`${this.apiUrl}/${id}`, body);
   }
 }

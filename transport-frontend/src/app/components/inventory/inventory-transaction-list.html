@@ -1,61 +1,70 @@
-<div class="h-full min-h-0 overflow-auto p-4 md:p-6 flex flex-col gap-4">
-  <div>
-    <h1 class="text-lg font-bold text-slate-900 dark:text-white">Inventory transactions</h1>
-    <p class="text-xs text-slate-500">OPENING_BALANCE, RECEIPT, ISSUE, and RETURN movements.</p>
-  </div>
-    <app-export-buttons module="inventory-transactions" />
+<div class="ops-page">
+  <header class="ops-header">
+    <div>
+      <h1 class="ops-title"><span class="material-icons">swap_vert</span>Inventory transactions</h1>
+      <p class="ops-sub">Every stock movement: opening balance, receipt from supplier, issue to a work order and return from it.</p>
+    </div>
+    <div class="ops-actions"><app-export-buttons module="inventory-transactions" /></div>
+  </header>
 
-  <form class="grid grid-cols-1 md:grid-cols-4 gap-2" (ngSubmit)="load()">
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
+<form class="ops-filters" (ngSubmit)="load()">
+    <select class="ops-input" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event)" name="warehouse">
       <option value="">All warehouses</option>
       @for (row of warehouses(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
-    <select class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs bg-white dark:bg-slate-900" [ngModel]="transactionType()" (ngModelChange)="transactionType.set($event)" name="type">
+    <select class="ops-input" [ngModel]="transactionType()" (ngModelChange)="transactionType.set($event)" name="type">
       <option value="">All types</option>
-      <option value="OPENING_BALANCE">OPENING_BALANCE</option>
-      <option value="RECEIPT">RECEIPT</option>
-      <option value="ISSUE">ISSUE</option>
-      <option value="RETURN">RETURN</option>
+      <option value="OPENING_BALANCE">Opening balance</option>
+      <option value="RECEIPT">Receipt</option>
+      <option value="ISSUE">Issue to work order</option>
+      <option value="RETURN">Return from work order</option>
     </select>
-    <button type="submit" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold border-none cursor-pointer w-fit">Filter</button>
+    <button type="submit" class="ops-btn ops-btn--dark">Apply</button>
   </form>
 
   @if (error()) {
-    <div class="p-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs">{{ error() }}</div>
+    <div class="ops-alert ops-alert--error">{{ error() }}</div>
   }
 
   @if (loading()) {
-    <div class="p-8 text-xs text-slate-500">Loading transactions…</div>
+    <div class="ops-empty">Loading transactions…</div>
   } @else {
-    <div class="border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-auto">
-      <table class="w-full text-xs">
-        <thead class="text-left text-slate-500">
+    <div class="ops-table-wrap">
+      <table class="ops-table">
+        <thead>
           <tr>
-            <th class="p-3">Date</th>
-            <th class="p-3">Reference</th>
-            <th class="p-3">Type</th>
-            <th class="p-3">Warehouse</th>
-            <th class="p-3">Spare Part</th>
-            <th class="p-3">Quantity</th>
-            <th class="p-3">User</th>
+            <th>Date</th>
+            <th>Reference</th>
+            <th>Type</th>
+            <th>Warehouse</th>
+            <th>Spare part</th>
+            <th class="num">Qty</th>
+            <th class="num">Rate</th>
+            <th>Work order / supplier</th>
+            <th>By</th>
           </tr>
         </thead>
         <tbody>
           @for (row of rows(); track row.id) {
-            <tr class="border-t border-slate-100 dark:border-slate-800">
-              <td class="p-3 whitespace-nowrap">{{ row.createdDate ? (row.createdDate | date:'medium') : '—' }}</td>
-              <td class="p-3 font-bold">{{ row.code }}</td>
-              <td class="p-3">{{ row.transactionType }}</td>
-              <td class="p-3">{{ row.warehouseCode || row.warehouseName }}</td>
-              <td class="p-3">{{ row.sparePartCode }} — {{ row.sparePartName }}</td>
-              <td class="p-3">{{ signedQuantity(row) }}</td>
-              <td class="p-3">{{ row.createdBy }}</td>
+            <tr>
+              <td class="whitespace-nowrap">{{ row.createdDate ? (row.createdDate | date:'dd MMM yyyy, HH:mm') : '—' }}</td>
+              <td class="code">{{ row.code }}</td>
+              <td><span class="ops-pill" [attr.data-s]="row.transactionType">{{ typeLabel(row.transactionType) }}</span></td>
+              <td>{{ row.warehouseCode || row.warehouseName }}</td>
+              <td>{{ row.sparePartCode }} — {{ row.sparePartName }}</td>
+              <td class="num"><strong>{{ signedQuantity(row) }}</strong></td>
+              <td class="num">{{ $any(row).unitRate != null ? ($any(row).unitRate | number:'1.2-2') : '—' }}</td>
+              <td>
+                @if ($any(row).workOrderId) { <a class="ops-link" [routerLink]="['/work-orders', $any(row).workOrderId]">{{ $any(row).workOrderNumber }}</a> }
+                @else { {{ $any(row).supplierName || $any(row).externalReference || '—' }} }
+              </td>
+              <td>{{ row.createdBy }}</td>
             </tr>
           } @empty {
             <tr>
-              <td class="p-3 text-slate-500" colspan="7">No inventory transactions yet.</td>
+              <td class="ops-empty" colspan="9">No inventory transactions yet.</td>
             </tr>
           }
         </tbody>

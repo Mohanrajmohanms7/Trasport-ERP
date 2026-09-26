@@ -1,3 +1,5 @@
+import { MasterService } from '../../services/master.service';
+import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -13,6 +15,9 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
   templateUrl: './maintenance-request-list.html'
 })
 export class MaintenanceRequestListComponent implements OnInit {
+  vehicles = signal<any[]>([]);
+  private masters = inject(MasterService);
+
   private requests = inject(MaintenanceRequestService);
   private router = inject(Router);
   private auth = inject(AuthService);
@@ -28,6 +33,7 @@ export class MaintenanceRequestListComponent implements OnInit {
   readonly canCreate = signal(false);
 
   ngOnInit() {
+    this.masters.getMasters<any>('vehicles', resolveTenantCompanyId(), { size: 500 }).subscribe({ next: res => this.vehicles.set(res?.success ? ((res.data as any)?.content || res.data || []) : []), error: () => this.vehicles.set([]) });
     const roles = this.auth.currentUser()?.roles || [];
     this.canCreate.set(roles.some(role =>
       role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || role === 'BRANCH_MANAGER' || role === 'DRIVER'));

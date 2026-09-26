@@ -22,5 +22,10 @@ public class WarehouseStockResponse {
     private String uomCode;
     private String uomName;
     private BigDecimal availableQuantity;
+    private BigDecimal averageCost;
+    private BigDecimal stockValue;
+    private BigDecimal reorderLevel;
+    /** OK, REORDER (at or below reorder level) or OUT (zero). */
+    private String stockStatus;
     private Integer version;
 }
