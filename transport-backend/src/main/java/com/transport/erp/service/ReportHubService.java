@@ -184,7 +184,9 @@ public class ReportHubService {
         if ("pdf".equalsIgnoreCase(format)) {
             return com.transport.erp.util.TablePdfGenerator.render(title, companyName(), describe(r.filters()), headers, rows);
         }
-        return xlsx.buildExcelWorkbook(title.length() > 31 ? title.substring(0, 31) : title, headers, rows);
+        // Excel sheet names: max 31 chars, no \ / ? * [ ] :
+        String sheet = title.replaceAll("[\\\\/?*\\[\\]:]", "-");
+        return xlsx.buildExcelWorkbook(sheet.length() > 31 ? sheet.substring(0, 31) : sheet, headers, rows);
     }
 
     private String describe(Map<String, Object> f) {
