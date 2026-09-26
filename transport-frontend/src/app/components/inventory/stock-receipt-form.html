@@ -35,7 +35,7 @@
       <input type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />
     </label>
     <label class="ops-field">Unit rate
-      <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Optional" />
+      <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Cost per unit (recommended)" />
     </label>
     <label class="ops-field">Supplier
       <select class="ops-input" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event)" name="supplier">
@@ -45,6 +45,17 @@
       }
     </select>
     </label>
+    <label class="ops-field">Paid by
+      <select class="ops-input" [ngModel]="paymentMode()" (ngModelChange)="paymentMode.set($event)" name="paymentMode">
+        <option value="CREDIT">Credit — supplier bill (pay later)</option>
+        <option value="CASH">Cash — paid now</option>
+        <option value="BANK">Bank / UPI — paid now</option>
+      </select>
+    </label>
+    <p class="ops-sub span-all">
+      With a unit rate the stock is valued and posted to accounts: Credit → supplier payable, Cash/Bank → paid from cash or bank.
+      @if (paymentMode() === 'CREDIT' && !supplierId()) { <strong style="color:#b45309">Pick the supplier for a credit purchase.</strong> }
+    </p>
     <label class="ops-field">External reference
       <input class="ops-input" [ngModel]="referenceNumber()" (ngModelChange)="referenceNumber.set($event)" name="referenceNumber" placeholder="Optional" />
     </label>

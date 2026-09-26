@@ -68,8 +68,12 @@ public class InventoryValuationService {
     }
 
     public void postReceipt(InventoryTransaction t, String username) {
+        String mode = t.getPaymentMode() == null ? "CREDIT" : t.getPaymentMode();
+        String crCode = "CASH".equals(mode) ? "1000" : "BANK".equals(mode) ? "1010" : "2000";
+        String crName = "CASH".equals(mode) ? "Cash on Hand" : "BANK".equals(mode) ? "Bank - Current A/c" : "Accounts Payable";
+        String crType = "CREDIT".equals(mode) ? "LIABILITY" : "ASSET";
         post(t.getCompanyId(), t.getBranchId(), value(t), INVENTORY_CODE, INVENTORY_NAME, "ASSET",
-                "2000", "Accounts Payable", "LIABILITY", "STK-RCPT-" + t.getId(),
+                crCode, crName, crType, "STK-RCPT-" + t.getId(),
                 "Spare parts received " + t.getCode() + (t.getSupplier() != null ? " from " + t.getSupplier().getName() : ""),
                 "Stock Receipt Voucher", username);
     }
@@ -78,6 +82,14 @@ public class InventoryValuationService {
         post(t.getCompanyId(), t.getBranchId(), value(t), INVENTORY_CODE, INVENTORY_NAME, "ASSET",
                 OPENING_EQUITY_CODE, OPENING_EQUITY_NAME, "EQUITY", "STK-OPEN-" + t.getId(),
                 "Opening stock " + t.getCode(), "Opening Stock Voucher", username);
+    }
+
+    public void postInitialCost(WarehouseStock stock, BigDecimal unitCost, String username) {
+        BigDecimal amount = nz(stock.getAvailableQuantity()).multiply(unitCost).setScale(2, RoundingMode.HALF_UP);
+        post(stock.getCompanyId(), stock.getBranchId(), amount, INVENTORY_CODE, INVENTORY_NAME, "ASSET",
+                OPENING_EQUITY_CODE, OPENING_EQUITY_NAME, "EQUITY", "STK-VAL-" + stock.getId(),
+                "Initial valuation of existing stock (" + (stock.getSparePart() != null ? stock.getSparePart().getName() : "part") + ")",
+                "Stock Valuation Voucher", username);
     }
 
     /** Parts consumed by a completed work order leave inventory into repair expense. */

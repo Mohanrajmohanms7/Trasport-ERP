@@ -59,6 +59,13 @@ public class InventoryController {
         return ApiResponse.success(inventoryService.getStock(id), "Stock fetched successfully");
     }
 
+    @PostMapping("/stock/{id}/initial-cost")
+    public ApiResponse<com.transport.erp.dto.WarehouseStockResponse> setInitialCost(@PathVariable Long id,
+            @RequestBody java.util.Map<String, java.math.BigDecimal> body, org.springframework.security.core.Authentication auth) {
+        String username = auth != null ? auth.getName() : "SYSTEM";
+        return ApiResponse.success(inventoryService.setInitialCost(id, body.get("unitCost"), username), "Stock cost set");
+    }
+
     @PostMapping("/stock/opening-balance")
     public ApiResponse<WarehouseStockResponse> openingBalance(
             @RequestBody OpeningBalanceRequest request,

@@ -118,9 +118,9 @@ import { FfToastComponent } from '@ff/ui';
       width: 40px;
       height: 40px;
       border-radius: 10px;
-      background-color: var(--ff-accent-amber);
       color: #1a1405;
     }
+    .app-nav-chip:has(.app-tenant-chip-text) { background-color: var(--ff-accent-amber); }
 
     .app-nav-group {
       margin-top: 1rem;

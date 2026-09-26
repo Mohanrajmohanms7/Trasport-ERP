@@ -25,6 +25,7 @@ export class StockReceiptFormComponent implements OnInit {
   quantity = signal('');
   unitRate = signal('');
   supplierId = signal('');
+  paymentMode = signal<'CREDIT' | 'CASH' | 'BANK'>('CREDIT');
   referenceNumber = signal('');
   description = signal('');
   currentQuantity = signal<number | null>(null);
@@ -86,6 +87,7 @@ export class StockReceiptFormComponent implements OnInit {
       quantity: Number(this.quantity()),
       unitRate: this.unitRate().trim() ? Number(this.unitRate()) : null,
       supplierId: this.supplierId() ? Number(this.supplierId()) : null,
+      paymentMode: this.paymentMode(),
       referenceNumber: this.referenceNumber().trim() || null,
       description: this.description().trim() || null
     }).subscribe({

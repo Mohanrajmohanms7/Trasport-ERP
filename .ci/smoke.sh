@@ -305,5 +305,24 @@ for m in work-orders maintenance-requests spare-parts stock inventory-transactio
   done
 done
 
+
+# ---------------- Receipt payment mode + initial cost ----------------
+SUPP=$($PSQL "INSERT INTO suppliers (code,name,status,company_id,branch_id,created_date,updated_date,is_deleted,version) VALUES ('SUP-1','Sri Auto Spares','ACTIVE',1,1,now(),now(),false,0) RETURNING id" | head -1)
+R=$(api POST /spare-parts '{"code":"AIR-FLT","name":"Air Filter","defaultUomId":'$UOM',"defaultRate":300,"status":"ACTIVE"}'); SP3=$(echo "$R" | j "d['data']['id']")
+R=$(api POST /inventory/stock/receipt '{"warehouseId":'$W1',"sparePartId":'$SP3',"quantity":2,"unitRate":300,"paymentMode":"CREDIT"}'); echo "$R" | grep -q "supplier" && pass "credit purchase needs a supplier" || fail "credit supplier" "$(echo $R | cut -c1-160)"
+R=$(api POST /inventory/stock/receipt '{"warehouseId":'$W1',"sparePartId":'$SP3',"quantity":2,"unitRate":300,"paymentMode":"CASH"}'); TID=$(echo "$R" | j "d['data']['transactionId']" 2>/dev/null || echo)
+CR=$($PSQL "SELECT c.account_code FROM journal_vouchers j JOIN chart_of_accounts c ON c.id=j.credit_account_id WHERE j.reference_number LIKE 'STK-RCPT-%' ORDER BY j.id DESC LIMIT 1")
+[ "$CR" = "1000" ] && pass "cash purchase credits Cash, not payable" || fail "cash receipt" "$CR $(echo $R | cut -c1-160)"
+R=$(api POST /inventory/stock/receipt '{"warehouseId":'$W1',"sparePartId":'$SP3',"quantity":1,"unitRate":320,"paymentMode":"CREDIT","supplierId":'$SUPP'}')
+CR=$($PSQL "SELECT c.account_code FROM journal_vouchers j JOIN chart_of_accounts c ON c.id=j.credit_account_id WHERE j.reference_number LIKE 'STK-RCPT-%' ORDER BY j.id DESC LIMIT 1")
+[ "$CR" = "2000" ] && pass "credit purchase with supplier credits Accounts Payable" || fail "credit receipt" "$CR $(echo $R | cut -c1-160)"
+R=$(api POST /spare-parts '{"code":"OLD-BELT","name":"Fan Belt","defaultUomId":'$UOM',"status":"ACTIVE"}'); SP4=$(echo "$R" | j "d['data']['id']")
+api POST /inventory/stock/opening-balance '{"warehouseId":'$W1',"sparePartId":'$SP4',"quantity":6}' >/dev/null
+SID=$(api GET "/inventory/stock?warehouseId=$W1&size=50" | j "[r['id'] for r in d['data']['content'] if r.get('sparePartId')==$SP4][0]")
+R=$(api POST /inventory/stock/$SID/initial-cost '{"unitCost":250}'); AVG=$(echo "$R" | j "d['data'].get('averageCost')")
+VJ=$($PSQL "SELECT amount FROM journal_vouchers WHERE reference_number='STK-VAL-$SID'")
+python3 -c "import sys; sys.exit(0 if abs(float('$AVG')-250)<1e-6 else 1)" && [ "$VJ" = "1500.00" ] && pass "unvalued stock costed once: 6 x 250 = 1500 posted" || fail "initial cost" "$AVG $VJ $(echo $R | cut -c1-160)"
+R=$(api POST /inventory/stock/$SID/initial-cost '{"unitCost":300}'); echo "$R" | grep -qi "already has a cost" && pass "initial cost only once" || fail "initial cost twice" "$(echo $R | cut -c1-160)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

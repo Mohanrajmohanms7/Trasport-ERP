@@ -167,6 +167,10 @@ export class InventoryService {
     return this.http.get<ApiResponse<PageResult<WarehouseStock>>>(`${this.inventoryUrl}/stock`, { params });
   }
 
+  setInitialCost(stockId: number, unitCost: number) {
+    return this.http.post<ApiResponse<WarehouseStock>>(`${this.inventoryUrl}/stock/${stockId}/initial-cost`, { unitCost });
+  }
+
   openingBalance(body: {
     warehouseId: number;
     sparePartId: number;
@@ -183,6 +187,7 @@ export class InventoryService {
     quantity: number;
     unitRate?: number | null;
     supplierId?: number | null;
+    paymentMode?: string;
     referenceNumber?: string | null;
     description?: string | null;
   }): Observable<ApiResponse<StockReceipt>> {
