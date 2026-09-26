@@ -270,8 +270,10 @@ ST=$(api GET "/inventory/stock?warehouseId=$W1&size=50" | j "[ (r['availableQuan
 echo "stock: $ST"; python3 -c "q,a,v=$ST; import sys; sys.exit(0 if abs(float(q)-20)<1e-6 and abs(float(a)-450)<1e-6 and abs(float(v)-9000)<1e-6 else 1)" && pass "stock 20 @ avg 450 = 9000" || fail "avg cost" "$ST"
 INVJ=$($PSQL "SELECT COALESCE(SUM(CASE WHEN d.account_code='1200' THEN j.amount ELSE 0 END),0) FROM journal_vouchers j JOIN chart_of_accounts d ON d.id=j.debit_account_id WHERE j.reference_number LIKE 'STK-%'")
 [ "$INVJ" = "9000.00" ] && pass "inventory account debited 9000 (opening 4000 + receipt 5000)" || fail "stock JVs" "$INVJ"
-R=$(api POST /vehicles '{"code":"TN01AB1234","name":"TN01AB1234","status":"ACTIVE","type":"TIPPER"}'); VH=$(echo "$R" | j "d['data']['id']"); [ -z "$VH" ] && VH=$($PSQL "SELECT id FROM vehicles ORDER BY id LIMIT 1")
-MR=$(api POST /maintenance-requests '{"vehicleId":'$VH',"title":"Brake noise","description":"front","priority":"HIGH"}'); echo "mr: $MR" | cut -c1-200; MRID=$(echo "$MR" | j "d['data']['id']")
+R=$(api POST /vehicles '{"code":"TN01AB1234","name":"TN01AB1234","status":"ACTIVE"}'); echo "vehicle: $R" | cut -c1-200; VH=$(echo "$R" | j "d['data']['id']" 2>/dev/null)
+if [ -z "$VH" ] || [ "$VH" = "None" ]; then $PSQL "INSERT INTO vehicles (code,name,status,company_id,branch_id,created_date,updated_date,is_deleted,version) VALUES ('TN01AB1234','TN01AB1234','ACTIVE',1,1,now(),now(),false,0)" >/dev/null; VH=$($PSQL "SELECT id FROM vehicles WHERE code='TN01AB1234'"); fi
+echo "VH=$VH"
+MR=$(api POST /maintenance-requests '{"vehicleId":'$VH',"title":"Brake noise","description":"front","priority":"HIGH"}'); echo "mr: $MR" | cut -c1-300; MRID=$(echo "$MR" | j "d['data']['id']")
 api POST /maintenance-requests/$MRID/review '{}' >/dev/null; api POST /maintenance-requests/$MRID/approve >/dev/null
 R=$(api POST /maintenance-requests/$MRID/convert '{}'); echo "convert: $R" | cut -c1-200; WOID=$(echo "$R" | j "d['data'].get('workOrderId')")
 [ -n "$WOID" ] && [ "$WOID" != "None" ] && pass "request converted to work order $WOID" || { WOID=$(echo "$(api POST /work-orders '{"vehicleId":'$VH',"source":"MANUAL","maintenanceType":"REPAIR","name":"Brake job","priority":"HIGH"}')" | j "d['data']['id']"); fail "convert" "$(echo $R | cut -c1-160)"; }
