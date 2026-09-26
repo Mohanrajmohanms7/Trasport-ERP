@@ -214,6 +214,37 @@ public class InventoryService {
         return toTransactionResponse(row);
     }
 
+    /**
+     * One-time cost for stock that has no value yet (stock entered before costing existed).
+     * Posts Dr Spare Parts Inventory / Cr Opening Balance Equity for quantity x cost.
+     */
+    @Transactional
+    public WarehouseStockResponse setInitialCost(Long stockId, BigDecimal unitCost, String username) {
+        AppUser user = tenantAccess.requireCurrentUser();
+        warehouseService.assertWriteAccess(user);
+        if (unitCost == null || unitCost.signum() <= 0) {
+            throw invalid("STOCK_COST_INVALID", "Enter a unit cost greater than zero.");
+        }
+        WarehouseStock stock = stockRepository.findById(stockId)
+                .filter(x -> !Boolean.TRUE.equals(x.getIsDeleted()))
+                .orElseThrow(() -> invalid("STOCK_NOT_FOUND", "Stock balance was not found."));
+        stock = stockRepository.findActiveForUpdate(stock.getWarehouse().getId(), stock.getSparePart().getId()).orElse(stock);
+        assertReadable(stock.getCompanyId(), stock.getBranchId(), user);
+        if (stock.getAverageCost() != null && stock.getAverageCost().signum() > 0) {
+            throw invalid("STOCK_ALREADY_COSTED", "This stock already has a cost. New receipts update it automatically.");
+        }
+        if (stock.getAvailableQuantity() == null || stock.getAvailableQuantity().signum() <= 0) {
+            throw invalid("STOCK_COST_NO_QUANTITY", "There is no quantity on hand to value.");
+        }
+        stock.setAverageCost(unitCost.setScale(4, java.math.RoundingMode.HALF_UP));
+        stock.setUpdatedBy(username);
+        stockRepository.saveAndFlush(stock);
+        valuationService.postInitialCost(stock, unitCost, username);
+        auditService.log(username, "STOCK_COST_SET", "warehouse_stock", stock.getId(), null,
+                "unitCost=" + unitCost + ", quantity=" + stock.getAvailableQuantity());
+        return toStockResponse(stockRepository.findDetailById(stock.getId()).orElse(stock));
+    }
+
     WarehouseStock increaseAvailable(Warehouse warehouse, SparePart part, BigDecimal quantity, String username) {
         return addQuantity(warehouse, part, quantity, username);
     }
@@ -394,6 +425,7 @@ public class InventoryService {
             dto.setWorkOrderPartId(row.getWorkOrderPart().getId());
         }
         dto.setUnitRate(row.getUnitRate());
+        dto.setPaymentMode(row.getPaymentMode());
         dto.setExternalReference(row.getExternalReference());
         Supplier supplier = row.getSupplier();
         if (supplier != null) {

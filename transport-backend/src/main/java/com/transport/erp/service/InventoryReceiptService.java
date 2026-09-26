@@ -69,6 +69,17 @@ public class InventoryReceiptService {
         Warehouse warehouse = warehouseService.requireActive(request.getWarehouseId(), user);
         SparePart part = requireUsablePart(request.getSparePartId(), warehouse.getCompanyId());
         Supplier supplier = optionalSupplier(request.getSupplierId(), warehouse.getCompanyId());
+        // Not chosen: a bill from a supplier is on credit, otherwise it was paid in cash.
+        String paymentMode = request.getPaymentMode() == null || request.getPaymentMode().isBlank()
+                ? (supplier != null ? "CREDIT" : "CASH") : request.getPaymentMode().trim().toUpperCase();
+        if (!java.util.Set.of("CREDIT", "CASH", "BANK").contains(paymentMode)) {
+            throw invalid("INVENTORY_RECEIPT_PAYMENT_MODE", "Payment mode must be CREDIT, CASH or BANK.");
+        }
+        // A credit purchase creates a payable, so we must know whom we owe.
+        if ("CREDIT".equals(paymentMode) && unitRate != null && unitRate.signum() > 0 && supplier == null) {
+            throw invalid("INVENTORY_RECEIPT_SUPPLIER_REQUIRED",
+                    "Select the supplier for a credit purchase, or choose Cash / Bank if it was paid on the spot.");
+        }
         if (externalReference != null
                 && transactionRepository.countReceiptExternalReference(warehouse.getCompanyId(), externalReference) > 0) {
             throw invalid("INVENTORY_RECEIPT_REFERENCE_DUPLICATE", "This receipt reference was already used.");
@@ -85,6 +96,7 @@ public class InventoryReceiptService {
         transaction.setTransactionType(InventoryTransaction.TYPE_RECEIPT);
         transaction.setQuantity(quantity);
         transaction.setUnitRate(unitRate);
+        transaction.setPaymentMode(paymentMode);
         transaction.setExternalReference(externalReference);
         transaction.setReferenceType("WAREHOUSE_STOCK");
         transaction.setReferenceId(stock.getId());

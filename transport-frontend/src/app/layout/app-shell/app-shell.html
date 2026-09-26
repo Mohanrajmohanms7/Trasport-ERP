@@ -17,7 +17,7 @@
           @if (navCollapsed() && tenantInitials()) {
             <span class="app-tenant-chip-text" [class.app-tenant-chip-text--long]="tenantInitials().length > 3">{{ tenantInitials() }}</span>
           } @else {
-            <span class="material-symbols-outlined text-[22px] select-none">local_shipping</span>
+            <img src="brand/transaflow-mark.svg" alt="TransaFlow" class="w-10 h-10" />
           }
         </div>
         @if (!navCollapsed()) {

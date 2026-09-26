@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bn" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d2b40"/><stop offset="1" stop-color="#0d1520"/></linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.42" r="0.6"><stop offset="0" stop-color="#f5a524" stop-opacity="0.22"/><stop offset="1" stop-color="#f5a524" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bn)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <!-- haul road sweeping across -->
+  <path d="M-40 760 C 380 700 620 560 900 560 C 1180 560 1320 470 1660 300" fill="none" stroke="#f5a524" stroke-opacity="0.16" stroke-width="90" stroke-linecap="round"/>
+  <path d="M-40 760 C 380 700 620 560 900 560 C 1180 560 1320 470 1660 300" fill="none" stroke="#f5a524" stroke-opacity="0.45" stroke-width="4" stroke-dasharray="26 22"/>
+  <g transform="translate(150 250) scale(4.2)">
+  <defs>
+    <linearGradient id="tf-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22324a"/>
+      <stop offset="1" stop-color="#121b28"/>
+    </linearGradient>
+    <linearGradient id="tf-amber" gradientUnits="userSpaceOnUse" x1="12" y1="14" x2="54" y2="56">
+      <stop offset="0" stop-color="#ffc24d"/>
+      <stop offset="1" stop-color="#f08c00"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#tf-bg)"/>
+  <!-- T: top bar is a haul road, the stem flows down and out to the delivery site -->
+  <path d="M13 19.5 H51" stroke="url(#tf-amber)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M32 20 V35 C32 43.5 37 47.5 45 47.5 H47" fill="none" stroke="url(#tf-amber)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M45.5 40.5 L53 47.5 L45.5 54.5" fill="none" stroke="url(#tf-amber)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- lane markings -->
+  <path d="M18 19.5 H46" stroke="#172231" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round"/>
+  <path d="M32 24 V35 C32 41 35.5 44 41 44.5" fill="none" stroke="#172231" stroke-width="1.6" stroke-dasharray="4 4" stroke-linecap="round"/>
+</g>
+  <text x="460" y="385" font-family="IBM Plex Sans" font-size="132" font-weight="700" letter-spacing="-2" fill="#ffffff">Transa<tspan fill="#f5a524">Flow</tspan></text>
+  <text x="466" y="455" font-family="IBM Plex Sans" font-size="34" font-weight="500" letter-spacing="7" fill="#9fb0c4">QUARRY-TO-SITE TRANSPORT ERP</text>
+  <text x="466" y="560" font-family="IBM Plex Sans" font-size="30" font-weight="500" fill="#d7dee8">Bookings · Trips · Weighbridge · GST Billing · Driver Payroll · Fleet &amp; Stock</text>
+</svg>

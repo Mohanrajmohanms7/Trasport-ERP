@@ -70,7 +70,11 @@
               <td>{{ row.branchCode || row.branchName || row.branchId || '—' }}</td>
               <td class="num"><strong>{{ row.availableQuantity }}</strong></td>
               <td class="num">{{ row.reorderLevel != null ? row.reorderLevel : '—' }}</td>
-              <td class="num">{{ row.averageCost ? (row.averageCost | number:'1.2-2') : '—' }}</td>
+              <td class="num">
+                @if (row.averageCost) { {{ row.averageCost | number:'1.2-2' }} }
+                @else if ((row.availableQuantity ?? 0) > 0) { <button type="button" class="ops-link" (click)="setCost(row)" title="This stock was entered without a cost">Set cost</button> }
+                @else { — }
+              </td>
               <td class="num">{{ row.stockValue ? (row.stockValue | number:'1.2-2') : '—' }}</td>
               <td><span class="ops-pill" [attr.data-s]="row.stockStatus === 'OK' ? 'LOW' : row.stockStatus">{{ row.stockStatus === 'OUT' ? 'Out of stock' : row.stockStatus === 'REORDER' ? 'Reorder' : 'OK' }}</span></td>
             </tr>
