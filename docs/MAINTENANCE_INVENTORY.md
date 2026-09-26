@@ -24,3 +24,13 @@ Actual cost cannot be below the parts cost from stock. Stock issued before V67 c
 
 ## Exports
 Excel / PDF on Spare parts, Warehouses, Stock (with avg cost, value, status), Inventory transactions, Maintenance requests, Work orders.
+
+## Receipt payment mode & costing existing stock (V69)
+- Receipt **payment mode**: CREDIT (supplier bill → Cr 2000 Accounts Payable; supplier required when a rate is entered),
+  CASH (→ Cr 1000 Cash), BANK (→ Cr 1010 Bank). Default: CREDIT when a supplier is chosen, else CASH.
+- **Set cost** on the Stock screen for stock that has no cost yet (entered before costing): one time only,
+  posts Dr 1200 Inventory / Cr 3900 Opening Balance Equity for quantity × cost. After that, receipts update the average.
+
+## Brand
+`public/brand/`: `transaflow-mark.svg` (app icon / favicon), `transaflow-logo-dark.svg`, `transaflow-logo-light.svg`,
+`transaflow-banner.svg|png` (1600×900), `transaflow-icon-1024.png`.
