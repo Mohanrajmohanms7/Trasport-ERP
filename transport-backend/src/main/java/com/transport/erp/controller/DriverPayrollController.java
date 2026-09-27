@@ -27,7 +27,7 @@ public class DriverPayrollController {
     private TenantAccessService tenantAccess;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<Page<DriverPayroll>> getPayrolls(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String status,
@@ -40,14 +40,14 @@ public class DriverPayrollController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> getPayrollById(@PathVariable Long id) {
         DriverPayroll payroll = payrollService.getPayrollById(id);
         return ApiResponse.success(payroll, "Driver payroll retrieved successfully");
     }
 
     @GetMapping("/driver/{driverId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<List<DriverPayroll>> getPayrollsByDriver(@PathVariable Long driverId) {
         List<DriverPayroll> payrolls = payrollService.getPayrollsByDriver(driverId);
         return ApiResponse.success(payrolls, "Driver payrolls retrieved successfully");
@@ -76,7 +76,7 @@ public class DriverPayrollController {
     }
 
     @PostMapping({"", "/generate"})
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> createPayroll(@RequestBody DriverPayrollCreateDTO dto, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll created = payrollService.createPayroll(dto, username);
@@ -84,21 +84,21 @@ public class DriverPayrollController {
     }
 
     @PostMapping("/{id}/recalculate")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> recalculatePayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         return ApiResponse.success(payrollService.recalculatePayroll(id, username), "Driver payroll recalculated from trips");
     }
 
     @PostMapping("/{id}/post")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> postPayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         return ApiResponse.success(payrollService.postPayroll(id, username), "Driver payroll posted to accounts");
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> updatePayroll(@PathVariable Long id, @RequestBody DriverPayrollCreateDTO dto, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll updated = payrollService.updatePayroll(id, dto, username);
@@ -106,7 +106,7 @@ public class DriverPayrollController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
     public ApiResponse<Void> deletePayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         payrollService.deletePayroll(id, username);
@@ -114,7 +114,7 @@ public class DriverPayrollController {
     }
 
     @PostMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> approvePayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll approved = payrollService.approvePayroll(id, username);
@@ -122,7 +122,7 @@ public class DriverPayrollController {
     }
 
     @PostMapping("/{id}/pay")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverPayroll> payPayroll(@PathVariable Long id, @RequestBody(required = false) DriverPayrollPaymentDTO paymentDto, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll paid = payrollService.payPayroll(id, paymentDto, username);
@@ -130,7 +130,7 @@ public class DriverPayrollController {
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
     public ApiResponse<DriverPayroll> cancelPayroll(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         DriverPayroll cancelled = payrollService.cancelPayroll(id, username);
@@ -138,14 +138,14 @@ public class DriverPayrollController {
     }
 
     @GetMapping("/{id}/print")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<com.transport.erp.dto.DriverPayrollPrintDTO> getSalarySlipPrintData(@PathVariable Long id) {
         com.transport.erp.dto.DriverPayrollPrintDTO printData = payrollService.getSalarySlipPrintData(id);
         return ApiResponse.success(printData, "Driver salary slip print data fetched successfully");
     }
 
     @GetMapping("/{id}/pdf")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public void downloadSalarySlipPdf(@PathVariable Long id, jakarta.servlet.http.HttpServletResponse response) throws Exception {
         com.transport.erp.dto.DriverPayrollPrintDTO printData = payrollService.getSalarySlipPrintData(id);
         response.setContentType("application/pdf");
@@ -159,7 +159,7 @@ public class DriverPayrollController {
     private com.transport.erp.service.XlsxExportService xlsxExportService;
 
     @GetMapping({"/export/xlsx", "/xlsx"})
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public void exportXlsx(@RequestParam(required = false) Long companyId, jakarta.servlet.http.HttpServletResponse response) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);

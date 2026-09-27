@@ -18,13 +18,13 @@ public class DriverPaySlabController {
     private DriverPaySlabService slabService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<List<DriverPaySlab>> getSlabs(@RequestParam(required = false) Long companyId) {
         return ApiResponse.success(slabService.getSlabs(companyId), "Daily pay slabs");
     }
 
     @PutMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
     public ApiResponse<List<DriverPaySlab>> saveSlabs(@RequestParam(required = false) Long companyId,
                                                       @RequestBody List<DriverPaySlab> slabs, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
