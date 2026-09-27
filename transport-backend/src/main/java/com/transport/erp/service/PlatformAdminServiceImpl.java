@@ -559,8 +559,11 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
 
         // --- Default Masters (settings + lookups from template company 1) ---
         int settingsCopied = 0;
+        // Copy the template company's active settings, but never its own setup state.
         List<AppSetting> templateSettings = appSettingRepository.findAll().stream()
                 .filter(s -> Long.valueOf(1L).equals(s.getCompanyId()))
+                .filter(s -> !Boolean.TRUE.equals(s.getIsDeleted()))
+                .filter(s -> !"SETUP_COMPLETED".equals(s.getKeyName()))
                 .toList();
         for (AppSetting ts : templateSettings) {
             AppSetting s = new AppSetting();
@@ -576,6 +579,22 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
             appSettingRepository.save(s);
             settingsCopied++;
         }
+
+        // Platform onboarding provisions company, head office, financial year, roles, admin and masters,
+        // so the client is ready: mark setup complete and the first login goes straight to the dashboard.
+        AppSetting setupDone = new AppSetting();
+        setupDone.setKeyName("SETUP_COMPLETED");
+        setupDone.setCode("SETUP_COMPLETED");
+        setupDone.setName("Setup Completed");
+        setupDone.setDescription("Provisioned by Platform Admin onboarding");
+        setupDone.setValueData("true");
+        setupDone.setStatus("ACTIVE");
+        setupDone.setCompanyId(savedCompany.getId());
+        setupDone.setBranchId(savedBranch.getId());
+        setupDone.setIsDeleted(false);
+        setupDone.setCreatedBy("SYSTEM");
+        setupDone.setUpdatedBy("SYSTEM");
+        appSettingRepository.save(setupDone);
 
         int lookupsCopied = 0;
         List<LookupValue> templateLookups = lookupValueRepository.findAll().stream()
