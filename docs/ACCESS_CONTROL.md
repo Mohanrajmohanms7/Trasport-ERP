@@ -50,3 +50,9 @@ Access & Security (Users & Sessions, Audit Logs) · Support (Tickets, Announceme
 - After the end date: only the company admin can sign in (to renew); every other API call returns SUBSCRIPTION_EXPIRED.
   Renewal endpoints (plans, renew, tenant-brand, profile, logout) stay open. (Fixed: this check was silently skipped before.)
 - Source: `AuthService.subscriptionInfo` / `expiringClients`, `GET /api/v1/auth/tenant-brand`.
+
+## First login after onboarding
+Platform Admin onboarding provisions company, head office, financial year, roles, admin user and masters and sets
+`SETUP_COMPLETED=true` for the new company (V71 does the same for existing provisioned companies). The client admin's
+first login therefore opens `/dashboard`. The Setup Wizard (`/setup`) is only offered to a company admin of a company
+that was never provisioned (no flag and no business data); other roles are never redirected there.
