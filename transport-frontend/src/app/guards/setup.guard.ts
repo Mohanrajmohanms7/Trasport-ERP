@@ -5,7 +5,8 @@ import { AuthService } from '../services/auth.service';
 import { SetupService } from '../services/setup.service';
 
 /**
- * Sends the user to the Setup Wizard while the ERP has no business data.
+ * Sends a company admin to the Setup Wizard only for a company that was never provisioned
+ * (no SETUP_COMPLETED flag and no business data) — e.g. a fresh self-hosted install.
  * Super Admin skips company ERP setup (uses Platform Admin instead).
  * Any failure to reach the status endpoint lets navigation through, so a
  * backend hiccup can never lock the user out of the application.
@@ -17,6 +18,11 @@ export const setupGuard: CanActivateFn = () => {
 
   const roles = authService.currentUser()?.roles || [];
   if (roles.includes('SUPER_ADMIN')) {
+    return true;
+  }
+  // Only a company admin can run the wizard; everyone else always goes straight to the app.
+  // Clients onboarded by Platform Admin are marked set up, so their admin is not redirected either.
+  if (!roles.includes('COMPANY_ADMIN') && !roles.includes('ADMIN')) {
     return true;
   }
 
