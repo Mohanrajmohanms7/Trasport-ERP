@@ -41,3 +41,12 @@ Access & Security (Users & Sessions, Audit Logs) · Support (Tickets, Announceme
   shown in amber above "TransaFlow" in the sidebar (and as a pill in the phone header). Platform operators see "PLATFORM".
 - **Backups**: the app records checkpoints only; real database backups come from the PostgreSQL host.
   `GET /api/v1/platform-admin/companies/{id}/data-export` downloads a ZIP of 18 Excel lists for one tenant.
+
+## Subscription notices & enforcement
+- From 3 days before `companies.subscription_end_date` every user of that company sees an amber notice under the header
+  ("ends in N days / tomorrow / today"). Company admins get **Renew now** (early renewal extends from the current end date);
+  other users are told to ask their admin. Closing it hides it until the next day.
+- Platform operators see "N client subscriptions end soon" with a link to Clients & Companies.
+- After the end date: only the company admin can sign in (to renew); every other API call returns SUBSCRIPTION_EXPIRED.
+  Renewal endpoints (plans, renew, tenant-brand, profile, logout) stay open. (Fixed: this check was silently skipped before.)
+- Source: `AuthService.subscriptionInfo` / `expiringClients`, `GET /api/v1/auth/tenant-brand`.
