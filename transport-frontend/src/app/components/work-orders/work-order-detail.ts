@@ -53,6 +53,8 @@ export class WorkOrderDetailComponent implements OnInit {
   requestedDate = signal('');
   completionNotes = signal('');
   actualCost = signal('');
+  /** How the outside part of the job (labour / workshop) was paid: CREDIT = workshop bill, CASH, BANK. */
+  outsidePaymentMode = signal('CREDIT');
   cancellationReason = signal('');
 
   spareParts = signal<SparePart[]>([]);
@@ -417,7 +419,8 @@ export class WorkOrderDetailComponent implements OnInit {
     this.transition(
       id => this.workOrders.complete(id, {
         completionNotes: this.completionNotes().trim(),
-        actualCost: cost ? Number(cost) : null
+        actualCost: cost ? Number(cost) : null,
+        outsidePaymentMode: this.outsidePaymentMode()
       }),
       'Work order completed.');
   }

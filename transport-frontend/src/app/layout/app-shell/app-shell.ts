@@ -292,6 +292,7 @@ export class AppShellComponent implements OnDestroy {
       items: [
         { label: 'Invoice', route: '/billing-invoices', icon: 'description' },
         { label: 'Payments', route: '/payment-logs', icon: 'payments' },
+        { label: 'Supplier Bills', route: '/payables', icon: 'request_quote' },
         { label: 'Driver Payroll', route: '/driver-payroll', icon: 'badge' },
         { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' },
         { label: 'Reports', route: '/reports', icon: 'assessment' },
@@ -399,6 +400,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'accounts-ledger') return 'Accounts';
       if (segment === 'reports-bi') return 'Financial Statements';
       if (segment === 'reports') return 'Reports';
+      if (segment === 'payables') return 'Supplier Bills & Payments';
       if (segment === 'users-roles') return 'User & Role Management';
       if (segment === 'company-admin') return 'System Settings';
       return segment.charAt(0).toUpperCase() + segment.slice(1);

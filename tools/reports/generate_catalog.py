@@ -413,6 +413,8 @@ rep("pending-approvals","Outstanding & pending","Pending approvals & actions","E
  UNION ALL SELECT 'Fuel entries', 'Approval', COUNT(*), SUM(total_amount), MIN(fuel_date) FROM fuel_entries x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED','PENDING') AND {B('x')}
  UNION ALL SELECT 'Driver payroll', 'Approve / post', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','APPROVED') AND {B('x')}
  UNION ALL SELECT 'Driver payroll', 'Salary payment', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND {B('x')}
+ UNION ALL SELECT 'Supplier bills', 'Approval', COUNT(*), SUM(total_amount), MIN(bill_date) FROM supplier_bills x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'DRAFT' AND {B('x')}
+ UNION ALL SELECT 'Supplier bills', 'Payment (overdue)', COUNT(*), SUM(total_amount - paid_amount), MIN(due_date) FROM supplier_bills x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'APPROVED' AND x.paid_amount < x.total_amount AND x.due_date < CURRENT_DATE AND {B('x')}
  UNION ALL SELECT 'Maintenance requests', 'Review / approval', COUNT(*), SUM(0), MIN(CAST(requested_at AS DATE)) FROM maintenance_requests x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','UNDER_REVIEW','APPROVED') AND {B('x')}
  UNION ALL SELECT 'Work orders', 'Completion', COUNT(*), SUM(COALESCE(estimated_cost,0)), MIN(CAST(opened_at AS DATE)) FROM work_orders x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','IN_PROGRESS') AND {B('x')}
  UNION ALL SELECT 'Trips', 'Dispatch / completion', COUNT(*), SUM(0), MIN(trip_date) FROM trips x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('PLANNED','DISPATCHED') AND {B('x')}
@@ -462,6 +464,87 @@ rep("account-balances","Financial & accounting","Account balances (period)","Ope
    ELSE COALESCE(mv.cr0,0)+COALESCE(mv.cr,0)-COALESCE(mv.dr0,0)-COALESCE(mv.dr,0) END closing
  FROM chart_of_accounts a LEFT JOIN mv ON mv.id = a.id WHERE a.company_id = :companyId AND a.is_deleted = false ORDER BY a.account_code""", finance=True)
 
+
+# ---------------- PAYABLES ----------------
+rep("supplier-outstanding","Outstanding & pending","Supplier outstanding & ageing","What we owe each supplier as on the To date, by days past due (not yet due, 1-30, 31-60, 61-90, 90+).",
+ ["to","branch"],
+ [C("supplier","Supplier"),C("bills","Open bills","number",True),C("not_due","Not yet due","money",True),C("d1_30","1-30 overdue","money",True),
+  C("d31_60","31-60","money",True),C("d61_90","61-90","money",True),C("d90","90+","money",True),C("total","Total owed","money",True),C("oldest_due","Oldest due","date")],
+ f"""SELECT s.name supplier, COUNT(*) bills,
+ SUM(b.total_amount - b.paid_amount) FILTER (WHERE b.due_date >= CAST(:to AS DATE)) not_due,
+ SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 1 AND 30) d1_30,
+ SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 31 AND 60) d31_60,
+ SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 61 AND 90) d61_90,
+ SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date > 90) d90,
+ SUM(b.total_amount - b.paid_amount) total, MIN(b.due_date) oldest_due
+ FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id
+ WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND b.total_amount > b.paid_amount
+ AND b.bill_date <= CAST(:to AS DATE) AND {B('b')} GROUP BY s.name ORDER BY total DESC""", finance=True)
+
+rep("supplier-bill-register","Invoices & receipts","Supplier bill register","Bills from suppliers — manual, credit stock receipts and workshop jobs — with due date, paid and balance.",
+ ["date","branch","status"],
+ [C("bill_no","Bill"),C("bill_date","Date","date"),C("supplier","Supplier"),C("supplier_bill_no","Supplier bill no"),C("category","Category"),C("source","Source"),
+  C("vehicle","Vehicle"),C("taxable","Taxable","money",True),C("gst","GST","money",True),C("total","Total","money",True),C("paid","Paid","money",True),
+  C("balance","Balance","money",True),C("due_date","Due","date"),C("status","Status")],
+ f"""SELECT b.bill_number bill_no, b.bill_date, s.name supplier, b.supplier_bill_no, b.category, COALESCE(b.source_reference, 'Manual') source, v.name vehicle,
+ b.taxable_amount taxable, b.gst_amount gst, b.total_amount total, b.paid_amount paid,
+ CASE WHEN b.status = 'APPROVED' THEN b.total_amount - b.paid_amount ELSE 0 END balance, b.due_date, b.status || ' / ' || b.payment_status status
+ FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id LEFT JOIN vehicles v ON v.id = b.vehicle_id
+ WHERE b.company_id = :companyId AND b.is_deleted = false AND {DATE('b.bill_date')} AND {B('b')} AND {STATUS('b.payment_status')}
+ ORDER BY b.bill_date, b.id""", finance=True)
+
+rep("supplier-payment-register","Invoices & receipts","Supplier payment register","Payments made to suppliers with method, reference and the bills they settled.",
+ ["date","branch"],
+ [C("payment_no","Payment"),C("payment_date","Date","date"),C("supplier","Supplier"),C("method","Method"),C("reference","Reference"),C("amount","Amount","money",True),
+  C("bills","Bills settled"),C("status","Status")],
+ f"""SELECT p.payment_number payment_no, p.payment_date, s.name supplier, p.payment_method method, p.reference_number reference, p.amount,
+ (SELECT string_agg(b.bill_number, ', ') FROM supplier_payment_allocations a JOIN supplier_bills b ON b.id = a.bill_id WHERE a.payment_id = p.id AND a.status = 'ACTIVE') bills,
+ p.status FROM supplier_payments p JOIN suppliers s ON s.id = p.supplier_id
+ WHERE p.company_id = :companyId AND p.is_deleted = false AND {DATE('p.payment_date')} AND {B('p')} ORDER BY p.payment_date, p.id""", finance=True)
+
+# ---------------- TRIP PROFITABILITY ----------------
+rep("trip-profitability","Vehicles & trips","Trip profitability","Per completed trip: billed value minus fuel and expenses linked to the trip (tolls, bata…) and the driver's day pay shared across that day's trips.",
+ ["date","branch","vehicle","driver","customer"],
+ [C("trip_no","Trip"),C("trip_date","Date","date"),C("customer","Customer"),C("vehicle","Vehicle"),C("driver","Driver"),C("qty","Qty","qty",True),
+  C("revenue","Revenue (taxable)","money",True),C("fuel","Fuel","money",True),C("trip_expenses","Trip expenses","money",True),C("driver_pay","Driver pay share","money",True),
+  C("profit","Profit","money",True),C("margin_pct","Margin %","percent"),C("billed","Invoiced?")],
+ f"""WITH base AS (SELECT t.id, t.trip_number, t.trip_date, t.driver_id, t.vehicle_id, t.booking_id, t.company_id, t.branch_id FROM trips t
+   LEFT JOIN bookings b ON b.id = t.booking_id
+   WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND {DATE('t.trip_date')} AND {B('t')}
+   AND {OPT('t.vehicle_id','vehicleId')} AND {OPT('t.driver_id','driverId')} AND {OPT('b.customer_id','customerId')}),
+ dayshare AS (SELECT t.driver_id, t.trip_date, COUNT(*) n FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED'
+   AND {DATE('t.trip_date')} GROUP BY t.driver_id, t.trip_date),
+ daypay AS (SELECT p.driver_id, d.work_date, d.daily_amount FROM driver_payroll_days d JOIN driver_payrolls p ON p.id = d.payroll_id
+   WHERE p.company_id = :companyId AND p.is_deleted = false AND d.is_deleted = false AND p.status <> 'CANCELLED')
+ SELECT base.trip_number trip_no, base.trip_date, c.name customer, v.name vehicle, dr.name driver,
+ (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td WHERE td.trip_id = base.id AND td.is_deleted = false) qty,
+ COALESCE(rv.revenue,0) revenue, COALESCE(fu.amt,0) fuel, COALESCE(ex.amt,0) trip_expenses, ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) driver_pay,
+ COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) profit,
+ ROUND(100 * (COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - COALESCE(dp.daily_amount / NULLIF(ds.n,0),0)) / NULLIF(rv.revenue,0), 1) margin_pct,
+ CASE WHEN rv.revenue IS NULL THEN 'No' ELSE 'Yes' END billed
+ FROM base LEFT JOIN bookings bk ON bk.id = base.booking_id LEFT JOIN customers c ON c.id = bk.customer_id
+ LEFT JOIN vehicles v ON v.id = base.vehicle_id LEFT JOIN drivers dr ON dr.id = base.driver_id
+ LEFT JOIN LATERAL (SELECT SUM(sd.taxable_amount) revenue FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id
+   WHERE sd.trip_id = base.id AND sd.is_deleted = false AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED')) rv ON true
+ LEFT JOIN LATERAL (SELECT SUM(f.total_amount) amt FROM fuel_entries f WHERE f.trip_id = base.id AND f.is_deleted = false AND f.status = 'APPROVED') fu ON true
+ LEFT JOIN LATERAL (SELECT SUM(COALESCE(e.total_amount, e.amount)) amt FROM expenses e WHERE e.trip_id = base.id AND e.is_deleted = false AND e.status IN ('APPROVED','PAID')) ex ON true
+ LEFT JOIN dayshare ds ON ds.driver_id = base.driver_id AND ds.trip_date = base.trip_date
+ LEFT JOIN daypay dp ON dp.driver_id = base.driver_id AND dp.work_date = base.trip_date
+ ORDER BY base.trip_date, base.trip_number""", finance=True)
+
+rep("unlinked-costs","Outstanding & pending","Fuel & expenses not linked to a trip","Approved fuel and trip-type expenses with no trip selected — link them so trip profit is complete.",
+ ["date","branch","vehicle"],
+ [C("kind","Type"),C("doc_no","Document"),C("doc_date","Date","date"),C("vehicle","Vehicle"),C("driver","Driver"),C("detail","Detail"),C("amount","Amount","money",True)],
+ f"""SELECT * FROM (
+ SELECT 'Fuel' kind, f.fuel_entry_number doc_no, f.fuel_date doc_date, v.name vehicle, d.name driver, f.fuel_station detail, f.total_amount amount, f.vehicle_id, f.company_id, f.branch_id
+ FROM fuel_entries f LEFT JOIN vehicles v ON v.id = f.vehicle_id LEFT JOIN drivers d ON d.id = f.driver_id
+ WHERE f.is_deleted = false AND f.status = 'APPROVED' AND f.trip_id IS NULL AND {DATE('f.fuel_date')}
+ UNION ALL
+ SELECT 'Expense', e.expense_number, e.expense_date, v.name, d.name, e.category, COALESCE(e.total_amount, e.amount), e.vehicle_id, e.company_id, e.branch_id
+ FROM expenses e LEFT JOIN vehicles v ON v.id = e.vehicle_id LEFT JOIN drivers d ON d.id = e.driver_id
+ WHERE e.is_deleted = false AND e.status IN ('APPROVED','PAID') AND e.trip_id IS NULL AND e.category IN ('TOLL','DRIVER_BATA','PARKING') AND {DATE('e.expense_date')}
+ ) x WHERE x.company_id = :companyId AND {B('x')} AND {OPT('x.vehicle_id','vehicleId')} ORDER BY doc_date""")
+
 # ---------------- MANAGEMENT ----------------
 MONTHS="generate_series(date_trunc('month', CAST(:from AS DATE)), date_trunc('month', CAST(:to AS DATE)), interval '1 month')"
 rep("monthly-summary","Monthly & management","Monthly business summary","Month by month: trips, quantity, billing, collections, fuel, expenses, maintenance, payroll and operating margin.",
@@ -505,6 +588,8 @@ rep("management-kpis","Monthly & management","Management KPIs","Headline numbers
  UNION ALL SELECT 16, 'Stores', 'Parts to reorder', (SELECT COUNT(*) FROM warehouse_stock s JOIN spare_parts sp ON sp.id = s.spare_part_id WHERE s.company_id = :companyId AND s.is_deleted = false AND sp.reorder_level IS NOT NULL AND s.available_quantity <= sp.reorder_level AND {B('s')}), 'parts'
  UNION ALL SELECT 17, 'People', 'Driver salary awaiting payment', (SELECT COALESCE(SUM(x.net_salary_payable),0) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND {B('x')}), '₹'
  UNION ALL SELECT 18, 'People', 'Driver advances outstanding', (SELECT COALESCE(SUM(a.amount - a.recovered_amount),0) FROM driver_advances a WHERE a.company_id = :companyId AND a.is_deleted = false AND a.status = 'ISSUED' AND {B('a')}), '₹'
+ UNION ALL SELECT 20, 'Purchases', 'Owed to suppliers', (SELECT COALESCE(SUM(b.total_amount - b.paid_amount),0) FROM supplier_bills b WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND {B('b')}), '₹'
+ UNION ALL SELECT 21, 'Purchases', 'Supplier bills overdue', (SELECT COALESCE(SUM(b.total_amount - b.paid_amount),0) FROM supplier_bills b WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND b.due_date < CURRENT_DATE AND {B('b')}), '₹'
  UNION ALL SELECT 19, 'Compliance', 'Documents expired or due in 30 days', (SELECT (SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND {B('v')} AND (v.insurance_expiry_date <= CURRENT_DATE + 30 OR v.fitness_expiry_date <= CURRENT_DATE + 30 OR v.permit_expiry_date <= CURRENT_DATE + 30)) + (SELECT COUNT(*) FROM drivers d WHERE d.company_id = :companyId AND d.is_deleted = false AND {B('d')} AND d.license_expiry_date <= CURRENT_DATE + 30)), 'items'
  ) k ORDER BY o""", finance=True)
 

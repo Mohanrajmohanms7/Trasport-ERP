@@ -165,7 +165,7 @@ export class WorkOrderService {
     return this.http.post<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/start`, {});
   }
 
-  complete(id: number, body: { completionNotes: string; actualCost?: number | null }): Observable<ApiResponse<WorkOrder>> {
+  complete(id: number, body: { completionNotes: string; actualCost?: number | null; outsidePaymentMode?: string }): Observable<ApiResponse<WorkOrder>> {
     return this.http.post<ApiResponse<WorkOrder>>(`${this.apiUrl}/${id}/complete`, body);
   }
 

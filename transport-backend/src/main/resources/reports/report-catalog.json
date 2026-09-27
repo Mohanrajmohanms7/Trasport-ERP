@@ -2153,7 +2153,7 @@
     "total": false
    }
   ],
-  "sql": "SELECT * FROM ( SELECT 'Bookings' module, 'Approval' waiting_for, COUNT(*) count, SUM(0) amount, MIN(booking_date) oldest FROM bookings x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('PENDING','DRAFT','ON_HOLD') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Invoices', 'Approval (draft)', COUNT(*), SUM(net_amount), MIN(invoice_date) FROM sales_invoices x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'DRAFT' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Receipts', 'Approval', COUNT(*), SUM(amount_received), MIN(receipt_date) FROM customer_receipts x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED','PENDING') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Expenses', 'Approval', COUNT(*), SUM(COALESCE(total_amount, amount)), MIN(expense_date) FROM expenses x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Fuel entries', 'Approval', COUNT(*), SUM(total_amount), MIN(fuel_date) FROM fuel_entries x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED','PENDING') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Driver payroll', 'Approve / post', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','APPROVED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Driver payroll', 'Salary payment', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Maintenance requests', 'Review / approval', COUNT(*), SUM(0), MIN(CAST(requested_at AS DATE)) FROM maintenance_requests x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','UNDER_REVIEW','APPROVED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Work orders', 'Completion', COUNT(*), SUM(COALESCE(estimated_cost,0)), MIN(CAST(opened_at AS DATE)) FROM work_orders x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','IN_PROGRESS') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Trips', 'Dispatch / completion', COUNT(*), SUM(0), MIN(trip_date) FROM trips x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('PLANNED','DISPATCHED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) ) q WHERE count > 0 ORDER BY oldest",
+  "sql": "SELECT * FROM ( SELECT 'Bookings' module, 'Approval' waiting_for, COUNT(*) count, SUM(0) amount, MIN(booking_date) oldest FROM bookings x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('PENDING','DRAFT','ON_HOLD') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Invoices', 'Approval (draft)', COUNT(*), SUM(net_amount), MIN(invoice_date) FROM sales_invoices x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'DRAFT' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Receipts', 'Approval', COUNT(*), SUM(amount_received), MIN(receipt_date) FROM customer_receipts x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED','PENDING') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Expenses', 'Approval', COUNT(*), SUM(COALESCE(total_amount, amount)), MIN(expense_date) FROM expenses x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Fuel entries', 'Approval', COUNT(*), SUM(total_amount), MIN(fuel_date) FROM fuel_entries x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','SUBMITTED','PENDING') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Driver payroll', 'Approve / post', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('DRAFT','APPROVED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Driver payroll', 'Salary payment', COUNT(*), SUM(net_salary_payable), MIN(make_date(pay_year,pay_month,1)) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Supplier bills', 'Approval', COUNT(*), SUM(total_amount), MIN(bill_date) FROM supplier_bills x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'DRAFT' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Supplier bills', 'Payment (overdue)', COUNT(*), SUM(total_amount - paid_amount), MIN(due_date) FROM supplier_bills x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'APPROVED' AND x.paid_amount < x.total_amount AND x.due_date < CURRENT_DATE AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Maintenance requests', 'Review / approval', COUNT(*), SUM(0), MIN(CAST(requested_at AS DATE)) FROM maintenance_requests x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','UNDER_REVIEW','APPROVED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Work orders', 'Completion', COUNT(*), SUM(COALESCE(estimated_cost,0)), MIN(CAST(opened_at AS DATE)) FROM work_orders x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('OPEN','IN_PROGRESS') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) UNION ALL SELECT 'Trips', 'Dispatch / completion', COUNT(*), SUM(0), MIN(trip_date) FROM trips x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status IN ('PLANNED','DISPATCHED') AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) ) q WHERE count > 0 ORDER BY oldest",
   "finance": false
  },
  {
@@ -2326,6 +2326,387 @@
   "finance": true
  },
  {
+  "key": "supplier-outstanding",
+  "category": "Outstanding & pending",
+  "title": "Supplier outstanding & ageing",
+  "purpose": "What we owe each supplier as on the To date, by days past due (not yet due, 1-30, 31-60, 61-90, 90+).",
+  "filters": [
+   "to",
+   "branch"
+  ],
+  "columns": [
+   {
+    "key": "supplier",
+    "label": "Supplier",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "bills",
+    "label": "Open bills",
+    "type": "number",
+    "total": true
+   },
+   {
+    "key": "not_due",
+    "label": "Not yet due",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "d1_30",
+    "label": "1-30 overdue",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "d31_60",
+    "label": "31-60",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "d61_90",
+    "label": "61-90",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "d90",
+    "label": "90+",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "total",
+    "label": "Total owed",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "oldest_due",
+    "label": "Oldest due",
+    "type": "date",
+    "total": false
+   }
+  ],
+  "sql": "SELECT s.name supplier, COUNT(*) bills, SUM(b.total_amount - b.paid_amount) FILTER (WHERE b.due_date >= CAST(:to AS DATE)) not_due, SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 1 AND 30) d1_30, SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 31 AND 60) d31_60, SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date BETWEEN 61 AND 90) d61_90, SUM(b.total_amount - b.paid_amount) FILTER (WHERE CAST(:to AS DATE) - b.due_date > 90) d90, SUM(b.total_amount - b.paid_amount) total, MIN(b.due_date) oldest_due FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND b.total_amount > b.paid_amount AND b.bill_date <= CAST(:to AS DATE) AND (CAST(:branchId AS BIGINT) IS NULL OR b.branch_id = CAST(:branchId AS BIGINT)) GROUP BY s.name ORDER BY total DESC",
+  "finance": true
+ },
+ {
+  "key": "supplier-bill-register",
+  "category": "Invoices & receipts",
+  "title": "Supplier bill register",
+  "purpose": "Bills from suppliers — manual, credit stock receipts and workshop jobs — with due date, paid and balance.",
+  "filters": [
+   "date",
+   "branch",
+   "status"
+  ],
+  "columns": [
+   {
+    "key": "bill_no",
+    "label": "Bill",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "bill_date",
+    "label": "Date",
+    "type": "date",
+    "total": false
+   },
+   {
+    "key": "supplier",
+    "label": "Supplier",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "supplier_bill_no",
+    "label": "Supplier bill no",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "category",
+    "label": "Category",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "source",
+    "label": "Source",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "vehicle",
+    "label": "Vehicle",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "taxable",
+    "label": "Taxable",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "gst",
+    "label": "GST",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "total",
+    "label": "Total",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "paid",
+    "label": "Paid",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "balance",
+    "label": "Balance",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "due_date",
+    "label": "Due",
+    "type": "date",
+    "total": false
+   },
+   {
+    "key": "status",
+    "label": "Status",
+    "type": "text",
+    "total": false
+   }
+  ],
+  "sql": "SELECT b.bill_number bill_no, b.bill_date, s.name supplier, b.supplier_bill_no, b.category, COALESCE(b.source_reference, 'Manual') source, v.name vehicle, b.taxable_amount taxable, b.gst_amount gst, b.total_amount total, b.paid_amount paid, CASE WHEN b.status = 'APPROVED' THEN b.total_amount - b.paid_amount ELSE 0 END balance, b.due_date, b.status || ' / ' || b.payment_status status FROM supplier_bills b JOIN suppliers s ON s.id = b.supplier_id LEFT JOIN vehicles v ON v.id = b.vehicle_id WHERE b.company_id = :companyId AND b.is_deleted = false AND b.bill_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) AND (CAST(:branchId AS BIGINT) IS NULL OR b.branch_id = CAST(:branchId AS BIGINT)) AND (CAST(:status AS VARCHAR) IS NULL OR b.payment_status = CAST(:status AS VARCHAR)) ORDER BY b.bill_date, b.id",
+  "finance": true
+ },
+ {
+  "key": "supplier-payment-register",
+  "category": "Invoices & receipts",
+  "title": "Supplier payment register",
+  "purpose": "Payments made to suppliers with method, reference and the bills they settled.",
+  "filters": [
+   "date",
+   "branch"
+  ],
+  "columns": [
+   {
+    "key": "payment_no",
+    "label": "Payment",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "payment_date",
+    "label": "Date",
+    "type": "date",
+    "total": false
+   },
+   {
+    "key": "supplier",
+    "label": "Supplier",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "method",
+    "label": "Method",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "reference",
+    "label": "Reference",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "amount",
+    "label": "Amount",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "bills",
+    "label": "Bills settled",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "status",
+    "label": "Status",
+    "type": "text",
+    "total": false
+   }
+  ],
+  "sql": "SELECT p.payment_number payment_no, p.payment_date, s.name supplier, p.payment_method method, p.reference_number reference, p.amount, (SELECT string_agg(b.bill_number, ', ') FROM supplier_payment_allocations a JOIN supplier_bills b ON b.id = a.bill_id WHERE a.payment_id = p.id AND a.status = 'ACTIVE') bills, p.status FROM supplier_payments p JOIN suppliers s ON s.id = p.supplier_id WHERE p.company_id = :companyId AND p.is_deleted = false AND p.payment_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) AND (CAST(:branchId AS BIGINT) IS NULL OR p.branch_id = CAST(:branchId AS BIGINT)) ORDER BY p.payment_date, p.id",
+  "finance": true
+ },
+ {
+  "key": "trip-profitability",
+  "category": "Vehicles & trips",
+  "title": "Trip profitability",
+  "purpose": "Per completed trip: billed value minus fuel and expenses linked to the trip (tolls, bata…) and the driver's day pay shared across that day's trips.",
+  "filters": [
+   "date",
+   "branch",
+   "vehicle",
+   "driver",
+   "customer"
+  ],
+  "columns": [
+   {
+    "key": "trip_no",
+    "label": "Trip",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "trip_date",
+    "label": "Date",
+    "type": "date",
+    "total": false
+   },
+   {
+    "key": "customer",
+    "label": "Customer",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "vehicle",
+    "label": "Vehicle",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "driver",
+    "label": "Driver",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "qty",
+    "label": "Qty",
+    "type": "qty",
+    "total": true
+   },
+   {
+    "key": "revenue",
+    "label": "Revenue (taxable)",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "fuel",
+    "label": "Fuel",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "trip_expenses",
+    "label": "Trip expenses",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "driver_pay",
+    "label": "Driver pay share",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "profit",
+    "label": "Profit",
+    "type": "money",
+    "total": true
+   },
+   {
+    "key": "margin_pct",
+    "label": "Margin %",
+    "type": "percent",
+    "total": false
+   },
+   {
+    "key": "billed",
+    "label": "Invoiced?",
+    "type": "text",
+    "total": false
+   }
+  ],
+  "sql": "WITH base AS (SELECT t.id, t.trip_number, t.trip_date, t.driver_id, t.vehicle_id, t.booking_id, t.company_id, t.branch_id FROM trips t LEFT JOIN bookings b ON b.id = t.booking_id WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT)) AND (CAST(:vehicleId AS BIGINT) IS NULL OR t.vehicle_id = CAST(:vehicleId AS BIGINT)) AND (CAST(:driverId AS BIGINT) IS NULL OR t.driver_id = CAST(:driverId AS BIGINT)) AND (CAST(:customerId AS BIGINT) IS NULL OR b.customer_id = CAST(:customerId AS BIGINT))), dayshare AS (SELECT t.driver_id, t.trip_date, COUNT(*) n FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) GROUP BY t.driver_id, t.trip_date), daypay AS (SELECT p.driver_id, d.work_date, d.daily_amount FROM driver_payroll_days d JOIN driver_payrolls p ON p.id = d.payroll_id WHERE p.company_id = :companyId AND p.is_deleted = false AND d.is_deleted = false AND p.status <> 'CANCELLED') SELECT base.trip_number trip_no, base.trip_date, c.name customer, v.name vehicle, dr.name driver, (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td WHERE td.trip_id = base.id AND td.is_deleted = false) qty, COALESCE(rv.revenue,0) revenue, COALESCE(fu.amt,0) fuel, COALESCE(ex.amt,0) trip_expenses, ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) driver_pay, COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) profit, ROUND(100 * (COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - COALESCE(dp.daily_amount / NULLIF(ds.n,0),0)) / NULLIF(rv.revenue,0), 1) margin_pct, CASE WHEN rv.revenue IS NULL THEN 'No' ELSE 'Yes' END billed FROM base LEFT JOIN bookings bk ON bk.id = base.booking_id LEFT JOIN customers c ON c.id = bk.customer_id LEFT JOIN vehicles v ON v.id = base.vehicle_id LEFT JOIN drivers dr ON dr.id = base.driver_id LEFT JOIN LATERAL (SELECT SUM(sd.taxable_amount) revenue FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id WHERE sd.trip_id = base.id AND sd.is_deleted = false AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED')) rv ON true LEFT JOIN LATERAL (SELECT SUM(f.total_amount) amt FROM fuel_entries f WHERE f.trip_id = base.id AND f.is_deleted = false AND f.status = 'APPROVED') fu ON true LEFT JOIN LATERAL (SELECT SUM(COALESCE(e.total_amount, e.amount)) amt FROM expenses e WHERE e.trip_id = base.id AND e.is_deleted = false AND e.status IN ('APPROVED','PAID')) ex ON true LEFT JOIN dayshare ds ON ds.driver_id = base.driver_id AND ds.trip_date = base.trip_date LEFT JOIN daypay dp ON dp.driver_id = base.driver_id AND dp.work_date = base.trip_date ORDER BY base.trip_date, base.trip_number",
+  "finance": true
+ },
+ {
+  "key": "unlinked-costs",
+  "category": "Outstanding & pending",
+  "title": "Fuel & expenses not linked to a trip",
+  "purpose": "Approved fuel and trip-type expenses with no trip selected — link them so trip profit is complete.",
+  "filters": [
+   "date",
+   "branch",
+   "vehicle"
+  ],
+  "columns": [
+   {
+    "key": "kind",
+    "label": "Type",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "doc_no",
+    "label": "Document",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "doc_date",
+    "label": "Date",
+    "type": "date",
+    "total": false
+   },
+   {
+    "key": "vehicle",
+    "label": "Vehicle",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "driver",
+    "label": "Driver",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "detail",
+    "label": "Detail",
+    "type": "text",
+    "total": false
+   },
+   {
+    "key": "amount",
+    "label": "Amount",
+    "type": "money",
+    "total": true
+   }
+  ],
+  "sql": "SELECT * FROM ( SELECT 'Fuel' kind, f.fuel_entry_number doc_no, f.fuel_date doc_date, v.name vehicle, d.name driver, f.fuel_station detail, f.total_amount amount, f.vehicle_id, f.company_id, f.branch_id FROM fuel_entries f LEFT JOIN vehicles v ON v.id = f.vehicle_id LEFT JOIN drivers d ON d.id = f.driver_id WHERE f.is_deleted = false AND f.status = 'APPROVED' AND f.trip_id IS NULL AND f.fuel_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) UNION ALL SELECT 'Expense', e.expense_number, e.expense_date, v.name, d.name, e.category, COALESCE(e.total_amount, e.amount), e.vehicle_id, e.company_id, e.branch_id FROM expenses e LEFT JOIN vehicles v ON v.id = e.vehicle_id LEFT JOIN drivers d ON d.id = e.driver_id WHERE e.is_deleted = false AND e.status IN ('APPROVED','PAID') AND e.trip_id IS NULL AND e.category IN ('TOLL','DRIVER_BATA','PARKING') AND e.expense_date BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) ) x WHERE x.company_id = :companyId AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT)) AND (CAST(:vehicleId AS BIGINT) IS NULL OR x.vehicle_id = CAST(:vehicleId AS BIGINT)) ORDER BY doc_date",
+  "finance": false
+ },
+ {
   "key": "monthly-summary",
   "category": "Monthly & management",
   "title": "Monthly business summary",
@@ -2440,7 +2821,7 @@
     "total": false
    }
   ],
-  "sql": "WITH p AS (SELECT CAST(:from AS DATE) d0, CAST(:to AS DATE) d1) SELECT * FROM ( SELECT 1 o, 'Sales' area, 'Billed (taxable)' kpi, (SELECT COALESCE(SUM(si.taxable_amount),0) FROM sales_invoices si, p WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND si.invoice_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))) value, '₹' unit UNION ALL SELECT 2, 'Sales', 'Collected', (SELECT COALESCE(SUM(r.amount_received),0) FROM customer_receipts r, p WHERE r.company_id = :companyId AND r.is_deleted = false AND r.status = 'APPROVED' AND r.receipt_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR r.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 3, 'Sales', 'Customer dues (all open invoices)', (SELECT COALESCE(SUM(si.net_amount - COALESCE(si.paid_amount,0)),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 4, 'Sales', 'Dues older than 60 days', (SELECT COALESCE(SUM(si.net_amount - COALESCE(si.paid_amount,0)),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND si.invoice_date < CURRENT_DATE - 60 AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 5, 'Sales', 'Completed trips not invoiced', (SELECT COUNT(*) FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT)) AND NOT EXISTS (SELECT 1 FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id WHERE sd.trip_id = t.id AND sd.is_deleted = false AND si.is_deleted = false AND si.status <> 'CANCELLED')), 'trips' UNION ALL SELECT 6, 'Operations', 'Trips completed', (SELECT COUNT(*) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), 'trips' UNION ALL SELECT 7, 'Operations', 'Quantity delivered', (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), 'qty' UNION ALL SELECT 8, 'Operations', 'Pending delivery quantity (approved bookings)', (SELECT COALESCE(SUM(GREATEST(bd.quantity - (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false),0)),0) FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND (CAST(:branchId AS BIGINT) IS NULL OR bk.branch_id = CAST(:branchId AS BIGINT))), 'qty' UNION ALL SELECT 9, 'Operations', 'Weighbridge shortage %', (SELECT ROUND(100 * SUM(td.loaded_quantity - td.delivered_quantity) / NULLIF(SUM(td.loaded_quantity),0), 2) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), '%' UNION ALL SELECT 10, 'Fleet', 'Vehicles used / active', (SELECT ROUND(100.0 * COUNT(DISTINCT t.vehicle_id) / NULLIF((SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND v.status = 'ACTIVE' AND (CAST(:branchId AS BIGINT) IS NULL OR v.branch_id = CAST(:branchId AS BIGINT))),0), 1) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), '%' UNION ALL SELECT 11, 'Fleet', 'Average km per litre', (SELECT ROUND(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END) / NULLIF(SUM(f.fuel_quantity),0), 2) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR f.branch_id = CAST(:branchId AS BIGINT))), 'km/L' UNION ALL SELECT 12, 'Fleet', 'Fuel cost', (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR f.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 13, 'Maintenance', 'Open work orders', (SELECT COUNT(*) FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status IN ('OPEN','IN_PROGRESS') AND (CAST(:branchId AS BIGINT) IS NULL OR w.branch_id = CAST(:branchId AS BIGINT))), 'jobs' UNION ALL SELECT 14, 'Maintenance', 'Maintenance cost', (SELECT COALESCE(SUM(w.actual_cost),0) FROM work_orders w, p WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status = 'COMPLETED' AND CAST(w.completed_at AS DATE) BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR w.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 15, 'Stores', 'Stock value', (SELECT COALESCE(ROUND(SUM(s.available_quantity * s.average_cost), 2),0) FROM warehouse_stock s WHERE s.company_id = :companyId AND s.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR s.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 16, 'Stores', 'Parts to reorder', (SELECT COUNT(*) FROM warehouse_stock s JOIN spare_parts sp ON sp.id = s.spare_part_id WHERE s.company_id = :companyId AND s.is_deleted = false AND sp.reorder_level IS NOT NULL AND s.available_quantity <= sp.reorder_level AND (CAST(:branchId AS BIGINT) IS NULL OR s.branch_id = CAST(:branchId AS BIGINT))), 'parts' UNION ALL SELECT 17, 'People', 'Driver salary awaiting payment', (SELECT COALESCE(SUM(x.net_salary_payable),0) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 18, 'People', 'Driver advances outstanding', (SELECT COALESCE(SUM(a.amount - a.recovered_amount),0) FROM driver_advances a WHERE a.company_id = :companyId AND a.is_deleted = false AND a.status = 'ISSUED' AND (CAST(:branchId AS BIGINT) IS NULL OR a.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 19, 'Compliance', 'Documents expired or due in 30 days', (SELECT (SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR v.branch_id = CAST(:branchId AS BIGINT)) AND (v.insurance_expiry_date <= CURRENT_DATE + 30 OR v.fitness_expiry_date <= CURRENT_DATE + 30 OR v.permit_expiry_date <= CURRENT_DATE + 30)) + (SELECT COUNT(*) FROM drivers d WHERE d.company_id = :companyId AND d.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR d.branch_id = CAST(:branchId AS BIGINT)) AND d.license_expiry_date <= CURRENT_DATE + 30)), 'items' ) k ORDER BY o",
+  "sql": "WITH p AS (SELECT CAST(:from AS DATE) d0, CAST(:to AS DATE) d1) SELECT * FROM ( SELECT 1 o, 'Sales' area, 'Billed (taxable)' kpi, (SELECT COALESCE(SUM(si.taxable_amount),0) FROM sales_invoices si, p WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND si.invoice_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))) value, '₹' unit UNION ALL SELECT 2, 'Sales', 'Collected', (SELECT COALESCE(SUM(r.amount_received),0) FROM customer_receipts r, p WHERE r.company_id = :companyId AND r.is_deleted = false AND r.status = 'APPROVED' AND r.receipt_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR r.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 3, 'Sales', 'Customer dues (all open invoices)', (SELECT COALESCE(SUM(si.net_amount - COALESCE(si.paid_amount,0)),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 4, 'Sales', 'Dues older than 60 days', (SELECT COALESCE(SUM(si.net_amount - COALESCE(si.paid_amount,0)),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED') AND si.invoice_date < CURRENT_DATE - 60 AND (CAST(:branchId AS BIGINT) IS NULL OR si.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 5, 'Sales', 'Completed trips not invoiced', (SELECT COUNT(*) FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT)) AND NOT EXISTS (SELECT 1 FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id WHERE sd.trip_id = t.id AND sd.is_deleted = false AND si.is_deleted = false AND si.status <> 'CANCELLED')), 'trips' UNION ALL SELECT 6, 'Operations', 'Trips completed', (SELECT COUNT(*) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), 'trips' UNION ALL SELECT 7, 'Operations', 'Quantity delivered', (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), 'qty' UNION ALL SELECT 8, 'Operations', 'Pending delivery quantity (approved bookings)', (SELECT COALESCE(SUM(GREATEST(bd.quantity - (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false),0)),0) FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND (CAST(:branchId AS BIGINT) IS NULL OR bk.branch_id = CAST(:branchId AS BIGINT))), 'qty' UNION ALL SELECT 9, 'Operations', 'Weighbridge shortage %', (SELECT ROUND(100 * SUM(td.loaded_quantity - td.delivered_quantity) / NULLIF(SUM(td.loaded_quantity),0), 2) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), '%' UNION ALL SELECT 10, 'Fleet', 'Vehicles used / active', (SELECT ROUND(100.0 * COUNT(DISTINCT t.vehicle_id) / NULLIF((SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND v.status = 'ACTIVE' AND (CAST(:branchId AS BIGINT) IS NULL OR v.branch_id = CAST(:branchId AS BIGINT))),0), 1) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR t.branch_id = CAST(:branchId AS BIGINT))), '%' UNION ALL SELECT 11, 'Fleet', 'Average km per litre', (SELECT ROUND(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END) / NULLIF(SUM(f.fuel_quantity),0), 2) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR f.branch_id = CAST(:branchId AS BIGINT))), 'km/L' UNION ALL SELECT 12, 'Fleet', 'Fuel cost', (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR f.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 13, 'Maintenance', 'Open work orders', (SELECT COUNT(*) FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status IN ('OPEN','IN_PROGRESS') AND (CAST(:branchId AS BIGINT) IS NULL OR w.branch_id = CAST(:branchId AS BIGINT))), 'jobs' UNION ALL SELECT 14, 'Maintenance', 'Maintenance cost', (SELECT COALESCE(SUM(w.actual_cost),0) FROM work_orders w, p WHERE w.company_id = :companyId AND w.is_deleted = false AND w.status = 'COMPLETED' AND CAST(w.completed_at AS DATE) BETWEEN p.d0 AND p.d1 AND (CAST(:branchId AS BIGINT) IS NULL OR w.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 15, 'Stores', 'Stock value', (SELECT COALESCE(ROUND(SUM(s.available_quantity * s.average_cost), 2),0) FROM warehouse_stock s WHERE s.company_id = :companyId AND s.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR s.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 16, 'Stores', 'Parts to reorder', (SELECT COUNT(*) FROM warehouse_stock s JOIN spare_parts sp ON sp.id = s.spare_part_id WHERE s.company_id = :companyId AND s.is_deleted = false AND sp.reorder_level IS NOT NULL AND s.available_quantity <= sp.reorder_level AND (CAST(:branchId AS BIGINT) IS NULL OR s.branch_id = CAST(:branchId AS BIGINT))), 'parts' UNION ALL SELECT 17, 'People', 'Driver salary awaiting payment', (SELECT COALESCE(SUM(x.net_salary_payable),0) FROM driver_payrolls x WHERE x.company_id = :companyId AND x.is_deleted = false AND x.status = 'POSTED' AND (CAST(:branchId AS BIGINT) IS NULL OR x.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 18, 'People', 'Driver advances outstanding', (SELECT COALESCE(SUM(a.amount - a.recovered_amount),0) FROM driver_advances a WHERE a.company_id = :companyId AND a.is_deleted = false AND a.status = 'ISSUED' AND (CAST(:branchId AS BIGINT) IS NULL OR a.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 20, 'Purchases', 'Owed to suppliers', (SELECT COALESCE(SUM(b.total_amount - b.paid_amount),0) FROM supplier_bills b WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND (CAST(:branchId AS BIGINT) IS NULL OR b.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 21, 'Purchases', 'Supplier bills overdue', (SELECT COALESCE(SUM(b.total_amount - b.paid_amount),0) FROM supplier_bills b WHERE b.company_id = :companyId AND b.is_deleted = false AND b.status = 'APPROVED' AND b.due_date < CURRENT_DATE AND (CAST(:branchId AS BIGINT) IS NULL OR b.branch_id = CAST(:branchId AS BIGINT))), '₹' UNION ALL SELECT 19, 'Compliance', 'Documents expired or due in 30 days', (SELECT (SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR v.branch_id = CAST(:branchId AS BIGINT)) AND (v.insurance_expiry_date <= CURRENT_DATE + 30 OR v.fitness_expiry_date <= CURRENT_DATE + 30 OR v.permit_expiry_date <= CURRENT_DATE + 30)) + (SELECT COUNT(*) FROM drivers d WHERE d.company_id = :companyId AND d.is_deleted = false AND (CAST(:branchId AS BIGINT) IS NULL OR d.branch_id = CAST(:branchId AS BIGINT)) AND d.license_expiry_date <= CURRENT_DATE + 30)), 'items' ) k ORDER BY o",
   "finance": true
  }
 ]

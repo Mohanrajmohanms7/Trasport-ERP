@@ -20,7 +20,7 @@ public class DriverAdvanceController {
     private DriverAdvanceService advanceService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<Page<DriverAdvance>> list(@RequestParam(required = false) Long companyId,
                                                  @RequestParam(required = false) Long driverId,
                                                  @RequestParam(required = false) String status,
@@ -29,20 +29,20 @@ public class DriverAdvanceController {
     }
 
     @GetMapping("/driver/{driverId}/outstanding")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<BigDecimal> outstanding(@PathVariable Long driverId) {
         return ApiResponse.success(advanceService.outstanding(driverId), "Outstanding advance");
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER', 'ACCOUNTANT')")
     public ApiResponse<DriverAdvance> issue(@RequestBody DriverAdvance advance, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         return ApiResponse.success(advanceService.issue(advance, username), "Advance issued and posted");
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COMPANY_ADMIN', 'ACCOUNTANT')")
     public ApiResponse<DriverAdvance> cancel(@PathVariable Long id, Principal principal) {
         String username = principal != null ? principal.getName() : "system";
         return ApiResponse.success(advanceService.cancel(id, username), "Advance cancelled and reversed");

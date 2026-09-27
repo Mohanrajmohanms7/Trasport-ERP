@@ -296,7 +296,7 @@ public class WorkOrderService {
                 .orElseThrow(this::vehicleInvalid);
         entityManager.refresh(vehicle);
 
-        workOrderFinancialPosting.postCompletion(order, actualCost, username);
+        workOrderFinancialPosting.postCompletion(order, actualCost, request.getOutsidePaymentMode(), username);
 
         order.setStatus(STATUS_COMPLETED);
         order.setCompletedAt(LocalDateTime.now());

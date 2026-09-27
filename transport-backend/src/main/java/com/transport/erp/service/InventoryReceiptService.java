@@ -26,6 +26,9 @@ import java.util.Locale;
 public class InventoryReceiptService {
 
     @Autowired
+    private PayablesService payablesService;
+
+    @Autowired
     private InventoryValuationService valuationService;
 
     @Autowired
@@ -118,6 +121,11 @@ public class InventoryReceiptService {
         transaction.setCode("RC-" + String.format("%06d", transaction.getId()));
         transaction = transactionRepository.save(transaction);
         valuationService.postReceipt(transaction, username);
+        if ("CREDIT".equals(transaction.getPaymentMode()) && supplier != null && unitRate != null && unitRate.signum() > 0) {
+            payablesService.recordPostedPayable(supplier, transaction.getBranchId(), "STOCK_RECEIPT", transaction.getId(),
+                    transaction.getCode(), externalReference, java.time.LocalDate.now(),
+                    quantity.multiply(unitRate).setScale(2, java.math.RoundingMode.HALF_UP), null, "STK-RCPT-" + transaction.getId(), username);
+        }
 
         auditService.log(username, "INVENTORY_RECEIPT_CREATED", "inventory_transactions", transaction.getId(), null,
                 "warehouseId=" + warehouse.getId() + ", sparePartId=" + part.getId() + ", quantity=" + quantity);
