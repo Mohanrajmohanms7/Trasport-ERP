@@ -67,7 +67,7 @@ class WorkOrderFinancialPostingTest {
                 .thenReturn(account(11L, "5400"));
         when(chartOfAccountService.getOrCreateAccount(eq(1L), eq(1L), eq("2000"), any(), eq("LIABILITY")))
                 .thenReturn(account(22L, "2000"));
-        when(journalVoucherRepository.findByReferenceNumberAndIsDeletedFalse("MAINT-WO-000010")).thenReturn(List.of());
+        when(journalVoucherRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("MAINT-WO-000010"))).thenReturn(List.of());
         when(journalVoucherService.createVoucher(any(), eq("admin"))).thenAnswer(inv -> {
             JournalVoucher voucher = inv.getArgument(0);
             voucher.setId(77L);
@@ -126,7 +126,7 @@ class WorkOrderFinancialPostingTest {
         existing.setCompanyId(1L);
         existing.setReferenceNumber("MAINT-WO-000010");
         existing.setAmount(new BigDecimal("350.00"));
-        when(journalVoucherRepository.findByReferenceNumberAndIsDeletedFalse("MAINT-WO-000010"))
+        when(journalVoucherRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("MAINT-WO-000010")))
                 .thenReturn(List.of(existing));
 
         BusinessValidationException ex = assertThrows(BusinessValidationException.class,
@@ -165,7 +165,7 @@ class WorkOrderFinancialPostingTest {
         existing.setReferenceNumber("MAINT-WO-000010");
         existing.setAmount(new BigDecimal("350.00"));
         existing.setCreatedDate(LocalDateTime.of(2026, 9, 23, 10, 0));
-        when(journalVoucherRepository.findByReferenceNumberAndIsDeletedFalse("MAINT-WO-000010"))
+        when(journalVoucherRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("MAINT-WO-000010")))
                 .thenReturn(List.of(existing));
         WorkOrderResponse response = new WorkOrderResponse();
         posting.attachAccounting(order, response);
@@ -175,7 +175,7 @@ class WorkOrderFinancialPostingTest {
         assertEquals("MAINT-WO-000010", response.getJournalVoucherReference());
         assertEquals(existing.getCreatedDate(), response.getPostedAt());
 
-        when(journalVoucherRepository.findByReferenceNumberAndIsDeletedFalse("MAINT-WO-000010")).thenReturn(List.of());
+        when(journalVoucherRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("MAINT-WO-000010"))).thenReturn(List.of());
         WorkOrderResponse open = new WorkOrderResponse();
         posting.attachAccounting(order, open);
         assertEquals("NOT_POSTED", open.getAccountingStatus());

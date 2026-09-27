@@ -256,7 +256,7 @@ class FuelRequestFulfillmentTest {
         when(requestRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockRequest));
         when(fuelEntryRepository.save(any(FuelEntry.class))).thenAnswer(inv -> inv.getArgument(0));
         when(requestRepository.save(any(FuelRequest.class))).thenAnswer(inv -> inv.getArgument(0));
-        when(jvRepository.findByReferenceNumberAndIsDeletedFalse("FUEL-50001")).thenReturn(Collections.singletonList(origJv));
+        when(jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq("FUEL-50001"))).thenReturn(Collections.singletonList(origJv));
 
         FuelEntry cancelled = fuelEntryService.cancelFuelEntry(50L, "testuser");
 

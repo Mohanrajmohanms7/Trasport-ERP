@@ -91,8 +91,8 @@ class DriverPayrollServiceTest {
         when(payrollRepository.save(any())).thenAnswer(i -> withId(i.getArgument(0)));
         when(advanceRepository.sumOutstanding(10L)).thenReturn(BigDecimal.ZERO);
         when(coaService.getOrCreateAccount(any(), any(), anyString(), anyString(), anyString())).thenAnswer(i -> account(i.getArgument(2)));
-        when(jvRepository.findByReferenceNumberAndIsDeletedFalse(anyString())).thenAnswer(i -> {
-            JournalVoucher jv = jvByRef.get((String) i.getArgument(0));
+        when(jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(any(), anyString())).thenAnswer(i -> {
+            JournalVoucher jv = jvByRef.get((String) i.getArgument(1));
             return jv == null ? List.of() : List.of(jv);
         });
         when(jvRepository.save(any())).thenAnswer(i -> {

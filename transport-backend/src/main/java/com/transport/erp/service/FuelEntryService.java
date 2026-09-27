@@ -279,7 +279,7 @@ public class FuelEntryService {
         LocalDate fuelPostingDate = entry.getFuelDate() != null ? entry.getFuelDate() : LocalDate.now();
         periodValidationService.validatePostingAllowed(entry.getCompanyId(), fuelPostingDate);
 
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(entry.getFuelEntryNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(entry.getCompanyId(), entry.getFuelEntryNumber());
 
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
@@ -400,7 +400,7 @@ public class FuelEntryService {
         FuelEntry saved = fuelEntryRepository.save(entry);
 
         // Reversal of JVs
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(entry.getFuelEntryNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(entry.getCompanyId(), entry.getFuelEntryNumber());
         if (existingJvs != null) {
             for (JournalVoucher origJv : existingJvs) {
                 JournalVoucher revJv = new JournalVoucher();

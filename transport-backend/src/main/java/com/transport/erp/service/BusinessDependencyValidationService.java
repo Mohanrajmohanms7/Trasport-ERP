@@ -201,7 +201,7 @@ public class BusinessDependencyValidationService {
         }
 
         if (log.getReferenceNumber() != null) {
-            List<JournalVoucher> jvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+            List<JournalVoucher> jvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(log.getCompanyId(), log.getReferenceNumber());
             if (jvs != null && !jvs.isEmpty()) {
                 List<String> details = new ArrayList<>();
                 details.add(String.format("Accounting voucher exists for vehicle service log '%s'.", log.getReferenceNumber()));

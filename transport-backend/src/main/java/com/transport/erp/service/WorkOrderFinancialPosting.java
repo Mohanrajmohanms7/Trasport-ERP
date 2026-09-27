@@ -176,7 +176,7 @@ public class WorkOrderFinancialPosting {
     }
 
     private JournalVoucher findPosted(WorkOrder order, String reference) {
-        List<JournalVoucher> found = journalVoucherRepository.findByReferenceNumberAndIsDeletedFalse(reference);
+        List<JournalVoucher> found = journalVoucherRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(order.getCompanyId(), reference);
         if (found == null) {
             return null;
         }

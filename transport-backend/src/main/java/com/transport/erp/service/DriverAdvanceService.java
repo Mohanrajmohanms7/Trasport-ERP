@@ -125,7 +125,7 @@ public class DriverAdvanceService {
         }
         LocalDate today = LocalDate.now();
         periodValidationService.validatePostingAllowed(adv.getCompanyId(), today);
-        Optional<JournalVoucher> orig = jvRepository.findByReferenceNumberAndIsDeletedFalse("DADV-" + adv.getId()).stream().findFirst();
+        Optional<JournalVoucher> orig = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(adv.getCompanyId(), "DADV-" + adv.getId()).stream().findFirst();
         if (orig.isPresent()) {
             JournalVoucher o = orig.get();
             JournalVoucher rev = postJv(adv, "REV-DADV-" + adv.getId(), "REV-" + o.getVoucherNumber(), today,
@@ -144,7 +144,7 @@ public class DriverAdvanceService {
     private JournalVoucher postJv(DriverAdvance a, String reference, String voucherNumber, LocalDate date,
                                   ChartOfAccount debit, ChartOfAccount credit, BigDecimal amount,
                                   String name, String description, String username) {
-        Optional<JournalVoucher> existing = jvRepository.findByReferenceNumberAndIsDeletedFalse(reference).stream().findFirst();
+        Optional<JournalVoucher> existing = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(a.getCompanyId(), reference).stream().findFirst();
         if (existing.isPresent()) return existing.get();
         JournalVoucher jv = new JournalVoucher();
         jv.setVoucherNumber(voucherNumber);

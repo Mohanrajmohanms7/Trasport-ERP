@@ -487,7 +487,7 @@ public class DriverPayrollService {
     private JournalVoucher postJv(DriverPayroll p, String reference, String voucherNumber, LocalDate date,
                                   ChartOfAccount debit, ChartOfAccount credit, BigDecimal amount,
                                   String name, String description, String username) {
-        Optional<JournalVoucher> existing = jvRepository.findByReferenceNumberAndIsDeletedFalse(reference).stream().findFirst();
+        Optional<JournalVoucher> existing = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(p.getCompanyId(), reference).stream().findFirst();
         if (existing.isPresent()) return existing.get(); // idempotent: never a second JV for the same step
         JournalVoucher jv = new JournalVoucher();
         jv.setVoucherNumber(voucherNumber);
@@ -510,7 +510,7 @@ public class DriverPayrollService {
 
     private void reverse(DriverPayroll p, String refPrefix, LocalDate date, String username, List<String> out) {
         String ref = refPrefix + p.getId();
-        Optional<JournalVoucher> orig = jvRepository.findByReferenceNumberAndIsDeletedFalse(ref).stream().findFirst();
+        Optional<JournalVoucher> orig = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(p.getCompanyId(), ref).stream().findFirst();
         if (orig.isEmpty()) return;
         JournalVoucher o = orig.get();
         JournalVoucher rev = postJv(p, "REV-" + ref, "REV-" + o.getVoucherNumber(), date, o.getCreditAccount(), o.getDebitAccount(),

@@ -14,7 +14,12 @@ import java.util.List;
 @Repository
 public interface JournalVoucherRepository extends JpaRepository<JournalVoucher, Long> {
     Page<JournalVoucher> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
+    /** @deprecated document numbers repeat across companies (per-company sequences) — use the company-scoped lookup. */
+    @Deprecated
     List<JournalVoucher> findByReferenceNumberAndIsDeletedFalse(String referenceNumber);
+
+    /** Postings of one document of one company (reference numbers are only unique inside a company). */
+    List<JournalVoucher> findByCompanyIdAndReferenceNumberAndIsDeletedFalse(Long companyId, String referenceNumber);
 
     @Query("SELECT COALESCE(SUM(jv.amount), 0) FROM JournalVoucher jv WHERE jv.debitAccount.id = :accountId AND jv.companyId = :companyId AND jv.voucherDate BETWEEN :startDate AND :endDate AND jv.isDeleted = false")
     BigDecimal sumDebitByAccountAndCompanyAndDateRange(@Param("accountId") Long accountId, @Param("companyId") Long companyId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
