@@ -55,6 +55,17 @@ from setting up the company to sending invoices, collecting money, paying driver
 | Viewer | Auditor / partner | Can see everything, cannot change anything |
 | Driver | Driver (mobile) | Report vehicle problems, see own salary slips |
 
+### One-person company (single login)
+If one person runs everything, you need **only the Company Admin login** created when your company was onboarded —
+no other users are required.
+- The Company Admin can open every menu: masters, bookings, trips, fuel, expenses, invoices, receipts, payroll,
+  maintenance, stores, supplier bills, accounts, reports and settings, for **all branches** of the company.
+- The admin can create, approve, post and pay their own entries. The *second person must approve* setting is
+  automatically ignored while the company has only one active staff login.
+- The admin cannot delete or deactivate their own login, and a company always keeps at least one active Company Admin —
+  so you can never lock yourself out.
+- When staff join later, just add users with the right roles; nothing else changes.
+
 ---
 
 ## Chapter 1 — One-time company setup (Company Admin)
