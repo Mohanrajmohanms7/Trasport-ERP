@@ -23,4 +23,8 @@ public class Supplier extends BaseEntity {
 
     @Column(name = "gst_number", length = 20)
     private String gstNumber;
+
+    /** Payment terms in days; due date of bills = bill date + credit days (0 / empty = due immediately). */
+    @Column(name = "credit_days")
+    private Integer creditDays;
 }

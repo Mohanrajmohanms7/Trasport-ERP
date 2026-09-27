@@ -27,6 +27,9 @@ import java.util.List;
 @Service
 public class WorkOrderFinancialPosting {
 
+    @Autowired(required = false)
+    private PayablesService payablesService;
+
     static final String EXPENSE_CODE = "5400";
     static final String EXPENSE_NAME = "Vehicle Repair & Maintenance";
     static final String PAYABLE_CODE = "2000";
@@ -57,6 +60,15 @@ public class WorkOrderFinancialPosting {
      * Parts from stock move from inventory to expense; only the outside part becomes a payable.
      */
     public void postCompletion(WorkOrder order, BigDecimal actualCost, String username) {
+        postCompletion(order, actualCost, null, username);
+    }
+
+    /**
+     * @param outsidePaymentMode how the outside cost (labour / workshop) was settled:
+     *        CREDIT (supplier bill, default) -> Cr Accounts Payable and a supplier bill for the workshop;
+     *        CASH / BANK -> paid on the spot, Cr Cash / Bank.
+     */
+    public void postCompletion(WorkOrder order, BigDecimal actualCost, String outsidePaymentMode, String username) {
         if (actualCost != null && actualCost.compareTo(BigDecimal.ZERO) < 0) {
             throw amountInvalid();
         }
@@ -87,8 +99,21 @@ public class WorkOrderFinancialPosting {
 
         ChartOfAccount expense = chartOfAccountService.getOrCreateAccount(
                 order.getCompanyId(), order.getBranchId(), EXPENSE_CODE, EXPENSE_NAME, "EXPENSE");
-        ChartOfAccount payable = chartOfAccountService.getOrCreateAccount(
-                order.getCompanyId(), order.getBranchId(), PAYABLE_CODE, PAYABLE_NAME, "LIABILITY");
+        String mode = outsidePaymentMode == null || outsidePaymentMode.isBlank() ? "CREDIT" : outsidePaymentMode.trim().toUpperCase();
+        if (!"CREDIT".equals(mode) && !"CASH".equals(mode) && !"BANK".equals(mode)) {
+            throw new BusinessValidationException("Invalid Payment Mode", "WORK_ORDER_PAYMENT_MODE",
+                    "Outside cost must be paid by CREDIT (workshop bill), CASH or BANK.", "Choose how the job was paid.");
+        }
+        if ("CREDIT".equals(mode) && outsidePaymentMode != null && order.getSupplier() == null) {
+            throw new BusinessValidationException("Workshop Required", "WORK_ORDER_WORKSHOP_REQUIRED",
+                    "A credit job needs the workshop (supplier) so the amount owed can be tracked.",
+                    "Select the workshop on the work order, or choose Cash / Bank if it was paid on the spot.");
+        }
+        ChartOfAccount payable = "CASH".equals(mode)
+                ? chartOfAccountService.getOrCreateAccount(order.getCompanyId(), order.getBranchId(), "1000", "Cash on Hand", "ASSET")
+                : "BANK".equals(mode)
+                ? chartOfAccountService.getOrCreateAccount(order.getCompanyId(), order.getBranchId(), "1010", "Bank - Current A/c", "ASSET")
+                : chartOfAccountService.getOrCreateAccount(order.getCompanyId(), order.getBranchId(), PAYABLE_CODE, PAYABLE_NAME, "LIABILITY");
 
         JournalVoucher voucher = new JournalVoucher();
         voucher.setVoucherDate(LocalDate.now());
@@ -104,6 +129,10 @@ public class WorkOrderFinancialPosting {
         voucher.setCreatedBy(username);
         voucher.setUpdatedBy(username);
         JournalVoucher saved = journalVoucherService.createVoucher(voucher, username);
+        if ("CREDIT".equals(mode) && order.getSupplier() != null && payablesService != null) {
+            payablesService.recordPostedPayable(order.getSupplier(), order.getBranchId(), "WORK_ORDER", order.getId(),
+                    order.getWorkOrderNumber(), null, LocalDate.now(), financialAmount, order.getVehicle(), reference, username);
+        }
         auditService.log(username, "WORK_ORDER_ACCOUNTING_POSTED", "work_orders", order.getId(), null,
                 "reference=" + reference + ", voucherId=" + saved.getId() + ", amount=" + financialAmount);
     }

@@ -38,6 +38,7 @@ public class AttachmentService {
     @Autowired private DriverPayrollRepository driverPayrollRepository;
     @Autowired private SupplierRepository supplierRepository;
     @Autowired private JournalVoucherRepository journalVoucherRepository;
+    @Autowired private SupplierBillRepository supplierBillRepository;
 
     public static final int MAX_PER_RECORD = 20;
 
@@ -54,6 +55,7 @@ public class AttachmentService {
             case "DRIVER_PAYROLL" -> driverPayrollRepository;
             case "SUPPLIER" -> supplierRepository;
             case "JOURNAL_VOUCHER" -> journalVoucherRepository;
+            case "SUPPLIER_BILL" -> supplierBillRepository;
             default -> throw new BusinessValidationException("Unsupported Record Type", "ATTACHMENT_TYPE_UNSUPPORTED",
                     "Attachments are not available for " + type + ".", "Use one of the supported record types.");
         };

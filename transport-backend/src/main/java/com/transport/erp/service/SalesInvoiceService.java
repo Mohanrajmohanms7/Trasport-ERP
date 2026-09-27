@@ -501,6 +501,36 @@ public class SalesInvoiceService {
 
     @Transactional
     public SalesInvoice createInvoiceFromTrip(Long tripId, String username) {
+        return createInvoiceFromTrips(List.of(tripId), username);
+    }
+
+    /**
+     * One draft invoice for several completed, unbilled trips of the same customer (e.g. a week's loads to one site).
+     * Every trip is row-locked and checked exactly like a single-trip invoice.
+     */
+    @Transactional
+    public SalesInvoice createInvoiceFromTrips(List<Long> tripIds, String username) {
+        if (tripIds == null || tripIds.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one completed trip to invoice.");
+        }
+        if (tripIds.size() > 200) {
+            throw new IllegalArgumentException("Invoice at most 200 trips at a time.");
+        }
+        SalesInvoice invoice = new SalesInvoice();
+        invoice.setDiscount(BigDecimal.ZERO);
+        invoice.setStatus("DRAFT");
+        invoice.setPaymentTerms("NET_30");
+        invoice.setDetails(new ArrayList<>());
+        LocalDate latestTrip = null;
+        for (Long id : new java.util.LinkedHashSet<>(tripIds)) {
+            Trip t = addTripLines(invoice, id);
+            if (t.getTripDate() != null && (latestTrip == null || t.getTripDate().isAfter(latestTrip))) latestTrip = t.getTripDate();
+        }
+        // Delegate to createInvoice to reuse calculation logic, numbering, validation and logs.
+        return createInvoice(invoice, username);
+    }
+
+    private Trip addTripLines(SalesInvoice invoice, Long tripId) {
         // Concurrency duplicate prevention: lock the Trip record.
         Trip trip = tripRepository.findAndLockById(tripId)
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found or deleted with ID: " + tripId));
@@ -536,15 +566,16 @@ public class SalesInvoiceService {
             throw new IllegalArgumentException("Billing information is incomplete. Trip has no payload details.");
         }
 
-        SalesInvoice invoice = new SalesInvoice();
-        invoice.setCustomer(trip.getBooking().getCustomer());
-        invoice.setCompanyId(trip.getCompanyId());
-        invoice.setBranchId(tenantAccess.resolveBranchId(trip.getBranchId()));
-
-        invoice.setDiscount(BigDecimal.ZERO);
-        invoice.setStatus("DRAFT");
-        invoice.setPaymentTerms("NET_30");
-        invoice.setDetails(new ArrayList<>());
+        if (invoice.getCustomer() == null) {
+            invoice.setCustomer(trip.getBooking().getCustomer());
+            invoice.setCompanyId(trip.getCompanyId());
+            invoice.setBranchId(tenantAccess.resolveBranchId(trip.getBranchId()));
+        } else if (!invoice.getCustomer().getId().equals(trip.getBooking().getCustomer().getId())) {
+            throw new BusinessValidationException("Different Customers", "INVOICE_TRIPS_MIXED_CUSTOMERS",
+                    "Trip " + trip.getTripNumber() + " belongs to " + trip.getBooking().getCustomer().getName()
+                            + ", not " + invoice.getCustomer().getName() + ".",
+                    "Select trips of one customer for one invoice.");
+        }
 
         for (TripDetail td : trip.getDetails()) {
             if (td.getMaterial() == null) {
@@ -588,8 +619,7 @@ public class SalesInvoiceService {
             invoice.getDetails().add(detail);
         }
 
-        // Delegate to existing createInvoice to reuse calculation logic, save record, and write logs.
-        return createInvoice(invoice, username);
+        return trip;
     }
 
     private static BigDecimal positiveOr(BigDecimal preferred, BigDecimal fallback) {

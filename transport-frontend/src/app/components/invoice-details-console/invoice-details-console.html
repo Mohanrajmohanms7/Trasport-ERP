@@ -115,13 +115,22 @@
       <!-- Ready for Billing view -->
       @if (billingTab() === 'ready') {
         <div class="flex justify-between items-center shrink-0">
-          <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Completed Trips Ready for Invoicing</span>
+          <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Completed Trips Ready for Invoicing ({{ readyTrips().length }})</span>
+          @if (selectedTripIds().length) {
+            <div class="flex items-center gap-2">
+              <button type="button" class="text-xs text-[var(--ff-text-muted)] underline" (click)="selectedTripIds.set([])">Clear</button>
+              <button type="button" (click)="invoiceSelectedTrips()" class="bg-[var(--ff-color-primary-600)] text-white font-semibold h-9 px-3 rounded-[8px] text-xs flex items-center gap-1.5">
+                <span class="material-icons text-sm">receipt_long</span> One invoice for {{ selectedTripIds().length }} trip(s)
+              </button>
+            </div>
+          }
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
+                <th class="p-4 w-10"><span class="sr-only">Select</span></th>
                 <th class="p-4">Trip Number</th>
                 <th class="p-4">Customer Name</th>
                 <th class="p-4">Allocated Payload Payload</th>
@@ -135,8 +144,10 @@
             <tbody>
               @for (trip of readyTrips(); track trip.tripNumber) {
                 <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
+                  <td class="p-4"><input type="checkbox" class="w-4 h-4 cursor-pointer" [checked]="isTripSelected(trip)" (change)="toggleTrip(trip)" [attr.aria-label]="'Select ' + trip.tripNumber" /></td>
                   <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ trip.tripNumber }}</td>
-                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ trip.booking?.customer?.name }}</td>
+                  <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ trip.booking?.customer?.name }}
+                    <button type="button" class="block text-[10px] font-normal text-[var(--ff-color-primary-600)] underline" (click)="selectAllForCustomer(trip)">select all of this customer</button></td>
                   <td class="p-4 text-[var(--ff-text-secondary)]">
                     @for (dt of trip.details; track dt.id) {
                       <div>{{ dt.material?.name }} — {{ dt.quantity }} Tons</div>
@@ -158,7 +169,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No completed trips ready for billing.</td>
+                  <td colspan="9" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No completed trips ready for billing.</td>
                 </tr>
               }
             </tbody>

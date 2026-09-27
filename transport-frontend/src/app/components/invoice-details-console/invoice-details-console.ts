@@ -387,6 +387,48 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     });
   }
 
+  /** Multi-select on "Ready for billing": trips of one customer become one invoice. */
+  selectedTripIds = signal<number[]>([]);
+  isTripSelected(trip: any): boolean {
+    return this.selectedTripIds().includes(trip.id);
+  }
+  toggleTrip(trip: any): void {
+    const ids = this.selectedTripIds();
+    if (ids.includes(trip.id)) {
+      this.selectedTripIds.set(ids.filter(x => x !== trip.id));
+      return;
+    }
+    const first = this.readyTrips().find(t => t.id === ids[0]);
+    if (first && first.booking?.customer?.id !== trip.booking?.customer?.id) {
+      this.notify.error('Select trips of one customer for one invoice.');
+      return;
+    }
+    this.selectedTripIds.set([...ids, trip.id]);
+  }
+  selectAllForCustomer(trip: any): void {
+    const cid = trip.booking?.customer?.id;
+    this.selectedTripIds.set(this.readyTrips().filter(t => t.booking?.customer?.id === cid).map(t => t.id));
+  }
+  invoiceSelectedTrips(): void {
+    const ids = this.selectedTripIds();
+    if (!ids.length) return;
+    this.loading.set(true);
+    this.invoiceMgmtService.createInvoiceFromTrips(ids).subscribe({
+      next: (res) => {
+        this.loading.set(false);
+        this.notify.success(res.message || 'Invoice draft generated');
+        this.selectedTripIds.set([]);
+        this.loadReadyTrips();
+        this.loadInvoices();
+        this.billingTab.set('ledger');
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.notify.error(this.apiError(err, 'Failed to generate invoice'));
+      }
+    });
+  }
+
   generateInvoice(trip: any) {
     if (!trip.id) return;
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {

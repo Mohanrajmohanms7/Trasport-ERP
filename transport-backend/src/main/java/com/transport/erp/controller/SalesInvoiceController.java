@@ -106,6 +106,14 @@ public class SalesInvoiceController {
         return ApiResponse.success(cancelled, "Invoice cancelled successfully");
     }
 
+    /** Body: {"tripIds":[1,2,3]} — one draft invoice for several completed trips of one customer. */
+    @PostMapping("/from-trips")
+    public ApiResponse<SalesInvoice> createFromTrips(@RequestBody java.util.Map<String, java.util.List<Long>> body) {
+        String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        SalesInvoice created = invoiceService.createInvoiceFromTrips(body.get("tripIds"), activeUser);
+        return ApiResponse.success(created, "Draft invoice generated for " + body.get("tripIds").size() + " trip(s)");
+    }
+
     @PostMapping("/from-trip/{tripId}")
     public ApiResponse<SalesInvoice> createFromTrip(@PathVariable Long tripId) {
         String activeUser = SecurityContextHolder.getContext().getAuthentication().getName();

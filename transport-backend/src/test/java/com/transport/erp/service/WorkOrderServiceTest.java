@@ -641,7 +641,7 @@ class WorkOrderServiceTest {
         when(vehicleRepository.findByIdForUpdate(VEHICLE_ID)).thenReturn(Optional.of(order.getVehicle()));
         org.mockito.Mockito.doThrow(new BusinessValidationException(
                 "Financial Period Closed", "FINANCIAL_YEAR_CLOSED", "FINANCIAL_YEAR_CLOSED: closed", "Use an open year"))
-                .when(workOrderFinancialPosting).postCompletion(any(), any(), any());
+                .when(workOrderFinancialPosting).postCompletion(any(), any(), any(), any());
         WorkOrderCompleteRequest request = new WorkOrderCompleteRequest();
         request.setCompletionNotes("Done");
         request.setActualCost(new BigDecimal("350.00"));
@@ -672,10 +672,10 @@ class WorkOrderServiceTest {
                 () -> service.complete(10L, request, "admin"));
 
         assertEquals("WORK_ORDER_INVALID_TRANSITION", ex.getErrorCode());
-        verify(workOrderFinancialPosting, times(1)).postCompletion(eq(order), eq(new BigDecimal("350.00")), eq("admin"));
+        verify(workOrderFinancialPosting, times(1)).postCompletion(eq(order), eq(new BigDecimal("350.00")), any(), eq("admin"));
         InOrder sequence = inOrder(workOrderRepository, workOrderFinancialPosting);
         sequence.verify(workOrderRepository).findByIdForUpdate(10L);
-        sequence.verify(workOrderFinancialPosting).postCompletion(any(), any(), any());
+        sequence.verify(workOrderFinancialPosting).postCompletion(any(), any(), any(), any());
         sequence.verify(workOrderRepository).save(order);
     }
 
@@ -689,7 +689,7 @@ class WorkOrderServiceTest {
         request.setCompletionNotes("Done");
         request.setActualCost(new BigDecimal("10.00"));
         assertThrows(AccessDeniedException.class, () -> service.complete(10L, request, "admin"));
-        verify(workOrderFinancialPosting, never()).postCompletion(any(), any(), any());
+        verify(workOrderFinancialPosting, never()).postCompletion(any(), any(), any(), any());
     }
 
     @Test
