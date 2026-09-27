@@ -25,7 +25,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Page<AppUser> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"roles"})
-    Page<AppUser> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(Long companyId, String name, String code, Pageable pageable);
+    /** Parenthesised on purpose: the derived-name version OR-ed the code match outside the company filter. */
+    @Query("SELECT e FROM AppUser e WHERE e.companyId = :companyId AND e.isDeleted = false AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(e.code) LIKE LOWER(CONCAT('%', :code, '%')))")
+    Page<AppUser> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(@Param("companyId") Long companyId, @Param("name") String name, @Param("code") String code, Pageable pageable);
 
     Page<AppUser> findByIsDeletedFalse(Pageable pageable);
     Page<AppUser> findByIsDeletedFalseAndUsernameContainingIgnoreCaseOrIsDeletedFalseAndEmailContainingIgnoreCase(String username, String email, Pageable pageable);

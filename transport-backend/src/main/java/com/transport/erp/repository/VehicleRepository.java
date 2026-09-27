@@ -28,8 +28,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     List<Vehicle> findByCompanyIdAndIsDeletedFalseOrderByIdAsc(Long companyId);
 
-    Page<Vehicle> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
-            Long companyId, String name, String code, Pageable pageable);
+    /** Parenthesised on purpose: the derived-name version OR-ed the code match outside the company filter. */
+    @Query("SELECT e FROM Vehicle e WHERE e.companyId = :companyId AND e.isDeleted = false AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(e.code) LIKE LOWER(CONCAT('%', :code, '%')))")
+    Page<Vehicle> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(@Param("companyId") Long companyId, @Param("name") String name, @Param("code") String code, Pageable pageable);
 
     long countByCompanyIdAndIsDeletedFalse(Long companyId);
 
