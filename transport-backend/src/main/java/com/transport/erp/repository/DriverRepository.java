@@ -32,8 +32,9 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
     Page<Driver> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
-    Page<Driver> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
-            Long companyId, String name, String code, Pageable pageable);
+    /** Parenthesised on purpose: the derived-name version OR-ed the code match outside the company filter. */
+    @Query("SELECT e FROM Driver e WHERE e.companyId = :companyId AND e.isDeleted = false AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(e.code) LIKE LOWER(CONCAT('%', :code, '%')))")
+    Page<Driver> findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(@Param("companyId") Long companyId, @Param("name") String name, @Param("code") String code, Pageable pageable);
 
     long countByCompanyIdAndStatusAndIsDeletedFalse(Long companyId, String status);
 }

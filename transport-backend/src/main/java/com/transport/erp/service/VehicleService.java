@@ -14,6 +14,9 @@ import java.util.Optional;
 @Service
 public class VehicleService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private BranchDefaults branchDefaults;
+
     @Autowired
     private VehicleRepository vehicleRepository;
 
@@ -44,6 +47,9 @@ public class VehicleService {
     public Vehicle create(Vehicle vehicle) {
         Long companyId = tenantAccess.resolveCompanyId(vehicle.getCompanyId());
         vehicle.setCompanyId(companyId);
+        // Vehicles and drivers are based at a branch: the one chosen (same company), else the user's branch,
+        // else the head office — so branch lists, filters and the Branch Master counts include them.
+        vehicle.setBranchId(branchDefaults.resolve(companyId, vehicle.getBranchId()));
         if (vehicleRepository.findByCompanyIdAndCodeAndIsDeletedFalse(companyId, vehicle.getCode()).isPresent()) {
             throw new IllegalArgumentException("Vehicle plate/reg code already exists: " + vehicle.getCode());
         }

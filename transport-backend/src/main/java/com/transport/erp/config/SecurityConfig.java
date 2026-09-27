@@ -80,7 +80,7 @@ public class SecurityConfig {
     static final String[] ADMIN_ROLES = {"SUPER_ADMIN", "COMPANY_ADMIN", "ADMIN"};
     static final String[] ADMIN_WRITE_PATHS = {
             "/api/v1/users/**", "/api/v1/roles/**", "/api/v1/permissions/**", "/api/v1/companies/**",
-            "/api/v1/branches/**", "/api/v1/settings/**", "/api/v1/financial-years/**", "/api/v1/setup/**"
+            "/api/v1/branches/**", "/api/v1/settings/**", "/api/v1/financial-years/**", "/api/v1/setup/**", "/api/v1/lookups/**"
     };
     static final String[] ACCOUNTING_ROLES = {"SUPER_ADMIN", "COMPANY_ADMIN", "ADMIN", "ACCOUNTANT"};
     static final String[] ACCOUNTING_WRITE_PATHS = {"/api/v1/journal/**", "/api/v1/accounts/**"};

@@ -35,6 +35,11 @@ public class BranchController {
         }
     }
 
+    @GetMapping("/summary")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> summary(@RequestParam(required = false) Long companyId) {
+        return ApiResponse.success(branchService.summary(tenantAccess.resolveCompanyId(companyId)), "Branch summary");
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<Branch> getById(@PathVariable Long id) {
         try {

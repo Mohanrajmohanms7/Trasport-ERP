@@ -200,9 +200,13 @@ export class MasterManagementComponent implements OnInit {
     }
   });
 
+  /** Served at /lookup-values: only the dropdown lists (vehicles, drivers, customers have their own masters). */
+  readonly lookupOnly = this.route.snapshot.data?.['mode'] === 'lookup';
+
   ngOnInit() {
     this.initForm();
-    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (this.lookupOnly) this.activeTab.set('lookup');
+    const tab = this.lookupOnly ? 'lookup' : this.route.snapshot.queryParamMap.get('tab');
     if (tab === 'vehicle' || tab === 'driver' || tab === 'customer' || tab === 'lookup') {
       this.activeTab.set(tab);
     }

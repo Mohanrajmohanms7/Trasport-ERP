@@ -20,6 +20,9 @@ import java.util.Set;
 @Service
 public class DriverService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private BranchDefaults branchDefaults;
+
     @Autowired
     private DriverRepository driverRepository;
 
@@ -59,6 +62,9 @@ public class DriverService {
     public Driver create(Driver driver) {
         Long companyId = tenantAccess.resolveCompanyId(driver.getCompanyId());
         driver.setCompanyId(companyId);
+        // Vehicles and drivers are based at a branch: the one chosen (same company), else the user's branch,
+        // else the head office — so branch lists, filters and the Branch Master counts include them.
+        driver.setBranchId(branchDefaults.resolve(companyId, driver.getBranchId()));
         if (driverRepository.findByCompanyIdAndCodeAndIsDeletedFalse(companyId, driver.getCode()).isPresent()) {
             throw new IllegalArgumentException("Driver code already exists in this company: " + driver.getCode());
         }
