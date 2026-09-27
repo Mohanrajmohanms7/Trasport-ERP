@@ -229,8 +229,8 @@ export class DashboardComponent implements OnInit {
   });
 
   private readonly quickActionRoutes: Record<string, string> = {
-    'Add Vehicle': '/masters?tab=vehicle',
-    'New Customer': '/masters?tab=customer',
+    'Add Vehicle': '/vehicles',
+    'New Customer': '/customers',
     'Create Booking': '/bookings',
     'Create Trip': '/trips-planning',
     'Receive Payment': '/payment-logs',

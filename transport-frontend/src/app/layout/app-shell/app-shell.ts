@@ -318,45 +318,56 @@ export class AppShellComponent implements OnDestroy {
     {
       groupName: 'MASTERS',
       items: [
+        { label: 'Branch Master', route: '/masters', icon: 'store' },
+        { label: 'Customer Master', route: '/customers', icon: 'group' },
         { label: 'Vehicle Master', route: '/vehicles', icon: 'local_shipping' },
         { label: 'Driver Master', route: '/drivers', icon: 'person' },
-        { label: 'Customer Master', route: '/customers', icon: 'group' },
-        { label: 'Branch Master', route: '/masters', icon: 'store' },
         { label: 'Material & Quarry', route: '/materials-quarries', icon: 'category' },
-        { label: 'Spare Parts', route: '/spare-parts', icon: 'inventory_2' },
         { label: 'Supplier Master', route: '/suppliers', icon: 'storefront' }
       ]
     },
     {
       groupName: 'OPERATIONS',
       items: [
-        { label: 'Booking', route: '/bookings', icon: 'receipt_long' },
-        { label: 'Trip Management', route: '/trips-planning', icon: 'map' },
-        { label: 'Fuel Management', route: '/fuel-logs', icon: 'local_gas_station' },
-        { label: 'Work Orders', route: '/work-orders', icon: 'handyman' },
+        { label: 'Bookings', route: '/bookings', icon: 'receipt_long' },
+        { label: 'Trips & Dispatch', route: '/trips-planning', icon: 'map' },
+        { label: 'Fuel', route: '/fuel-logs', icon: 'local_gas_station' },
+        { label: 'Expenses', route: '/expense-logs', icon: 'account_balance_wallet' }
+      ]
+    },
+    {
+      groupName: 'MAINTENANCE & STORES',
+      items: [
         { label: 'Maintenance Requests', route: '/maintenance-requests', icon: 'report' },
+        { label: 'Work Orders', route: '/work-orders', icon: 'handyman' },
+        { label: 'Spare Parts', route: '/spare-parts', icon: 'inventory_2' },
         { label: 'Warehouses', route: '/inventory/warehouses', icon: 'warehouse' },
         { label: 'Stock', route: '/inventory/stock', icon: 'inventory' },
-        { label: 'Inventory Transactions', route: '/inventory/transactions', icon: 'receipt' },
-        { label: 'Expense Management', route: '/expense-logs', icon: 'account_balance_wallet' }
+        { label: 'Inventory Transactions', route: '/inventory/transactions', icon: 'swap_horiz' }
       ]
     },
     {
       groupName: 'FINANCE',
       items: [
-        { label: 'Invoice', route: '/billing-invoices', icon: 'description' },
-        { label: 'Payments', route: '/payment-logs', icon: 'payments' },
-        { label: 'Supplier Bills', route: '/payables', icon: 'request_quote' },
+        { label: 'Invoices', route: '/billing-invoices', icon: 'description' },
+        { label: 'Customer Receipts', route: '/payment-logs', icon: 'payments' },
+        { label: 'Supplier Bills & Payments', route: '/payables', icon: 'request_quote' },
         { label: 'Driver Payroll', route: '/driver-payroll', icon: 'badge' },
-        { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' },
+        { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' }
+      ]
+    },
+    {
+      groupName: 'REPORTS',
+      items: [
         { label: 'Reports', route: '/reports', icon: 'assessment' },
-        { label: 'Financial Statements', route: '/reports-bi', icon: 'account_balance' }
+        { label: 'Financial Statements', route: '/reports-bi', icon: 'query_stats' }
       ]
     },
     {
       groupName: 'ADMIN',
       items: [
-        { label: 'User & Roles', route: '/users-roles', icon: 'manage_accounts' },
+        { label: 'Users & Roles', route: '/users-roles', icon: 'manage_accounts' },
+        { label: 'Dropdown Lists', route: '/lookup-values', icon: 'list_alt' },
         { label: 'System Settings', route: '/company-admin', icon: 'settings' }
       ]
     }
@@ -408,7 +419,7 @@ export class AppShellComponent implements OnDestroy {
     const isAdmin = roles.some(r => r === 'COMPANY_ADMIN' || r === 'ADMIN');
     if (!isAdmin) {
       return groups
-        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin'].includes(i.route)) }))
+        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin', '/lookup-values'].includes(i.route)) }))
         .filter(g => g.items.length > 0);
     }
     return groups;
@@ -436,9 +447,9 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'customers') return 'Customer Master';
       if (segment === 'masters') return 'Branch Master';
       if (segment === 'materials-quarries') return 'Material & Quarry';
-      if (segment === 'bookings') return 'Booking';
-      if (segment === 'trips-planning') return 'Trip Management';
-      if (segment === 'fuel-logs') return 'Fuel Management';
+      if (segment === 'bookings') return 'Bookings';
+      if (segment === 'trips-planning') return 'Trips & Dispatch';
+      if (segment === 'fuel-logs') return 'Fuel';
       if (segment === 'work-orders') return 'Work Orders';
       if (segment === 'maintenance-requests') return 'Maintenance Requests';
       if (segment === 'spare-parts') return 'Spare Parts';
@@ -448,15 +459,16 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'transactions') return 'Inventory Transactions';
       if (segment === 'opening-balance') return 'Opening Stock';
       if (segment === 'receipt') return 'Receive Stock';
-      if (segment === 'expense-logs') return 'Expense Management';
-      if (segment === 'billing-invoices') return 'Invoice';
-      if (segment === 'payment-logs') return 'Payments';
+      if (segment === 'expense-logs') return 'Expenses';
+      if (segment === 'billing-invoices') return 'Invoices';
+      if (segment === 'payment-logs') return 'Customer Receipts';
       if (segment === 'accounts-ledger') return 'Accounts';
       if (segment === 'reports-bi') return 'Financial Statements';
       if (segment === 'reports') return 'Reports';
       if (segment === 'payables') return 'Supplier Bills & Payments';
       if (segment === 'suppliers') return 'Supplier Master';
-      if (segment === 'users-roles') return 'User & Role Management';
+      if (segment === 'lookup-values') return 'Dropdown Lists';
+      if (segment === 'users-roles') return 'Users & Roles';
       if (segment === 'company-admin') return 'System Settings';
       return segment.charAt(0).toUpperCase() + segment.slice(1);
     })];

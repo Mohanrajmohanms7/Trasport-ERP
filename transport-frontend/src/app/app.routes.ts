@@ -1,3 +1,4 @@
+import { BranchMasterComponent } from './components/branch-master/branch-master';
 import { SupplierMasterComponent } from './components/supplier-master/supplier-master';
 import { PayablesConsoleComponent } from './components/payables-console/payables-console';
 import { ReportsHubComponent } from './components/reports-hub/reports-hub';
@@ -64,7 +65,9 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent, canActivate: [setupGuard] },
       { path: 'platform-admin', component: PlatformAdminComponent },
       { path: 'platform-admin/:section', component: PlatformAdminComponent },
-      { path: 'masters', component: MasterManagementComponent },
+      { path: 'masters', component: BranchMasterComponent },
+      { path: 'branches', redirectTo: 'masters', pathMatch: 'full' },
+      { path: 'lookup-values', component: MasterManagementComponent, data: { mode: 'lookup' } },
       { path: 'profile', component: UserProfileComponent },
       { path: 'users-roles', component: UserRoleManagementComponent },
       { path: 'company-admin', component: CompanyAdministrationComponent },

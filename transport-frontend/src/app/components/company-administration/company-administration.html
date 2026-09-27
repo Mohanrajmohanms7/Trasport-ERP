@@ -5,9 +5,9 @@
     <div class="flex flex-col gap-1">
       <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
         <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">corporate_fare</span>
-        Company Administration
+        System Settings
       </h1>
-      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Configure company profiles, registers branches, manage fiscal dates parameters, and default number sequences</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Company profile, financial years and business preferences. Branches are managed in Masters → Branch Master.</p>
     </div>
   </header>
 
@@ -32,9 +32,6 @@
     <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none overflow-x-auto">
       <button (click)="activeTab.set('profile')" [class.border-b-2]="activeTab() === 'profile'" [class.border-blue-600]="activeTab() === 'profile'" [class.text-slate-900]="activeTab() === 'profile'" [class.dark:text-white]="activeTab() === 'profile'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] whitespace-nowrap">
         Company Profile
-      </button>
-      <button (click)="activeTab.set('branches')" [class.border-b-2]="activeTab() === 'branches'" [class.border-blue-600]="activeTab() === 'branches'" [class.text-slate-900]="activeTab() === 'branches'" [class.dark:text-white]="activeTab() === 'branches'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] whitespace-nowrap">
-        Branches
       </button>
       <button (click)="activeTab.set('years')" [class.border-b-2]="activeTab() === 'years'" [class.border-blue-600]="activeTab() === 'years'" [class.text-slate-900]="activeTab() === 'years'" [class.dark:text-white]="activeTab() === 'years'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] whitespace-nowrap">
         Financial Years
@@ -92,64 +89,6 @@
             </div>
 
           </form>
-        }
-
-        <!-- 2. Branches Management Viewport -->
-        @if (activeTab() === 'branches') {
-          <div class="flex justify-between items-center shrink-0">
-            <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Branch Offices Locations</span>
-            <button (click)="openAddBranch()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
-              <span class="material-icons text-sm">add_location_alt</span> Register Branch
-            </button>
-          </div>
-
-          <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
-            <table class="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
-                  <th class="p-4">Branch Code</th>
-                  <th class="p-4">Branch Name</th>
-                  <th class="p-4">Manager</th>
-                  <th class="p-4">Phone</th>
-                  <th class="p-4">Email</th>
-                  <th class="p-4">Coordinates (Lat, Lon)</th>
-                  <th class="p-4">Status</th>
-                  <th class="p-4 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (branch of branches(); track branch.code) {
-                  <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
-                    <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ branch.code }}</td>
-                    <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ branch.name }}</td>
-                    <td class="p-4 text-[var(--ff-text-secondary)]">{{ branch.manager || 'N/A' }}</td>
-                    <td class="p-4 text-[var(--ff-text-secondary)]">{{ branch.phone }}</td>
-                    <td class="p-4 text-[var(--ff-text-secondary)]">{{ branch.email }}</td>
-                    <td class="p-4 font-mono text-[10px] text-[var(--ff-text-muted)]">
-                      {{ branch.latitude || '0.000000' }}, {{ branch.longitude || '0.000000' }}
-                    </td>
-                    <td class="p-4">
-                      <span [class.bg-[var(--ff-color-success-50)]]="branch.status === 'ACTIVE'" [class.dark:bg-[var(--ff-color-success-50)]]="branch.status === 'ACTIVE'" [class.text-[var(--ff-color-success-500)]]="branch.status === 'ACTIVE'" [class.dark:text-[var(--ff-color-success-500)]]="branch.status === 'ACTIVE'"
-                            [class.bg-[var(--ff-surface-hover)]]="branch.status === 'INACTIVE'" [class.dark:bg-[var(--ff-surface-hover)]]="branch.status === 'INACTIVE'" [class.text-[var(--ff-text-muted)]]="branch.status === 'INACTIVE'" [class.dark:text-[var(--ff-text-muted)]]="branch.status === 'INACTIVE'"
-                            class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
-                        {{ branch.status }}
-                      </span>
-                    </td>
-                    <td class="p-4 text-center">
-                      <div class="flex items-center justify-center gap-2">
-                        <button (click)="openEditBranch(branch)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition">
-                          <span class="material-icons text-sm">edit</span>
-                        </button>
-                        <button (click)="deleteBranch(branch)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition">
-                          <span class="material-icons text-sm">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
         }
 
         <!-- 3. Financial Years Viewport -->

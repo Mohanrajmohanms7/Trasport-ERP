@@ -4,10 +4,10 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-extrabold tracking-tight text-[var(--ff-text-primary)] flex items-center gap-2">
-          <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">dashboard_customize</span>
-          Master Data Management
+          <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">{{ lookupOnly ? 'list_alt' : 'dashboard_customize' }}</span>
+          {{ lookupOnly ? 'Dropdown Lists' : 'Master Data Management' }}
         </h1>
-        <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Configure your master foundation tables, drivers, vehicles, and lookups</p>
+        <p class="text-[var(--ff-text-secondary)] text-sm mt-1">{{ lookupOnly ? 'The choices offered in dropdowns: vehicle types, fuel types, expense categories, payment methods, departments and more.' : 'Configure your master foundation tables, drivers, vehicles, and lookups' }}</p>
       </div>
       <button (click)="openAddForm()" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none flex items-center gap-2 transition duration-200">
         <span class="material-icons">add</span>
@@ -18,7 +18,7 @@
 
   <!-- Category Nav and Search -->
   <section class="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-[var(--ff-surface-card)] p-4 rounded-[10px] border border-[var(--ff-border-default)]">
-    <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0" [class.hidden]="lookupOnly">
       <button (click)="switchTab('vehicle')" [class]="activeTab() === 'vehicle' ? 'bg-[var(--ff-color-primary-600)] text-white' : 'bg-[var(--ff-surface-hover)] hover:bg-[var(--ff-border-default)] text-[var(--ff-text-secondary)]'" class="px-4 py-2 rounded-[8px] font-medium transition duration-200 flex items-center gap-2 whitespace-nowrap">
         <span class="material-icons text-sm">local_shipping</span> Vehicles
       </button>

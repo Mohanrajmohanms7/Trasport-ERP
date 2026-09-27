@@ -16,7 +16,7 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
         message="You do not have the administrative roles or permissions required to view this console screen."
         type="unauthorized">
       </app-empty-state>
-      <button mat-flat-button color="primary" routerLink="/masters" class="mt-6">
+      <button mat-flat-button color="primary" routerLink="/dashboard" class="mt-6">
         Return to Master Data Management
       </button>
     </div>
