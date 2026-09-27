@@ -80,6 +80,7 @@ export class RenewalComponent implements OnInit {
         if (res.success) {
           this.successMessage.set('Subscription successfully renewed! Thank you.');
           this.authService.setSubscriptionExpired(false);
+          this.authService.refreshTenantBrand();
           setTimeout(() => {
             this.router.navigate(['/']);
           }, 1500);

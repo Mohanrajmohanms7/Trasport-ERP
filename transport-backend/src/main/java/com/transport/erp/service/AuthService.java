@@ -233,8 +233,50 @@ public class AuthService {
         companyRepository.findById(companyId).ifPresent(c -> {
             brand.put("companyName", c.getName());
             brand.put("companyShortName", c.getDisplayShortName());
+            brand.putAll(subscriptionInfo(c));
         });
         return brand;
+    }
+
+    /** Days before the end date from which users are warned in the app. */
+    public static final int SUBSCRIPTION_WARNING_DAYS = 3;
+
+    /** Subscription end date, days left and plan — drives the renewal banner. */
+    public Map<String, Object> subscriptionInfo(Company c) {
+        Map<String, Object> m = new HashMap<>();
+        LocalDate end = c.getSubscriptionEndDate();
+        m.put("subscriptionStatus", c.getSubscriptionStatus());
+        m.put("subscriptionEndDate", end);
+        m.put("subscriptionPlan", c.getSubscriptionPlan() != null ? c.getSubscriptionPlan().getName() : null);
+        if (end != null) {
+            long left = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), end);
+            m.put("subscriptionDaysLeft", left);
+            m.put("subscriptionExpiringSoon", left >= 0 && left <= SUBSCRIPTION_WARNING_DAYS);
+        }
+        return m;
+    }
+
+    /** For the platform operator: client companies whose subscription ends within the warning window. */
+    public Map<String, Object> expiringClients() {
+        LocalDate today = LocalDate.now();
+        List<Map<String, Object>> list = new java.util.ArrayList<>();
+        for (Company c : companyRepository.findAll()) {
+            if (Boolean.TRUE.equals(c.getIsDeleted()) || c.getSubscriptionEndDate() == null) continue;
+            long left = java.time.temporal.ChronoUnit.DAYS.between(today, c.getSubscriptionEndDate());
+            if (left >= 0 && left <= SUBSCRIPTION_WARNING_DAYS) {
+                Map<String, Object> row = new HashMap<>();
+                row.put("id", c.getId());
+                row.put("name", c.getName());
+                row.put("shortName", c.getDisplayShortName());
+                row.put("endDate", c.getSubscriptionEndDate());
+                row.put("daysLeft", left);
+                list.add(row);
+            }
+        }
+        list.sort(java.util.Comparator.comparing(r -> (Long) r.get("daysLeft")));
+        Map<String, Object> out = new HashMap<>();
+        out.put("expiringClients", list);
+        return out;
     }
 
     public AppUser getProfile(String username) {

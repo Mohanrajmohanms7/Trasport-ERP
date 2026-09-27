@@ -1,0 +1,71 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3">
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 shrink-0">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight flex items-center gap-2"><span class="material-icons text-[var(--ff-color-primary-600)]">storefront</span>Supplier Master</h1>
+      <p class="text-sm text-[var(--ff-text-secondary)]">Workshops, spare-part shops, tyre dealers and fuel pumps. Credit days set the due date of their bills.</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <app-export-buttons module="suppliers" />
+      <a routerLink="/payables" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5"><span class="material-icons text-base">request_quote</span>Bills &amp; payments</a>
+      <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="add()"><span class="material-icons text-base">add</span>New supplier</button>
+    </div>
+  </header>
+
+  <main class="flex-1 min-h-0 flex flex-col rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] overflow-hidden">
+    <div class="p-3 flex gap-2 border-b border-[var(--ff-border-divider)]">
+      <input class="h-9 flex-1 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-3 text-sm" placeholder="Search name or code" [(ngModel)]="search" (keyup.enter)="load()" />
+      <button type="button" class="h-9 px-4 rounded-lg bg-slate-800 text-white text-sm font-semibold" (click)="load()">Search</button>
+    </div>
+    <div class="flex-1 min-h-0 overflow-auto">
+      <table class="w-full text-left text-xs border-collapse min-w-[860px]">
+        <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-semibold">
+          <th class="p-3">Code</th><th class="p-3">Name</th><th class="p-3">Phone</th><th class="p-3">GSTIN</th><th class="p-3 text-right">Credit days</th><th class="p-3">Status</th><th class="p-3"></th>
+        </tr></thead>
+        <tbody>
+          @for (r of rows(); track r.id) {
+            <tr class="border-t border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+              <td class="p-3 font-mono font-semibold">{{ r.code }}</td>
+              <td class="p-3"><div class="font-semibold">{{ r.name }}</div><div class="text-[11px] text-[var(--ff-text-muted)]">{{ r.email }}</div></td>
+              <td class="p-3">{{ r.phone || '—' }}</td>
+              <td class="p-3 font-mono">{{ r.gstNumber || '—' }}</td>
+              <td class="p-3 text-right tabular-nums">{{ r.creditDays ?? '—' }}</td>
+              <td class="p-3"><span class="px-2 py-0.5 rounded-full border text-[11px] font-semibold">{{ r.status | titlecase }}</span></td>
+              <td class="p-3 text-right whitespace-nowrap">
+                <button class="text-[var(--ff-color-primary-600)] font-semibold mr-3" (click)="edit(r)">Edit</button>
+                <button class="text-[var(--ff-text-secondary)] font-semibold mr-3" (click)="toggle(r)">{{ r.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}</button>
+                <button class="text-[var(--ff-text-muted)] mr-2" (click)="docsFor.set(docsFor() === r.id ? null : r.id)" title="Documents"><span class="material-icons text-sm">attach_file</span></button>
+                <button class="text-rose-600" (click)="remove(r)" title="Delete"><span class="material-icons text-sm">delete</span></button>
+              </td>
+            </tr>
+            @if (docsFor() === r.id) {
+              <tr><td colspan="7" class="p-3 bg-[var(--ff-surface-hover)]"><app-attachments-panel entityType="SUPPLIER" [entityId]="r.id" title="Supplier documents" [categories]="['GST_CERTIFICATE', 'AGREEMENT', 'BANK_DETAILS', 'OTHER']" /></td></tr>
+            }
+          } @empty {
+            <tr><td colspan="7" class="p-10 text-center text-[var(--ff-text-muted)]">{{ loading() ? 'Loading…' : 'No suppliers yet. Add your workshops and parts shops.' }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  @if (showForm()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showForm.set(false)">
+      <form (ngSubmit)="save()" (click)="$event.stopPropagation()" class="w-full max-w-xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-3">
+        <h2 class="text-lg font-bold">{{ form.id ? 'Edit supplier' : 'New supplier' }}</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-semibold text-[var(--ff-text-muted)]">
+          <label class="flex flex-col gap-1">Code *<input required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.code" name="code" /></label>
+          <label class="flex flex-col gap-1">Name *<input required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.name" name="name" placeholder="e.g. Sri Murugan Auto Works" /></label>
+          <label class="flex flex-col gap-1">Phone<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.phone" name="phone" inputmode="tel" /></label>
+          <label class="flex flex-col gap-1">Email<input type="email" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.email" name="email" /></label>
+          <label class="flex flex-col gap-1">GSTIN<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)] uppercase" maxlength="15" [(ngModel)]="form.gstNumber" name="gst" placeholder="33ABCDE1234F1Z5" /></label>
+          <label class="flex flex-col gap-1">Credit days<input type="number" min="0" max="365" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.creditDays" name="cd" placeholder="0 = pay on bill date" /></label>
+          <label class="flex flex-col gap-1 sm:col-span-2">Address<textarea rows="2" class="rounded-lg border px-2 py-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="form.address" name="addr"></textarea></label>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="h-10 px-4 rounded-lg border" (click)="showForm.set(false)">Close</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold" [disabled]="!form.code || !form.name">Save</button>
+        </div>
+      </form>
+    </div>
+  }
+</div>

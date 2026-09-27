@@ -113,7 +113,13 @@ public class AuthController {
     @GetMapping("/tenant-brand")
     public ApiResponse<java.util.Map<String, Object>> tenantBrand(java.security.Principal principal) {
         com.transport.erp.model.AppUser user = authService.getProfile(principal.getName());
-        return ApiResponse.success(authService.tenantBrand(user.getCompanyId()), "Tenant brand");
+        java.util.Map<String, Object> brand = new java.util.HashMap<>(authService.tenantBrand(user.getCompanyId()));
+        boolean superAdmin = user.getRoles() != null && user.getRoles().stream().anyMatch(r -> "SUPER_ADMIN".equals(r.getCode()));
+        if (superAdmin) {
+            brand.putAll(authService.expiringClients());
+            brand.remove("subscriptionExpiringSoon"); // the platform itself is not a subscriber
+        }
+        return ApiResponse.success(brand, "Tenant brand");
     }
 
     @GetMapping("/profile")

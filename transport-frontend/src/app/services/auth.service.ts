@@ -22,6 +22,12 @@ export interface LoginResponse {
 export interface TenantBrand {
   companyName?: string;
   shortName?: string;
+  subscriptionEndDate?: string | null;
+  subscriptionDaysLeft?: number | null;
+  subscriptionExpiringSoon?: boolean;
+  subscriptionPlan?: string | null;
+  /** Platform operator only: clients ending within the warning window. */
+  expiringClients?: { id: number; name: string; shortName?: string; endDate: string; daysLeft: number }[];
 }
 
 export interface UserProfile {
@@ -75,7 +81,12 @@ export class AuthService {
   refreshTenantBrand(): void {
     if (!localStorage.getItem('token')) return;
     this.http.get<ApiResponse<any>>(`${this.apiUrl}/tenant-brand`).subscribe({
-      next: r => this.setBrand(r?.data ? { companyName: r.data.companyName, shortName: r.data.companyShortName } : null),
+      next: r => this.setBrand(r?.data ? {
+        companyName: r.data.companyName, shortName: r.data.companyShortName,
+        subscriptionEndDate: r.data.subscriptionEndDate, subscriptionDaysLeft: r.data.subscriptionDaysLeft,
+        subscriptionExpiringSoon: r.data.subscriptionExpiringSoon, subscriptionPlan: r.data.subscriptionPlan,
+        expiringClients: r.data.expiringClients
+      } : null),
       error: () => {}
     });
   }
@@ -116,7 +127,9 @@ export class AuthService {
   }
 
   private persistSession(authData: LoginResponse): void {
-    this.setBrand({ companyName: authData.companyName, shortName: authData.companyShortName });
+    const a: any = authData;
+    this.setBrand({ companyName: a.companyName, shortName: a.companyShortName, subscriptionEndDate: a.subscriptionEndDate,
+      subscriptionDaysLeft: a.subscriptionDaysLeft, subscriptionExpiringSoon: a.subscriptionExpiringSoon, subscriptionPlan: a.subscriptionPlan });
     localStorage.setItem('token', authData.token);
     localStorage.setItem('refreshToken', authData.refreshToken);
     localStorage.setItem('username', authData.username);

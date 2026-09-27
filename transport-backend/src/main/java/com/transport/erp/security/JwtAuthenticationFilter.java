@@ -76,7 +76,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (user != null && user.getCompanyId() != null) {
                         Company company = companyRepository.findById(user.getCompanyId()).orElse(null);
                         if (company != null) {
-                            boolean isSuperAdmin = user.getRoles().stream().anyMatch(r -> "SUPER_ADMIN".equals(r.getCode()));
+                            // Use the already-loaded authorities: reading user.getRoles() here (outside a transaction)
+                            // could fail lazily and silently skip this check.
+                            boolean isSuperAdmin = userDetails.getAuthorities().stream()
+                                    .anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
                             if (!isSuperAdmin) {
                                 LocalDate today = LocalDate.now();
                                 boolean isExpired = (company.getSubscriptionEndDate() != null && today.isAfter(company.getSubscriptionEndDate()))
@@ -84,7 +87,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 
                                 if (isExpired) {
                                     String path = request.getRequestURI();
-                                    if (!path.contains("/api/v1/auth/renew-subscription") && !path.contains("/api/v1/auth/logout") && !path.contains("/api/v1/plans")) {
+                                    // Renewal page needs: plans list, renew call, brand/subscription info, logout.
+                                    if (!path.contains("/api/v1/auth/renew-subscription") && !path.contains("/api/v1/auth/logout")
+                                            && !path.contains("/api/v1/plans") && !path.contains("/api/v1/auth/plans")
+                                            && !path.contains("/api/v1/auth/tenant-brand") && !path.contains("/api/v1/auth/profile")) {
                                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                                         response.setContentType("application/json");
                                         response.setCharacterEncoding("UTF-8");
@@ -98,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             } catch (Exception e) {
                 // Ignore invalid/stale tokens — request continues as anonymous
-                logger.debug("Skipping invalid JWT: " + e.getMessage());
+                logger.warn("Skipping invalid JWT / subscription check: " + e.getMessage());
             }
         }
         filterChain.doFilter(request, response);

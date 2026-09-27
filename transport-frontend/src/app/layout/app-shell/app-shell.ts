@@ -114,6 +114,20 @@ import { FfToastComponent } from '@ff/ui';
       letter-spacing: 0.06em;
     }
 
+    /* Renewal banner: amber, calm, one line on desktop, wraps on phones. */
+    .app-sub-banner {
+      display: flex; align-items: center; gap: 10px; padding: 8px 12px 8px 14px;
+      background: #fff6e0; color: #6b4300; border-bottom: 1px solid #f3d38a;
+    }
+    :host-context(.dark) .app-sub-banner { background: #3a2a06; color: #ffd98a; border-bottom-color: #5c430d; }
+    .app-sub-banner__btn {
+      flex-shrink: 0; height: 32px; padding: 0 12px; border-radius: 8px; display: inline-flex; align-items: center;
+      background: #172231; color: #fff; font-size: 12px; font-weight: 600; text-decoration: none;
+    }
+    .app-sub-banner__close { flex-shrink: 0; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+    .app-sub-banner__close:hover { background: rgba(0,0,0,0.06); }
+    @media (max-width: 639px) { .app-sub-banner__detail { display: block; } }
+
     .app-nav-chip {
       width: 40px;
       height: 40px;
@@ -223,6 +237,45 @@ export class AppShellComponent implements OnDestroy {
     return this.auth.tenantBrand()?.companyName || '';
   });
 
+  /** Hidden until tomorrow once the user closes it (reappears daily until renewed). */
+  private noticeDismissedOn = signal<string | null>(localStorage.getItem('subNoticeDismissed'));
+
+  readonly subscriptionNotice = computed(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (this.noticeDismissedOn() === today) return null;
+    const roles = this.auth.currentUser()?.roles || [];
+    const b = this.auth.tenantBrand();
+    if (!b) return null;
+    const fmt = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    const when = (n: number) => n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`;
+
+    if (roles.includes('SUPER_ADMIN')) {
+      const list = b.expiringClients || [];
+      if (!list.length) return null;
+      const names = list.slice(0, 3).map(c => `${c.shortName || c.name} (${when(c.daysLeft)})`).join(', ');
+      return {
+        title: `${list.length} client subscription${list.length > 1 ? 's end' : ' ends'} soon:`,
+        detail: names + (list.length > 3 ? ` and ${list.length - 3} more.` : '.'),
+        action: { label: 'View clients', route: '/platform-admin/companies' }
+      };
+    }
+    if (!b.subscriptionExpiringSoon || b.subscriptionDaysLeft == null) return null;
+    const isAdmin = roles.includes('COMPANY_ADMIN') || roles.includes('ADMIN');
+    return {
+      title: `Your TransaFlow subscription ends ${when(b.subscriptionDaysLeft)} (${fmt(b.subscriptionEndDate)}).`,
+      detail: isAdmin
+        ? 'Renew now to avoid interruption — after the end date only the company admin can sign in, to renew.'
+        : 'Please ask your company admin to renew, or access will stop after the end date.',
+      action: isAdmin ? { label: 'Renew now', route: '/renewal' } : null
+    };
+  });
+
+  dismissSubscriptionNotice(): void {
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('subNoticeDismissed', today);
+    this.noticeDismissedOn.set(today);
+  }
+
   /** Collapsed rail only on desktop; the phone drawer always shows labels. */
   navCollapsed = computed(() => !this.isMobile() && this.sidebarCollapsed());
   activeRoute = signal<string>('/');
@@ -270,7 +323,8 @@ export class AppShellComponent implements OnDestroy {
         { label: 'Customer Master', route: '/customers', icon: 'group' },
         { label: 'Branch Master', route: '/masters', icon: 'store' },
         { label: 'Material & Quarry', route: '/materials-quarries', icon: 'category' },
-        { label: 'Spare Parts', route: '/spare-parts', icon: 'inventory_2' }
+        { label: 'Spare Parts', route: '/spare-parts', icon: 'inventory_2' },
+        { label: 'Supplier Master', route: '/suppliers', icon: 'storefront' }
       ]
     },
     {
@@ -401,6 +455,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'reports-bi') return 'Financial Statements';
       if (segment === 'reports') return 'Reports';
       if (segment === 'payables') return 'Supplier Bills & Payments';
+      if (segment === 'suppliers') return 'Supplier Master';
       if (segment === 'users-roles') return 'User & Role Management';
       if (segment === 'company-admin') return 'System Settings';
       return segment.charAt(0).toUpperCase() + segment.slice(1);
