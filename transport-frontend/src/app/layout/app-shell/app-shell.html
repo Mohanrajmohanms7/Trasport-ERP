@@ -197,6 +197,23 @@
     </header>
 
     <!-- Dynamic Router Pages Content Outlet -->
+    <!-- Subscription renewal notice (3 days before the plan ends) -->
+    @if (subscriptionNotice(); as n) {
+      <div class="app-sub-banner shrink-0" role="status" aria-live="polite">
+        <span class="material-symbols-outlined text-xl shrink-0">schedule</span>
+        <div class="min-w-0 flex-1 text-sm leading-snug">
+          <strong>{{ n.title }}</strong>
+          <span class="app-sub-banner__detail"> {{ n.detail }}</span>
+        </div>
+        @if (n.action) {
+          <a [routerLink]="n.action.route" class="app-sub-banner__btn">{{ n.action.label }}</a>
+        }
+        <button type="button" class="app-sub-banner__close" (click)="dismissSubscriptionNotice()" aria-label="Hide for today">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+    }
+
     <main class="flex-1 min-h-0 overflow-hidden bg-[var(--ff-surface-page)] p-2 sm:p-3 lg:p-4 transition-colors duration-200 flex flex-col">
       <div class="app-outlet-host flex-1 min-h-0 flex flex-col">
         <router-outlet></router-outlet>

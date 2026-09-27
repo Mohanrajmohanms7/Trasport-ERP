@@ -32,6 +32,11 @@ export const subscriptionGuard: CanActivateFn = (route, state) => {
   }
 
   if (state.url.includes('/renewal')) {
+    // Company admins may renew early (e.g. from the "ends in 3 days" notice); others have nothing to do there.
+    const roles = authService.currentUser()?.roles || [];
+    if (roles.includes('COMPANY_ADMIN') || roles.includes('ADMIN')) {
+      return true;
+    }
     router.navigate(['/']);
     return false;
   }

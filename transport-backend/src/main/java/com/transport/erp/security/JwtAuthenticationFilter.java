@@ -84,7 +84,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 
                                 if (isExpired) {
                                     String path = request.getRequestURI();
-                                    if (!path.contains("/api/v1/auth/renew-subscription") && !path.contains("/api/v1/auth/logout") && !path.contains("/api/v1/plans")) {
+                                    // Renewal page needs: plans list, renew call, brand/subscription info, logout.
+                                    if (!path.contains("/api/v1/auth/renew-subscription") && !path.contains("/api/v1/auth/logout")
+                                            && !path.contains("/api/v1/plans") && !path.contains("/api/v1/auth/plans")
+                                            && !path.contains("/api/v1/auth/tenant-brand") && !path.contains("/api/v1/auth/profile")) {
                                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                                         response.setContentType("application/json");
                                         response.setCharacterEncoding("UTF-8");
