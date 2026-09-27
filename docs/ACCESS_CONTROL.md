@@ -56,3 +56,12 @@ Platform Admin onboarding provisions company, head office, financial year, roles
 `SETUP_COMPLETED=true` for the new company (V71 does the same for existing provisioned companies). The client admin's
 first login therefore opens `/dashboard`. The Setup Wizard (`/setup`) is only offered to a company admin of a company
 that was never provisioned (no flag and no business data); other roles are never redirected there.
+
+## One-person companies (single Company Admin)
+- Onboarding creates exactly one login with COMPANY_ADMIN; that is enough to run the whole application.
+- COMPANY_ADMIN / ADMIN are **company-wide**: every branch of their own company (`TenantAccessService.isCompanyWideAdmin`);
+  they may record for any branch of their company. Other roles stay limited to their branch. Company isolation unchanged.
+- `REQUIRE_SEPARATE_APPROVER` only applies when the company has 2+ active staff logins (non-driver, non-viewer).
+- Nobody can delete or deactivate their own login, and the last active COMPANY_ADMIN of a company cannot be deleted,
+  deactivated or demoted.
+- Accounting duplicate/reversal checks look up postings per company (document numbers repeat across companies).
