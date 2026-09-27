@@ -183,7 +183,11 @@
         <p>Driver: {{ driver.name }} · Company {{ driver.companyId }}</p>
         <p>Login: {{ driver.appUserName || (driver.appUserId ? 'User ' + driver.appUserId : 'Not linked') }}</p>
         <p>Mapping: {{ driver.appUserId ? 'LINKED' : 'NOT LINKED' }}</p>
-        <input class="border border-slate-200 rounded-lg px-3 py-2" placeholder="App user id" [value]="loginUserId()" (input)="loginUserId.set($any($event.target).value)" />
+        <select class="border border-slate-200 rounded-lg px-3 py-2 min-w-[240px]" [value]="loginUserId()" (change)="loginUserId.set($any($event.target).value)" aria-label="Driver login">
+          <option value="">— Not linked —</option>
+          @for (u of driverUsers(); track u.id) { <option [value]="u.id">{{ u.name }} ({{ u.username }})</option> }
+        </select>
+        @if (!driverUsers().length) { <p class="text-xs text-slate-500">No login with the DRIVER role yet. Create one in Admin → Users &amp; Roles.</p> }
         <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer w-fit" (click)="saveDriverLogin()">Save login link</button>
         @if (loginMessage()) {
           <p>{{ loginMessage() }}</p>

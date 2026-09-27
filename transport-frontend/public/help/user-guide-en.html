@@ -1,0 +1,495 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TransaFlow — User Guide</title><link rel="icon" href="../favicon.svg"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'IBM Plex Sans','Noto Sans Tamil','Latha',system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px 20px 60px;color:#17212b;line-height:1.6;background:#fff}
+header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #f5a524;padding-bottom:14px;margin-bottom:10px}
+header img{width:52px;height:52px}header .t{font-size:26px;font-weight:700}header .t span{color:#f5a524}
+header .lang{margin-left:auto;font-size:14px}header .lang a{color:#2653eb;margin-left:10px;font-weight:600}
+h1{font-size:28px;margin-top:18px}h2{margin-top:36px;padding-top:10px;border-top:1px solid #e3e8ee;color:#172231}h3{color:#2653eb;margin-top:22px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px;display:block;overflow-x:auto}th,td{border:1px solid #dde3ea;padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#172231;color:#fff}tr:nth-child(even) td{background:#f6f8fa}code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:90%}
+blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px solid #f5a524;border-radius:6px}
+@media print{header .lang{display:none}body{max-width:none}h2{page-break-before:auto}}</style></head><body>
+<header><img src="../brand/transaflow-mark.svg" alt=""><div class="t">Transa<span>Flow</span></div><div class="lang"><a href="user-guide-ta.html">தமிழ்</a> · <a href="javascript:window.print()">Print / PDF</a></div></header>
+<h1 id="transaflow-user-guide-english">TransaFlow — User Guide (English)</h1>
+<p><strong>Quarry-to-site transport ERP.</strong> This guide explains, step by step, how to run your transport business in TransaFlow:
+from setting up the company to sending invoices, collecting money, paying drivers and reading reports.</p>
+<blockquote>
+<p><strong>Where do I start?</strong> Follow the chapters in order. Chapters 1–3 are done once. Chapters 4–9 are your daily work.
+Chapters 10–14 are weekly / monthly work.</p>
+</blockquote>
+<hr />
+<h2 id="quick-map-the-complete-flow">Quick map — the complete flow</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What you do</th>
+<th>Menu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Check company, branch GSTIN, financial year; create users</td>
+<td>Admin → System Settings, Masters → Branch Master, Admin → Users &amp; Roles</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Create materials, quarries, customers, vehicles, drivers, suppliers</td>
+<td>Masters</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Set driver daily pay slabs</td>
+<td>Finance → Driver Payroll → Daily Pay Slabs</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Take a customer order (booking) and approve it</td>
+<td>Operations → Bookings</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Plan the trip, dispatch the truck, complete delivery (weighbridge + POD)</td>
+<td>Operations → Trips &amp; Dispatch</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Enter fuel and trip expenses (toll, bata…) and approve them</td>
+<td>Operations → Fuel, Operations → Expenses</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Make the invoice from completed trips and approve it</td>
+<td>Finance → Invoices</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Record the customer's payment</td>
+<td>Finance → Customer Receipts</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Give driver advances; generate, post and pay monthly driver salary</td>
+<td>Finance → Driver Payroll</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Maintenance: driver reports a problem → work order → parts → complete</td>
+<td>Maintenance &amp; Stores</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Spare parts stock: receive, issue to jobs, reorder</td>
+<td>Maintenance &amp; Stores</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Supplier bills and supplier payments</td>
+<td>Finance → Supplier Bills &amp; Payments</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Check reports, dues and unbilled trips</td>
+<td>Reports</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Month-end checklist</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example company used in this guide:</strong> <em>PKC Transport</em>, Coimbatore (GSTIN 33ABCPK1234F1Z5).</p>
+<hr />
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+<li><strong>Signing in:</strong> open the TransaFlow link, enter the <strong>username</strong> and <strong>password</strong> given by your administrator.
+  You land on the <strong>Dashboard</strong>. Your company initials (for example <strong>PKC</strong>) show above <em>TransaFlow</em> in the left menu.</li>
+<li><strong>Phone use:</strong> tap <strong>☰</strong> (top left) to open the menu.</li>
+<li><strong>Mandatory fields</strong> are marked with <strong>*</strong>. The Save button stays disabled until they are filled.</li>
+<li><strong>Dates:</strong> you can enter past dates (e.g. yesterday's trip), but <strong>never future dates</strong>.</li>
+<li><strong>Numbers are automatic:</strong> booking, trip, invoice, receipt, payroll numbers are created by the system per financial
+  year, for example <code>INV-2627/00001</code> (financial year 2026-27, invoice 1).</li>
+<li><strong>Approve = final:</strong> most documents are saved as <strong>Draft / Submitted / Pending</strong> first. Only <strong>Approve</strong> (or <strong>Post</strong>)
+  sends them to accounts. After approval they cannot be edited — cancel and create again if needed.</li>
+<li><strong>Subscription notice:</strong> 3 days before your plan ends, an amber message appears at the top. The company admin can
+  click <strong>Renew now</strong>.</li>
+<li><strong>Roles (who can do what):</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Typical person</th>
+<th>Can do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Company Admin</td>
+<td>Owner / manager</td>
+<td>Everything, including users, branches and settings</td>
+</tr>
+<tr>
+<td>Accountant</td>
+<td>Accounts staff</td>
+<td>Invoices, receipts, payroll posting, supplier payments, journals, finance reports</td>
+</tr>
+<tr>
+<td>Branch Manager</td>
+<td>Yard in-charge</td>
+<td>Operations and most finance screens for his branch</td>
+</tr>
+<tr>
+<td>Operator</td>
+<td>Dispatcher / clerk</td>
+<td>Bookings, trips, fuel, expenses, maintenance (not accounts posting)</td>
+</tr>
+<tr>
+<td>Viewer</td>
+<td>Auditor / partner</td>
+<td>Can see everything, cannot change anything</td>
+</tr>
+<tr>
+<td>Driver</td>
+<td>Driver (mobile)</td>
+<td>Report vehicle problems, see own salary slips</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="chapter-1-one-time-company-setup-company-admin">Chapter 1 — One-time company setup (Company Admin)</h2>
+<h3 id="11-system-settings-admin-system-settings">1.1 System Settings — <em>Admin → System Settings</em></h3>
+<p><strong>Purpose:</strong> company details used on invoices and numbering.
+- <strong>Company Profile:</strong> name, GSTIN, PAN, address, phone, email. <em>GSTIN is important — it decides GST type.</em>
+- <strong>Financial Years:</strong> a year such as <strong>01-Apr-2026 to 31-Mar-2027</strong> must exist and be <strong>Open</strong>. Nothing can be posted
+  to accounts on a date outside an open financial year.
+- <strong>Settings:</strong> number prefixes (e.g. <code>INV-</code>, <code>TRP-</code>, <code>BKG-</code>) and options such as
+  <code>REQUIRE_SEPARATE_APPROVER = true</code> (the person who creates an expense/invoice cannot approve it) and
+  <code>BOOKING_QTY_TOLERANCE_PERCENT</code> (allow trips to exceed booked quantity by a few %).</p>
+<h3 id="12-branch-master-masters-branch-master">1.2 Branch Master — <em>Masters → Branch Master</em></h3>
+<p><strong>Purpose:</strong> your offices / yards. Every vehicle, driver, user and store belongs to a branch.
+- <strong>Mandatory:</strong> Code, Name. <strong>Recommended:</strong> GSTIN, Manager, Phone, Address.
+- Example: <code>HO</code> — <em>Head Office, Coimbatore</em> — GSTIN <code>33ABCPK1234F1Z5</code>; <code>SLM</code> — <em>Salem Yard</em>.
+- <strong>Why GSTIN matters:</strong> if the branch GSTIN state (33 = Tamil Nadu) is the same as the customer's state → <strong>CGST + SGST</strong>;
+  different state → <strong>IGST</strong>.
+- A branch that still has users, vehicles, drivers, customers, stores or transactions <strong>cannot be deleted</strong> — use
+  <strong>Deactivate</strong>. The last branch cannot be deleted.</p>
+<h3 id="13-users-roles-admin-users-roles">1.3 Users &amp; Roles — <em>Admin → Users &amp; Roles</em></h3>
+<p>Create a login for each staff member: name, username, password (8+ characters), branch, <strong>role</strong>.
+For drivers who use the mobile app, create a user with role <strong>DRIVER</strong> and then link it in <em>Driver Master</em>.</p>
+<h3 id="14-dropdown-lists-admin-dropdown-lists">1.4 Dropdown Lists — <em>Admin → Dropdown Lists</em></h3>
+<p>Vehicle types (Tipper, Trailer), capacities (10 T, 20 T), fuel types, expense categories, units. Add your own values here.</p>
+<hr />
+<h2 id="chapter-2-masters-create-once-update-when-needed">Chapter 2 — Masters (create once, update when needed)</h2>
+<blockquote>
+<p><strong>Order:</strong> Materials &amp; Quarries → Customers → Vehicles → Drivers → Suppliers.</p>
+</blockquote>
+<h3 id="21-material-quarry-masters-material-quarry">2.1 Material &amp; Quarry — <em>Masters → Material &amp; Quarry</em></h3>
+<p><strong>Purpose:</strong> what you carry and where you load it.
+- <strong>Materials tab</strong> — <em>Code*, Name*, Category*, Unit*</em>, default <strong>material rate</strong>, <strong>transport rate</strong>, <strong>royalty rate</strong>,
+  <strong>loading charge</strong> (all <em>per unit</em>, usually per ton).
+  Example: <code>MSAND</code> — <em>M-Sand</em> — Ton — material ₹900, transport ₹350, royalty ₹60, loading ₹40.
+- <strong>Quarries tab</strong> — quarry name and location, e.g. <em>Madukkarai Quarry</em>.
+- <strong>Loading Locations</strong> — loading points with charges; <strong>Pricing</strong> — dated material prices; <strong>UOM Conversions</strong>
+  (e.g. 1 unit = 4.5 tons).
+- <strong>Next:</strong> Customer Master.</p>
+<h3 id="22-customer-master-masters-customer-master">2.2 Customer Master — <em>Masters → Customer Master</em></h3>
+<p><strong>Purpose:</strong> who you deliver to and bill.
+- Click <strong>New customer</strong>. <strong>Mandatory:</strong> Customer code*, Customer name*.
+  <strong>Important:</strong> GSTIN (decides IGST vs CGST+SGST), phone, address, <strong>credit limit</strong>, status.
+- Example: <code>C-SLC</code> — <em>Sri Lakshmi Constructions</em>, GSTIN <code>33AAXFS1234K1Z5</code>, credit limit ₹5,00,000.
+- After saving, select the customer and add:
+  - <strong>Delivery sites</strong> (unloading sites), e.g. <em>Saravanampatti Site, Coimbatore</em> — used in bookings.
+  - <strong>Contact persons</strong> and <strong>documents</strong> (GST certificate, agreement).
+- <strong>Edit:</strong> select the customer → <strong>Edit customer</strong>. <strong>Delete:</strong> only if the customer has no bookings/invoices;
+  otherwise set status Inactive.
+- <strong>Next:</strong> Vehicle Master.</p>
+<h3 id="23-vehicle-master-masters-vehicle-master">2.3 Vehicle Master — <em>Masters → Vehicle Master</em></h3>
+<p><strong>Purpose:</strong> your trucks and their papers.
+- Click <strong>New vehicle</strong>. <strong>Mandatory:</strong> Registration number* (e.g. <code>TN38AB4521</code>), Display name*.
+  Also: type, category, capacity, brand, model, chassis/engine no, ownership (own / hired / client), branch,
+  <strong>insurance, fitness and permit expiry dates</strong>, current odometer.
+- Select a vehicle to add <strong>photo</strong>, <strong>documents</strong> (RC, insurance, permit — with expiry dates),
+  see <strong>service history</strong>, and <strong>assign a driver</strong>.
+- Expiry dates feed the <strong>Document expiry (compliance)</strong> report — renew before they lapse.
+- A vehicle under maintenance (open work order) is blocked from new trips.
+- <strong>Delete</strong> only if unused; otherwise make it Inactive.
+- <strong>Next:</strong> Driver Master.</p>
+<h3 id="24-driver-master-masters-driver-master">2.4 Driver Master — <em>Masters → Driver Master</em></h3>
+<p><strong>Purpose:</strong> drivers, licences and salary settings.
+- <strong>Add Driver</strong> — <em>Code*, Name*, Licence number*</em>, licence expiry, phone, status, branch, photo.
+- In the driver's drawer: documents (licence, Aadhaar), attendance, <strong>salary configuration</strong> (basic salary — use 0 for
+  pure trip-based pay), and the <strong>Login</strong> tab — choose the driver's login (a user with the DRIVER role) and click
+  <strong>Save login link</strong> so the driver can use the phone app.
+- <strong>Next:</strong> Supplier Master (if you buy parts/services on credit) → Driver pay slabs.</p>
+<h3 id="25-supplier-master-masters-supplier-master">2.5 Supplier Master — <em>Masters → Supplier Master</em></h3>
+<p><strong>Purpose:</strong> workshops, spare-part shops, tyre dealers, fuel pumps.
+- <strong>Mandatory:</strong> Code*, Name*. Also GSTIN (checked), phone, <strong>credit days</strong> (bill due date = bill date + credit days).
+- Example: <code>SUP-001</code> — <em>Sri Murugan Auto Works</em>, credit 30 days.</p>
+<hr />
+<h2 id="chapter-3-driver-daily-pay-slabs-finance-driver-payroll-daily-pay-slabs">Chapter 3 — Driver daily pay slabs — <em>Finance → Driver Payroll → Daily Pay Slabs</em></h2>
+<p><strong>Purpose:</strong> how much a driver earns per day based on completed trips that day.
+- Example: <strong>1 trip = ₹500</strong>, <strong>2 or more trips = ₹1,000</strong> (leave <em>Trips To</em> empty on the last slab).
+- The system never multiplies per trip — 4 trips in a day still earn one day's slab amount.
+- Only admins / accountants can change slabs.</p>
+<hr />
+<h2 id="chapter-4-booking-customer-order-operations-bookings">Chapter 4 — Booking (customer order) — <em>Operations → Bookings</em></h2>
+<p><strong>Purpose:</strong> record what the customer ordered.
+1. Click <strong>Register Booking Request</strong>.
+2. Choose <strong>Customer*</strong> and <strong>Delivery site</strong>, priority.
+3. Add material lines: <strong>Material*</strong>, <strong>Quantity*</strong> (e.g. 60 tons), <strong>Material rate*</strong>, <strong>Transport rate*</strong>,
+   <strong>Royalty*</strong>, <strong>Loading*</strong>, <strong>GST %*</strong> (e.g. 5). Default rates come from the material master.
+4. Save → status <strong>PENDING</strong>. Booking value = quantity × (material + transport + royalty + loading) + GST.
+5. <strong>Approve</strong> the booking. <em>Trips can only be planned on approved bookings.</em></p>
+<p><strong>Rules to know</strong>
+- A booking with trips cannot be rejected; its quantity cannot be reduced below what trips already moved.
+- When all booked quantity is delivered the booking becomes <strong>COMPLETED</strong> automatically.
+- <strong>Close</strong> an approved booking early when the customer needs no more loads (no trips may be on the road).
+- Attach the customer's <strong>purchase order</strong> in the booking.</p>
+<p><strong>Next:</strong> plan trips.</p>
+<hr />
+<h2 id="chapter-5-trip-dispatch-and-delivery-operations-trips-dispatch">Chapter 5 — Trip, dispatch and delivery — <em>Operations → Trips &amp; Dispatch</em></h2>
+<p><strong>Purpose:</strong> each truck load from quarry to site.</p>
+<h3 id="51-plan-the-trip">5.1 Plan the trip</h3>
+<p>Click <strong>Plan Dispatch Trip</strong> and enter:
+- <strong>Booking*</strong> (only approved bookings are listed), <strong>Trip date*</strong> (not future, not before the booking date),
+- <strong>Vehicle</strong> and <strong>Driver</strong> (needed before dispatch), <strong>Quarry</strong> and <strong>Loading point</strong>,
+- Material line(s): <strong>Material*</strong> (must be on the booking) and <strong>Quantity*</strong> (e.g. 20 tons).</p>
+<p>Save → status <strong>PLANNED</strong>, number like <code>TRP-2627/00001</code>.
+The total of all trips cannot exceed the booked quantity (plus the tolerance %).</p>
+<h3 id="52-dispatch-complete">5.2 Dispatch → Complete</h3>
+<ul>
+<li><strong>Dispatch</strong> when the truck leaves the quarry (vehicle + driver required) → <strong>DISPATCHED</strong>.</li>
+<li><strong>Complete</strong> when it reaches the site → <strong>COMPLETED</strong>.</li>
+<li>Order is fixed: PLANNED → DISPATCHED → COMPLETED. Only a PLANNED trip can be cancelled.</li>
+</ul>
+<h3 id="53-weighbridge-and-pod">5.3 Weighbridge and POD</h3>
+<p>Open the completed trip (<strong>Edit</strong>):
+- <strong>Loaded weight</strong> (quarry weighbridge) and <strong>Delivered weight</strong> (site weighbridge), e.g. 20.00 / 19.80 →
+  <strong>shortage 0.20 t</strong>. Delivered cannot be more than loaded. <strong>The delivered weight is what gets billed.</strong>
+- Upload <strong>POD / delivery challan / LR</strong> in the trip documents.
+- Once the trip is on an invoice it is locked.</p>
+<p><strong>Next:</strong> fuel &amp; expenses, then invoice.</p>
+<hr />
+<h2 id="chapter-6-fuel-and-expenses">Chapter 6 — Fuel and expenses</h2>
+<h3 id="61-fuel-operations-fuel">6.1 Fuel — <em>Operations → Fuel</em></h3>
+<ul>
+<li><strong>Fuel Entry Logs → Add Fuel Entry:</strong> vehicle, driver, <strong>link the trip</strong>, <strong>fuel station*</strong>, <strong>litres*</strong>,
+  <strong>rate per litre*</strong>, <strong>previous*</strong> and <strong>current odometer*</strong>, <strong>payment method*</strong>, date, bill photo.</li>
+<li>Saved as <strong>DRAFT</strong> → <strong>Approve</strong> posts it to accounts (Fuel Expense / Cash or Bank).</li>
+<li>Only approved fuel counts in cost reports. Linking the trip gives correct <strong>trip profit</strong>.</li>
+<li><strong>Fuel Requests:</strong> a driver/dispatcher can request fuel for a trip; the request is approved and then fulfilled by a fuel entry.</li>
+</ul>
+<h3 id="62-expenses-operations-expenses">6.2 Expenses — <em>Operations → Expenses</em></h3>
+<ul>
+<li><strong>Record Expense Voucher:</strong> <strong>Expense date</strong> (can be past, not future), <strong>Category*</strong> (Toll, Driver Bata, Parking,
+  Vehicle Repair, Insurance, Office…), vehicle, driver, <strong>trip</strong>, <strong>Amount*</strong>, <strong>GST amount</strong>, <strong>Payment method*</strong>,
+  <strong>Description*</strong>. Attach the bill.</li>
+<li>Status <strong>SUBMITTED</strong> → <strong>Approve</strong> posts to accounts (on the expense date). Reject if wrong.</li>
+<li><em>Driver Bata</em> expenses appear on the driver's salary slip for information (they are already paid).</li>
+<li>If <code>REQUIRE_SEPARATE_APPROVER</code> is on, a different user must approve.</li>
+</ul>
+<hr />
+<h2 id="chapter-7-invoice-finance-invoices">Chapter 7 — Invoice — <em>Finance → Invoices</em></h2>
+<p><strong>Purpose:</strong> bill the customer for completed trips.
+1. Open <strong>Ready for billing</strong> — all completed trips not yet invoiced.
+2. Tick the trips of <strong>one customer</strong> (or <em>select all of this customer</em>) → <strong>One invoice for N trips</strong>.
+   (Or use the <strong>Generate</strong> button on a single trip.)
+3. A <strong>DRAFT</strong> invoice is created: quantity = delivered weight; rates from the booking.
+   Line value = qty × (rate + freight + loading + royalty). <strong>Discount is taken before GST.</strong>
+4. <strong>Edit</strong> the draft if needed: invoice date (not future, not before the trip date), place of supply (2-digit state code,
+   e.g. 33), discount, payment terms.
+5. <strong>Approve</strong> → posts <strong>Customer Receivable</strong> / <strong>Freight Income</strong> + <strong>GST Liability</strong>. Number <code>INV-2627/000xx</code>.
+6. <strong>Print / PDF</strong> and attach the <strong>signed copy / e-way bill</strong>.</p>
+<p><strong>GST example:</strong> 19.8 t × ₹1,350 = ₹26,730 taxable; GST 5% = ₹1,336.50 → CGST ₹668.25 + SGST ₹668.25
+(same state) → total ₹28,066.50. For an out-of-state customer the tax is IGST ₹1,336.50.</p>
+<p><strong>Rules:</strong> a trip can be billed only once; one invoice per customer; cancelling an approved invoice reverses its
+accounts; the <strong>Unbilled completed trips</strong> report shows trips you forgot to bill.</p>
+<p><strong>Next:</strong> collect payment.</p>
+<hr />
+<h2 id="chapter-8-customer-receipt-finance-customer-receipts">Chapter 8 — Customer receipt — <em>Finance → Customer Receipts</em></h2>
+<p><strong>Purpose:</strong> record money received from customers.
+1. <strong>Record Payment Receipt:</strong> <strong>Customer*</strong>, date, <strong>Amount received*</strong>, <strong>Payment method*</strong> (Cash / Bank / UPI /
+   Cheque), reference (UTR / cheque no).
+2. Allocate the amount to the customer's <strong>open invoices</strong> (oldest first). Any extra stays as <strong>advance</strong>.
+3. Save → <strong>Approve</strong>. Invoices become <strong>PAID</strong> / <strong>PARTIALLY PAID</strong>; accounts: Cash/Bank ↔ Customer Receivable.
+4. Attach the cheque copy / UPI screenshot. See the <strong>Customer Ledger</strong> tab for the running balance.</p>
+<p><strong>Next:</strong> driver settlement (monthly).</p>
+<hr />
+<h2 id="chapter-9-driver-advances-and-salary-finance-driver-payroll">Chapter 9 — Driver advances and salary — <em>Finance → Driver Payroll</em></h2>
+<h3 id="91-advances-any-time">9.1 Advances (any time)</h3>
+<p><strong>Advances tab → Give Advance:</strong> driver, amount, date, paid by (cash / bank / UPI). Posted to <em>Driver Advances</em>.
+An advance can be cancelled only if nothing has been recovered yet.</p>
+<h3 id="92-monthly-payroll">9.2 Monthly payroll</h3>
+<ol>
+<li><strong>Generate Payroll:</strong> driver, <strong>month</strong>, year; optional allowance, <strong>advance recovery</strong> (not more than outstanding),
+   deductions (fine / damage / other with reason).</li>
+<li>The system calculates from <strong>completed trips</strong> in that month:
+   day-wise trips → slab amount per day → <strong>trip earnings</strong> + basic + allowance = <strong>gross</strong>;
+   <strong>net = gross − deductions − advance recovery</strong>.
+   Example: Day 1 = 1 trip ₹500, Day 2 = 2 trips ₹1,000, Day 3 = 4 trips ₹1,000 → gross ₹2,500; advance ₹500 → net ₹2,000.</li>
+<li><strong>Approve</strong> (trips re-read) → <strong>Post to Accounts</strong> (salary expense, advance recovered) → <strong>Pay Salary</strong>
+   (cash / bank, date, reference).</li>
+<li><strong>Salary Slip</strong> PDF shows the daily breakdown. Drivers see their own posted slips under <strong>My Salary</strong>.</li>
+</ol>
+<p><strong>Rules:</strong> one active payroll per driver per month; future months not allowed; cancel reverses all entries and returns
+advance recovery.</p>
+<hr />
+<h2 id="chapter-10-maintenance-maintenance-stores">Chapter 10 — Maintenance — <em>Maintenance &amp; Stores</em></h2>
+<ol>
+<li><strong>Maintenance Requests:</strong> a driver (phone) or staff clicks <strong>Report a problem</strong> — vehicle, problem, priority,
+   odometer, damage photos. Status <strong>OPEN</strong>.</li>
+<li>Office <strong>Reviews</strong> → <strong>Approves</strong> → <strong>Converts to Work Order</strong> (or cancels, e.g. fixed on the road).</li>
+<li><strong>Work Orders:</strong> add <strong>parts</strong> (spare part + quantity) and <strong>labour</strong> lines; <strong>Issue</strong> parts from a warehouse
+   (stock goes down; a returned part can be issued again); <strong>Start</strong> the job.</li>
+<li><strong>Complete:</strong> enter the <strong>actual cost</strong> (parts from stock + labour + outside charges) and <strong>how the outside cost
+   was paid</strong> (Credit = workshop bill, Cash, Bank). Parts cost moves from inventory to repair expense; the outside part
+   becomes a supplier bill (credit) or a cash/bank payment.</li>
+<li>A vehicle with an open work order cannot be put on new trips. A work order still holding issued parts cannot be
+   cancelled — return the parts first.</li>
+</ol>
+<hr />
+<h2 id="chapter-11-spare-parts-and-stock-maintenance-stores">Chapter 11 — Spare parts and stock — <em>Maintenance &amp; Stores</em></h2>
+<ul>
+<li><strong>Spare Parts:</strong> code, name, unit, default rate, <strong>reorder level</strong>, photo.</li>
+<li><strong>Warehouses:</strong> your stores (one per branch or yard).</li>
+<li><strong>Stock → Opening stock:</strong> existing quantity with <strong>unit cost</strong>. <strong>Receive stock:</strong> warehouse, part, quantity,
+  <strong>rate</strong>, supplier, bill number and <strong>payment mode</strong> (Credit → a supplier bill is created automatically; Cash / Bank).</li>
+<li>Stock shows <strong>average cost</strong>, <strong>value</strong> and status <strong>OK / REORDER / OUT</strong>. Old stock without a cost can be valued
+  once with <strong>Set cost</strong>.</li>
+<li><strong>Inventory Transactions:</strong> every receipt, issue and return with rate and work order.</li>
+</ul>
+<hr />
+<h2 id="chapter-12-supplier-bills-payments-finance-supplier-bills-payments">Chapter 12 — Supplier bills &amp; payments — <em>Finance → Supplier Bills &amp; Payments</em></h2>
+<ul>
+<li><strong>Bills:</strong> created automatically (credit stock receipts, credit workshop jobs) or <strong>New bill</strong> for workshop / tyre /
+  office bills: supplier, their bill no, date, due date (auto from credit days), category, taxable amount, GST.
+  Save as draft → <strong>Approve</strong> (posts expense + GST input / Accounts Payable).</li>
+<li><strong>Pay supplier:</strong> supplier, date, amount, method, reference; allocate to bills (or oldest first automatically).
+  Cancelling a payment re-opens the bills.</li>
+<li>The <strong>Supplier outstanding &amp; ageing</strong> report shows what you owe and what is overdue.</li>
+</ul>
+<hr />
+<h2 id="chapter-13-reports-reports-reports">Chapter 13 — Reports — <em>Reports → Reports</em></h2>
+<p>Pick a report on the left, set the date range (Today / This month / Last month / Financial year) and filters, click
+<strong>Run</strong>, then <strong>Excel</strong> or <strong>PDF</strong>. Useful reports:</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Report</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Owner's daily view</td>
+<td><strong>Management KPIs</strong>, <strong>Monthly business summary</strong></td>
+</tr>
+<tr>
+<td>Trips not yet billed</td>
+<td><strong>Unbilled completed trips</strong></td>
+</tr>
+<tr>
+<td>Who owes us</td>
+<td><strong>Customer outstanding &amp; ageing</strong></td>
+</tr>
+<tr>
+<td>What we owe</td>
+<td><strong>Supplier outstanding &amp; ageing</strong></td>
+</tr>
+<tr>
+<td>GST returns</td>
+<td><strong>Sales register (GST)</strong>, <strong>GST summary (rate-wise)</strong></td>
+</tr>
+<tr>
+<td>Truck performance</td>
+<td><strong>Vehicle performance &amp; profitability</strong>, <strong>Fuel efficiency</strong>, <strong>Trip profitability</strong></td>
+</tr>
+<tr>
+<td>Losses in transit</td>
+<td><strong>Weighbridge shortage</strong></td>
+</tr>
+<tr>
+<td>Drivers</td>
+<td><strong>Driver performance</strong>, <strong>Driver payroll register</strong>, <strong>Driver advances</strong></td>
+</tr>
+<tr>
+<td>Maintenance &amp; stores</td>
+<td><strong>Work order register</strong>, <strong>Maintenance cost by vehicle</strong>, <strong>Stock valuation</strong>, <strong>Reorder list</strong></td>
+</tr>
+<tr>
+<td>Accounts</td>
+<td><strong>Day book</strong>, <strong>Account ledger / cash &amp; bank book</strong>, <strong>Account balances</strong>; P&amp;L and Balance Sheet in <strong>Financial Statements</strong></td>
+</tr>
+<tr>
+<td>Pending work</td>
+<td><strong>Pending approvals &amp; actions</strong>, <strong>Document expiry</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Every list screen also has <strong>Excel</strong> and <strong>PDF</strong> buttons.</p>
+<hr />
+<h2 id="chapter-14-month-end-checklist">Chapter 14 — Month-end checklist</h2>
+<ol>
+<li><strong>Pending approvals</strong> report → clear draft bookings, invoices, receipts, expenses, fuel, payroll.</li>
+<li><strong>Unbilled completed trips</strong> = 0 (invoice everything delivered).</li>
+<li>Approve all fuel and expenses of the month; link them to trips (<strong>Unlinked costs</strong> report).</li>
+<li>Generate → approve → post → pay <strong>driver payroll</strong> for the month.</li>
+<li>Record all <strong>customer receipts</strong>; follow up <strong>Customer outstanding</strong> (61–90 and 90+ days first).</li>
+<li>Pay due <strong>supplier bills</strong>.</li>
+<li>Check <strong>Document expiry</strong> (insurance / fitness / permit / licence).</li>
+<li>Download <strong>Sales register</strong> and <strong>GST summary</strong> for GST filing; review <strong>Monthly business summary</strong>.</li>
+</ol>
+<hr />
+<h2 id="common-questions">Common questions</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trip screen does not show my booking</td>
+<td>The booking is not <strong>Approved</strong>, or it is already completed/closed.</td>
+</tr>
+<tr>
+<td>"Booking quantity exceeded"</td>
+<td>Trips already moved the booked quantity. Increase the booking quantity or set the tolerance %.</td>
+</tr>
+<tr>
+<td>Cannot dispatch</td>
+<td>Select a vehicle and a driver on the trip first.</td>
+</tr>
+<tr>
+<td>Trip is not in <em>Ready for billing</em></td>
+<td>The trip must be <strong>COMPLETED</strong> and not already on an invoice.</td>
+</tr>
+<tr>
+<td>Invoice shows IGST instead of CGST+SGST</td>
+<td>Customer GSTIN (or place of supply) is in another state than your branch GSTIN.</td>
+</tr>
+<tr>
+<td>"Future-dated posting"</td>
+<td>Use today's date or an earlier date.</td>
+</tr>
+<tr>
+<td>"Second person must approve"</td>
+<td>Your company requires a different user to approve what you created.</td>
+</tr>
+<tr>
+<td>Cannot delete a customer / vehicle / branch</td>
+<td>It is already used. Set it to <strong>Inactive</strong> instead.</td>
+</tr>
+<tr>
+<td>Payroll says "Pay slabs not configured"</td>
+<td>Set the daily pay slabs first (Chapter 3).</td>
+</tr>
+<tr>
+<td>Only the admin can log in</td>
+<td>The subscription has ended — the admin must <strong>Renew</strong>.</td>
+</tr>
+</tbody>
+</table></body></html>

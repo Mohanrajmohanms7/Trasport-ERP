@@ -1,0 +1,503 @@
+<!doctype html><html lang="ta"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TransaFlow — பயனர் வழிகாட்டி</title><link rel="icon" href="../favicon.svg"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'IBM Plex Sans','Noto Sans Tamil','Latha',system-ui,sans-serif;max-width:980px;margin:0 auto;padding:24px 20px 60px;color:#17212b;line-height:1.6;background:#fff}
+header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #f5a524;padding-bottom:14px;margin-bottom:10px}
+header img{width:52px;height:52px}header .t{font-size:26px;font-weight:700}header .t span{color:#f5a524}
+header .lang{margin-left:auto;font-size:14px}header .lang a{color:#2653eb;margin-left:10px;font-weight:600}
+h1{font-size:28px;margin-top:18px}h2{margin-top:36px;padding-top:10px;border-top:1px solid #e3e8ee;color:#172231}h3{color:#2653eb;margin-top:22px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px;display:block;overflow-x:auto}th,td{border:1px solid #dde3ea;padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#172231;color:#fff}tr:nth-child(even) td{background:#f6f8fa}code{background:#eef1f4;padding:1px 5px;border-radius:4px;font-size:90%}
+blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px solid #f5a524;border-radius:6px}
+@media print{header .lang{display:none}body{max-width:none}h2{page-break-before:auto}}</style></head><body>
+<header><img src="../brand/transaflow-mark.svg" alt=""><div class="t">Transa<span>Flow</span></div><div class="lang"><a href="user-guide-en.html">English</a> · <a href="javascript:window.print()">Print / PDF</a></div></header>
+<h1 id="transaflow">TransaFlow — பயனர் வழிகாட்டி (தமிழ்)</h1>
+<p><strong>குவாரியிலிருந்து சைட் வரை — போக்குவரத்து ERP.</strong> நிறுவன அமைப்பு முதல் இன்வாய்ஸ் அனுப்புதல், பணம் வசூல்,
+டிரைவர் சம்பளம், ரிப்போர்ட்கள் வரை TransaFlow-ஐ படிப்படியாக எப்படி பயன்படுத்துவது என்பதை இந்த வழிகாட்டி விளக்குகிறது.</p>
+<blockquote>
+<p><strong>எங்கிருந்து தொடங்குவது?</strong> அத்தியாயங்களை வரிசையாகப் பின்பற்றுங்கள். அத்தியாயம் 1–3 ஒருமுறை மட்டும்.
+அத்தியாயம் 4–9 தினசரி வேலை. அத்தியாயம் 10–14 வாராந்திர / மாதாந்திர வேலை.</p>
+<p>குறிப்பு: அப்ளிகேஷனில் மெனு பெயர்கள் ஆங்கிலத்தில் உள்ளன. அதனால் இங்கே மெனு பெயர்களை ஆங்கிலத்திலேயே
+கொடுத்துள்ளோம் (உதா: <em>Operations → Bookings</em>).</p>
+</blockquote>
+<hr />
+<h2 id="_1">விரைவு வரைபடம் — முழு வேலை ஓட்டம்</h2>
+<table>
+<thead>
+<tr>
+<th>படி</th>
+<th>நீங்கள் செய்வது</th>
+<th>மெனு</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>நிறுவனம், கிளை GSTIN, நிதியாண்டு சரிபார்த்தல்; பயனர்களை உருவாக்குதல்</td>
+<td>Admin → System Settings, Masters → Branch Master, Admin → Users &amp; Roles</td>
+</tr>
+<tr>
+<td>2</td>
+<td>மெட்டீரியல், குவாரி, வாடிக்கையாளர், வாகனம், டிரைவர், சப்ளையர் உருவாக்குதல்</td>
+<td>Masters</td>
+</tr>
+<tr>
+<td>3</td>
+<td>டிரைவர் தினசரி சம்பள ஸ்லாப் அமைத்தல்</td>
+<td>Finance → Driver Payroll → Daily Pay Slabs</td>
+</tr>
+<tr>
+<td>4</td>
+<td>வாடிக்கையாளர் ஆர்டர் (புக்கிங்) பதிவு செய்து அப்ரூவ் செய்தல்</td>
+<td>Operations → Bookings</td>
+</tr>
+<tr>
+<td>5</td>
+<td>ட்ரிப் திட்டமிடல், லாரியை அனுப்புதல், டெலிவரி முடித்தல் (எடை + POD)</td>
+<td>Operations → Trips &amp; Dispatch</td>
+</tr>
+<tr>
+<td>6</td>
+<td>டீசல் மற்றும் ட்ரிப் செலவுகள் (டோல், பேட்டா…) பதிவு, அப்ரூவ்</td>
+<td>Operations → Fuel, Operations → Expenses</td>
+</tr>
+<tr>
+<td>7</td>
+<td>முடிந்த ட்ரிப்களில் இருந்து இன்வாய்ஸ் உருவாக்கி அப்ரூவ் செய்தல்</td>
+<td>Finance → Invoices</td>
+</tr>
+<tr>
+<td>8</td>
+<td>வாடிக்கையாளர் பணம் செலுத்தியதை பதிவு செய்தல்</td>
+<td>Finance → Customer Receipts</td>
+</tr>
+<tr>
+<td>9</td>
+<td>டிரைவர் அட்வான்ஸ்; மாதச் சம்பளம் உருவாக்கி, போஸ்ட் செய்து, வழங்குதல்</td>
+<td>Finance → Driver Payroll</td>
+</tr>
+<tr>
+<td>10</td>
+<td>பராமரிப்பு: டிரைவர் பிரச்சினை புகார் → வொர்க் ஆர்டர் → பார்ட்ஸ் → முடித்தல்</td>
+<td>Maintenance &amp; Stores</td>
+</tr>
+<tr>
+<td>11</td>
+<td>ஸ்பேர் பார்ட்ஸ் ஸ்டாக்: வரவு, வேலைக்கு வழங்குதல், மறு ஆர்டர்</td>
+<td>Maintenance &amp; Stores</td>
+</tr>
+<tr>
+<td>12</td>
+<td>சப்ளையர் பில்கள் மற்றும் சப்ளையர் பேமெண்ட்</td>
+<td>Finance → Supplier Bills &amp; Payments</td>
+</tr>
+<tr>
+<td>13</td>
+<td>ரிப்போர்ட்கள், நிலுவைகள், பில் போடாத ட்ரிப்கள் பார்த்தல்</td>
+<td>Reports</td>
+</tr>
+<tr>
+<td>14</td>
+<td>மாத இறுதி சரிபார்ப்பு பட்டியல்</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>இந்த வழிகாட்டியில் உதாரண நிறுவனம்:</strong> <em>PKC Transport</em>, கோயம்புத்தூர் (GSTIN 33ABCPK1234F1Z5).</p>
+<hr />
+<h2 id="_2">தொடங்கும் முன்</h2>
+<ul>
+<li><strong>உள்நுழைவு:</strong> TransaFlow லிங்கைத் திறந்து, நிர்வாகி கொடுத்த <strong>username</strong> மற்றும் <strong>password</strong> உள்ளிடுங்கள்.
+  <strong>Dashboard</strong> திறக்கும். இடது மெனுவில் <em>TransaFlow</em> மேலே உங்கள் நிறுவன சுருக்கப் பெயர் (உதா: <strong>PKC</strong>) தெரியும்.</li>
+<li><strong>மொபைலில்:</strong> மேலே இடது பக்கம் உள்ள <strong>☰</strong> தொட்டு மெனுவைத் திறக்கவும்.</li>
+<li><strong>கட்டாய புலங்கள்</strong> <strong>*</strong> குறியுடன் இருக்கும். அவை நிரப்பும் வரை Save பட்டன் வேலை செய்யாது.</li>
+<li><strong>தேதிகள்:</strong> பழைய தேதிகளை உள்ளிடலாம் (உதா: நேற்றைய ட்ரிப்), ஆனால் <strong>எதிர்கால தேதி உள்ளிட முடியாது</strong>.</li>
+<li><strong>எண்கள் தானாக வரும்:</strong> புக்கிங், ட்ரிப், இன்வாய்ஸ், ரசீது, சம்பள எண்கள் நிதியாண்டு வாரியாக தானாக உருவாகும்,
+  உதா: <code>INV-2627/00001</code> (நிதியாண்டு 2026-27, இன்வாய்ஸ் 1).</li>
+<li><strong>Approve = இறுதி:</strong> பெரும்பாலான ஆவணங்கள் முதலில் <strong>Draft / Submitted / Pending</strong> ஆக சேமிக்கப்படும்.
+  <strong>Approve</strong> (அல்லது <strong>Post</strong>) செய்தால் மட்டுமே கணக்குகளில் பதிவாகும். அப்ரூவ் செய்த பின் திருத்த முடியாது —
+  தேவைப்பட்டால் Cancel செய்து மீண்டும் உருவாக்குங்கள்.</li>
+<li><strong>சந்தா அறிவிப்பு:</strong> உங்கள் திட்டம் முடிவதற்கு 3 நாட்கள் முன் மேலே மஞ்சள் நிற செய்தி வரும். நிறுவன நிர்வாகி
+  <strong>Renew now</strong> கிளிக் செய்யலாம்.</li>
+<li><strong>பணிகள் (யார் என்ன செய்யலாம்):</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>பங்கு (Role)</th>
+<th>யார்</th>
+<th>செய்யக்கூடியவை</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Company Admin</td>
+<td>உரிமையாளர் / மேலாளர்</td>
+<td>அனைத்தும் — பயனர்கள், கிளைகள், அமைப்புகள் உட்பட</td>
+</tr>
+<tr>
+<td>Accountant</td>
+<td>கணக்கு ஊழியர்</td>
+<td>இன்வாய்ஸ், ரசீது, சம்பள போஸ்டிங், சப்ளையர் பேமெண்ட், ஜர்னல், நிதி ரிப்போர்ட்</td>
+</tr>
+<tr>
+<td>Branch Manager</td>
+<td>யார்டு பொறுப்பாளர்</td>
+<td>தனது கிளையின் ஆபரேஷன்ஸ் மற்றும் பெரும்பாலான நிதி திரைகள்</td>
+</tr>
+<tr>
+<td>Operator</td>
+<td>டிஸ்பாட்சர் / கிளர்க்</td>
+<td>புக்கிங், ட்ரிப், டீசல், செலவு, பராமரிப்பு (கணக்கு போஸ்டிங் இல்லை)</td>
+</tr>
+<tr>
+<td>Viewer</td>
+<td>ஆடிட்டர் / பங்குதாரர்</td>
+<td>அனைத்தையும் பார்க்கலாம், எதையும் மாற்ற முடியாது</td>
+</tr>
+<tr>
+<td>Driver</td>
+<td>டிரைவர் (மொபைல்)</td>
+<td>வாகனப் பிரச்சினை புகார், தனது சம்பள ஸ்லிப் பார்த்தல்</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-company-admin">அத்தியாயம் 1 — ஒருமுறை நிறுவன அமைப்பு (Company Admin)</h2>
+<h3 id="11-system-settings-admin-system-settings">1.1 System Settings — <em>Admin → System Settings</em></h3>
+<p><strong>நோக்கம்:</strong> இன்வாய்ஸ் மற்றும் எண் வரிசைக்கு தேவையான நிறுவன விவரங்கள்.
+- <strong>Company Profile:</strong> பெயர், GSTIN, PAN, முகவரி, போன், இமெயில். <em>GSTIN மிக முக்கியம் — GST வகையை அதுவே தீர்மானிக்கும்.</em>
+- <strong>Financial Years:</strong> <strong>01-04-2026 முதல் 31-03-2027</strong> போன்ற நிதியாண்டு <strong>Open</strong> நிலையில் இருக்க வேண்டும்.
+  திறந்த நிதியாண்டுக்கு வெளியே உள்ள தேதியில் கணக்குகளில் எதையும் பதிவு செய்ய முடியாது.
+- <strong>Settings:</strong> எண் முன்னொட்டுகள் (<code>INV-</code>, <code>TRP-</code>, <code>BKG-</code>), மற்றும்
+  <code>REQUIRE_SEPARATE_APPROVER = true</code> (செலவு/இன்வாய்ஸ் உருவாக்கியவரே அப்ரூவ் செய்ய முடியாது),
+  <code>BOOKING_QTY_TOLERANCE_PERCENT</code> (புக் செய்த அளவைவிட சில % அதிகம் ட்ரிப் அனுமதி) போன்ற விருப்பங்கள்.</p>
+<h3 id="12-branch-master-masters-branch-master">1.2 Branch Master — <em>Masters → Branch Master</em></h3>
+<p><strong>நோக்கம்:</strong> உங்கள் அலுவலகங்கள் / யார்டுகள். ஒவ்வொரு வாகனம், டிரைவர், பயனர், ஸ்டோர் ஒரு கிளைக்கு சொந்தம்.
+- <strong>கட்டாயம்:</strong> Code, Name. <strong>பரிந்துரை:</strong> GSTIN, Manager, Phone, Address.
+- உதா: <code>HO</code> — <em>Head Office, கோயம்புத்தூர்</em> — GSTIN <code>33ABCPK1234F1Z5</code>; <code>SLM</code> — <em>சேலம் யார்டு</em>.
+- <strong>GSTIN ஏன் முக்கியம்:</strong> கிளை GSTIN மாநிலமும் (33 = தமிழ்நாடு) வாடிக்கையாளர் மாநிலமும் ஒன்றாக இருந்தால் →
+  <strong>CGST + SGST</strong>; வேறு மாநிலம் என்றால் → <strong>IGST</strong>.
+- பயனர்கள், வாகனங்கள், டிரைவர்கள், வாடிக்கையாளர்கள், ஸ்டோர்கள் அல்லது பரிவர்த்தனைகள் உள்ள கிளையை
+  <strong>நீக்க முடியாது</strong> — <strong>Deactivate</strong> செய்யுங்கள். கடைசி கிளையை நீக்க முடியாது.</p>
+<h3 id="13-users-roles-admin-users-roles">1.3 Users &amp; Roles — <em>Admin → Users &amp; Roles</em></h3>
+<p>ஒவ்வொரு ஊழியருக்கும் லாகின் உருவாக்குங்கள்: பெயர், username, password (8+ எழுத்துகள்), கிளை, <strong>Role</strong>.
+மொபைல் ஆப் பயன்படுத்தும் டிரைவர்களுக்கு <strong>DRIVER</strong> role உடன் பயனர் உருவாக்கி, <em>Driver Master</em>-ல் இணைக்கவும்.</p>
+<h3 id="14-dropdown-lists-admin-dropdown-lists">1.4 Dropdown Lists — <em>Admin → Dropdown Lists</em></h3>
+<p>வாகன வகைகள் (Tipper, Trailer), கொள்ளளவு (10 T, 20 T), எரிபொருள் வகைகள், செலவு வகைகள், அளவுகள் — உங்கள்
+சொந்த மதிப்புகளை இங்கே சேர்க்கலாம்.</p>
+<hr />
+<h2 id="2">அத்தியாயம் 2 — மாஸ்டர்கள் (ஒருமுறை உருவாக்கி, தேவைப்படும்போது மாற்றலாம்)</h2>
+<blockquote>
+<p><strong>வரிசை:</strong> Material &amp; Quarry → Customers → Vehicles → Drivers → Suppliers.</p>
+</blockquote>
+<h3 id="21-material-quarry-masters-material-quarry">2.1 Material &amp; Quarry — <em>Masters → Material &amp; Quarry</em></h3>
+<p><strong>நோக்கம்:</strong> நீங்கள் எதை ஏற்றுகிறீர்கள், எங்கே ஏற்றுகிறீர்கள்.
+- <strong>Materials டேப்</strong> — <em>Code*, Name*, Category*, Unit*</em>, இயல்பு <strong>மெட்டீரியல் விலை</strong>, <strong>போக்குவரத்து விலை</strong>,
+  <strong>ராயல்டி</strong>, <strong>லோடிங் கட்டணம்</strong> (அனைத்தும் <em>ஒரு யூனிட்டுக்கு</em>, பொதுவாக ஒரு டன்னுக்கு).
+  உதா: <code>MSAND</code> — <em>M-Sand</em> — டன் — மெட்டீரியல் ₹900, போக்குவரத்து ₹350, ராயல்டி ₹60, லோடிங் ₹40.
+- <strong>Quarries டேப்</strong> — குவாரி பெயர், இடம்; உதா: <em>மதுக்கரை குவாரி</em>.
+- <strong>Loading Locations</strong> — லோடிங் இடங்கள் மற்றும் கட்டணம்; <strong>Pricing</strong> — தேதி வாரியான விலை; <strong>UOM Conversions</strong>
+  (உதா: 1 யூனிட் = 4.5 டன்).
+- <strong>அடுத்து:</strong> Customer Master.</p>
+<h3 id="22-customer-master-masters-customer-master">2.2 Customer Master — <em>Masters → Customer Master</em></h3>
+<p><strong>நோக்கம்:</strong> யாருக்கு டெலிவரி செய்கிறீர்கள், யாருக்கு பில் போடுகிறீர்கள்.
+- <strong>New customer</strong> கிளிக் செய்யவும். <strong>கட்டாயம்:</strong> Customer code*, Customer name*.
+  <strong>முக்கியம்:</strong> GSTIN (IGST அல்லது CGST+SGST தீர்மானிக்கும்), போன், முகவரி, <strong>கிரெடிட் லிமிட்</strong>, நிலை.
+- உதா: <code>C-SLC</code> — <em>ஸ்ரீ லக்ஷ்மி கன்ஸ்ட்ரக்ஷன்ஸ்</em>, GSTIN <code>33AAXFS1234K1Z5</code>, கிரெடிட் லிமிட் ₹5,00,000.
+- சேமித்த பின், வாடிக்கையாளரைத் தேர்ந்தெடுத்து சேர்க்கவும்:
+  - <strong>Delivery sites</strong> (இறக்கும் இடங்கள்), உதா: <em>சரவணம்பட்டி சைட், கோயம்புத்தூர்</em> — புக்கிங்கில் பயன்படும்.
+  - <strong>Contact persons</strong> மற்றும் <strong>documents</strong> (GST சான்றிதழ், ஒப்பந்தம்).
+- <strong>திருத்த:</strong> வாடிக்கையாளரைத் தேர்ந்தெடுத்து → <strong>Edit customer</strong>. <strong>நீக்க:</strong> புக்கிங்/இன்வாய்ஸ் இல்லையென்றால் மட்டும்;
+  இல்லையென்றால் நிலையை Inactive ஆக்குங்கள்.
+- <strong>அடுத்து:</strong> Vehicle Master.</p>
+<h3 id="23-vehicle-master-masters-vehicle-master">2.3 Vehicle Master — <em>Masters → Vehicle Master</em></h3>
+<p><strong>நோக்கம்:</strong> உங்கள் லாரிகள் மற்றும் அவற்றின் ஆவணங்கள்.
+- <strong>New vehicle</strong> கிளிக் செய்யவும். <strong>கட்டாயம்:</strong> Registration number* (உதா: <code>TN38AB4521</code>), Display name*.
+  மேலும்: வகை, பிரிவு, கொள்ளளவு, பிராண்ட், மாடல், சேசிஸ்/இன்ஜின் எண், உரிமை (சொந்தம் / வாடகை / வாடிக்கையாளர்),
+  கிளை, <strong>இன்சூரன்ஸ், FC, பர்மிட் காலாவதி தேதிகள்</strong>, தற்போதைய ஓடோமீட்டர்.
+- வாகனத்தைத் தேர்ந்தெடுத்து <strong>புகைப்படம்</strong>, <strong>ஆவணங்கள்</strong> (RC, இன்சூரன்ஸ், பர்மிட் — காலாவதி தேதியுடன்) சேர்க்கலாம்;
+  <strong>சர்வீஸ் வரலாறு</strong> பார்க்கலாம்; <strong>டிரைவரை ஒதுக்கலாம்</strong>.
+- காலாவதி தேதிகள் <strong>Document expiry (compliance)</strong> ரிப்போர்ட்டில் வரும் — காலாவதியாகும் முன் புதுப்பியுங்கள்.
+- திறந்த வொர்க் ஆர்டர் உள்ள (பராமரிப்பில் உள்ள) வாகனத்தை புதிய ட்ரிப்பில் போட முடியாது.
+- பயன்படுத்தப்படாத வாகனத்தை மட்டுமே <strong>Delete</strong> செய்யலாம்; இல்லையெனில் Inactive ஆக்குங்கள்.
+- <strong>அடுத்து:</strong> Driver Master.</p>
+<h3 id="24-driver-master-masters-driver-master">2.4 Driver Master — <em>Masters → Driver Master</em></h3>
+<p><strong>நோக்கம்:</strong> டிரைவர்கள், லைசென்ஸ், சம்பள அமைப்பு.
+- <strong>Add Driver</strong> — <em>Code*, Name*, Licence number*</em>, லைசென்ஸ் காலாவதி, போன், நிலை, கிளை, புகைப்படம்.
+- டிரைவர் விவரத்தில்: ஆவணங்கள் (லைசென்ஸ், ஆதார்), வருகை (attendance), <strong>சம்பள அமைப்பு</strong> (அடிப்படை சம்பளம் —
+  ட்ரிப் அடிப்படையில் மட்டும் சம்பளம் என்றால் 0), மற்றும் <strong>Login</strong> டேப் — டிரைவரின் லாகினை (DRIVER role உள்ள பயனர்)
+  தேர்வு செய்து <strong>Save login link</strong> கிளிக் செய்யவும்; அப்போது டிரைவர் மொபைல் ஆப் பயன்படுத்தலாம்.
+- <strong>அடுத்து:</strong> Supplier Master (கடனில் பார்ட்ஸ்/சேவை வாங்கினால்) → டிரைவர் சம்பள ஸ்லாப்.</p>
+<h3 id="25-supplier-master-masters-supplier-master">2.5 Supplier Master — <em>Masters → Supplier Master</em></h3>
+<p><strong>நோக்கம்:</strong> வொர்க்ஷாப், ஸ்பேர் பார்ட்ஸ் கடை, டயர் டீலர், பெட்ரோல் பங்க்.
+- <strong>கட்டாயம்:</strong> Code*, Name*. மேலும் GSTIN (சரிபார்க்கப்படும்), போன், <strong>கிரெடிட் நாட்கள்</strong>
+  (பில் செலுத்த வேண்டிய தேதி = பில் தேதி + கிரெடிட் நாட்கள்).
+- உதா: <code>SUP-001</code> — <em>ஸ்ரீ முருகன் ஆட்டோ வொர்க்ஸ்</em>, கிரெடிட் 30 நாட்கள்.</p>
+<hr />
+<h2 id="3-finance-driver-payroll-daily-pay-slabs">அத்தியாயம் 3 — டிரைவர் தினசரி சம்பள ஸ்லாப் — <em>Finance → Driver Payroll → Daily Pay Slabs</em></h2>
+<p><strong>நோக்கம்:</strong> அந்த நாளில் முடித்த ட்ரிப்களின் எண்ணிக்கையைப் பொறுத்து டிரைவர் ஒரு நாளுக்கு எவ்வளவு சம்பாதிக்கிறார்.
+- உதா: <strong>1 ட்ரிப் = ₹500</strong>, <strong>2 அல்லது அதற்கு மேல் = ₹1,000</strong> (கடைசி ஸ்லாபில் <em>Trips To</em> காலியாக விடவும்).
+- ஒவ்வொரு ட்ரிப்புக்கும் பெருக்கப்படாது — ஒரு நாளில் 4 ட்ரிப் செய்தாலும் அந்த நாளுக்கான ஒரு ஸ்லாப் தொகைதான்.
+- நிர்வாகி / கணக்காளர் மட்டுமே ஸ்லாப்களை மாற்ற முடியும்.</p>
+<hr />
+<h2 id="4-operations-bookings">அத்தியாயம் 4 — புக்கிங் (வாடிக்கையாளர் ஆர்டர்) — <em>Operations → Bookings</em></h2>
+<p><strong>நோக்கம்:</strong> வாடிக்கையாளர் என்ன ஆர்டர் செய்தார் என்பதைப் பதிவு செய்தல்.
+1. <strong>Register Booking Request</strong> கிளிக் செய்யவும்.
+2. <strong>Customer*</strong> மற்றும் <strong>Delivery site</strong>, முன்னுரிமை (priority) தேர்வு செய்யவும்.
+3. மெட்டீரியல் வரிகள்: <strong>Material*</strong>, <strong>Quantity*</strong> (உதா: 60 டன்), <strong>மெட்டீரியல் விலை*</strong>, <strong>போக்குவரத்து விலை*</strong>,
+   <strong>ராயல்டி*</strong>, <strong>லோடிங்*</strong>, <strong>GST %*</strong> (உதா: 5). இயல்பு விலைகள் மெட்டீரியல் மாஸ்டரில் இருந்து வரும்.
+4. சேமித்தால் நிலை <strong>PENDING</strong>. புக்கிங் மதிப்பு = அளவு × (மெட்டீரியல் + போக்குவரத்து + ராயல்டி + லோடிங்) + GST.
+5. புக்கிங்கை <strong>Approve</strong> செய்யுங்கள். <em>அப்ரூவ் செய்த புக்கிங்கில் மட்டுமே ட்ரிப் திட்டமிட முடியும்.</em></p>
+<p><strong>தெரிந்து கொள்ள வேண்டிய விதிகள்</strong>
+- ட்ரிப் உள்ள புக்கிங்கை Reject செய்ய முடியாது; ஏற்கனவே சென்ற அளவைவிட குறைவாக புக்கிங் அளவை மாற்ற முடியாது.
+- புக் செய்த முழு அளவும் டெலிவரி ஆனதும் புக்கிங் தானாக <strong>COMPLETED</strong> ஆகும்.
+- வாடிக்கையாளருக்கு இனி லோடு தேவையில்லை என்றால் <strong>Close</strong> செய்யலாம் (சாலையில் எந்த ட்ரிப்பும் இருக்கக்கூடாது).
+- வாடிக்கையாளரின் <strong>பர்ச்சேஸ் ஆர்டர்</strong> (PO) நகலை புக்கிங்கில் இணைக்கவும்.</p>
+<p><strong>அடுத்து:</strong> ட்ரிப் திட்டமிடல்.</p>
+<hr />
+<h2 id="5-operations-trips-dispatch">அத்தியாயம் 5 — ட்ரிப், டிஸ்பாட்ச், டெலிவரி — <em>Operations → Trips &amp; Dispatch</em></h2>
+<p><strong>நோக்கம்:</strong> குவாரியிலிருந்து சைட் வரை ஒவ்வொரு லாரி லோடும்.</p>
+<h3 id="51">5.1 ட்ரிப் திட்டமிடல்</h3>
+<p><strong>Plan Dispatch Trip</strong> கிளிக் செய்து உள்ளிடவும்:
+- <strong>Booking*</strong> (அப்ரூவ் செய்தவை மட்டும் தெரியும்), <strong>Trip date*</strong> (எதிர்காலம் கூடாது, புக்கிங் தேதிக்கு முன் கூடாது),
+- <strong>Vehicle</strong> மற்றும் <strong>Driver</strong> (டிஸ்பாட்ச் செய்ய தேவை), <strong>Quarry</strong> மற்றும் <strong>Loading point</strong>,
+- மெட்டீரியல் வரி: <strong>Material*</strong> (புக்கிங்கில் இருக்க வேண்டும்) மற்றும் <strong>Quantity*</strong> (உதா: 20 டன்).</p>
+<p>சேமித்தால் நிலை <strong>PLANNED</strong>, எண் <code>TRP-2627/00001</code> போல வரும்.
+அனைத்து ட்ரிப்களின் மொத்த அளவும் புக் செய்த அளவை (+ அனுமதி %) தாண்டக்கூடாது.</p>
+<h3 id="52-dispatch-complete">5.2 Dispatch → Complete</h3>
+<ul>
+<li>லாரி குவாரியிலிருந்து புறப்படும்போது <strong>Dispatch</strong> (வாகனம் + டிரைவர் தேவை) → <strong>DISPATCHED</strong>.</li>
+<li>சைட்டை அடைந்ததும் <strong>Complete</strong> → <strong>COMPLETED</strong>.</li>
+<li>வரிசை மாறாது: PLANNED → DISPATCHED → COMPLETED. PLANNED நிலையில் உள்ள ட்ரிப்பை மட்டுமே Cancel செய்யலாம்.</li>
+</ul>
+<h3 id="53-weighbridge-pod">5.3 எடைப்பாலம் (Weighbridge) மற்றும் POD</h3>
+<p>முடிந்த ட்ரிப்பைத் திறக்கவும் (<strong>Edit</strong>):
+- <strong>Loaded weight</strong> (குவாரி எடைப்பாலம்) மற்றும் <strong>Delivered weight</strong> (சைட் எடைப்பாலம்), உதா: 20.00 / 19.80 →
+  <strong>குறைவு 0.20 டன்</strong>. டெலிவரி எடை ஏற்றிய எடையைவிட அதிகமாக இருக்கக்கூடாது.
+  <strong>பில் போடுவது டெலிவரி எடைக்குத்தான்.</strong>
+- <strong>POD / டெலிவரி சலான் / LR</strong> ஐ ட்ரிப் ஆவணங்களில் பதிவேற்றவும்.
+- ட்ரிப் இன்வாய்ஸில் சேர்ந்த பின் அது பூட்டப்படும் (மாற்ற முடியாது).</p>
+<p><strong>அடுத்து:</strong> டீசல் &amp; செலவுகள், பிறகு இன்வாய்ஸ்.</p>
+<hr />
+<h2 id="6">அத்தியாயம் 6 — டீசல் மற்றும் செலவுகள்</h2>
+<h3 id="61-operations-fuel">6.1 டீசல் — <em>Operations → Fuel</em></h3>
+<ul>
+<li><strong>Fuel Entry Logs → Add Fuel Entry:</strong> வாகனம், டிரைவர், <strong>ட்ரிப்பை இணைக்கவும்</strong>, <strong>பங்க் பெயர்*</strong>, <strong>லிட்டர்*</strong>,
+  <strong>லிட்டர் விலை*</strong>, <strong>முந்தைய*</strong> மற்றும் <strong>தற்போதைய ஓடோமீட்டர்*</strong>, <strong>பணம் செலுத்திய முறை*</strong>, தேதி, பில் புகைப்படம்.</li>
+<li><strong>DRAFT</strong> ஆக சேமிக்கப்படும் → <strong>Approve</strong> செய்தால் கணக்குகளில் பதிவாகும் (Fuel Expense / Cash அல்லது Bank).</li>
+<li>அப்ரூவ் செய்த டீசல் மட்டுமே செலவு ரிப்போர்ட்களில் கணக்கில் எடுக்கப்படும். ட்ரிப்பை இணைத்தால் <strong>ட்ரிப் லாபம்</strong> சரியாக வரும்.</li>
+<li><strong>Fuel Requests:</strong> டிரைவர்/டிஸ்பாட்சர் ஒரு ட்ரிப்புக்கு டீசல் கோரலாம்; அப்ரூவ் ஆன பின் fuel entry மூலம் நிறைவேற்றப்படும்.</li>
+</ul>
+<h3 id="62-operations-expenses">6.2 செலவுகள் — <em>Operations → Expenses</em></h3>
+<ul>
+<li><strong>Record Expense Voucher:</strong> <strong>செலவு தேதி</strong> (பழைய தேதி சரி, எதிர்காலம் கூடாது), <strong>Category*</strong> (Toll, Driver Bata,
+  Parking, Vehicle Repair, Insurance, Office…), வாகனம், டிரைவர், <strong>ட்ரிப்</strong>, <strong>Amount*</strong>, <strong>GST தொகை</strong>,
+  <strong>Payment method*</strong>, <strong>Description*</strong>. பில்லை இணைக்கவும்.</li>
+<li>நிலை <strong>SUBMITTED</strong> → <strong>Approve</strong> செய்தால் (செலவு தேதியில்) கணக்குகளில் பதிவாகும். தவறு என்றால் Reject.</li>
+<li><em>Driver Bata</em> செலவுகள் டிரைவர் சம்பள ஸ்லிப்பில் தகவலுக்காக மட்டும் தெரியும் (அவை ஏற்கனவே கொடுக்கப்பட்டவை).</li>
+<li><code>REQUIRE_SEPARATE_APPROVER</code> ஆன் என்றால், வேறு பயனர்தான் அப்ரூவ் செய்ய வேண்டும்.</li>
+</ul>
+<hr />
+<h2 id="7-finance-invoices">அத்தியாயம் 7 — இன்வாய்ஸ் — <em>Finance → Invoices</em></h2>
+<p><strong>நோக்கம்:</strong> முடிந்த ட்ரிப்களுக்கு வாடிக்கையாளருக்கு பில் போடுதல்.
+1. <strong>Ready for billing</strong> திறக்கவும் — இன்னும் பில் போடாத அனைத்து முடிந்த ட்ரிப்களும் தெரியும்.
+2. <strong>ஒரே வாடிக்கையாளரின்</strong> ட்ரிப்களை டிக் செய்யவும் (அல்லது <em>select all of this customer</em>) →
+   <strong>One invoice for N trips</strong>. (ஒரு ட்ரிப்புக்கு மட்டும் <strong>Generate</strong> பட்டனும் பயன்படுத்தலாம்.)
+3. <strong>DRAFT</strong> இன்வாய்ஸ் உருவாகும்: அளவு = டெலிவரி எடை; விலைகள் புக்கிங்கில் இருந்து.
+   வரி மதிப்பு = அளவு × (விலை + போக்குவரத்து + லோடிங் + ராயல்டி). <strong>தள்ளுபடி GST-க்கு முன்பே கழிக்கப்படும்.</strong>
+4. தேவைப்பட்டால் டிராஃப்டை <strong>Edit</strong>: இன்வாய்ஸ் தேதி (எதிர்காலம் கூடாது, ட்ரிப் தேதிக்கு முன் கூடாது),
+   Place of supply (2 இலக்க மாநில குறியீடு, உதா: 33), தள்ளுபடி, கட்டண விதிமுறைகள்.
+5. <strong>Approve</strong> → <strong>Customer Receivable</strong> / <strong>Freight Income</strong> + <strong>GST Liability</strong> கணக்குகளில் பதிவாகும்.
+   எண் <code>INV-2627/000xx</code>.
+6. <strong>Print / PDF</strong> எடுத்து, <strong>கையொப்பமிட்ட நகல் / இ-வே பில்</strong> இணைக்கவும்.</p>
+<p><strong>GST உதாரணம்:</strong> 19.8 டன் × ₹1,350 = ₹26,730 வரிக்குட்பட்ட மதிப்பு; GST 5% = ₹1,336.50 →
+CGST ₹668.25 + SGST ₹668.25 (அதே மாநிலம்) → மொத்தம் ₹28,066.50. வேறு மாநில வாடிக்கையாளருக்கு IGST ₹1,336.50.</p>
+<p><strong>விதிகள்:</strong> ஒரு ட்ரிப்புக்கு ஒருமுறை மட்டுமே பில்; ஒரு இன்வாய்ஸில் ஒரு வாடிக்கையாளர் மட்டும்; அப்ரூவ் ஆன
+இன்வாய்ஸை Cancel செய்தால் கணக்குப் பதிவுகள் திருப்பப்படும்; மறந்த ட்ரிப்களை <strong>Unbilled completed trips</strong> ரிப்போர்ட் காட்டும்.</p>
+<p><strong>அடுத்து:</strong> பணம் வசூல்.</p>
+<hr />
+<h2 id="8-finance-customer-receipts">அத்தியாயம் 8 — வாடிக்கையாளர் ரசீது — <em>Finance → Customer Receipts</em></h2>
+<p><strong>நோக்கம்:</strong> வாடிக்கையாளர்களிடமிருந்து பெற்ற பணத்தைப் பதிவு செய்தல்.
+1. <strong>Record Payment Receipt:</strong> <strong>Customer*</strong>, தேதி, <strong>Amount received*</strong>, <strong>Payment method*</strong>
+   (Cash / Bank / UPI / Cheque), குறிப்பு எண் (UTR / செக் எண்).
+2. தொகையை வாடிக்கையாளரின் <strong>திறந்த இன்வாய்ஸ்களுக்கு</strong> ஒதுக்கவும் (பழையது முதலில்). மீதி <strong>அட்வான்ஸ்</strong> ஆக இருக்கும்.
+3. சேமித்து → <strong>Approve</strong>. இன்வாய்ஸ்கள் <strong>PAID</strong> / <strong>PARTIALLY PAID</strong> ஆகும்; கணக்கு: Cash/Bank ↔ Customer Receivable.
+4. செக் நகல் / UPI ஸ்கிரீன்ஷாட் இணைக்கவும். <strong>Customer Ledger</strong> டேபில் நிலுவை இருப்பைப் பார்க்கலாம்.</p>
+<p><strong>அடுத்து:</strong> டிரைவர் செட்டில்மெண்ட் (மாதாந்திரம்).</p>
+<hr />
+<h2 id="9-finance-driver-payroll">அத்தியாயம் 9 — டிரைவர் அட்வான்ஸ் மற்றும் சம்பளம் — <em>Finance → Driver Payroll</em></h2>
+<h3 id="91">9.1 அட்வான்ஸ் (எப்போது வேண்டுமானாலும்)</h3>
+<p><strong>Advances டேப் → Give Advance:</strong> டிரைவர், தொகை, தேதி, செலுத்திய முறை (பணம் / வங்கி / UPI).
+<em>Driver Advances</em> கணக்கில் பதிவாகும். இன்னும் எதுவும் பிடித்தம் செய்யப்படாவிட்டால் மட்டுமே அட்வான்ஸை Cancel செய்யலாம்.</p>
+<h3 id="92">9.2 மாதச் சம்பளம்</h3>
+<ol>
+<li><strong>Generate Payroll:</strong> டிரைவர், <strong>மாதம்</strong>, வருடம்; விருப்பமாக அலவன்ஸ், <strong>அட்வான்ஸ் பிடித்தம்</strong> (நிலுவைக்கு மேல் கூடாது),
+   பிடித்தங்கள் (அபராதம் / சேதம் / மற்றவை — காரணத்துடன்).</li>
+<li>அந்த மாதத்தின் <strong>முடிந்த ட்ரிப்களில்</strong> இருந்து கணினி கணக்கிடும்:
+   நாள் வாரியான ட்ரிப் → ஒரு நாளுக்கு ஸ்லாப் தொகை → <strong>ட்ரிப் வருமானம்</strong> + அடிப்படை + அலவன்ஸ் = <strong>மொத்தம் (gross)</strong>;
+   <strong>நிகர சம்பளம் = மொத்தம் − பிடித்தங்கள் − அட்வான்ஸ் பிடித்தம்</strong>.
+   உதா: நாள் 1 = 1 ட்ரிப் ₹500, நாள் 2 = 2 ட்ரிப் ₹1,000, நாள் 3 = 4 ட்ரிப் ₹1,000 → மொத்தம் ₹2,500;
+   அட்வான்ஸ் ₹500 → நிகரம் ₹2,000.</li>
+<li><strong>Approve</strong> (ட்ரிப்கள் மீண்டும் கணக்கிடப்படும்) → <strong>Post to Accounts</strong> (சம்பளச் செலவு, அட்வான்ஸ் பிடித்தம்) →
+   <strong>Pay Salary</strong> (பணம் / வங்கி, தேதி, குறிப்பு எண்).</li>
+<li><strong>Salary Slip</strong> PDF-ல் நாள் வாரியான விவரம் இருக்கும். டிரைவர்கள் தங்கள் ஸ்லிப்பை <strong>My Salary</strong>-ல் பார்க்கலாம்.</li>
+</ol>
+<p><strong>விதிகள்:</strong> ஒரு டிரைவருக்கு ஒரு மாதத்துக்கு ஒரு சம்பளப் பதிவு மட்டும்; எதிர்கால மாதம் கூடாது; Cancel செய்தால் அனைத்து
+பதிவுகளும் திருப்பப்பட்டு அட்வான்ஸ் பிடித்தம் திரும்ப நிலுவையில் சேரும்.</p>
+<hr />
+<h2 id="10-maintenance-stores">அத்தியாயம் 10 — பராமரிப்பு — <em>Maintenance &amp; Stores</em></h2>
+<ol>
+<li><strong>Maintenance Requests:</strong> டிரைவர் (மொபைல்) அல்லது ஊழியர் <strong>Report a problem</strong> — வாகனம், பிரச்சினை, முன்னுரிமை,
+   ஓடோமீட்டர், சேத புகைப்படங்கள். நிலை <strong>OPEN</strong>.</li>
+<li>அலுவலகம் <strong>Review</strong> → <strong>Approve</strong> → <strong>Convert to Work Order</strong> (அல்லது Cancel — உதா: சாலையிலேயே சரி செய்யப்பட்டது).</li>
+<li><strong>Work Orders:</strong> <strong>பார்ட்ஸ்</strong> (ஸ்பேர் பார்ட் + அளவு) மற்றும் <strong>லேபர்</strong> வரிகள் சேர்க்கவும்; வேர்ஹவுஸில் இருந்து பார்ட்ஸை
+   <strong>Issue</strong> செய்யவும் (ஸ்டாக் குறையும்; திருப்பிய பார்ட்டை மீண்டும் வழங்கலாம்); வேலையை <strong>Start</strong> செய்யவும்.</li>
+<li><strong>Complete:</strong> <strong>உண்மையான செலவு</strong> (ஸ்டாக் பார்ட்ஸ் + லேபர் + வெளிக் கட்டணம்) மற்றும் <strong>வெளிச் செலவு எப்படி
+   செலுத்தப்பட்டது</strong> (Credit = வொர்க்ஷாப் பில், Cash, Bank) உள்ளிடவும். ஸ்டாக் பார்ட்ஸ் செலவு இன்வென்டரியில் இருந்து
+   பழுதுச் செலவுக்கு மாறும்; வெளிப் பகுதி சப்ளையர் பில் (கடன்) அல்லது பணம்/வங்கி பேமெண்ட் ஆகும்.</li>
+<li>திறந்த வொர்க் ஆர்டர் உள்ள வாகனத்தை புதிய ட்ரிப்பில் போட முடியாது. வழங்கிய பார்ட்ஸ் திருப்பப்படாத வொர்க் ஆர்டரை
+   Cancel செய்ய முடியாது — முதலில் பார்ட்ஸைத் திருப்புங்கள்.</li>
+</ol>
+<hr />
+<h2 id="11-maintenance-stores">அத்தியாயம் 11 — ஸ்பேர் பார்ட்ஸ் மற்றும் ஸ்டாக் — <em>Maintenance &amp; Stores</em></h2>
+<ul>
+<li><strong>Spare Parts:</strong> குறியீடு, பெயர், அளவு, இயல்பு விலை, <strong>ரீ-ஆர்டர் அளவு</strong>, புகைப்படம்.</li>
+<li><strong>Warehouses:</strong> உங்கள் ஸ்டோர்கள் (ஒவ்வொரு கிளை/யார்டுக்கும் ஒன்று).</li>
+<li><strong>Stock → Opening stock:</strong> ஏற்கனவே உள்ள அளவு <strong>யூனிட் விலையுடன்</strong>. <strong>Receive stock:</strong> வேர்ஹவுஸ், பார்ட், அளவு,
+  <strong>விலை</strong>, சப்ளையர், பில் எண், <strong>பணம் செலுத்திய முறை</strong> (Credit → சப்ளையர் பில் தானாக உருவாகும்; Cash / Bank).</li>
+<li>ஸ்டாக்கில் <strong>சராசரி விலை</strong>, <strong>மதிப்பு</strong>, நிலை <strong>OK / REORDER / OUT</strong> தெரியும். விலை இல்லாத பழைய ஸ்டாக்கை
+  <strong>Set cost</strong> மூலம் ஒருமுறை மதிப்பிடலாம்.</li>
+<li><strong>Inventory Transactions:</strong> ஒவ்வொரு வரவு, வழங்கல், திருப்பல் — விலை மற்றும் வொர்க் ஆர்டருடன்.</li>
+</ul>
+<hr />
+<h2 id="12-finance-supplier-bills-payments">அத்தியாயம் 12 — சப்ளையர் பில்கள் &amp; பேமெண்ட் — <em>Finance → Supplier Bills &amp; Payments</em></h2>
+<ul>
+<li><strong>Bills:</strong> தானாக உருவாகும் (கடன் ஸ்டாக் வரவு, கடன் வொர்க்ஷாப் வேலை) அல்லது வொர்க்ஷாப் / டயர் / அலுவலக பில்களுக்கு
+  <strong>New bill</strong>: சப்ளையர், அவர்களின் பில் எண், தேதி, செலுத்த வேண்டிய தேதி (கிரெடிட் நாட்களில் இருந்து தானாக),
+  வகை, வரிக்குட்பட்ட தொகை, GST. டிராஃப்டாக சேமித்து → <strong>Approve</strong> (செலவு + GST input / Accounts Payable).</li>
+<li><strong>Pay supplier:</strong> சப்ளையர், தேதி, தொகை, முறை, குறிப்பு எண்; பில்களுக்கு ஒதுக்கவும் (அல்லது பழையது முதலில் தானாக).
+  பேமெண்டை Cancel செய்தால் பில்கள் மீண்டும் திறக்கும்.</li>
+<li><strong>Supplier outstanding &amp; ageing</strong> ரிப்போர்ட் நீங்கள் கொடுக்க வேண்டியதையும் தாமதமானதையும் காட்டும்.</li>
+</ul>
+<hr />
+<h2 id="13-reports-reports">அத்தியாயம் 13 — ரிப்போர்ட்கள் — <em>Reports → Reports</em></h2>
+<p>இடது பக்கத்தில் ரிப்போர்ட்டைத் தேர்வு செய்து, தேதி வரம்பு (Today / This month / Last month / Financial year) மற்றும்
+ஃபில்டர்கள் அமைத்து, <strong>Run</strong> கிளிக் செய்யவும்; பிறகு <strong>Excel</strong> அல்லது <strong>PDF</strong>. பயனுள்ள ரிப்போர்ட்கள்:</p>
+<table>
+<thead>
+<tr>
+<th>தேவை</th>
+<th>ரிப்போர்ட்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>உரிமையாளரின் தினசரி பார்வை</td>
+<td><strong>Management KPIs</strong>, <strong>Monthly business summary</strong></td>
+</tr>
+<tr>
+<td>இன்னும் பில் போடாத ட்ரிப்கள்</td>
+<td><strong>Unbilled completed trips</strong></td>
+</tr>
+<tr>
+<td>நமக்கு யார் பணம் தர வேண்டும்</td>
+<td><strong>Customer outstanding &amp; ageing</strong></td>
+</tr>
+<tr>
+<td>நாம் யாருக்குத் தர வேண்டும்</td>
+<td><strong>Supplier outstanding &amp; ageing</strong></td>
+</tr>
+<tr>
+<td>GST ரிட்டர்ன்</td>
+<td><strong>Sales register (GST)</strong>, <strong>GST summary (rate-wise)</strong></td>
+</tr>
+<tr>
+<td>லாரி செயல்திறன்</td>
+<td><strong>Vehicle performance &amp; profitability</strong>, <strong>Fuel efficiency</strong>, <strong>Trip profitability</strong></td>
+</tr>
+<tr>
+<td>போக்குவரத்தில் இழப்பு</td>
+<td><strong>Weighbridge shortage</strong></td>
+</tr>
+<tr>
+<td>டிரைவர்கள்</td>
+<td><strong>Driver performance</strong>, <strong>Driver payroll register</strong>, <strong>Driver advances</strong></td>
+</tr>
+<tr>
+<td>பராமரிப்பு &amp; ஸ்டோர்</td>
+<td><strong>Work order register</strong>, <strong>Maintenance cost by vehicle</strong>, <strong>Stock valuation</strong>, <strong>Reorder list</strong></td>
+</tr>
+<tr>
+<td>கணக்குகள்</td>
+<td><strong>Day book</strong>, <strong>Account ledger / cash &amp; bank book</strong>, <strong>Account balances</strong>; P&amp;L, Balance Sheet — <strong>Financial Statements</strong></td>
+</tr>
+<tr>
+<td>நிலுவை வேலை</td>
+<td><strong>Pending approvals &amp; actions</strong>, <strong>Document expiry</strong></td>
+</tr>
+</tbody>
+</table>
+<p>ஒவ்வொரு பட்டியல் திரையிலும் <strong>Excel</strong> மற்றும் <strong>PDF</strong> பட்டன்கள் உள்ளன.</p>
+<hr />
+<h2 id="14">அத்தியாயம் 14 — மாத இறுதி சரிபார்ப்பு பட்டியல்</h2>
+<ol>
+<li><strong>Pending approvals</strong> ரிப்போர்ட் → டிராஃப்ட் புக்கிங், இன்வாய்ஸ், ரசீது, செலவு, டீசல், சம்பளம் அனைத்தையும் முடிக்கவும்.</li>
+<li><strong>Unbilled completed trips</strong> = 0 (டெலிவரி ஆன அனைத்துக்கும் பில் போடவும்).</li>
+<li>மாதத்தின் அனைத்து டீசல் மற்றும் செலவுகளை அப்ரூவ் செய்து ட்ரிப்களுடன் இணைக்கவும் (<strong>Unlinked costs</strong> ரிப்போர்ட்).</li>
+<li>மாதத்துக்கான <strong>டிரைவர் சம்பளம்</strong> — Generate → Approve → Post → Pay.</li>
+<li>அனைத்து <strong>வாடிக்கையாளர் ரசீதுகளையும்</strong> பதிவு செய்யவும்; <strong>Customer outstanding</strong> பின்தொடரவும் (61–90, 90+ நாட்கள் முதலில்).</li>
+<li>செலுத்த வேண்டிய <strong>சப்ளையர் பில்களை</strong> செலுத்தவும்.</li>
+<li><strong>Document expiry</strong> (இன்சூரன்ஸ் / FC / பர்மிட் / லைசென்ஸ்) சரிபார்க்கவும்.</li>
+<li>GST தாக்கலுக்கு <strong>Sales register</strong> மற்றும் <strong>GST summary</strong> டவுன்லோட் செய்யவும்; <strong>Monthly business summary</strong> பார்க்கவும்.</li>
+</ol>
+<hr />
+<h2 id="_3">பொதுவான கேள்விகள்</h2>
+<table>
+<thead>
+<tr>
+<th>கேள்வி</th>
+<th>பதில்</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ட்ரிப் திரையில் என் புக்கிங் தெரியவில்லை</td>
+<td>புக்கிங் <strong>Approve</strong> ஆகவில்லை, அல்லது ஏற்கனவே முடிந்துவிட்டது/மூடப்பட்டது.</td>
+</tr>
+<tr>
+<td>"Booking quantity exceeded"</td>
+<td>ட்ரிப்கள் ஏற்கனவே புக் செய்த அளவை எடுத்துவிட்டன. புக்கிங் அளவை அதிகரிக்கவும் அல்லது அனுமதி % அமைக்கவும்.</td>
+</tr>
+<tr>
+<td>டிஸ்பாட்ச் செய்ய முடியவில்லை</td>
+<td>முதலில் ட்ரிப்பில் வாகனம் மற்றும் டிரைவரைத் தேர்வு செய்யவும்.</td>
+</tr>
+<tr>
+<td>ட்ரிப் <em>Ready for billing</em>-ல் இல்லை</td>
+<td>ட்ரிப் <strong>COMPLETED</strong> ஆக இருக்க வேண்டும், ஏற்கனவே இன்வாய்ஸில் இருக்கக்கூடாது.</td>
+</tr>
+<tr>
+<td>CGST+SGST-க்கு பதில் IGST வருகிறது</td>
+<td>வாடிக்கையாளர் GSTIN (அல்லது Place of supply) உங்கள் கிளை GSTIN மாநிலத்திலிருந்து வேறுபட்டது.</td>
+</tr>
+<tr>
+<td>"Future-dated posting"</td>
+<td>இன்றைய தேதி அல்லது முந்தைய தேதியைப் பயன்படுத்தவும்.</td>
+</tr>
+<tr>
+<td>"Second person must approve"</td>
+<td>நீங்கள் உருவாக்கியதை வேறு பயனர்தான் அப்ரூவ் செய்ய வேண்டும் என நிறுவன அமைப்பு உள்ளது.</td>
+</tr>
+<tr>
+<td>வாடிக்கையாளர் / வாகனம் / கிளையை நீக்க முடியவில்லை</td>
+<td>அது ஏற்கனவே பயன்பாட்டில் உள்ளது. பதிலாக <strong>Inactive</strong> ஆக்குங்கள்.</td>
+</tr>
+<tr>
+<td>சம்பளத்தில் "Pay slabs not configured"</td>
+<td>முதலில் தினசரி சம்பள ஸ்லாப்களை அமைக்கவும் (அத்தியாயம் 3).</td>
+</tr>
+<tr>
+<td>நிர்வாகி மட்டுமே லாகின் செய்ய முடிகிறது</td>
+<td>சந்தா முடிந்துவிட்டது — நிர்வாகி <strong>Renew</strong> செய்ய வேண்டும்.</td>
+</tr>
+</tbody>
+</table></body></html>

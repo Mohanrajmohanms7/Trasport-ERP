@@ -31,7 +31,7 @@ type Kind = 'vehicle' | 'customer';
             <label class="flex flex-col gap-1">Type<select class="mf-in" [(ngModel)]="f.typeId" name="type"><option [ngValue]="null">—</option>@for (t of types(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
             <label class="flex flex-col gap-1">Category<select class="mf-in" [(ngModel)]="f.categoryId" name="category"><option [ngValue]="null">—</option>@for (t of categories(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
             <label class="flex flex-col gap-1">Capacity<select class="mf-in" [(ngModel)]="f.capacityId" name="capacity"><option [ngValue]="null">—</option>@for (t of capacities(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
-            <div class="flex items-end text-[11px] font-normal">Add more types / capacities in Admin → Lookup Lists.</div>
+            <div class="flex items-end text-[11px] font-normal">Add more types / capacities in Admin → Dropdown Lists.</div>
             <label class="flex flex-col gap-1">Brand<input class="mf-in" [(ngModel)]="f.brand" name="brand" placeholder="Tata, Ashok Leyland…" /></label>
             <label class="flex flex-col gap-1">Model<input class="mf-in" [(ngModel)]="f.model" name="model" /></label>
             <label class="flex flex-col gap-1">Chassis no<input class="mf-in" [(ngModel)]="f.chassisNumber" name="chassis" /></label>

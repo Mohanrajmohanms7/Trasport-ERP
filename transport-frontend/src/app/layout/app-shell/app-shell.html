@@ -140,6 +140,12 @@
       <!-- Right Toolbar Controls -->
       <div class="flex items-center gap-1 lg:gap-3 shrink-0">
 
+        <!-- User guide (English / Tamil) -->
+        <a href="help/user-guide-en.html" target="_blank" rel="noopener" title="User guide — where to start"
+           class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" aria-label="User guide">
+          <span class="material-symbols-outlined text-xl">help</span>
+        </a>
+
         <!-- Theme Toggle -->
         <button (click)="toggleTheme()" 
                 class="p-1.5 text-slate-500 dark:text-slate-450 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition duration-150 cursor-pointer" 
@@ -177,6 +183,12 @@
             <span class="font-bold text-slate-900 dark:text-white">{{ userProfile().name }}</span>
             <span class="text-slate-450 text-[10px]">{{ userProfile().email }}</span>
           </div>
+          <a mat-menu-item href="help/user-guide-en.html" target="_blank" rel="noopener" class="hover:bg-slate-50 text-slate-650 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">menu_book</span><span class="text-xs">User Guide (English)</span>
+          </a>
+          <a mat-menu-item href="help/user-guide-ta.html" target="_blank" rel="noopener" class="hover:bg-slate-50 text-slate-650 flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">translate</span><span class="text-xs">பயனர் வழிகாட்டி (தமிழ்)</span>
+          </a>
           <button mat-menu-item routerLink="/profile" class="hover:bg-slate-50 text-slate-650 flex items-center gap-2">
             <span class="material-symbols-outlined text-lg text-slate-400">person</span>
             Profile Settings
