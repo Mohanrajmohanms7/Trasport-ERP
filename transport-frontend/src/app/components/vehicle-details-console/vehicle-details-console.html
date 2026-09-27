@@ -7,10 +7,20 @@
         <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">local_shipping</span>
         Vehicle Master
       </h1>
-      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage vehicle registration documentation, workshop service schedules, and driver active assignments logs</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Create vehicles, keep registration, insurance, fitness and permit dates, documents, service history and driver assignments</p>
     </div>
-    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="vehicles" /></div>
+    <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      <app-export-buttons module="vehicles" />
+      @if (selectedVehicle()) {
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openVehicleForm(selectedVehicle())"><span class="material-icons text-base">edit</span>Edit vehicle</button>
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteVehicle(selectedVehicle())"><span class="material-icons text-base">delete</span>Delete</button>
+      }
+      <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="openVehicleForm(null)"><span class="material-icons text-base">add</span>New vehicle</button>
+    </div>
   </header>
+  @if (vehicleForm(); as vf) {
+    <app-master-form-dialog kind="vehicle" [record]="vf.record" (saved)="onVehicleSaved($event)" (closed)="vehicleForm.set(null)" />
+  }
 
   <!-- Main workspace layouts -->
   <div class="flex-1 min-h-0 flex flex-col gap-4 overflow-y-auto pr-1">
