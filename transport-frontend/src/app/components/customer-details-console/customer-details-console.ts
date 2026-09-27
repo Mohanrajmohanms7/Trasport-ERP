@@ -1,3 +1,5 @@
+import { HttpClient } from '@angular/common/http';
+import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -16,7 +18,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-customer-details-console',
   standalone: true,
-  imports: [ExportButtonsComponent, 
+  imports: [MasterFormDialogComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -32,6 +34,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   styleUrl: './customer-details-console.css'
 })
 export class CustomerDetailsConsoleComponent implements OnInit {
+  private http = inject(HttpClient);
   private customerMgmtService = inject(CustomerMgmtService);
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
@@ -85,9 +88,31 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   showContactEditor = signal<boolean>(false);
   showSiteEditor = signal<boolean>(false);
 
+  /** Create / edit customer (the only place customers are created). */
+  customerForm = signal<{ record: any | null } | null>(null);
+  openCustomerForm(record: any | null): void { this.customerForm.set({ record }); }
+  /** Delete; the server refuses when the customer is used in trips, bookings, invoices, fuel or jobs (deactivate instead). */
+  deleteCustomer(rec: any): void {
+    if (!rec?.id || !confirm(`Delete ${rec.name || rec.code}? This cannot be undone.`)) return;
+    this.http.delete<any>(`/api/v1/customers/${rec.id}`).subscribe({
+      next: (r: any) => {
+        if (r && r.success === false) { this.notify.error((r.errors && r.errors[0]) || r.message || 'Could not delete'); return; }
+        this.notify.success('Customer deleted');
+        this.loadCustomers();
+      },
+      error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not delete')
+    });
+  }
+  onCustomerSaved(c: any): void {
+    this.customerForm.set(null);
+    this.loadCustomers();
+    if (c?.id) setTimeout(() => this.selectCustomer(c.id), 400);
+  }
+
   ngOnInit() {
     this.initForms();
     this.loadCustomers();
+    if (new URLSearchParams(window.location.search).get('new') === '1') this.openCustomerForm(null);
   }
 
   loadCustomers() {

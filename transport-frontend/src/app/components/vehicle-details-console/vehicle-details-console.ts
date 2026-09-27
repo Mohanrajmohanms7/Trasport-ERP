@@ -1,3 +1,5 @@
+import { HttpClient } from '@angular/common/http';
+import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -21,7 +23,7 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -41,6 +43,7 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
   styles: []
 })
 export class VehicleDetailsConsoleComponent implements OnInit {
+  private http = inject(HttpClient);
   private vehicleMgmtService = inject(VehicleMgmtService);
   private masterService = inject(MasterService);
   private fb = inject(FormBuilder);
@@ -141,12 +144,34 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   showDocEditor = signal<boolean>(false);
   showMaintenanceEditor = signal<boolean>(false);
 
+  /** Create / edit vehicle (the only place vehicles are created). */
+  vehicleForm = signal<{ record: any | null } | null>(null);
+  openVehicleForm(record: any | null): void { this.vehicleForm.set({ record }); }
+  /** Delete; the server refuses when the vehicle is used in trips, bookings, invoices, fuel or jobs (deactivate instead). */
+  deleteVehicle(rec: any): void {
+    if (!rec?.id || !confirm(`Delete ${rec.name || rec.code}? This cannot be undone.`)) return;
+    this.http.delete<any>(`/api/v1/vehicles/${rec.id}`).subscribe({
+      next: (r: any) => {
+        if (r && r.success === false) { this.notify.error((r.errors && r.errors[0]) || r.message || 'Could not delete'); return; }
+        this.notify.success('Vehicle deleted');
+        this.loadVehicles();
+      },
+      error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not delete')
+    });
+  }
+  onVehicleSaved(v: any): void {
+    this.vehicleForm.set(null);
+    this.loadVehicles();
+    if (v?.id) this.requestedVehicleId = v.id;
+  }
+
   ngOnInit() {
     this.initForms();
     this.route.queryParamMap.subscribe(params => {
       const raw = params.get('vehicleId');
       const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
       this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
+      if (params.get('new') === '1') this.openVehicleForm(null);
       const tab = params.get('tab');
       if (tab === 'work-orders' || tab === 'service-history' || tab === 'maintenance-requests') {
         this.activeTab.set(tab);

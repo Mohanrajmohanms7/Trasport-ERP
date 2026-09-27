@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -74,6 +75,7 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
   styleUrl: './driver-details-console.css'
 })
 export class DriverDetailsConsoleComponent implements OnInit {
+  private http = inject(HttpClient);
   private masterService = inject(MasterService);
   private driverMgmt = inject(DriverMgmtService);
   private fb = inject(FormBuilder);
@@ -434,6 +436,7 @@ export class DriverDetailsConsoleComponent implements OnInit {
   openOps(driver: Driver): void {
     this.selectedDriver.set(driver);
     this.loginUserId.set(driver.appUserId != null ? String(driver.appUserId) : '');
+    this.loadDriverUsers();
     this.loginMessage.set(null);
     this.opsTab.set('documents');
     this.showOps.set(true);
@@ -443,6 +446,18 @@ export class DriverDetailsConsoleComponent implements OnInit {
       this.loadSalary(driver.id);
       this.loadPayrolls(driver.id);
     }
+  }
+
+  /** Logins that have the DRIVER role, for the "Mobile login" link (no typing of user ids). */
+  driverUsers = signal<any[]>([]);
+  private loadDriverUsers(): void {
+    this.http.get<any>('/api/v1/users', { params: { size: '500' } }).subscribe({
+      next: r => {
+        const all: any[] = r?.data?.content ?? r?.data ?? [];
+        this.driverUsers.set(all.filter(u => (u.roles || []).some((ro: any) => (ro.code || ro) === 'DRIVER')));
+      },
+      error: () => this.driverUsers.set([])
+    });
   }
 
   saveDriverLogin(): void {

@@ -7,10 +7,20 @@
         <span class="material-icons text-[var(--ff-color-primary-600)] text-2xl">people</span>
         Customer Master
       </h1>
-      <p class="text-[var(--ff-text-secondary)] text-sm">Manage delivery sites, contact persons, and compliance documents</p>
+      <p class="text-[var(--ff-text-secondary)] text-sm">Create customers with GSTIN and credit limit; manage delivery sites, contact persons and documents</p>
     </div>
-    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="customers" /></div>
+    <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      <app-export-buttons module="customers" />
+      @if (selectedCustomer()) {
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(selectedCustomer())"><span class="material-icons text-base">edit</span>Edit customer</button>
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteCustomer(selectedCustomer())"><span class="material-icons text-base">delete</span>Delete</button>
+      }
+      <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(null)"><span class="material-icons text-base">person_add</span>New customer</button>
+    </div>
   </header>
+  @if (customerForm(); as cf) {
+    <app-master-form-dialog kind="customer" [record]="cf.record" (saved)="onCustomerSaved($event)" (closed)="customerForm.set(null)" />
+  }
 
   <!-- Main console layouts -->
   <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
