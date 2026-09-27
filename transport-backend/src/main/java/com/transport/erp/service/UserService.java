@@ -132,6 +132,9 @@ public class UserService {
         existingUser.setName(userDetails.getName());
         existingUser.setEmail(userDetails.getEmail());
         existingUser.setPhone(userDetails.getPhone());
+        if (userDetails.getStatus() != null && !"ACTIVE".equalsIgnoreCase(userDetails.getStatus())) {
+            assertNotLockingOut(existingUser, "deactivate");
+        }
         existingUser.setStatus(userDetails.getStatus());
         if (userDetails.getRoles() != null) {
             String me = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null
@@ -141,6 +144,13 @@ public class UserService {
             java.util.Set<Long> newIds = newRoles.stream().map(com.transport.erp.model.AppRole::getId).collect(java.util.stream.Collectors.toSet());
             if (me != null && me.equals(existingUser.getUsername()) && !oldIds.equals(newIds)) {
                 throw new org.springframework.security.access.AccessDeniedException("You cannot change your own roles.");
+            }
+            boolean wasAdmin = existingUser.getRoles().stream().anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()));
+            boolean staysAdmin = newRoles.stream().anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()));
+            if (wasAdmin && !staysAdmin && otherActiveCompanyAdmins(existingUser) == 0) {
+                throw new com.transport.erp.exception.BusinessValidationException("Last Company Admin", "LAST_COMPANY_ADMIN",
+                        existingUser.getUsername() + " is the only Company Admin of this company.",
+                        "Give another user the Company Admin role first.");
             }
             existingUser.setRoles(newRoles);
         }
@@ -159,6 +169,7 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id, String deletedByUsername) {
         AppUser user = getUserById(id);
+        assertNotLockingOut(user, "delete");
         user.setIsDeleted(true);
         user.setUpdatedBy(deletedByUsername);
         userRepository.save(user);
@@ -166,5 +177,30 @@ public class UserService {
         // Audit log
         auditService.log(deletedByUsername, "USER_DELETED", "app_users", user.getId(), null,
                 "Soft deleted user account: " + user.getUsername());
+    }
+
+    /** A user cannot delete / deactivate themselves, and a company always keeps one active Company Admin. */
+    private void assertNotLockingOut(AppUser target, String action) {
+        String me = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null
+                ? org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : null;
+        if (me != null && me.equals(target.getUsername())) {
+            throw new com.transport.erp.exception.BusinessValidationException("Own Account", "USER_SELF_" + action.toUpperCase(),
+                    "You cannot " + action + " your own login.", "Ask another admin, or keep your account active.");
+        }
+        boolean isAdmin = target.getRoles() != null && target.getRoles().stream().anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()));
+        if (isAdmin && otherActiveCompanyAdmins(target) == 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Last Company Admin", "LAST_COMPANY_ADMIN",
+                    target.getUsername() + " is the only Company Admin of this company.",
+                    "Give another user the Company Admin role before you " + action + " this login.");
+        }
+    }
+
+    private long otherActiveCompanyAdmins(AppUser target) {
+        return userRepository.findAll().stream()
+                .filter(u -> !u.getId().equals(target.getId()))
+                .filter(u -> target.getCompanyId() != null && target.getCompanyId().equals(u.getCompanyId()))
+                .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()) && "ACTIVE".equalsIgnoreCase(u.getStatus()))
+                .filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode())))
+                .count();
     }
 }

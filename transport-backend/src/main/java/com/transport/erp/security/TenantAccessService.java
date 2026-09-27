@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class TenantAccessService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @Autowired
     private AppUserRepository userRepository;
 
@@ -100,16 +103,35 @@ public class TenantAccessService {
             if (user.getBranchId() != null) return user.getBranchId();
             throw new AccessDeniedException("User branch context is required to create this transaction.");
         }
+        // A company-wide admin may record for any branch of the same company (e.g. a one-person office running two yards).
+        if (requestedBranchId != null && isCompanyWideAdmin(user) && branchBelongsToCompany(requestedBranchId, user.getCompanyId())) {
+            return requestedBranchId;
+        }
         if (user.getBranchId() == null) {
             throw new AccessDeniedException("User branch context is required to create this transaction.");
         }
         return user.getBranchId();
     }
 
+    /** COMPANY_ADMIN / ADMIN work across every branch of their own company. */
+    public boolean isCompanyWideAdmin(AppUser user) {
+        return user != null && user.getRoles() != null && user.getRoles().stream()
+                .anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()) || "ADMIN".equals(r.getCode()));
+    }
+
+    private boolean branchBelongsToCompany(Long branchId, Long companyId) {
+        if (companyId == null) return false;
+        Long owner = jdbcTemplate.query("SELECT company_id FROM branches WHERE id = ? AND is_deleted = false",
+                rs -> rs.next() ? rs.getLong(1) : null, branchId);
+        return owner != null && owner.equals(companyId);
+    }
+
     @Transactional(readOnly = true)
     public void assertBranchAccess(Long resourceBranchId) {
         AppUser user = requireCurrentUser();
         if (isSuperAdmin(user)) return;
+        // Company admins are company-wide; company ownership is checked separately by assertOwned.
+        if (isCompanyWideAdmin(user)) return;
         if (resourceBranchId == null || user.getBranchId() == null
                 || !sameBranch(resourceBranchId, user.getBranchId())) {
             throw new AccessDeniedException("Access denied: Trip belongs to another branch.");

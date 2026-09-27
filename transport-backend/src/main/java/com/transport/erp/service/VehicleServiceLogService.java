@@ -209,7 +209,7 @@ public class VehicleServiceLogService {
         LocalDate servicePostingDate = log.getServiceDate() != null ? log.getServiceDate() : LocalDate.now();
         periodValidationService.validatePostingAllowed(log.getCompanyId(), servicePostingDate);
 
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(log.getCompanyId(), log.getReferenceNumber());
 
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
@@ -306,10 +306,10 @@ public class VehicleServiceLogService {
 
 
         // 3. locate original approval JV
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(log.getReferenceNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(log.getCompanyId(), log.getReferenceNumber());
 
         // 4. verify reversal does not already exist
-        List<JournalVoucher> existingReversals = jvRepository.findByReferenceNumberAndIsDeletedFalse("REV-" + log.getReferenceNumber());
+        List<JournalVoucher> existingReversals = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(log.getCompanyId(), "REV-" + log.getReferenceNumber());
         if (existingReversals != null && !existingReversals.isEmpty()) {
             List<String> details = new ArrayList<>();
             details.add(String.format("Reversal JV already exists for vehicle service log '%s'.", log.getReferenceNumber()));

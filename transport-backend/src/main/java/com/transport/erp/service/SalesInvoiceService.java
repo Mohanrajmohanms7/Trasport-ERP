@@ -338,7 +338,7 @@ public class SalesInvoiceService {
         periodValidationService.validatePostingAllowed(invoice.getCompanyId(), invoicePostingDate);
 
 
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(invoice.getInvoiceNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(invoice.getCompanyId(), invoice.getInvoiceNumber());
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new java.util.ArrayList<>();
             details.add(String.format("Accounting vouchers already exist for invoice '%s'.", invoice.getInvoiceNumber()));
@@ -437,7 +437,7 @@ public class SalesInvoiceService {
             periodValidationService.validatePostingAllowed(invoice.getCompanyId(), LocalDate.now());
             String reversalRef = "REV-" + invoice.getInvoiceNumber();
 
-            List<JournalVoucher> existingReversals = jvRepository.findByReferenceNumberAndIsDeletedFalse(reversalRef);
+            List<JournalVoucher> existingReversals = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(invoice.getCompanyId(), reversalRef);
 
             if (existingReversals.isEmpty()) {
                 // 1. Post Customer Ledger reversal (Credit entry = netAmount)
@@ -453,7 +453,7 @@ public class SalesInvoiceService {
                 );
 
                 // 2. Post Journal Voucher reversals
-                List<JournalVoucher> originalJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(invoice.getInvoiceNumber());
+                List<JournalVoucher> originalJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(invoice.getCompanyId(), invoice.getInvoiceNumber());
                 for (JournalVoucher origJv : originalJvs) {
                     JournalVoucher revJv = new JournalVoucher();
                     revJv.setVoucherNumber("JV-REV-" + origJv.getId() + "-" + System.currentTimeMillis());

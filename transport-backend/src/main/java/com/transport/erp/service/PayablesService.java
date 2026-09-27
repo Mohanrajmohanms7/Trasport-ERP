@@ -366,7 +366,7 @@ public class PayablesService {
     private void post(Long companyId, Long branchId, LocalDate date, ChartOfAccount dr, ChartOfAccount cr, BigDecimal amount,
                       String reference, String description, String username) {
         if (amount == null || amount.signum() <= 0) return;
-        if (!jvRepository.findByReferenceNumberAndIsDeletedFalse(reference).isEmpty()) return;
+        if (!jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(companyId, reference).isEmpty()) return;
         JournalVoucher v = new JournalVoucher();
         v.setVoucherDate(date);
         v.setDebitAccount(dr);
@@ -384,7 +384,7 @@ public class PayablesService {
     }
 
     private void reverse(Long companyId, String reference, String username) {
-        List<JournalVoucher> found = jvRepository.findByReferenceNumberAndIsDeletedFalse(reference);
+        List<JournalVoucher> found = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(companyId, reference);
         if (found.isEmpty()) return;
         JournalVoucher o = found.get(0);
         post(companyId, o.getBranchId(), LocalDate.now(), o.getCreditAccount(), o.getDebitAccount(), o.getAmount(),

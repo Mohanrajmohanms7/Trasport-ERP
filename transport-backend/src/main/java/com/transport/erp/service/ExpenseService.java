@@ -191,7 +191,7 @@ public class ExpenseService {
         LocalDate expensePostingDate = expense.getExpenseDate() != null ? expense.getExpenseDate() : LocalDate.now();
         periodValidationService.validatePostingAllowed(expense.getCompanyId(), expensePostingDate);
 
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(expense.getExpenseNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(expense.getCompanyId(), expense.getExpenseNumber());
 
         if (existingJvs != null && !existingJvs.isEmpty()) {
             List<String> details = new ArrayList<>();
@@ -309,7 +309,7 @@ public class ExpenseService {
         Expense saved = expenseRepository.save(expense);
 
         // Reversal of JVs
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(expense.getExpenseNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(expense.getCompanyId(), expense.getExpenseNumber());
         if (existingJvs != null) {
             for (JournalVoucher origJv : existingJvs) {
                 JournalVoucher revJv = new JournalVoucher();

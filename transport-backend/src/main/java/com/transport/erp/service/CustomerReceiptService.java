@@ -441,7 +441,7 @@ public class CustomerReceiptService {
         );
 
         // Reverse Journal Voucher
-        List<JournalVoucher> originalJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(savedReceipt.getReceiptNumber());
+        List<JournalVoucher> originalJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(savedReceipt.getCompanyId(), savedReceipt.getReceiptNumber());
         if (!originalJvs.isEmpty()) {
             JournalVoucher originalJv = originalJvs.get(0);
             
@@ -599,7 +599,7 @@ public class CustomerReceiptService {
         );
 
         // 7. Post Journal Voucher exactly once (checking for duplicates)
-        List<JournalVoucher> existingJvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(savedReceipt.getReceiptNumber());
+        List<JournalVoucher> existingJvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(savedReceipt.getCompanyId(), savedReceipt.getReceiptNumber());
         if (existingJvs.isEmpty()) {
             String debitAccountCode = "CASH".equalsIgnoreCase(savedReceipt.getPaymentMethod()) ? "1000" : "1010";
             String debitAccountName = "CASH".equalsIgnoreCase(savedReceipt.getPaymentMethod()) ? "Cash on Hand" : "Bank - Current A/c";
@@ -1088,7 +1088,7 @@ public class CustomerReceiptService {
 
         // Accounting JV reference
         if ("APPROVED".equals(receipt.getStatus()) || "CANCELLED".equals(receipt.getStatus())) {
-            List<JournalVoucher> jvs = jvRepository.findByReferenceNumberAndIsDeletedFalse(receipt.getReceiptNumber());
+            List<JournalVoucher> jvs = jvRepository.findByCompanyIdAndReferenceNumberAndIsDeletedFalse(receipt.getCompanyId(), receipt.getReceiptNumber());
             if (!jvs.isEmpty()) {
                 JournalVoucher targetJv = jvs.stream()
                         .filter(jv -> !jv.getDescription().contains("reversal"))
