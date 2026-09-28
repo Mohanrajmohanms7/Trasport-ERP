@@ -189,7 +189,7 @@ public class VehicleOdometerService {
         if (tenantAccess.isSuperAdmin(currentUser)) {
             return;
         }
-        if (currentUser.getBranchId() != null && vehicle.getBranchId() != null
+        if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && vehicle.getBranchId() != null
                 && !currentUser.getBranchId().equals(vehicle.getBranchId())) {
             throw new AccessDeniedException("Access denied: Vehicle belongs to another branch.");
         }

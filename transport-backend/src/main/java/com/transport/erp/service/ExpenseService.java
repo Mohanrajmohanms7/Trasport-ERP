@@ -158,7 +158,7 @@ public class ExpenseService {
         approvalPolicy.assertDifferentApprover(expense.getCompanyId(), expense.getCreatedBy(), username, "Expense " + expense.getExpenseNumber());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && expense.getBranchId() != null && !currentUser.getBranchId().equals(expense.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && expense.getBranchId() != null && !currentUser.getBranchId().equals(expense.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Expense belongs to another branch.");
             }
         }
@@ -271,7 +271,7 @@ public class ExpenseService {
         tenantAccess.assertOwned(expense.getCompanyId());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && expense.getBranchId() != null && !currentUser.getBranchId().equals(expense.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && expense.getBranchId() != null && !currentUser.getBranchId().equals(expense.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Expense belongs to another branch.");
             }
         }

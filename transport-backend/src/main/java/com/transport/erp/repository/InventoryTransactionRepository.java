@@ -114,10 +114,12 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
               AND t.transactionType = 'RECEIPT'
               AND t.isDeleted = false
               AND LOWER(t.externalReference) = LOWER(:externalReference)
+              AND t.sparePart.id = :sparePartId
             """)
     long countReceiptExternalReference(
             @Param("companyId") Long companyId,
-            @Param("externalReference") String externalReference);
+            @Param("externalReference") String externalReference,
+            @Param("sparePartId") Long sparePartId);
 
     java.util.List<com.transport.erp.model.InventoryTransaction> findByCompanyIdAndIsDeletedFalseOrderByIdDesc(Long companyId);
 

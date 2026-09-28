@@ -210,7 +210,7 @@ public class CustomerReceiptService {
                 .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + dto.getCustomerId()));
         tenantAccess.assertOwned(customer.getCompanyId());
-        if (currentUser.getBranchId() != null && customer.getBranchId() != null && !currentUser.getBranchId().equals(customer.getBranchId())) {
+        if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && customer.getBranchId() != null && !currentUser.getBranchId().equals(customer.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Customer belongs to another branch.");
         }
 
@@ -260,7 +260,7 @@ public class CustomerReceiptService {
                         .orElseThrow(() -> new IllegalArgumentException("Invoice not found or deleted with ID: " + alloc.getInvoiceId()));
 
                 tenantAccess.assertOwned(invoice.getCompanyId());
-                if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+                if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
                     throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
                 }
 
@@ -336,7 +336,7 @@ public class CustomerReceiptService {
                 .orElseThrow(() -> new IllegalArgumentException("Receipt not found: " + receiptId));
                 
         tenantAccess.assertOwned(receipt.getCompanyId());
-        if (currentUser.getBranchId() != null && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
+        if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
 
@@ -397,7 +397,7 @@ public class CustomerReceiptService {
                         .orElseThrow(() -> new IllegalArgumentException("Invoice not found or deleted: " + allocation.getInvoice().getId()));
                         
                 tenantAccess.assertOwned(invoice.getCompanyId());
-                if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+                if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
                     throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
                 }
                 
@@ -508,7 +508,7 @@ public class CustomerReceiptService {
         // 2. Validate tenant & branch security
         tenantAccess.assertOwned(receipt.getCompanyId());
         approvalPolicy.assertDifferentApprover(receipt.getCompanyId(), receipt.getCreatedBy(), username, "Receipt " + receipt.getReceiptNumber());
-        if (currentUser.getBranchId() != null && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
+        if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
 
@@ -543,7 +543,7 @@ public class CustomerReceiptService {
 
                 // Validate invoice tenant and branch ownership
                 tenantAccess.assertOwned(invoice.getCompanyId());
-                if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+                if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
                     throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
                 }
 
@@ -721,7 +721,7 @@ public class CustomerReceiptService {
                 .orElseThrow(() -> new IllegalArgumentException("Receipt not found: " + receiptId));
 
         tenantAccess.assertOwned(receipt.getCompanyId());
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null 
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) 
             && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
@@ -985,7 +985,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(receipt.getCompanyId());
 
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null 
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) 
             && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
@@ -1119,7 +1119,7 @@ public class CustomerReceiptService {
         Long companyId = tenantAccess.resolveCompanyId(null);
         Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
 
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null 
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) 
             && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }
@@ -1158,7 +1158,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(receipt.getCompanyId());
         
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null 
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) 
             && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Receipt belongs to another branch.");
         }

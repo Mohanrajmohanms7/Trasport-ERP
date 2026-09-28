@@ -93,7 +93,7 @@ class InventoryReceiptServiceTest {
         when(tenantAccess.requireCurrentUser()).thenReturn(companyAdmin);
         when(warehouseService.requireActive(1L, companyAdmin)).thenReturn(warehouse);
         when(sparePartRepository.findDetailById(5L)).thenReturn(Optional.of(part));
-        when(transactionRepository.countReceiptExternalReference(any(), any())).thenReturn(0L);
+        when(transactionRepository.countReceiptExternalReference(any(), any(), any())).thenReturn(0L);
         when(transactionRepository.saveAndFlush(any())).thenAnswer(inv -> {
             InventoryTransaction saved = inv.getArgument(0);
             if (saved.getId() == null) {
@@ -279,7 +279,7 @@ class InventoryReceiptServiceTest {
     @Test
     @DisplayName("Duplicate external reference is rejected")
     void duplicateExternalReference() {
-        when(transactionRepository.countReceiptExternalReference(COMPANY, "SUP-REC-001")).thenReturn(1L);
+        when(transactionRepository.countReceiptExternalReference(org.mockito.ArgumentMatchers.eq(COMPANY), org.mockito.ArgumentMatchers.eq("SUP-REC-001"), any())).thenReturn(1L);
         StockReceiptRequest request = receipt(1L, 5L, "20");
         request.setReferenceNumber("SUP-REC-001");
         assertEquals("INVENTORY_RECEIPT_REFERENCE_DUPLICATE",

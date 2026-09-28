@@ -220,6 +220,9 @@ public class WarehouseService {
             }
             return requestedBranchId;
         }
+        if (requestedBranchId != null && tenantAccess.isCompanyWideAdmin(user)) {
+            return tenantAccess.resolveBranchId(requestedBranchId); // must be a branch of the admin's company
+        }
         if (user.getBranchId() != null) {
             if (requestedBranchId != null && !user.getBranchId().equals(requestedBranchId)) {
                 throw new AccessDeniedException("Access denied: Warehouse belongs to another branch.");
@@ -240,7 +243,7 @@ public class WarehouseService {
     }
 
     private void assertBranch(Long resourceBranchId, AppUser user, String message) {
-        if (tenantAccess.isSuperAdmin(user)) {
+        if (tenantAccess.isSuperAdmin(user) || tenantAccess.isCompanyWideAdmin(user)) {
             return;
         }
         if (user.getBranchId() != null && resourceBranchId != null

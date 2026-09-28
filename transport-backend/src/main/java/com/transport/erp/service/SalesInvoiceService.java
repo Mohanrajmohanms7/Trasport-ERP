@@ -181,6 +181,8 @@ public class SalesInvoiceService {
             throw new IllegalArgumentException("Add at least one billing line to the invoice.");
         }
         for (SalesInvoiceDetail d : details.getDetails()) {
+            d.setId(null);              // lines are replaced; ids sent by API clients must not be re-attached
+            d.setVersion(null);
             d.setInvoice(existing);
             d.setIsDeleted(false);
             d.setCreatedBy(username);
@@ -305,7 +307,7 @@ public class SalesInvoiceService {
         approvalPolicy.assertDifferentApprover(invoice.getCompanyId(), invoice.getCreatedBy(), username, "Invoice " + invoice.getInvoiceNumber());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
             }
         }
@@ -539,7 +541,7 @@ public class SalesInvoiceService {
 
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && trip.getBranchId() != null && !currentUser.getBranchId().equals(trip.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && trip.getBranchId() != null && !currentUser.getBranchId().equals(trip.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Trip belongs to another branch.");
             }
         }
@@ -636,7 +638,7 @@ public class SalesInvoiceService {
         SalesInvoice invoice = getInvoiceById(id);
 
         com.transport.erp.model.AppUser currentUser = tenantAccess.requireCurrentUser();
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)
                 && invoice.getBranchId() != null && !currentUser.getBranchId().equals(invoice.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Invoice belongs to another branch.");
         }

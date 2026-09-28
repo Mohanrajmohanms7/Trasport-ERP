@@ -246,7 +246,7 @@ public class FuelEntryService {
         tenantAccess.assertOwned(entry.getCompanyId());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && entry.getBranchId() != null && !currentUser.getBranchId().equals(entry.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && entry.getBranchId() != null && !currentUser.getBranchId().equals(entry.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Fuel entry belongs to another branch.");
             }
         }
@@ -348,7 +348,7 @@ public class FuelEntryService {
         tenantAccess.assertOwned(entry.getCompanyId());
         AppUser currentUser = tenantAccess.requireCurrentUser();
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null && entry.getBranchId() != null && !currentUser.getBranchId().equals(entry.getBranchId())) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) && entry.getBranchId() != null && !currentUser.getBranchId().equals(entry.getBranchId())) {
                 throw new org.springframework.security.access.AccessDeniedException("Access denied: Fuel entry belongs to another branch.");
             }
         }

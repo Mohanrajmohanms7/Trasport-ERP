@@ -239,6 +239,8 @@ public class TripService {
         existing.getDetails().clear();
         if (details.getDetails() != null) {
             for (TripDetail d : details.getDetails()) {
+                d.setId(null);          // lines are replaced; ids sent by API clients must not be re-attached
+                d.setVersion(null);
                 d.setTrip(existing);
                 d.setIsDeleted(false);
                 d.setCreatedBy(updatedByUsername);

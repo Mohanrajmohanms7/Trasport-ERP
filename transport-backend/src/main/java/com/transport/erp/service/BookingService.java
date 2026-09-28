@@ -73,7 +73,13 @@ public class BookingService {
         
         booking.setBookingNumber(documentNumberService.next(tenantAccess.resolveCompanyId(booking.getCompanyId()),
                 DocumentNumberService.BOOKING, prefix, LocalDate.now()));
-        booking.setBookingDate(LocalDate.now());
+        // Orders taken earlier (phone / WhatsApp) can be entered afterwards; never a future date.
+        LocalDate bookingDate = booking.getBookingDate() != null ? booking.getBookingDate() : LocalDate.now();
+        if (bookingDate.isAfter(LocalDate.now())) {
+            throw new com.transport.erp.exception.BusinessValidationException("Booking Date In Future", "BOOKING_DATE_IN_FUTURE",
+                    "Booking date " + bookingDate + " is in the future.", "Use today's date or earlier.");
+        }
+        booking.setBookingDate(bookingDate);
         if (booking.getStatus() == null || booking.getStatus().trim().isEmpty()) {
             booking.setStatus(defaultStatus);
         }

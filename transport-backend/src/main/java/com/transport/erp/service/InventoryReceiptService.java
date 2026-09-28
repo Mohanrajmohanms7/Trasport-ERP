@@ -84,8 +84,8 @@ public class InventoryReceiptService {
                     "Select the supplier for a credit purchase, or choose Cash / Bank if it was paid on the spot.");
         }
         if (externalReference != null
-                && transactionRepository.countReceiptExternalReference(warehouse.getCompanyId(), externalReference) > 0) {
-            throw invalid("INVENTORY_RECEIPT_REFERENCE_DUPLICATE", "This receipt reference was already used.");
+                && transactionRepository.countReceiptExternalReference(warehouse.getCompanyId(), externalReference, part.getId()) > 0) {
+            throw invalid("INVENTORY_RECEIPT_REFERENCE_DUPLICATE", "This bill number was already received for this spare part.");
         }
 
         WarehouseStock stock = inventoryService.increaseAvailable(warehouse, part, quantity, username);
@@ -114,7 +114,7 @@ public class InventoryReceiptService {
             transaction = transactionRepository.saveAndFlush(transaction);
         } catch (DataIntegrityViolationException ex) {
             if (isDuplicateExternalReference(ex)) {
-                throw invalid("INVENTORY_RECEIPT_REFERENCE_DUPLICATE", "This receipt reference was already used.");
+                throw invalid("INVENTORY_RECEIPT_REFERENCE_DUPLICATE", "This bill number was already received for this spare part.");
             }
             throw ex;
         }

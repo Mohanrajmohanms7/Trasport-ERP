@@ -344,7 +344,7 @@ public class MaintenanceRuleService {
         if (tenantAccess.isSuperAdmin(user)) {
             return;
         }
-        if (user.getBranchId() != null && vehicle.getBranchId() != null
+        if (user.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(user) && vehicle.getBranchId() != null
                 && !user.getBranchId().equals(vehicle.getBranchId())) {
             throw new AccessDeniedException("Access denied: Vehicle belongs to another branch.");
         }
