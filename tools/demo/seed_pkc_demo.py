@@ -57,8 +57,9 @@ class Api:
             js = {'success': False, 'message': raw[:200]}
         if isinstance(js, dict) and js.get('success') is False:
             msg = f"{method} {path}: {js.get('message')} {(js.get('errors') or [''])[0]}"
-            self.errors.append(msg)
-            if not quiet:
+            self.last_error = msg
+            if not quiet:                     # quiet = an expected refusal the script handles itself
+                self.errors.append(msg)
                 print('  ! ' + msg)
             return None
         return js.get('data') if isinstance(js, dict) and 'data' in js else js
@@ -442,11 +443,11 @@ def main():
                     'advanceAdjustment': 500 if not last else 1000, 'description': f'Salary {mth:02d}/{y}',
                     'deductions': [{'deductionType': 'FINE', 'amount': 200, 'remarks': 'Late reporting at quarry'}] if i == 2 else []}
             p = api.post('/driver-payrolls/generate', body, quiet=True)
-            if not p and 'Nothing To Pay' not in (api.errors[-1] if api.errors else ''):
+            if not p and 'Nothing To Pay' not in getattr(api, 'last_error', ''):
                 body['advanceAdjustment'] = 0
                 p = api.post('/driver-payrolls/generate', body, quiet=True)
             if not p:
-                api.errors = [e for e in api.errors if 'Nothing To Pay' not in e and 'Advance Recovery' not in e]
+                continue                      # driver had no trips that month
             if not p:
                 continue
             api.post(f"/driver-payrolls/{p['id']}/approve")
