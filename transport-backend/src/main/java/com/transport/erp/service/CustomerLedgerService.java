@@ -125,7 +125,7 @@ public class CustomerLedgerService {
         tenantAccess.assertCompanyAccess(customer.getCompanyId());
 
         com.transport.erp.model.AppUser currentUser = tenantAccess.requireCurrentUser();
-        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null
+        if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)
                 && customer.getBranchId() != null && !currentUser.getBranchId().equals(customer.getBranchId())) {
             throw new org.springframework.security.access.AccessDeniedException("Access denied: Customer belongs to another branch.");
         }

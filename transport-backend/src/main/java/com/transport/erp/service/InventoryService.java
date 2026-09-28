@@ -338,7 +338,7 @@ public class InventoryService {
         if (tenantAccess.isSuperAdmin(user)) {
             return;
         }
-        if (user.getBranchId() != null && branchId != null && !user.getBranchId().equals(branchId)) {
+        if (user.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(user) && branchId != null && !user.getBranchId().equals(branchId)) {
             throw new AccessDeniedException("Access denied: Warehouse belongs to another branch.");
         }
     }

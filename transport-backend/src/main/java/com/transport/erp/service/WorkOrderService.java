@@ -537,7 +537,7 @@ public class WorkOrderService {
         if (tenantAccess.isSuperAdmin(user)) {
             return;
         }
-        if (user.getBranchId() != null && order.getBranchId() != null
+        if (user.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(user) && order.getBranchId() != null
                 && !user.getBranchId().equals(order.getBranchId())) {
             throw new AccessDeniedException("Access denied: Work order belongs to another branch.");
         }
@@ -547,7 +547,7 @@ public class WorkOrderService {
         if (tenantAccess.isSuperAdmin(user)) {
             return;
         }
-        if (user.getBranchId() != null && vehicle.getBranchId() != null
+        if (user.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(user) && vehicle.getBranchId() != null
                 && !user.getBranchId().equals(vehicle.getBranchId())) {
             throw new AccessDeniedException("Access denied: Vehicle belongs to another branch.");
         }

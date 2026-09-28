@@ -195,7 +195,9 @@ def main():
         ('V. Senthil', 'TN46 20190019908', 2100, '9500100006', 0)]):
         dr = api.post('/drivers', {'code': f'PKC-D{i + 1:02d}', 'name': name, 'licenseNumber': lic,
                                    'licenseExpiryDate': (TODAY + timedelta(days=exp_days)).isoformat(),
-                                   'phoneNumber': phone, 'status': 'ACTIVE'})
+                                   'phoneNumber': phone, 'status': 'ACTIVE',
+                                   # drivers of the Thanirpandal trucks belong to that yard
+                                   'branchId': (tpl or {}).get('id') if i in (3, 4) else ho['id']})
         if dr:
             api.post(f"/drivers/{dr['id']}/salary", {'basicSalary': basic, 'overtimeRate': 0, 'advanceTaken': 0})
             drivers.append(dr)
@@ -399,8 +401,9 @@ def main():
                                    'paymentMethod': ['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CASH'][n % 4],
                                    'referenceNumber': f'UTR{88100000 + n}', 'remarks': 'Payment against invoice',
                                    'allocations': [{'invoiceId': inv['id'], 'amount': amount}]})
-        if r and n % 5 != 4:
-            api.post(f"/receipts/{r['id']}/approve")
+        rid = (r or {}).get('receiptId') or (r or {}).get('id')
+        if rid and n % 5 != 4:
+            api.post(f"/receipts/{rid}/approve")
 
     # ------------------------------------------------------------------ 10. Driver advances and payroll
     print('[10] Driver advances and payroll')

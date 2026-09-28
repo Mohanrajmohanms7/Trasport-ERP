@@ -196,7 +196,7 @@ public class DriverService {
         if (tenantAccess.isSuperAdmin(actor)) {
             return;
         }
-        if (actor.getBranchId() != null && driver.getBranchId() != null
+        if (actor.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(actor) && driver.getBranchId() != null
                 && !actor.getBranchId().equals(driver.getBranchId())) {
             throw new AccessDeniedException("Access denied: Driver belongs to another branch.");
         }

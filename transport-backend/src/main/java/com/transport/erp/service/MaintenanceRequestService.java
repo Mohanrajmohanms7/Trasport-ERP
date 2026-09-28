@@ -425,7 +425,7 @@ public class MaintenanceRequestService {
     }
 
     private void assertBranch(Long resourceBranchId, AppUser user, String message) {
-        if (tenantAccess.isSuperAdmin(user)) {
+        if (tenantAccess.isSuperAdmin(user) || tenantAccess.isCompanyWideAdmin(user)) {
             return;
         }
         if (user.getBranchId() != null && resourceBranchId != null
