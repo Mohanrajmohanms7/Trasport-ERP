@@ -386,7 +386,7 @@ def main():
     print('[9] Invoices and receipts')
     by_customer = {}
     for t in done:
-        if t['ago'] <= 6:
+        if t['ago'] <= 8:
             continue                      # keep the last week unbilled (Unbilled trips report)
         by_customer.setdefault(t['b']['ci'], []).append(t)
     invoices = []
@@ -430,6 +430,9 @@ def main():
         adv = api.post('/driver-advances', {'driver': {'id': dr['id']}, 'amount': [2000, 1500, 3000, 1000, 2500, 1500][i],
                                             'advanceDate': d(45 - i * 3), 'paymentMethod': 'CASH',
                                             'remarks': 'Festival / family advance'})
+    for i, dr in enumerate(drivers[:4]):
+        api.post('/driver-advances', {'driver': {'id': dr['id']}, 'amount': [1000, 800, 1200, 600][i],
+                                      'advanceDate': d(14 - i * 2), 'paymentMethod': 'UPI', 'remarks': 'Trip cash advance'})
     months = sorted({(date.fromisoformat(d(t['ago'])).year, date.fromisoformat(d(t['ago'])).month) for t in done
                      if date.fromisoformat(d(t['ago'])).replace(day=1) < TODAY.replace(day=1)})
     for (y, mth) in months:
@@ -499,6 +502,23 @@ def main():
                                                      'actualCost': round(parts_cost + labour + (1500 if i == 3 else 0), 2),
                                                      'outsidePaymentMode': mode})
 
+    # scheduled (preventive) services raised directly by the office
+    for n, (vi, title, part, qty) in enumerate([(0, '10,000 km preventive service', 'OF-01', 1), (5, 'Monthly greasing & check-up', 'GR-01', 2)]):
+        wo = api.post('/work-orders', {'vehicleId': vehicles[vi]['id'], 'source': 'MANUAL', 'maintenanceType': 'PREVENTIVE',
+                                       'name': title, 'description': title, 'priority': 'MEDIUM', 'estimatedCost': 1200,
+                                       'requestedDate': d(5 + n)})
+        if not wo:
+            continue
+        w = api.post(f"/work-orders/{wo['id']}/parts", {'sparePartId': parts[part]['id'], 'quantity': qty, 'unitRate': parts[part]['rate']}) or {}
+        line = (w.get('parts') or [{}])[-1].get('id')
+        api.post(f"/work-orders/{wo['id']}/labour", {'description': 'Service labour', 'hours': 1.5, 'rate': 300})
+        if line and wm:
+            api.post('/inventory/stock/issue', {'warehouseId': wm, 'workOrderId': wo['id'], 'workOrderPartId': line, 'quantity': qty})
+        api.post(f"/work-orders/{wo['id']}/start", {})
+        det = api.get(f"/work-orders/{wo['id']}") or {}
+        api.post(f"/work-orders/{wo['id']}/complete", {'completionNotes': 'Service done', 'outsidePaymentMode': 'CASH',
+                                                        'actualCost': round(float(det.get('partsCostFromStock') or 0) + 450, 2)})
+
     # ------------------------------------------------------------------ 12. Supplier bills and payments
     print('[12] Supplier bills and payments')
     for code, bno, ago, cat, amt, gst, vi in [('PKC-S09', 'SWW-118', 40, 'REPAIR', 6500, 1170, 2), ('PKC-S02', 'SBT-8902', 28, 'TYRES', 3200, 576, 0),
@@ -510,7 +530,9 @@ def main():
         if bill and ago > 12:
             api.post(f"/payables/bills/{bill['id']}/approve")
     for code, amt, ago, method in [('PKC-S01', 6000, 18, 'BANK_TRANSFER'), ('PKC-S02', 40000, 14, 'CHEQUE'),
-                                   ('PKC-S09', 7670, 9, 'UPI'), ('PKC-S07', 5000, 5, 'BANK_TRANSFER')]:
+                                   ('PKC-S09', 7670, 9, 'UPI'), ('PKC-S07', 5000, 5, 'BANK_TRANSFER'),
+                                   ('PKC-S01', 3000, 4, 'UPI'), ('PKC-S02', 15000, 4, 'BANK_TRANSFER'), ('PKC-S03', 2500, 3, 'CASH'),
+                                   ('PKC-S08', 11000, 3, 'BANK_TRANSFER'), ('PKC-S07', 4000, 2, 'CHEQUE'), ('PKC-S04', 1500, 1, 'UPI')]:
         api.post('/payables/payments', {'supplierId': sup.get(code), 'paymentDate': d(ago), 'amount': amt,
                                         'paymentMethod': method, 'referenceNumber': f'PAY{ago}{amt}'})
 
