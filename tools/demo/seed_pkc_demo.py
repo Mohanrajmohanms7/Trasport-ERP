@@ -317,6 +317,15 @@ def main():
                                           'driver': {'id': dr['id']}, 'quarry': {'id': q['id']} if q else None,
                                           'details': tr['details']})
             trips.append({'id': tr['id'], 'status': 'COMPLETED', 'ago': ago, 'b': b, 'v': v, 'dr': dr, 'qty': delivered})
+    # two loads on the road today (Planned / Dispatched) for the dispatch board and pending actions
+    live = [b for b in bookings if b['action'] == 'APPROVE' and b['ago'] <= 12]
+    for n, b in enumerate(live[:2]):
+        vi = (k + n) % len(vehicles)
+        tr = api.post('/trips', {'booking': {'id': b['id']}, 'tripDate': d(0), 'vehicle': {'id': vehicles[vi]['id']},
+                                 'driver': {'id': drivers[vi]['id']}, 'details': [{'material': {'id': mats[b['mc']]['id']},
+                                 'quantity': loads[b['mc']]}]})
+        if tr and n == 1:
+            api.post(f"/trips/{tr['id']}/dispatch")
     # close one booking early (customer needs no more loads)
     closable = [b for b in bookings if b['action'] == 'APPROVE' and b['ci'] == 7]
     if closable:
@@ -341,6 +350,16 @@ def main():
                                'paymentMethod': 'CASH' if i % 4 else 'BANK_TRANSFER', 'invoiceNumber': f'FB-{7000 + i}',
                                'previousOdometer': prev, 'currentOdometer': cur})
         if f and i < len(done) - 3:
+            api.post(f"/fuel/{f['id']}/approve")
+    for n, v in enumerate(vehicles[:2]):
+        prev = odo[v['id']]
+        cur = prev + 40
+        odo[v['id']] = cur
+        f = api.post('/fuel', {'vehicle': {'id': v['id']}, 'driver': {'id': drivers[n]['id']}, 'fuelDate': d(3),
+                               'fuelStation': 'Yard top-up — Thanirpandal', 'fuelQuantity': 12, 'ratePerLitre': 92.4,
+                               'totalAmount': 1108.8, 'paymentMethod': 'CASH', 'invoiceNumber': f'FB-TOP-{n}',
+                               'previousOdometer': prev, 'currentOdometer': cur})
+        if f:
             api.post(f"/fuel/{f['id']}/approve")
     for i, t in enumerate(sorted(done, key=lambda x: -x['ago'])):
         cat, amt, desc = [('TOLL', 285, 'Thirumandurai toll plaza (NH-38)'), ('DRIVER_BATA', 300, 'Driver bata — trip'),
@@ -367,8 +386,8 @@ def main():
     print('[9] Invoices and receipts')
     by_customer = {}
     for t in done:
-        if t['ago'] < 4:
-            continue                      # keep the last few days unbilled (Unbilled trips report)
+        if t['ago'] <= 6:
+            continue                      # keep the last week unbilled (Unbilled trips report)
         by_customer.setdefault(t['b']['ci'], []).append(t)
     invoices = []
     for ci, ts in by_customer.items():
@@ -420,9 +439,11 @@ def main():
                     'advanceAdjustment': 500 if not last else 1000, 'description': f'Salary {mth:02d}/{y}',
                     'deductions': [{'deductionType': 'FINE', 'amount': 200, 'remarks': 'Late reporting at quarry'}] if i == 2 else []}
             p = api.post('/driver-payrolls/generate', body, quiet=True)
-            if not p:
+            if not p and 'Nothing To Pay' not in (api.errors[-1] if api.errors else ''):
                 body['advanceAdjustment'] = 0
-                p = api.post('/driver-payrolls/generate', body)
+                p = api.post('/driver-payrolls/generate', body, quiet=True)
+            if not p:
+                api.errors = [e for e in api.errors if 'Nothing To Pay' not in e and 'Advance Recovery' not in e]
             if not p:
                 continue
             api.post(f"/driver-payrolls/{p['id']}/approve")
@@ -440,7 +461,8 @@ def main():
               ('Air filter choked — dust from quarry', 'LOW', 'AF-01', 1, 300), ('Fan belt squeal', 'LOW', 'FB-01', 1, 250),
               ('Diesel filter change', 'MEDIUM', 'DF-01', 1, 300), ('Grease all points', 'LOW', 'GR-01', 3, 400)]
     for i, (title, prio, part, qty, labour) in enumerate(issues):
-        v = vehicles[i % len(vehicles)]
+        ho_fleet = [x for j, x in enumerate(vehicles) if j not in (3, 4)] or vehicles
+        v = ho_fleet[i % len(ho_fleet)]          # Perambalur trucks are serviced from the Perambalur store
         mr = api.post('/maintenance-requests', {'vehicleId': v['id'], 'title': title, 'description': title + ' — reported by driver',
                                                 'priority': prio})
         if not mr:
@@ -467,9 +489,16 @@ def main():
             continue                                   # stays IN_PROGRESS (open jobs)
         detail = api.get(f'/work-orders/{wo_id}') or {}
         parts_cost = float(detail.get('partsCostFromStock') or 0)
+        mode = ['CREDIT', 'CASH', 'BANK'][i % 3]
+        if mode == 'CREDIT':
+            upd = {k: detail.get(k) for k in ('name', 'description', 'priority', 'estimatedCost', 'requestedDate', 'diagnosis',
+                                               'vehicleId', 'source', 'maintenanceType', 'odometerAtOpen')}
+            upd.update({'supplierId': sup.get(['PKC-S04', 'PKC-S09', 'PKC-S03'][i % 3]), 'diagnosis': 'Checked by workshop'})
+            if not api.put(f'/work-orders/{wo_id}', upd):
+                mode = 'CASH'
         api.post(f'/work-orders/{wo_id}/complete', {'completionNotes': 'Work completed and road tested',
                                                      'actualCost': round(parts_cost + labour + (1500 if i == 3 else 0), 2),
-                                                     'outsidePaymentMode': ['CREDIT', 'CASH', 'BANK'][i % 3]})
+                                                     'outsidePaymentMode': mode})
 
     # ------------------------------------------------------------------ 12. Supplier bills and payments
     print('[12] Supplier bills and payments')

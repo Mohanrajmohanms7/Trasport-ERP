@@ -242,7 +242,7 @@ public class WorkOrderLineService {
         WorkOrder order = workOrderRepository.findByIdForUpdate(workOrderId)
                 .orElseThrow(() -> new IllegalArgumentException("Work order not found: " + workOrderId));
         tenantAccess.assertCompanyAccess(order.getCompanyId());
-        if (!tenantAccess.isSuperAdmin(user)
+        if (!tenantAccess.isSuperAdmin(user) && !tenantAccess.isCompanyWideAdmin(user)
                 && user.getBranchId() != null
                 && order.getBranchId() != null
                 && !user.getBranchId().equals(order.getBranchId())) {
