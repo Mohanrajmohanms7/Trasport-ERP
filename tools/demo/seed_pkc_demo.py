@@ -491,8 +491,7 @@ def main():
         parts_cost = float(detail.get('partsCostFromStock') or 0)
         mode = ['CREDIT', 'CASH', 'BANK'][i % 3]
         if mode == 'CREDIT':
-            upd = {k: detail.get(k) for k in ('name', 'description', 'priority', 'estimatedCost', 'requestedDate', 'diagnosis',
-                                               'vehicleId', 'source', 'maintenanceType', 'odometerAtOpen')}
+            upd = {k: detail.get(k) for k in ('name', 'description', 'priority', 'estimatedCost', 'requestedDate', 'diagnosis')}
             upd.update({'supplierId': sup.get(['PKC-S04', 'PKC-S09', 'PKC-S03'][i % 3]), 'diagnosis': 'Checked by workshop'})
             if not api.put(f'/work-orders/{wo_id}', upd):
                 mode = 'CASH'
