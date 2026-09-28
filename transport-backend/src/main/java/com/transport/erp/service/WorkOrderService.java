@@ -637,6 +637,9 @@ public class WorkOrderService {
         String priority = raw == null || raw.isBlank()
                 ? PRIORITY_NORMAL
                 : raw.trim().toUpperCase(Locale.ROOT);
+        // Bookings and maintenance requests say MEDIUM / CRITICAL; accept them here too.
+        if ("MEDIUM".equals(priority)) priority = PRIORITY_NORMAL;
+        if ("CRITICAL".equals(priority) || "URGENT".equals(priority)) priority = "HIGH";
         if (!PRIORITIES.contains(priority)) {
             throw failure(
                     "Invalid Priority",

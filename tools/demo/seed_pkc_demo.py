@@ -487,17 +487,18 @@ def main():
         api.post(f'/work-orders/{wo_id}/labour', {'description': 'Mechanic labour', 'hours': 2, 'rate': labour / 2})
         if line and wm:
             api.post('/inventory/stock/issue', {'warehouseId': wm, 'workOrderId': wo_id, 'workOrderPartId': line, 'quantity': qty})
+        mode = ['CREDIT', 'CASH', 'BANK'][i % 3]
+        if mode == 'CREDIT':
+            cur = api.get(f'/work-orders/{wo_id}') or {}
+            upd = {k: cur.get(k) for k in ('name', 'description', 'priority', 'estimatedCost', 'requestedDate', 'diagnosis')}
+            upd.update({'supplierId': sup.get(['PKC-S04', 'PKC-S09', 'PKC-S03'][i % 3]), 'diagnosis': 'Checked by workshop'})
+            if not api.put(f'/work-orders/{wo_id}', upd):
+                mode = 'CASH'
         api.post(f'/work-orders/{wo_id}/start', {})
         if i in (0, 6):
             continue                                   # stays IN_PROGRESS (open jobs)
         detail = api.get(f'/work-orders/{wo_id}') or {}
         parts_cost = float(detail.get('partsCostFromStock') or 0)
-        mode = ['CREDIT', 'CASH', 'BANK'][i % 3]
-        if mode == 'CREDIT':
-            upd = {k: detail.get(k) for k in ('name', 'description', 'priority', 'estimatedCost', 'requestedDate', 'diagnosis')}
-            upd.update({'supplierId': sup.get(['PKC-S04', 'PKC-S09', 'PKC-S03'][i % 3]), 'diagnosis': 'Checked by workshop'})
-            if not api.put(f'/work-orders/{wo_id}', upd):
-                mode = 'CASH'
         api.post(f'/work-orders/{wo_id}/complete', {'completionNotes': 'Work completed and road tested',
                                                      'actualCost': round(parts_cost + labour + (1500 if i == 3 else 0), 2),
                                                      'outsidePaymentMode': mode})
@@ -505,7 +506,7 @@ def main():
     # scheduled (preventive) services raised directly by the office
     for n, (vi, title, part, qty) in enumerate([(0, '10,000 km preventive service', 'OF-01', 1), (5, 'Monthly greasing & check-up', 'GR-01', 2)]):
         wo = api.post('/work-orders', {'vehicleId': vehicles[vi]['id'], 'source': 'MANUAL', 'maintenanceType': 'PREVENTIVE',
-                                       'name': title, 'description': title, 'priority': 'MEDIUM', 'estimatedCost': 1200,
+                                       'name': title, 'description': title, 'priority': 'NORMAL', 'estimatedCost': 1200,
                                        'requestedDate': d(5 + n)})
         if not wo:
             continue
@@ -532,7 +533,7 @@ def main():
     for code, amt, ago, method in [('PKC-S01', 6000, 18, 'BANK_TRANSFER'), ('PKC-S02', 40000, 14, 'CHEQUE'),
                                    ('PKC-S09', 7670, 9, 'UPI'), ('PKC-S07', 5000, 5, 'BANK_TRANSFER'),
                                    ('PKC-S01', 3000, 4, 'UPI'), ('PKC-S02', 15000, 4, 'BANK_TRANSFER'), ('PKC-S03', 2500, 3, 'CASH'),
-                                   ('PKC-S08', 11000, 3, 'BANK_TRANSFER'), ('PKC-S07', 4000, 2, 'CHEQUE'), ('PKC-S04', 1500, 1, 'UPI')]:
+                                   ('PKC-S08', 11000, 3, 'BANK_TRANSFER'), ('PKC-S07', 4000, 2, 'CHEQUE'), ('PKC-S03', 1500, 1, 'UPI')]:
         api.post('/payables/payments', {'supplierId': sup.get(code), 'paymentDate': d(ago), 'amount': amt,
                                         'paymentMethod': method, 'referenceNumber': f'PAY{ago}{amt}'})
 
