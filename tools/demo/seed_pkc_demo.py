@@ -504,8 +504,11 @@ def main():
                                                      'outsidePaymentMode': mode})
 
     # scheduled (preventive) services raised directly by the office
+    mtypes = api.get(f'/lookups/list?companyId={cid}&type=MAINTENANCE_TYPE') or []
+    mtype = next((m.get('code') for m in mtypes if 'PREVENT' in (m.get('code') or '').upper() or 'SERVICE' in (m.get('code') or '').upper()),
+                 (mtypes[0].get('code') if mtypes else 'GENERAL_SERVICE'))
     for n, (vi, title, part, qty) in enumerate([(0, '10,000 km preventive service', 'OF-01', 1), (5, 'Monthly greasing & check-up', 'GR-01', 2)]):
-        wo = api.post('/work-orders', {'vehicleId': vehicles[vi]['id'], 'source': 'MANUAL', 'maintenanceType': 'PREVENTIVE',
+        wo = api.post('/work-orders', {'vehicleId': vehicles[vi]['id'], 'source': 'MANUAL', 'maintenanceType': mtype,
                                        'name': title, 'description': title, 'priority': 'NORMAL', 'estimatedCost': 1200,
                                        'requestedDate': d(5 + n)})
         if not wo:
