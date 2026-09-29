@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -18,7 +19,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-customer-details-console',
   standalone: true,
-  imports: [MasterFormDialogComponent, ExportButtonsComponent, 
+  imports: [BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -91,6 +92,27 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   /** Create / edit customer (the only place customers are created). */
   customerForm = signal<{ record: any | null } | null>(null);
   openCustomerForm(record: any | null): void { this.customerForm.set({ record }); }
+  /** List (search) / details view. The list is the landing view; Edit opens the form with the saved record. */
+  view = signal<'list' | 'detail'>('list');
+  listSearch = signal('');
+  showUpload = signal(false);
+  readonly filteredCustomers = computed(() => {
+    const q = this.listSearch().trim().toLowerCase();
+    const all = this.customers();
+    if (!q) return all;
+    return all.filter((r: any) => ['code','name','gstNumber','phone','address'].some(f => String(r?.[f] ?? '').toLowerCase().includes(q)));
+  });
+  editCustomerRow(row: any): void {
+    // Load the full saved record so every field (dates, dropdowns, branch) is filled in the form.
+    this.http.get<any>(`/api/v1/customers/${row.id}`).subscribe({
+      next: r => this.openCustomerForm(r?.data ?? row),
+      error: () => this.openCustomerForm(row)
+    });
+  }
+  openCustomerDetails(row: any): void {
+    this.selectCustomer(row.id);
+    this.view.set('detail');
+  }
   /** Delete; the server refuses when the customer is used in trips, bookings, invoices, fuel or jobs (deactivate instead). */
   deleteCustomer(rec: any): void {
     if (!rec?.id || !confirm(`Delete ${rec.name || rec.code}? This cannot be undone.`)) return;

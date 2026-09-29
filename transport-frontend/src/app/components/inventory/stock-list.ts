@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -11,10 +12,12 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-stock-list',
   standalone: true,
-  imports: [ExportButtonsComponent, CommonModule, FormsModule],
+  imports: [BulkUploadDialogComponent, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {
+  /** Excel bulk creation dialog. */
+  showUpload = signal(false);
   /** One-time cost for stock entered before costing existed (posts it to the inventory account). */
   setCost(row: any): void {
     const v = prompt(`Unit cost (₹) for ${row.sparePartName} in ${row.warehouseCode || row.warehouseName}\nQuantity on hand: ${row.availableQuantity}`);

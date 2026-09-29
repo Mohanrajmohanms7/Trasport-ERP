@@ -1,10 +1,14 @@
 <div class="ops-page">
+  @if (showUpload()) {
+    <app-bulk-upload-dialog module="spare-parts" title="Spare Parts" (done)="showUpload.set(false); load()" (closed)="showUpload.set(false)" />
+  }
   <header class="ops-header">
     <div>
       <h1 class="ops-title"><span class="material-icons">settings</span>Spare parts</h1>
       <p class="ops-sub">Parts catalog used on work orders. Set a reorder level to get low-stock alerts on the Stock screen.</p>
     </div>
     <div class="ops-actions">
+      <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
       <app-export-buttons module="spare-parts" />
       @if (canWrite()) {
         <button type="button" class="ops-btn ops-btn--primary" (click)="openNew()"><span class="material-icons">add</span>New spare part</button>
