@@ -12,7 +12,7 @@
     <div class="flex flex-wrap gap-2 self-start md:self-auto">
       <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
       <app-export-buttons module="customers" />
-      @if (selectedCustomer()) {
+      @if (selectedCustomer() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(selectedCustomer())"><span class="material-icons text-base">edit</span>Edit customer</button>
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteCustomer(selectedCustomer())"><span class="material-icons text-base">delete</span>Delete</button>
       }
