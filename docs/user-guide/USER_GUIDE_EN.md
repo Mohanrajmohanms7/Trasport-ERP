@@ -148,6 +148,15 @@ Vehicle types (Tipper, Trailer), capacities (10 T, 20 T), fuel types, expense ca
 - **Mandatory:** Code\*, Name\*. Also GSTIN (checked), phone, **credit days** (bill due date = bill date + credit days).
 - Example: `SUP-001` — *Sri Murugan Auto Works*, credit 30 days.
 
+### Bulk upload from Excel
+Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock (opening stock) have an **Upload** button.
+1. Click **Upload** → **Download template** (dropdown columns such as Ownership, Branch, Unit already list the allowed values).
+2. Fill one row per record (columns with * are required), save, then **Choose file** → **Upload**.
+3. Every row is checked: required fields, formats (dates, GSTIN, phone, numbers), dropdown values, duplicates inside the file
+   and records that already exist. Each row shows **Valid** or **Invalid** with the exact reason.
+4. Fix the Excel and upload again, or click **Remove invalid**. **Create** is enabled only when every remaining row is valid;
+   all rows are created together — if anything fails, nothing is saved.
+
 ---
 
 ## Chapter 3 — Driver daily pay slabs — *Finance → Driver Payroll → Daily Pay Slabs*
