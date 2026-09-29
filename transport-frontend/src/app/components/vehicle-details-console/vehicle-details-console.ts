@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
@@ -23,7 +24,7 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -147,6 +148,31 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   /** Create / edit vehicle (the only place vehicles are created). */
   vehicleForm = signal<{ record: any | null } | null>(null);
   openVehicleForm(record: any | null): void { this.vehicleForm.set({ record }); }
+  /** List (search) / details view. The list is the landing view; Edit opens the form with the saved record. */
+  view = signal<'list' | 'detail'>('list');
+  expiring(d: any): boolean {
+    if (!d) return false;
+    return (new Date(d).getTime() - Date.now()) / 86400000 <= 30;
+  }
+  listSearch = signal('');
+  showUpload = signal(false);
+  readonly filteredVehicles = computed(() => {
+    const q = this.listSearch().trim().toLowerCase();
+    const all = this.vehicles();
+    if (!q) return all;
+    return all.filter((r: any) => ['code','name','brand','model','ownerName'].some(f => String(r?.[f] ?? '').toLowerCase().includes(q)));
+  });
+  editVehicleRow(row: any): void {
+    // Load the full saved record so every field (dates, dropdowns, branch) is filled in the form.
+    this.http.get<any>(`/api/v1/vehicles/${row.id}`).subscribe({
+      next: r => this.openVehicleForm(r?.data ?? row),
+      error: () => this.openVehicleForm(row)
+    });
+  }
+  openVehicleDetails(row: any): void {
+    this.selectVehicle(row.id);
+    this.view.set('detail');
+  }
   /** Delete; the server refuses when the vehicle is used in trips, bookings, invoices, fuel or jobs (deactivate instead). */
   deleteVehicle(rec: any): void {
     if (!rec?.id || !confirm(`Delete ${rec.name || rec.code}? This cannot be undone.`)) return;
@@ -169,6 +195,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
     this.initForms();
     this.route.queryParamMap.subscribe(params => {
       const raw = params.get('vehicleId');
+      if (raw) this.view.set('detail');
       const parsed = raw != null && raw !== '' ? Number(raw) : NaN;
       this.requestedVehicleId = Number.isFinite(parsed) ? parsed : null;
       if (params.get('new') === '1') this.openVehicleForm(null);

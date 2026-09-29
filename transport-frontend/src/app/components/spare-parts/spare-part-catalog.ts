@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -10,10 +11,12 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-spare-part-catalog',
   standalone: true,
-  imports: [EntityPhotoComponent, ExportButtonsComponent, CommonModule, FormsModule],
+  imports: [BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './spare-part-catalog.html'
 })
 export class SparePartCatalogComponent implements OnInit {
+  /** Excel bulk creation dialog. */
+  showUpload = signal(false);
   /** Photo edit is available inline; the server checks company access. */
   readonly canWritePhoto = true;
   private spareParts = inject(SparePartService);

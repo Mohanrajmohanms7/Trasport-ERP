@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,10 +13,12 @@ import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attach
 @Component({
   selector: 'app-supplier-master',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, ExportButtonsComponent, AttachmentsPanelComponent],
+  imports: [BulkUploadDialogComponent, CommonModule, FormsModule, RouterLink, ExportButtonsComponent, AttachmentsPanelComponent],
   templateUrl: './supplier-master.html'
 })
 export class SupplierMasterComponent implements OnInit {
+  /** Excel bulk creation dialog. */
+  showUpload = signal(false);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
   private companyId = resolveTenantCompanyId();

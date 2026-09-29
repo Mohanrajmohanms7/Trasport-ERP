@@ -1,3 +1,4 @@
+import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -48,7 +49,7 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
 @Component({
   selector: 'app-driver-details-console',
   standalone: true,
-  imports: [EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FfPageContainerComponent,
@@ -75,6 +76,8 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
   styleUrl: './driver-details-console.css'
 })
 export class DriverDetailsConsoleComponent implements OnInit {
+  /** Excel bulk creation dialog. */
+  showUpload = signal(false);
   private http = inject(HttpClient);
   private masterService = inject(MasterService);
   private driverMgmt = inject(DriverMgmtService);
@@ -496,7 +499,7 @@ export class DriverDetailsConsoleComponent implements OnInit {
     this.showSalaryEditor.set(false);
   }
 
-  private loadDrivers(): void {
+  loadDrivers(): void {
     this.loading.set(true);
     this.masterService
       .getMasters<Driver>('drivers', this.companyId, {

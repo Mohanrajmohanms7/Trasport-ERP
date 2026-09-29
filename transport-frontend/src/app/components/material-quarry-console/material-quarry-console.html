@@ -1,4 +1,7 @@
 <div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans relative overflow-hidden text-[var(--ff-text-primary)]">
+  @if (showUpload()) {
+    <app-bulk-upload-dialog module="materials" title="Materials" (done)="showUpload.set(false); loadMaterials()" (closed)="showUpload.set(false)" />
+  }
 
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
     <div class="flex flex-col gap-0.5">
@@ -10,7 +13,7 @@
         Create materials, quarries, UOM masters, conversion rules, pricing and loading points
       </p>
     </div>
-    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="materials" /></div>
+    <div class="flex flex-wrap gap-2 self-start md:self-auto"><button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload materials</button><app-export-buttons module="materials" /></div>
   </header>
 
   <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">

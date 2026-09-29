@@ -237,6 +237,14 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 <p><strong>Purpose:</strong> workshops, spare-part shops, tyre dealers, fuel pumps.
 - <strong>Mandatory:</strong> Code*, Name*. Also GSTIN (checked), phone, <strong>credit days</strong> (bill due date = bill date + credit days).
 - Example: <code>SUP-001</code> — <em>Sri Murugan Auto Works</em>, credit 30 days.</p>
+<h3 id="bulk-upload-from-excel">Bulk upload from Excel</h3>
+<p>Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock (opening stock) have an <strong>Upload</strong> button.
+1. Click <strong>Upload</strong> → <strong>Download template</strong> (dropdown columns such as Ownership, Branch, Unit already list the allowed values).
+2. Fill one row per record (columns with * are required), save, then <strong>Choose file</strong> → <strong>Upload</strong>.
+3. Every row is checked: required fields, formats (dates, GSTIN, phone, numbers), dropdown values, duplicates inside the file
+   and records that already exist. Each row shows <strong>Valid</strong> or <strong>Invalid</strong> with the exact reason.
+4. Fix the Excel and upload again, or click <strong>Remove invalid</strong>. <strong>Create</strong> is enabled only when every remaining row is valid;
+   all rows are created together — if anything fails, nothing is saved.</p>
 <hr />
 <h2 id="chapter-3-driver-daily-pay-slabs-finance-driver-payroll-daily-pay-slabs">Chapter 3 — Driver daily pay slabs — <em>Finance → Driver Payroll → Daily Pay Slabs</em></h2>
 <p><strong>Purpose:</strong> how much a driver earns per day based on completed trips that day.

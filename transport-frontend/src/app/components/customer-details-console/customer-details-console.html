@@ -10,8 +10,9 @@
       <p class="text-[var(--ff-text-secondary)] text-sm">Create customers with GSTIN and credit limit; manage delivery sites, contact persons and documents</p>
     </div>
     <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
       <app-export-buttons module="customers" />
-      @if (selectedCustomer()) {
+      @if (selectedCustomer() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(selectedCustomer())"><span class="material-icons text-base">edit</span>Edit customer</button>
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteCustomer(selectedCustomer())"><span class="material-icons text-base">delete</span>Delete</button>
       }
@@ -22,6 +23,53 @@
     <app-master-form-dialog kind="customer" [record]="cf.record" (saved)="onCustomerSaved($event)" (closed)="customerForm.set(null)" />
   }
 
+    @if (showUpload()) {
+    <app-bulk-upload-dialog module="customers" title="Customers" (done)="showUpload.set(false); loadCustomers()" (closed)="showUpload.set(false)" />
+  }
+
+  <!-- List / details switch -->
+  <div class="flex items-center gap-1 shrink-0 border-b border-[var(--ff-border-divider)]">
+    <button type="button" class="px-3 pb-2 text-sm font-semibold border-b-2" [style.border-color]="view() === 'list' ? 'var(--ff-color-primary-600)' : 'transparent'" [style.color]="view() === 'list' ? null : 'var(--ff-text-muted)'" (click)="view.set('list')">All customers</button>
+    <button type="button" class="px-3 pb-2 text-sm font-semibold border-b-2" [style.border-color]="view() === 'detail' ? 'var(--ff-color-primary-600)' : 'transparent'" [style.color]="view() === 'detail' ? null : 'var(--ff-text-muted)'" (click)="view.set('detail')">Customer details</button>
+  </div>
+
+  @if (view() === 'list') {
+    <main class="flex-1 min-h-0 flex flex-col rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] overflow-hidden">
+      <div class="p-3 flex flex-wrap gap-2 items-center border-b border-[var(--ff-border-divider)]">
+        <input class="h-9 flex-1 min-w-[200px] rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-3 text-sm" placeholder="Search code, name, GSTIN, phone" [value]="listSearch()" (input)="listSearch.set($any($event.target).value)" aria-label="Search customers" />
+        <span class="text-xs text-[var(--ff-text-muted)]">{{ filteredCustomers().length }} of {{ customers().length }}</span>
+      </div>
+      <div class="flex-1 min-h-0 overflow-auto">
+        <table class="w-full text-left text-xs border-collapse min-w-[860px]">
+          <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-semibold">
+            <th class="p-3">Code</th><th class="p-3">Name</th><th class="p-3">GSTIN</th><th class="p-3">Phone</th><th class="p-3">Address</th>
+            <th class="p-3 text-right">Credit limit (₹)</th><th class="p-3">Status</th><th class="p-3"></th>
+          </tr></thead>
+          <tbody>
+            @for (c of filteredCustomers(); track c.id) {
+              <tr class="border-t border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                <td class="p-3 font-mono font-semibold">{{ c.code }}</td>
+                <td class="p-3 font-semibold">{{ c.name }}</td>
+                <td class="p-3 font-mono">{{ c.gstNumber || '—' }}</td>
+                <td class="p-3">{{ c.phone || '—' }}</td>
+                <td class="p-3 max-w-[260px] truncate">{{ c.address || '—' }}</td>
+                <td class="p-3 text-right tabular-nums">{{ (c.creditLimit || 0) | number:'1.0-0' }}</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full border text-[11px] font-semibold">{{ c.status | titlecase }}</span></td>
+                <td class="p-3 text-right whitespace-nowrap">
+                  <button type="button" class="text-[var(--ff-color-primary-600)] font-semibold mr-3 inline-flex items-center gap-1" (click)="editCustomerRow(c)"><span class="material-icons text-sm">edit</span>Edit</button>
+                  <button type="button" class="text-[var(--ff-text-secondary)] font-semibold inline-flex items-center gap-1" (click)="openCustomerDetails(c)"><span class="material-icons text-sm">open_in_new</span>Sites &amp; contacts</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="8" class="p-10 text-center text-[var(--ff-text-muted)]">{{ customers().length ? 'No customer matches the search.' : 'No customers yet — click New customer or Upload.' }}</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </main>
+  }
+
+  @if (view() === 'detail') {
   <!-- Main console layouts -->
   <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
 
@@ -213,6 +261,7 @@
 
     </div>
   </main>
+  }
 
   <!-- Slide-out Sidebar Form Editor for Sites -->
   @if (showSiteEditor()) {

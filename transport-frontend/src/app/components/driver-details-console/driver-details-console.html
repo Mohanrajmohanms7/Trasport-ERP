@@ -1,4 +1,7 @@
 <ff-loading-overlay />
+  @if (showUpload()) {
+    <app-bulk-upload-dialog module="drivers" title="Drivers" (done)="showUpload.set(false); loadDrivers()" (closed)="showUpload.set(false)" />
+  }
 <ff-toast />
 
 <ff-page-container>
@@ -12,6 +15,7 @@
     ]"
     [actions]="headerActions"
     (actionClick)="onHeaderAction($event)">
+    <button type="button" ffActions class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
     <app-export-buttons ffActions module="drivers" />
   </ff-page-header>
 
