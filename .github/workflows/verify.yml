@@ -9,6 +9,8 @@ on:
   workflow_dispatch: {}
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -94,7 +96,7 @@ jobs:
           test "${{ steps.fe.outcome }}" = success
           ! grep -q "^SMOKE_FAILS=[1-9]" /tmp/boot.log
       - name: Report
-        if: always() && github.event_name == 'push'
+        if: always()
         uses: actions/github-script@v7
         env:
           BE: ${{ steps.be.outcome }}
@@ -106,4 +108,8 @@ jobs:
             const tail = (f, n) => { try { const l = fs.readFileSync(f,'utf8').split('\n'); return l.slice(-n).join('\n'); } catch { return '(no log)'; } };
             const errs = (f) => { try { return fs.readFileSync(f,'utf8').split('\n').filter(x => /✘|ERROR|error TS|FAIL|Tests run:.*Fail|COMPILATION|cannot find symbol|symbol:|location:/.test(x)).slice(0,120).join('\n'); } catch { return ''; } };
             const body = `BE=${process.env.BE} BOOT=${process.env.BOOT} FE=${process.env.FE}\n\n### backend errors\n\`\`\`\n${errs('/tmp/be.log')}\n\`\`\`\n### backend tail\n\`\`\`\n${tail('/tmp/be.log',60)}\n\`\`\`\n### boot/smoke\n\`\`\`\n${tail("/tmp/boot.log",200)}\n\`\`\`\n### shots\n\`\`\`\n${tail('/tmp/shots.log',60)}\n${tail('/tmp/ngserve.log',15)}\n\`\`\`\n### frontend errors\n\`\`\`\n${errs('/tmp/fe.log')}\n\`\`\`\n### frontend tail\n\`\`\`\n${tail('/tmp/fe.log',30)}\n\`\`\``;
-            await github.rest.repos.createCommitComment({ owner: context.repo.owner, repo: context.repo.repo, commit_sha: context.sha, body: body.slice(0, 60000) });
+            if (context.payload.pull_request) {
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: context.payload.pull_request.number, body: body.slice(0, 60000) });
+            } else {
+              await github.rest.repos.createCommitComment({ owner: context.repo.owner, repo: context.repo.repo, commit_sha: context.sha, body: body.slice(0, 60000) });
+            }
