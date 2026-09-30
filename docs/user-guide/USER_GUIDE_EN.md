@@ -35,6 +35,9 @@ from setting up the company to sending invoices, collecting money, paying driver
 
 - **Signing in:** open the TransaFlow link, enter the **username** and **password** given by your administrator.
   You land on the **Dashboard**. Your company initials (for example **PKC**) show above *TransaFlow* in the left menu.
+- **Temporary password:** if your login was created with a system-generated or reset password, TransaFlow first opens
+  **Profile → Change password**. Enter the temporary password as the current password and choose your own (8+ characters);
+  then the application opens.
 - **Phone use:** tap **☰** (top left) to open the menu.
 - **Mandatory fields** are marked with **\***. The Save button stays disabled until they are filled.
 - **Dates:** you can enter past dates (e.g. yesterday's trip), but **never future dates**.
