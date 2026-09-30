@@ -271,6 +271,15 @@ CGST ₹668.25 + SGST ₹668.25 (அதே மாநிலம்) → மொத�
 3. சேமித்து → **Approve**. இன்வாய்ஸ்கள் **PAID** / **PARTIALLY PAID** ஆகும்; கணக்கு: Cash/Bank ↔ Customer Receivable.
 4. செக் நகல் / UPI ஸ்கிரீன்ஷாட் இணைக்கவும். **Customer Ledger** டேபில் நிலுவை இருப்பைப் பார்க்கலாம்.
 
+### Settlement Dashboard (Customer Receipts → Settlement Dashboard)
+- **Received in period / Settled against invoices / Advance not yet applied** — காலப் பொத்தான்கள் (This month, Last month,
+  Financial year, All time) படி மாறும். **Customers owe**, **Overdue** எப்போதும் இன்றைய நிலவரம்.
+- **Dues by age** — ஒரு பெட்டியைக் கிளிக் செய்தால் (Not yet due, 1–30, 31–60 … நாட்கள் தாமதம்) அந்த இன்வாய்ஸ்கள் மட்டும் தெரியும்.
+- **Customers with dues** (அதிக நிலுவை முதலில்): **Receive** — அந்த வாடிக்கையாளருக்கு ரசீது; **Ledger** — நிலுவை இருப்பு;
+  **Apply advance** — முன்பணத்தை அவர்களின் பழைய திறந்த இன்வாய்ஸ்களுக்கு ஒதுக்கும்.
+- **கிரெடிட் லிமிட்:** வாடிக்கையாளர் நிலுவை + இந்த புக்கிங் மதிப்பு கிரெடிட் லிமிட்டை தாண்டினால் புக்கிங்கை அப்ரூவ் செய்ய முடியாது
+  (0 = லிமிட் இல்லை). பணம் வசூலிக்கவும் அல்லது Customer Master-ல் லிமிட்டை உயர்த்தவும்.
+
 **அடுத்து:** டிரைவர் செட்டில்மெண்ட் (மாதாந்திரம்).
 
 ---
