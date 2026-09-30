@@ -30,6 +30,8 @@ public class QuarryController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Quarry> quarries = quarryService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(quarries, "Quarries fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch quarries");
         }
@@ -41,6 +43,8 @@ public class QuarryController {
             return quarryService.getById(id)
                     .map(q -> ApiResponse.success(q, "Quarry fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Quarry not found"), "Quarry not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch quarry");
         }
@@ -52,6 +56,8 @@ public class QuarryController {
             quarry.setCompanyId(tenantAccess.resolveCompanyId(quarry.getCompanyId()));
             Quarry created = quarryService.create(quarry);
             return ApiResponse.success(created, "Quarry created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create quarry");
         }
@@ -62,6 +68,8 @@ public class QuarryController {
         try {
             Quarry updated = quarryService.update(id, quarry);
             return ApiResponse.success(updated, "Quarry updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update quarry");
         }
@@ -72,6 +80,8 @@ public class QuarryController {
         try {
             quarryService.delete(id);
             return ApiResponse.success(null, "Quarry deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete quarry");
         }
@@ -82,6 +92,8 @@ public class QuarryController {
         try {
             Quarry toggled = quarryService.toggleStatus(id);
             return ApiResponse.success(toggled, "Quarry status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

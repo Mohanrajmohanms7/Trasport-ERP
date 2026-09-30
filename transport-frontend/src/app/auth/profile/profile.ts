@@ -93,7 +93,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 })
 export class UserProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
+  authService = inject(AuthService);
   private router = inject(Router);
 
   profile = signal<UserProfile | null>(null);
@@ -286,13 +286,18 @@ export class UserProfileComponent implements OnInit {
         if (res.success) {
           this.successMessage.set('Password changed successfully!');
           this.passwordForm.reset();
+          if (this.authService.passwordChangeRequired()) {
+            this.authService.setPasswordChangeRequired(false);
+            const roles = this.authService.currentUser()?.roles || [];
+            setTimeout(() => this.router.navigate([roles.includes('SUPER_ADMIN') ? '/platform-admin/dashboard' : '/dashboard']), 800);
+          }
         } else {
           this.errorMessage.set(res.message || 'Password change failed.');
         }
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Old password verification failed or invalid policy.');
+        this.errorMessage.set(err.error?.errors?.[0] || err.error?.message || 'Old password verification failed or invalid policy.');
       }
     });
   }

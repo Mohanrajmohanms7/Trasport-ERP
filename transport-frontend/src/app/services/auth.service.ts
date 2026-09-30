@@ -136,6 +136,7 @@ export class AuthService {
     localStorage.setItem('name', authData.name);
     localStorage.setItem('roles', JSON.stringify(authData.roles || []));
     localStorage.setItem('subscriptionExpired', authData.subscriptionExpired ? 'true' : 'false');
+    this.setPasswordChangeRequired(!!(authData as any).forcePasswordChange);
     if (authData.email) {
       localStorage.setItem('email', authData.email);
     } else {
@@ -227,6 +228,14 @@ export class AuthService {
     return this.http.post<ApiResponse<void>>(`${this.apiUrl}/reset-password`, payload);
   }
 
+  /** A temporary password must be changed before the rest of the app can be used. */
+  passwordChangeRequired = signal<boolean>(localStorage.getItem('forcePasswordChange') === 'true');
+  setPasswordChangeRequired(v: boolean): void {
+    this.passwordChangeRequired.set(v);
+    if (v) localStorage.setItem('forcePasswordChange', 'true');
+    else localStorage.removeItem('forcePasswordChange');
+  }
+
   changePassword(payload: any): Observable<ApiResponse<void>> {
     return this.http.put<ApiResponse<void>>(`${this.apiUrl}/change-password`, payload);
   }
@@ -287,6 +296,7 @@ export class AuthService {
 
   clearLocalSession() {
     this.setBrand(null);
+    localStorage.removeItem('forcePasswordChange');
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('username');

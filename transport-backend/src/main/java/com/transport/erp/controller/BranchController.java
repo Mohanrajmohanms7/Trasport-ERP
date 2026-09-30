@@ -30,6 +30,8 @@ public class BranchController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Branch> branches = branchService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(branches, "Branches fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch branches");
         }
@@ -49,6 +51,8 @@ public class BranchController {
                         return ApiResponse.success(b, "Branch fetched successfully");
                     })
                     .orElse(ApiResponse.error(Collections.singletonList("Branch not found"), "Branch not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch branch");
         }
@@ -61,6 +65,8 @@ public class BranchController {
             branch.setCompanyId(scopedCompanyId);
             Branch created = branchService.create(branch);
             return ApiResponse.success(created, "Branch created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create branch");
         }
@@ -75,6 +81,8 @@ public class BranchController {
             branch.setCompanyId(existing.getCompanyId());
             Branch updated = branchService.update(id, branch);
             return ApiResponse.success(updated, "Branch updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update branch");
         }
@@ -88,6 +96,8 @@ public class BranchController {
             tenantAccess.assertCompanyAccess(existing.getCompanyId());
             branchService.delete(id);
             return ApiResponse.success(null, "Branch deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete branch");
         }
@@ -101,6 +111,8 @@ public class BranchController {
             tenantAccess.assertCompanyAccess(existing.getCompanyId());
             Branch toggled = branchService.toggleStatus(id);
             return ApiResponse.success(toggled, "Branch status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

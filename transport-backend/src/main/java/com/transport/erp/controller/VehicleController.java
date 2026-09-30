@@ -30,6 +30,8 @@ public class VehicleController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Vehicle> vehicles = vehicleService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(vehicles, "Vehicles fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch vehicles");
         }
@@ -41,6 +43,8 @@ public class VehicleController {
             return vehicleService.getById(id)
                     .map(v -> ApiResponse.success(v, "Vehicle fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Vehicle not found"), "Vehicle not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch vehicle");
         }
@@ -52,6 +56,8 @@ public class VehicleController {
             vehicle.setCompanyId(tenantAccess.resolveCompanyId(vehicle.getCompanyId()));
             Vehicle created = vehicleService.create(vehicle);
             return ApiResponse.success(created, "Vehicle created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create vehicle");
         }
@@ -62,6 +68,8 @@ public class VehicleController {
         try {
             Vehicle updated = vehicleService.update(id, vehicle);
             return ApiResponse.success(updated, "Vehicle updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update vehicle");
         }
@@ -74,6 +82,8 @@ public class VehicleController {
             return ApiResponse.success(null, "Vehicle deleted successfully");
         } catch (com.transport.erp.exception.BusinessValidationException e) {
             return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete vehicle");
         }
@@ -84,6 +94,8 @@ public class VehicleController {
         try {
             Vehicle toggled = vehicleService.toggleStatus(id);
             return ApiResponse.success(toggled, "Vehicle status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

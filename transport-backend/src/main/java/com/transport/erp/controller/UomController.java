@@ -33,6 +33,8 @@ public class UomController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             List<UomMaster> uoms = uomService.getAllUoms(scopedCompanyId);
             return ApiResponse.success(uoms, "UOMs fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch UOMs");
         }
@@ -47,6 +49,8 @@ public class UomController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<UomMaster> uoms = uomService.getUomsPaged(scopedCompanyId, search, pageable);
             return ApiResponse.success(uoms, "Paged UOMs fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch paged UOMs");
         }
@@ -57,6 +61,8 @@ public class UomController {
         try {
             UomMaster uom = uomService.getUomById(id);
             return ApiResponse.success(uom, "UOM fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch UOM");
         }
@@ -68,6 +74,8 @@ public class UomController {
             uom.setCompanyId(tenantAccess.resolveCompanyId(uom.getCompanyId()));
             UomMaster created = uomService.createUom(uom);
             return ApiResponse.success(created, "UOM created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create UOM");
         }
@@ -78,6 +86,8 @@ public class UomController {
         try {
             UomMaster updated = uomService.updateUom(id, uom);
             return ApiResponse.success(updated, "UOM updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update UOM");
         }
@@ -88,6 +98,8 @@ public class UomController {
         try {
             uomService.deleteUom(id);
             return ApiResponse.success(null, "UOM deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete UOM");
         }
@@ -101,6 +113,8 @@ public class UomController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             List<UomConversion> conversions = uomService.getAllConversions(scopedCompanyId);
             return ApiResponse.success(conversions, "UOM conversions fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch UOM conversions");
         }
@@ -114,6 +128,8 @@ public class UomController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<UomConversion> conversions = uomService.getConversionsPaged(scopedCompanyId, pageable);
             return ApiResponse.success(conversions, "Paged UOM conversions fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch paged UOM conversions");
         }
@@ -125,6 +141,8 @@ public class UomController {
             conversion.setCompanyId(tenantAccess.resolveCompanyId(conversion.getCompanyId()));
             UomConversion created = uomService.createConversion(conversion);
             return ApiResponse.success(created, "UOM conversion created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create UOM conversion");
         }
@@ -135,6 +153,8 @@ public class UomController {
         try {
             UomConversion updated = uomService.updateConversion(id, conversion);
             return ApiResponse.success(updated, "UOM conversion updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update UOM conversion");
         }
@@ -145,6 +165,8 @@ public class UomController {
         try {
             uomService.deleteConversion(id);
             return ApiResponse.success(null, "UOM conversion deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete UOM conversion");
         }
@@ -167,6 +189,8 @@ public class UomController {
             result.put("originalQuantity", quantity);
             result.put("convertedQuantity", converted);
             return ApiResponse.success(result, "Quantity converted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to convert quantity");
         }

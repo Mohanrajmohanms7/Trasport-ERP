@@ -122,6 +122,12 @@
                           <span class="material-icons text-sm">delete</span>
                         </button>
                       } @else if (rct.status === 'APPROVED') {
+                        <button (click)="exportReceiptPdf(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] transition" title="Download receipt voucher (PDF)">
+                          <span class="material-icons text-sm">picture_as_pdf</span>
+                        </button>
+                        <button (click)="printReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] transition" title="Print receipt voucher">
+                          <span class="material-icons text-sm">print</span>
+                        </button>
                         <button (click)="cancelReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Cancel & Reverse Receipt">
                           <span class="material-icons text-sm">block</span>
                         </button>

@@ -45,6 +45,8 @@ public class CustomerLedgerController {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } catch (IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
@@ -65,6 +67,8 @@ public class CustomerLedgerController {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } catch (IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
@@ -88,6 +92,8 @@ public class CustomerLedgerController {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } catch (IllegalArgumentException e) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }

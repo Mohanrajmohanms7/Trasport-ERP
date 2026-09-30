@@ -532,7 +532,10 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         adminUser.setStatus("ACTIVE");
         adminUser.setCompanyId(savedCompany.getId());
         adminUser.setBranchId(savedBranch.getId());
-        adminUser.setForcePasswordChange(true);
+        // Only a system-generated temporary password must be changed at first login; a password chosen
+        // by the platform admin for the client lets the client go straight to the dashboard.
+        boolean generatedPassword = request.getAdminPassword() == null || request.getAdminPassword().trim().isEmpty();
+        adminUser.setForcePasswordChange(generatedPassword);
         adminUser.getRoles().add(adminRole);
         AppUser savedAdmin = userRepository.save(adminUser);
         steps.add(step("CREATE_COMPANY_ADMIN", "Create Company Admin", "DONE",

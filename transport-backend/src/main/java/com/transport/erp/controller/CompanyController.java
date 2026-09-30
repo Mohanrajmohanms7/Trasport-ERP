@@ -42,6 +42,8 @@ public class CompanyController {
             }
             Page<Company> companies = companyService.getAll(search, pageable);
             return ApiResponse.success(companies, "Companies fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch companies");
         }
@@ -54,6 +56,8 @@ public class CompanyController {
             return companyService.getById(id)
                     .map(c -> ApiResponse.success(c, "Company fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Company not found"), "Company not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch company");
         }
@@ -67,6 +71,8 @@ public class CompanyController {
             }
             Company created = companyService.create(company);
             return ApiResponse.success(created, "Company created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create company");
         }
@@ -78,6 +84,8 @@ public class CompanyController {
             tenantAccess.assertCompanyAccess(id);
             Company updated = companyService.update(id, company);
             return ApiResponse.success(updated, "Company updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update company");
         }
@@ -91,6 +99,8 @@ public class CompanyController {
             }
             companyService.delete(id);
             return ApiResponse.success(null, "Company deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete company");
         }
@@ -104,6 +114,8 @@ public class CompanyController {
             }
             Company toggled = companyService.toggleStatus(id);
             return ApiResponse.success(toggled, "Company status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

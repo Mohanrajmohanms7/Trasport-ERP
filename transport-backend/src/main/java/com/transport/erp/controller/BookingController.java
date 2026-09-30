@@ -64,6 +64,8 @@ public class BookingController {
             return ApiResponse.success(null, "Booking cancelled successfully");
         } catch (com.transport.erp.exception.BusinessValidationException e) {
             return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(java.util.Collections.singletonList(e.getMessage()), "Failed to delete booking");
         }

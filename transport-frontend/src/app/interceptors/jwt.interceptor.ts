@@ -35,6 +35,10 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(err => {
+      if (err.status === 403 && err.error?.message === 'PASSWORD_CHANGE_REQUIRED') {
+        authService.setPasswordChangeRequired(true);
+        router.navigate(['/profile'], { queryParams: { changePassword: 1 } });
+      }
       if (err.status === 403 && err.error?.message === 'SUBSCRIPTION_EXPIRED') {
         authService.setSubscriptionExpired(true);
         router.navigate(['/renewal']);

@@ -30,6 +30,8 @@ public class CustomerController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Customer> customers = customerService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(customers, "Customers fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch customers");
         }
@@ -41,6 +43,8 @@ public class CustomerController {
             return customerService.getById(id)
                     .map(c -> ApiResponse.success(c, "Customer fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Customer not found"), "Customer not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch customer");
         }
@@ -52,6 +56,8 @@ public class CustomerController {
             customer.setCompanyId(tenantAccess.resolveCompanyId(customer.getCompanyId()));
             Customer created = customerService.create(customer);
             return ApiResponse.success(created, "Customer created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create customer");
         }
@@ -62,6 +68,8 @@ public class CustomerController {
         try {
             Customer updated = customerService.update(id, customer);
             return ApiResponse.success(updated, "Customer updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update customer");
         }
@@ -74,6 +82,8 @@ public class CustomerController {
             return ApiResponse.success(null, "Customer deleted successfully");
         } catch (com.transport.erp.exception.BusinessValidationException e) {
             return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete customer");
         }
@@ -84,6 +94,8 @@ public class CustomerController {
         try {
             Customer toggled = customerService.toggleStatus(id);
             return ApiResponse.success(toggled, "Customer status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

@@ -33,6 +33,8 @@ public class DriverController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Driver> drivers = driverService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(drivers, "Drivers fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch drivers");
         }
@@ -44,6 +46,8 @@ public class DriverController {
             return driverService.getById(id)
                     .map(d -> ApiResponse.success(d, "Driver fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Driver not found"), "Driver not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch driver");
         }
@@ -55,6 +59,8 @@ public class DriverController {
             driver.setCompanyId(tenantAccess.resolveCompanyId(driver.getCompanyId()));
             Driver created = driverService.create(driver);
             return ApiResponse.success(created, "Driver created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create driver");
         }
@@ -65,6 +71,8 @@ public class DriverController {
         try {
             Driver updated = driverService.update(id, driver);
             return ApiResponse.success(updated, "Driver updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update driver");
         }
@@ -77,6 +85,8 @@ public class DriverController {
             return ApiResponse.success(null, "Driver deleted successfully");
         } catch (com.transport.erp.exception.BusinessValidationException e) {
             return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete driver");
         }
@@ -105,6 +115,8 @@ public class DriverController {
         try {
             Driver toggled = driverService.toggleStatus(id);
             return ApiResponse.success(toggled, "Driver status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }
