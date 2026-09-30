@@ -125,7 +125,7 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
             COALESCE(SUM(CASE WHEN i.status = 'APPROVED' THEN i.paidAmount ELSE 0 END), 0),
             COALESCE(SUM(CASE WHEN i.status = 'APPROVED' THEN (i.netAmount - i.paidAmount) ELSE 0 END), 0),
             0.0,
-            COUNT(i.id),
+            SUM(CASE WHEN i.status = 'APPROVED' THEN 1 ELSE 0 END),
             SUM(CASE WHEN i.status = 'APPROVED' AND i.paymentStatus = 'UNPAID' THEN 1 ELSE 0 END),
             SUM(CASE WHEN i.status = 'APPROVED' AND i.paymentStatus = 'PARTIALLY_PAID' THEN 1 ELSE 0 END),
             SUM(CASE WHEN i.status = 'APPROVED' AND i.paymentStatus = 'PAID' THEN 1 ELSE 0 END),

@@ -263,6 +263,15 @@ accounts; the **Unbilled completed trips** report shows trips you forgot to bill
 3. Save → **Approve**. Invoices become **PAID** / **PARTIALLY PAID**; accounts: Cash/Bank ↔ Customer Receivable.
 4. Attach the cheque copy / UPI screenshot. See the **Customer Ledger** tab for the running balance.
 
+### Settlement Dashboard (Customer Receipts → Settlement Dashboard)
+- **Received in period / Settled against invoices / Advance not yet applied** follow the period buttons (This month, Last month,
+  Financial year, All time). **Customers owe** and **Overdue** are always as of today.
+- **Dues by age** — click a box (Not yet due, 1–30, 31–60 … days late) to see those invoices.
+- **Customers with dues** (largest first): **Receive** opens a receipt for that customer, **Ledger** shows their running
+  balance, **Apply advance** uses money they paid in advance against their oldest open invoices.
+- **Credit limit:** a booking cannot be approved if the customer's dues plus the booking value would exceed their credit
+  limit (0 = no limit). Collect payment or raise the limit in Customer Master.
+
 **Next:** driver settlement (monthly).
 
 ---

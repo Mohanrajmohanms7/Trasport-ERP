@@ -1,5 +1,7 @@
 package com.transport.erp.service;
 
+import com.transport.erp.exception.BusinessValidationException;
+
 import com.transport.erp.repository.CustomerReceiptAuditRepository;
 import com.transport.erp.repository.CustomerReceiptAllocationRepository;
 import com.transport.erp.model.CustomerReceiptAudit;
@@ -1188,7 +1190,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1265,7 +1267,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1341,7 +1343,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1396,7 +1398,9 @@ public class CustomerReceiptService {
             }
         }
 
-        dtos.sort((d1, d2) -> d2.getInvoiceDate().compareTo(d1.getInvoiceDate()));
+        // Most overdue first (that is what needs chasing), then oldest invoice.
+        dtos.sort(java.util.Comparator.comparingLong(CustomerInvoiceAgingDTO::getAgingDays).reversed()
+                .thenComparing(CustomerInvoiceAgingDTO::getInvoiceDate));
 
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), dtos.size());
@@ -1413,7 +1417,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1469,7 +1473,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1534,7 +1538,7 @@ public class CustomerReceiptService {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1601,10 +1605,19 @@ public class CustomerReceiptService {
 
     @Transactional(readOnly = true)
     public ReceiptSettlementDashboardDTO getSettlementDashboard(Long companyId, Long branchId) {
+        return getSettlementDashboard(companyId, branchId, null, null);
+    }
+
+    /**
+     * Receipts / allocations / advance are for the chosen period (receipt date); outstanding and ageing are always
+     * "as of today" (money owed does not depend on the period being looked at).
+     */
+    @Transactional(readOnly = true)
+    public ReceiptSettlementDashboardDTO getSettlementDashboard(Long companyId, Long branchId, LocalDate fromDate, LocalDate toDate) {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         tenantAccess.assertOwned(companyId);
         if (!tenantAccess.isSuperAdmin(currentUser)) {
-            if (currentUser.getBranchId() != null) {
+            if (currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser)) {
                 branchId = currentUser.getBranchId();
             }
         }
@@ -1612,17 +1625,22 @@ public class CustomerReceiptService {
         ReceiptSettlementDashboardDTO dashboard = new ReceiptSettlementDashboardDTO();
 
         // 1. Summary
-        dashboard.setSummary(getSettlementSummary(companyId, branchId, null, null));
+        dashboard.setSummary(getSettlementSummary(companyId, branchId, fromDate, toDate));
 
         // 2. Aging Summary
         dashboard.setAgingSummary(getAgingSummary(companyId, branchId, null));
 
-        // 3. Top Outstanding Customers (page size 5)
+        // 3. Customers who owe the most (all customers with dues, largest first)
         Pageable top5 = org.springframework.data.domain.PageRequest.of(0, 5);
-        dashboard.setTopOutstandingCustomers(getCustomerOutstandingSummary(companyId, branchId, null, top5).getContent());
+        List<CustomerOutstandingSummaryDTO> owing = new java.util.ArrayList<>(
+                getCustomerOutstandingSummary(companyId, branchId, null, org.springframework.data.domain.PageRequest.of(0, 500)).getContent());
+        owing.removeIf(c -> c.getTotalOutstanding() == null || c.getTotalOutstanding().signum() <= 0);
+        owing.sort((a, b) -> b.getTotalOutstanding().compareTo(a.getTotalOutstanding()));
+        dashboard.setTopOutstandingCustomers(owing.size() > 50 ? owing.subList(0, 50) : owing);
 
-        // 4. Aging Invoices (first 5 invoices)
-        dashboard.setAgingInvoices(getCustomerInvoiceAging(companyId, branchId, null, null, null, top5).getContent());
+        // 4. Open invoices, most overdue first
+        dashboard.setAgingInvoices(getCustomerInvoiceAging(companyId, branchId, null, null, null,
+                org.springframework.data.domain.PageRequest.of(0, 50)).getContent());
 
         // 5. Recent Approved Receipts
         List<CustomerReceipt> recentReceipts = receiptRepository.findRecentApprovedReceipts(companyId, branchId, top5);
@@ -1660,5 +1678,132 @@ public class CustomerReceiptService {
         dashboard.setPaymentPerformance(getCustomerPaymentPerformance(companyId, branchId, top5).getContent());
 
         return dashboard;
+    }
+
+    /**
+     * Apply the unallocated (advance) part of an approved receipt to the same customer's open invoices.
+     * No new accounting entry is needed: the whole receipt was already credited to Customer Receivables.
+     */
+    @Transactional
+    public Map<String, Object> applyAdvance(Long receiptId, List<Map<String, Object>> requested, String username) {
+        CustomerReceipt receipt = receiptRepository.findById(receiptId)
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Receipt not found: " + receiptId));
+        tenantAccess.assertOwned(receipt.getCompanyId());
+        if (!"APPROVED".equals(receipt.getStatus())) {
+            throw new BusinessValidationException("Receipt Not Approved", "ADVANCE_RECEIPT_NOT_APPROVED",
+                    "Only an approved receipt's advance can be applied.", "Approve the receipt first.");
+        }
+        BigDecimal allocated = allocationRepository.findByReceiptIdAndIsDeletedFalse(receipt.getId()).stream()
+                .map(CustomerReceiptAllocation::getAllocatedAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal available = receipt.getAmountReceived().subtract(allocated);
+        if (available.signum() <= 0) {
+            throw new BusinessValidationException("No Advance Left", "ADVANCE_NONE",
+                    "Receipt " + receipt.getReceiptNumber() + " has no unallocated amount.", "Nothing to apply.");
+        }
+        List<SalesInvoice> open = salesInvoiceRepository.findAll().stream()
+                .filter(i -> !Boolean.TRUE.equals(i.getIsDeleted()) && "APPROVED".equals(i.getStatus()))
+                .filter(i -> receipt.getCompanyId().equals(i.getCompanyId()) && i.getCustomer() != null
+                        && i.getCustomer().getId().equals(receipt.getCustomer().getId()))
+                .filter(i -> i.getNetAmount().subtract(i.getPaidAmount()).signum() > 0)
+                .sorted(java.util.Comparator.comparing(SalesInvoice::getInvoiceDate).thenComparing(SalesInvoice::getId))
+                .collect(Collectors.toList());
+        Map<Long, BigDecimal> plan = new java.util.LinkedHashMap<>();
+        if (requested == null || requested.isEmpty()) {
+            BigDecimal left = available;
+            for (SalesInvoice inv : open) {
+                if (left.signum() <= 0) break;
+                BigDecimal take = left.min(inv.getNetAmount().subtract(inv.getPaidAmount()));
+                plan.put(inv.getId(), take);
+                left = left.subtract(take);
+            }
+        } else {
+            for (Map<String, Object> a : requested) {
+                Long invId = Long.valueOf(String.valueOf(a.get("invoiceId")));
+                BigDecimal amt = new BigDecimal(String.valueOf(a.get("amount")));
+                if (amt.signum() <= 0) continue;
+                plan.merge(invId, amt, BigDecimal::add);
+            }
+        }
+        if (plan.isEmpty()) {
+            throw new BusinessValidationException("No Open Invoices", "ADVANCE_NO_OPEN_INVOICES",
+                    receipt.getCustomer().getName() + " has no unpaid approved invoice.", "Keep the advance for the next invoice.");
+        }
+        BigDecimal total = plan.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (total.compareTo(available) > 0) {
+            throw new BusinessValidationException("More Than Advance", "ADVANCE_EXCEEDED",
+                    "₹" + total + " is more than the ₹" + available + " left on " + receipt.getReceiptNumber() + ".", "Reduce the amounts.");
+        }
+        for (Map.Entry<Long, BigDecimal> e : new java.util.TreeMap<>(plan).entrySet()) {
+            SalesInvoice inv = salesInvoiceRepository.findAndLockById(e.getKey())
+                    .orElseThrow(() -> new IllegalArgumentException("Invoice not found: " + e.getKey()));
+            if (!receipt.getCustomer().getId().equals(inv.getCustomer().getId()) || !"APPROVED".equals(inv.getStatus())) {
+                throw new BusinessValidationException("Wrong Invoice", "ADVANCE_WRONG_INVOICE",
+                        "Invoice " + inv.getInvoiceNumber() + " is not an approved invoice of " + receipt.getCustomer().getName() + ".", "Pick this customer's approved invoices.");
+            }
+            BigDecimal balance = inv.getNetAmount().subtract(inv.getPaidAmount());
+            if (e.getValue().compareTo(balance) > 0) {
+                throw new BusinessValidationException("More Than Invoice Balance", "ADVANCE_OVER_INVOICE",
+                        "Invoice " + inv.getInvoiceNumber() + " balance is ₹" + balance + ".", "Reduce the amount.");
+            }
+            CustomerReceiptAllocation alloc = new CustomerReceiptAllocation();
+            alloc.setReceipt(receipt);
+            alloc.setInvoice(inv);
+            alloc.setAllocatedAmount(e.getValue());
+            alloc.setCompanyId(receipt.getCompanyId());
+            alloc.setBranchId(receipt.getBranchId());
+            alloc.setCode("ALLOC-" + receipt.getReceiptNumber());
+            alloc.setName("Advance applied");
+            alloc.setStatus("ACTIVE");
+            alloc.setIsDeleted(false);
+            alloc.setCreatedBy(username);
+            alloc.setUpdatedBy(username);
+            allocationRepository.save(alloc);
+            BigDecimal paid = inv.getPaidAmount().add(e.getValue());
+            inv.setPaidAmount(paid);
+            inv.setPaymentStatus(paid.compareTo(inv.getNetAmount()) >= 0 ? "PAID" : "PARTIALLY_PAID");
+            salesInvoiceRepository.save(inv);
+        }
+        receipt.setAdvanceAmount(available.subtract(total));
+        receipt.setUpdatedBy(username);
+        receiptRepository.save(receipt);
+        auditService.log(username, "RECEIPT_ADVANCE_APPLIED", "customer_receipts", receipt.getId(), null,
+                "Applied ₹" + total + " of advance on " + receipt.getReceiptNumber() + " to " + plan.size() + " invoice(s)");
+        Map<String, Object> out = new java.util.HashMap<>();
+        out.put("applied", total);
+        out.put("invoices", plan.size());
+        out.put("advanceLeft", available.subtract(total));
+        return out;
+    }
+
+    /** Apply every unallocated advance of a customer (oldest receipt first) to their open invoices (oldest first). */
+    @Transactional
+    public Map<String, Object> applyCustomerAdvances(Long customerId, String username) {
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        List<CustomerReceipt> receipts = receiptRepository.findAll().stream()
+                .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()) && "APPROVED".equals(r.getStatus()))
+                .filter(r -> companyId.equals(r.getCompanyId()) && r.getCustomer() != null && r.getCustomer().getId().equals(customerId))
+                .filter(r -> r.getAdvanceAmount() != null && r.getAdvanceAmount().signum() > 0)
+                .sorted(java.util.Comparator.comparing(CustomerReceipt::getReceiptDate).thenComparing(CustomerReceipt::getId))
+                .collect(Collectors.toList());
+        if (receipts.isEmpty()) {
+            throw new BusinessValidationException("No Advance", "ADVANCE_NONE", "This customer has no unallocated advance.", "Nothing to apply.");
+        }
+        BigDecimal applied = BigDecimal.ZERO;
+        int invoices = 0;
+        for (CustomerReceipt r : receipts) {
+            try {
+                Map<String, Object> res = applyAdvance(r.getId(), null, username);
+                applied = applied.add((BigDecimal) res.get("applied"));
+                invoices += (Integer) res.get("invoices");
+            } catch (BusinessValidationException e) {
+                if ("ADVANCE_NO_OPEN_INVOICES".equals(e.getErrorCode())) break;   // everything is paid
+                throw e;
+            }
+        }
+        Map<String, Object> out = new java.util.HashMap<>();
+        out.put("applied", applied);
+        out.put("invoices", invoices);
+        return out;
     }
 }

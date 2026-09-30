@@ -64,5 +64,6 @@ public interface CustomerReceiptAllocationRepository extends JpaRepository<Custo
 
     @Query("SELECT COALESCE(SUM(a.allocatedAmount), 0) FROM CustomerReceiptAllocation a WHERE a.invoice.id = :invoiceId AND a.isDeleted = false AND a.receipt.isDeleted = false AND a.receipt.status != 'CANCELLED'")
     java.math.BigDecimal sumAllocatedAmountByInvoiceId(@Param("invoiceId") Long invoiceId);
-}
 
+    java.util.List<com.transport.erp.model.CustomerReceiptAllocation> findByReceiptIdAndIsDeletedFalse(Long receiptId);
+}

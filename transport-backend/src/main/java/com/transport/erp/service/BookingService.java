@@ -19,6 +19,9 @@ import com.transport.erp.security.TenantParentAccess;
 @Service
 public class BookingService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.repository.SalesInvoiceRepository salesInvoiceRepository;
+
     @Autowired
     private DocumentNumberService documentNumberService;
 
@@ -199,6 +202,23 @@ public class BookingService {
         if (booking.getDetails() == null || booking.getDetails().isEmpty()) {
             throw new com.transport.erp.exception.BusinessValidationException("Empty Booking", "BOOKING_NO_LINES",
                     "Booking " + booking.getBookingNumber() + " has no material lines.", "Add at least one material before approving.");
+        }
+        // Credit control: do not commit more loads to a customer who would go over the agreed credit limit.
+        com.transport.erp.model.Customer cust = booking.getCustomer();
+        if (cust != null && cust.getCreditLimit() != null && cust.getCreditLimit().signum() > 0) {
+            java.math.BigDecimal due = salesInvoiceRepository.sumOutstandingByCustomer(cust.getId(), booking.getCompanyId(), null);
+            java.math.BigDecimal value = booking.getDetails().stream()
+                    .filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
+                    .map(d -> d.getNetAmount() == null ? java.math.BigDecimal.ZERO : d.getNetAmount())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+            java.math.BigDecimal exposure = (due == null ? java.math.BigDecimal.ZERO : due).add(value);
+            if (exposure.compareTo(cust.getCreditLimit()) > 0) {
+                throw new com.transport.erp.exception.BusinessValidationException("Credit Limit Exceeded", "BOOKING_CREDIT_LIMIT",
+                        cust.getName() + " owes ₹" + due.setScale(2, java.math.RoundingMode.HALF_UP) + "; with this booking (₹"
+                                + value.setScale(2, java.math.RoundingMode.HALF_UP) + ") that is more than the credit limit of ₹"
+                                + cust.getCreditLimit().setScale(2, java.math.RoundingMode.HALF_UP) + ".",
+                        "Collect payment first, or raise the customer's credit limit in Customer Master.");
+            }
         }
         booking.setStatus("APPROVED");
         booking.setUpdatedBy(approvedByUsername);
