@@ -224,8 +224,12 @@ public class AuthService {
         }
 
         validatePasswordPolicy(newPassword);
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from the current password.");
+        }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setForcePasswordChange(false);       // temporary password replaced — full access again
         userRepository.save(user);
 
         auditService.log(username, "PASSWORD_CHANGE", "app_users", user.getId(), ipAddress, "User changed password successfully");
