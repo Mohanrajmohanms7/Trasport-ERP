@@ -18,10 +18,10 @@
     <!-- Tab Controls selector -->
     <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none overflow-x-auto whitespace-nowrap scrollbar-none">
       <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
-        Receipts Registry
+        Receipts
       </button>
       <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
-        Customer Ledger running balance
+        Customer Ledger
       </button>
       <button (click)="toggleDashboard()" [class.border-b-2]="activeTab() === 'dashboard'" [class.border-blue-600]="activeTab() === 'dashboard'" [class.text-slate-900]="activeTab() === 'dashboard'" [class.dark:text-white]="activeTab() === 'dashboard'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
         Settlement Dashboard
@@ -196,339 +196,148 @@
         </div>
       }
 
-      <!-- 3. Settlement Dashboard Viewport -->
+      <!-- 3. Settlement Dashboard -->
       @if (activeTab() === 'dashboard') {
+        <!-- Period filter: applies to money received; dues and ageing are always as of today -->
+        <div class="flex flex-wrap items-end gap-2 shrink-0">
+          @for (p of [{k:'month',l:'This month'},{k:'last-month',l:'Last month'},{k:'fy',l:'This financial year'},{k:'all',l:'All time'}]; track p.k) {
+            <button type="button" class="h-8 px-3 rounded-full border text-xs font-semibold" [style.background]="dashPreset() === p.k ? '#172231' : null" [style.color]="dashPreset() === p.k ? '#fff' : null" (click)="setDashPreset(p.k)">{{ p.l }}</button>
+          }
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)] ml-2">From
+            <input type="date" [formControl]="dashboardFromDateControl" class="h-8 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-input)] px-2 text-xs" /></label>
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">To
+            <input type="date" [formControl]="dashboardToDateControl" class="h-8 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-input)] px-2 text-xs" /></label>
+          <button type="button" class="h-8 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold" (click)="dashPreset.set(''); refreshDashboard()">Apply</button>
+          <button type="button" class="h-8 px-3 rounded-lg border text-xs font-semibold inline-flex items-center gap-1 ml-auto" (click)="refreshDashboard()"><span class="material-icons text-sm">refresh</span>Refresh</button>
+        </div>
+
         @if (dashboardLoading()) {
-          <div class="flex-grow flex flex-col items-center justify-center p-8 text-[var(--ff-text-muted)]">
-            <span class="material-icons animate-spin text-3xl text-[var(--ff-color-primary-600)]">sync</span>
-            <span class="text-xs font-bold mt-2">Computing financial data analytics...</span>
-          </div>
+          <div class="p-10 text-center text-sm text-[var(--ff-text-muted)]">Loading settlement figures…</div>
         } @else if (dashboardError()) {
-          <div class="flex-grow flex flex-col items-center justify-center p-8 text-[var(--ff-color-danger-500)]">
-            <span class="material-icons text-3xl">error</span>
-            <span class="text-xs font-bold mt-2">{{ dashboardError() }}</span>
-            <button (click)="refreshDashboard()" class="mt-4 bg-[var(--ff-surface-hover)] hover:bg-[var(--ff-border-default)] text-[var(--ff-text-primary)] py-1.5 px-3 rounded text-xs transition font-semibold">Retry</button>
-          </div>
-        } @else {
-          <!-- Dashboard Date Filter Bar -->
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 bg-[var(--ff-surface-hover)] p-4 rounded-[10px] border border-[var(--ff-border-default)]">
-            <div class="flex flex-wrap gap-2.5 items-center">
-              <div class="flex flex-col">
-                <span class="text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-1">From Date</span>
-                <input type="date" [formControl]="dashboardFromDateControl" class="text-xs bg-[var(--ff-surface-input)] border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] rounded px-2.5 py-1.5 focus:outline-none" />
-              </div>
-              <div class="flex flex-col">
-                <span class="text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-1">To Date</span>
-                <input type="date" [formControl]="dashboardToDateControl" class="text-xs bg-[var(--ff-surface-input)] border border-[var(--ff-border-default)] text-[var(--ff-text-primary)] rounded px-2.5 py-1.5 focus:outline-none" />
-              </div>
-              <div class="flex items-end gap-1.5 mt-4">
-                <button (click)="applyDashboardFilters()" class="bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-1.5 px-3 rounded-[8px] text-xs transition">Apply</button>
-                <button (click)="clearDashboardFilters()" class="border border-[var(--ff-border-default)] hover:bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] py-1.5 px-3 rounded-[8px] text-xs transition font-semibold">Clear</button>
-              </div>
+          <div class="p-10 text-center text-sm text-rose-600">{{ dashboardError() }} <button class="underline ml-2" (click)="refreshDashboard()">Retry</button></div>
+        } @else if (settlementSummary(); as s) {
+          <!-- KPI cards -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
+            <div class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+              <div class="text-[11px] font-semibold text-[var(--ff-text-muted)]">Received in period</div>
+              <div class="text-xl font-bold tabular-nums">₹{{ s.totalReceived | number:'1.2-2' }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)]">{{ s.totalApprovedReceipts }} approved receipt(s){{ s.totalDraft ? ' · ' + s.totalDraft + ' awaiting approval' : '' }}</div>
             </div>
-            <button (click)="refreshDashboard()" class="flex items-center gap-1.5 border border-[var(--ff-border-default)] hover:bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] py-1.5 px-3 rounded-[8px] text-xs transition font-bold self-end">
-              <span class="material-icons text-sm">refresh</span> Refresh Dashboard
-            </button>
+            <div class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+              <div class="text-[11px] font-semibold text-[var(--ff-text-muted)]">Settled against invoices</div>
+              <div class="text-xl font-bold tabular-nums text-emerald-700">₹{{ s.totalAllocated | number:'1.2-2' }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)]">Advance not yet applied: <strong>₹{{ s.totalAdvance | number:'1.2-2' }}</strong></div>
+            </div>
+            <div class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+              <div class="text-[11px] font-semibold text-[var(--ff-text-muted)]">Customers owe (today)</div>
+              <div class="text-xl font-bold tabular-nums text-rose-600">₹{{ s.totalOutstanding | number:'1.2-2' }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)]">{{ s.totalUnpaidInvoices }} unpaid · {{ s.totalPartiallyPaidInvoices }} part-paid invoice(s)</div>
+            </div>
+            <div class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+              <div class="text-[11px] font-semibold text-[var(--ff-text-muted)]">Overdue (past due date)</div>
+              <div class="text-xl font-bold tabular-nums" [style.color]="overdueTotal() > 0 ? '#b45309' : null">₹{{ overdueTotal() | number:'1.2-2' }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)]">{{ s.totalPaidInvoices }} invoice(s) fully paid</div>
+            </div>
           </div>
 
-          @if (settlementSummary()) {
-            <!-- Summary Metrics Grid Cards -->
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-3 shrink-0 mt-3">
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Total Received</span>
-                <span class="text-sm font-extrabold text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ settlementSummary().totalReceived | number:'1.2-2' }}</span>
+          <!-- Ageing strip (click a bucket to filter the invoice list) -->
+          @if (agingSummary(); as a) {
+            <div class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3 shrink-0">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold">Dues by age (days past due date)</span>
+                @if (agingBucketFilter()) { <button class="text-xs underline" (click)="agingBucketFilter.set('')">Show all</button> }
               </div>
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Allocated Portion</span>
-                <span class="text-sm font-extrabold text-[var(--ff-color-primary-600)] font-mono tabular-nums">₹{{ settlementSummary().totalAllocated | number:'1.2-2' }}</span>
+              <div class="grid grid-cols-3 md:grid-cols-6 gap-2">
+                @for (b of agingBuckets(a); track b.key) {
+                  <button type="button" class="rounded-lg border p-2 text-left" [style.border-color]="agingBucketFilter() === b.key ? 'var(--ff-color-primary-600)' : null" (click)="agingBucketFilter.set(agingBucketFilter() === b.key ? '' : b.key)">
+                    <div class="text-[11px] text-[var(--ff-text-muted)]">{{ b.label }}</div>
+                    <div class="text-sm font-bold tabular-nums" [style.color]="b.key === 'CURRENT' ? null : (b.amount > 0 ? '#b45309' : null)">₹{{ b.amount | number:'1.0-0' }}</div>
+                  </button>
+                }
               </div>
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Advance Held</span>
-                <span class="text-sm font-extrabold text-[var(--ff-text-secondary)] font-mono tabular-nums">₹{{ settlementSummary().totalAdvance | number:'1.2-2' }}</span>
-              </div>
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Total Outstanding</span>
-                <span class="text-sm font-extrabold text-[var(--ff-color-danger-500)] font-mono tabular-nums">₹{{ settlementSummary().totalOutstanding | number:'1.2-2' }}</span>
-              </div>
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Total Cancelled</span>
-                <span class="text-sm font-extrabold text-[var(--ff-text-muted)] font-mono tabular-nums">₹{{ settlementSummary().totalCancelled | number:'1.2-2' }}</span>
-              </div>
-              <div class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)]">
-                <span class="block text-[9px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider mb-0.5">Approved Receipts</span>
-                <span class="text-sm font-extrabold text-[var(--ff-color-success-500)] font-mono tabular-nums">{{ settlementSummary().totalApprovedReceipts }}</span>
-              </div>
-            </div>
-
-            <!-- Invoices statuses stats sub-bar -->
-            <div class="text-[10px] text-[var(--ff-text-muted)] font-semibold px-1 shrink-0 flex gap-4 mt-2 mb-2">
-              <span>🧾 Outstanding Invoices: <span class="text-[var(--ff-color-danger-500)] font-bold">{{ settlementSummary().totalOutstandingInvoices }}</span></span>
-              <span>• Unpaid: <span class="text-[var(--ff-text-primary)] font-bold">{{ settlementSummary().totalUnpaidInvoices }}</span></span>
-              <span>• Partially Paid: <span class="text-[var(--ff-color-primary-600)] font-bold">{{ settlementSummary().totalPartiallyPaidInvoices }}</span></span>
-              <span>• Paid Invoices: <span class="text-[var(--ff-color-success-500)] font-bold">{{ settlementSummary().totalPaidInvoices }}</span></span>
-              <span>• Total Customers: <span class="text-[var(--ff-text-primary)] font-bold">{{ settlementSummary().totalCustomers }}</span></span>
             </div>
           }
 
-          <!-- Grid tab panels layout -->
-          <mat-tab-group class="flex-grow min-h-0 mt-2">
-
-            <!-- Tab A: Customer Outstanding Summaries -->
-            <mat-tab label="Customer Outstanding balances">
-              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
-                <div class="flex justify-between items-center shrink-0">
-                  <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Top Customer Balances</span>
-                </div>
-
-                <div class="flex-grow min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
-                  <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold text-[10px]">
-                        <th class="p-3">Customer Code</th>
-                        <th class="p-3">Customer Name</th>
-                        <th class="p-3 text-right">Invoice Count</th>
-                        <th class="p-3 text-right">Total Invoice Amt</th>
-                        <th class="p-3 text-right">Paid Portion</th>
-                        <th class="p-3 text-right">Outstanding Balance</th>
-                        <th class="p-3 text-right">Advance Held</th>
-                        <th class="p-3 text-center">Unpaid / Partial / Paid</th>
-                        <th class="p-3 text-right">Last Payment Date</th>
-                        <th class="p-3 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (cust of customerOutstanding(); track cust.customerId) {
-                        <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
-                          <td class="p-3 font-mono text-[var(--ff-text-muted)]">{{ cust.customerCode || 'N/A' }}</td>
-                          <td class="p-3 text-[var(--ff-text-primary)] font-bold">{{ cust.customerName }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums">{{ cust.invoiceCount }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums font-bold">₹{{ cust.totalInvoiceAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-text-muted)]">₹{{ cust.totalPaidAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-danger-500)] font-bold">₹{{ cust.totalOutstanding | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-success-500)] font-bold">₹{{ cust.totalAdvance | number:'1.2-2' }}</td>
-                          <td class="p-3 text-center text-[10px]">
-                            <span class="text-[var(--ff-color-danger-500)] font-bold">{{ cust.unpaidInvoiceCount }}</span> /
-                            <span class="text-[var(--ff-color-primary-600)] font-bold">{{ cust.partiallyPaidInvoiceCount }}</span> /
-                            <span class="text-[var(--ff-color-success-500)] font-bold">{{ cust.paidInvoiceCount }}</span>
-                          </td>
-                          <td class="p-3 text-right text-[var(--ff-text-muted)]">{{ cust.lastPaymentDate ? (cust.lastPaymentDate | date:'mediumDate') : 'No Payments' }}</td>
-                          <td class="p-3 text-center">
-                            <button (click)="openCustomerOutstanding(cust.customerId)" class="bg-[var(--ff-color-primary-600)] text-white font-bold py-1 px-2.5 rounded-[8px] text-[10px] hover:bg-[var(--ff-color-primary-700)] transition">Drill down</button>
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="10" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No customer outstanding summaries calculated.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <!-- Customers who owe -->
+            <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] flex flex-col min-h-[260px]">
+              <div class="flex flex-wrap items-center justify-between gap-2 p-3 border-b border-[var(--ff-border-divider)]">
+                <span class="text-sm font-semibold">Customers with dues ({{ owingCustomers().length }})</span>
+                <input class="h-8 w-48 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-xs" placeholder="Search customer" [value]="dashCustomerSearch()" (input)="dashCustomerSearch.set($any($event.target).value)" />
               </div>
-            </mat-tab>
-
-            <!-- Tab B: Invoice Aging & Buckets -->
-            <mat-tab label="Invoice Aging Analysis">
-              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
-
-                @if (agingSummary()) {
-                  <!-- Aging Summary Buckets Bar -->
-                  <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 shrink-0 select-none">
-                    <div (click)="openAgingBucket('CURRENT')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === 'CURRENT'" [class.ring-blue-600]="selectedAgingBucket() === 'CURRENT'" [class.dark:ring-blue-500]="selectedAgingBucket() === 'CURRENT'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">CURRENT</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().currentAmount | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('1_30')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === '1_30'" [class.ring-blue-600]="selectedAgingBucket() === '1_30'" [class.dark:ring-blue-500]="selectedAgingBucket() === '1_30'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">1-30 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().days1To30 | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('31_60')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === '31_60'" [class.ring-blue-600]="selectedAgingBucket() === '31_60'" [class.dark:ring-blue-500]="selectedAgingBucket() === '31_60'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">31-60 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().days31To60 | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('61_90')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === '61_90'" [class.ring-blue-600]="selectedAgingBucket() === '61_90'" [class.dark:ring-blue-500]="selectedAgingBucket() === '61_90'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">61-90 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().days61To90 | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('91_180')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === '91_180'" [class.ring-blue-600]="selectedAgingBucket() === '91_180'" [class.dark:ring-blue-500]="selectedAgingBucket() === '91_180'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">91-180 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().days91To180 | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('181_365')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === '181_365'" [class.ring-blue-600]="selectedAgingBucket() === '181_365'" [class.dark:ring-blue-500]="selectedAgingBucket() === '181_365'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">181-365 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-text-primary)] font-mono tabular-nums">₹{{ agingSummary().days181To365 | number:'1.0-0' }}</span>
-                    </div>
-                    <div (click)="openAgingBucket('ABOVE_365')" class="p-3 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] hover:bg-[var(--ff-surface-hover)] cursor-pointer transition text-center"
-                         [class.ring-2]="selectedAgingBucket() === 'ABOVE_365'" [class.ring-blue-600]="selectedAgingBucket() === 'ABOVE_365'" [class.dark:ring-blue-500]="selectedAgingBucket() === 'ABOVE_365'">
-                      <span class="block text-[8px] font-bold text-[var(--ff-text-muted)] tracking-wider mb-0.5">Above 365 Days</span>
-                      <span class="text-xs font-black text-[var(--ff-color-danger-500)] font-mono tabular-nums">₹{{ agingSummary().above365 | number:'1.0-0' }}</span>
-                    </div>
-                  </div>
-                }
-
-                <div class="flex justify-between items-center shrink-0">
-                  <div class="flex gap-2 items-center text-xs font-bold text-[var(--ff-text-secondary)]">
-                    <span>Outstanding Invoices Aging List</span>
-                    @if (selectedAgingBucket()) {
-                      <span class="bg-[var(--ff-color-primary-50)] text-[var(--ff-color-primary-600)] px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase font-mono">Bucket: {{ selectedAgingBucket() }}</span>
-                    }
-                  </div>
-                  @if (selectedAgingBucket() || selectedDashboardCustomer()) {
-                    <button (click)="selectedAgingBucket.set(''); selectedDashboardCustomer.set(''); loadAgingInvoices();" class="text-[10px] text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] font-semibold underline">Show All Invoices</button>
-                  }
-                </div>
-
-                <div class="flex-grow min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
-                  <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold text-[10px]">
-                        <th class="p-3">Invoice Number</th>
-                        <th class="p-3">Customer</th>
-                        <th class="p-3">Invoice Date</th>
-                        <th class="p-3">Due Date</th>
-                        <th class="p-3 text-right">Net Amount</th>
-                        <th class="p-3 text-right">Paid Amount</th>
-                        <th class="p-3 text-right">Outstanding</th>
-                        <th class="p-3 text-center">Payment Status</th>
-                        <th class="p-3 text-right">Aging Days</th>
-                        <th class="p-3">Aging Bucket</th>
+              <div class="overflow-auto">
+                <table class="w-full text-xs">
+                  <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] text-left">
+                    <th class="p-2">Customer</th><th class="p-2 text-right">Billed</th><th class="p-2 text-right">Paid</th><th class="p-2 text-right">Due</th><th class="p-2 text-right">Advance</th><th class="p-2">Last paid</th><th class="p-2"></th>
+                  </tr></thead>
+                  <tbody>
+                    @for (c of owingCustomers(); track c.customerId) {
+                      <tr class="border-t border-[var(--ff-border-divider)]">
+                        <td class="p-2"><div class="font-semibold">{{ c.customerName }}</div><div class="text-[10px] text-[var(--ff-text-muted)]">{{ c.unpaidInvoiceCount }} unpaid · {{ c.partiallyPaidInvoiceCount }} part-paid</div></td>
+                        <td class="p-2 text-right tabular-nums">{{ c.totalInvoiceAmount | number:'1.0-0' }}</td>
+                        <td class="p-2 text-right tabular-nums">{{ c.totalPaidAmount | number:'1.0-0' }}</td>
+                        <td class="p-2 text-right tabular-nums font-bold text-rose-600">{{ c.totalOutstanding | number:'1.2-2' }}</td>
+                        <td class="p-2 text-right tabular-nums">{{ c.totalAdvance > 0 ? (c.totalAdvance | number:'1.0-0') : '—' }}</td>
+                        <td class="p-2 whitespace-nowrap">{{ c.lastPaymentDate ? (c.lastPaymentDate | date:'dd MMM yy') : 'Never' }}</td>
+                        <td class="p-2 text-right whitespace-nowrap">
+                          @if (c.totalAdvance > 0) { <button class="text-emerald-700 font-semibold mr-2" (click)="applyAdvance(c)" title="Use the unallocated advance against these invoices">Apply advance</button> }
+                          <button class="text-[var(--ff-color-primary-600)] font-semibold mr-2" (click)="receiveFrom(c)">Receive</button>
+                          <button class="text-[var(--ff-text-secondary)] font-semibold" (click)="openLedgerFor(c)">Ledger</button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      @for (inv of agingInvoices(); track inv.invoiceId) {
-                        <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
-                          <td class="p-3 font-mono font-bold text-[var(--ff-text-primary)]">{{ inv.invoiceNumber }}</td>
-                          <td class="p-3 text-[var(--ff-text-secondary)]">{{ inv.customerName }}</td>
-                          <td class="p-3 text-[var(--ff-text-muted)]">{{ inv.invoiceDate | date:'mediumDate' }}</td>
-                          <td class="p-3 font-bold text-[var(--ff-text-secondary)]">{{ inv.dueDate | date:'mediumDate' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums font-bold">₹{{ inv.invoiceAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-text-muted)]">₹{{ inv.paidAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-danger-500)] font-bold">₹{{ inv.outstandingAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-center">
-                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
-                                  [class.bg-slate-100]="inv.paymentStatus === 'UNPAID'" [class.dark:bg-slate-950]="inv.paymentStatus === 'UNPAID'" [class.text-slate-800]="inv.paymentStatus === 'UNPAID'" [class.dark:text-slate-300]="inv.paymentStatus === 'UNPAID'"
-                                  [class.bg-blue-100]="inv.paymentStatus === 'PARTIALLY_PAID'" [class.dark:bg-blue-950]="inv.paymentStatus === 'PARTIALLY_PAID'" [class.text-blue-800]="inv.paymentStatus === 'PARTIALLY_PAID'" [class.dark:text-blue-300]="inv.paymentStatus === 'PARTIALLY_PAID'"
-                                  [class.bg-emerald-100]="inv.paymentStatus === 'PAID'" [class.dark:bg-emerald-950]="inv.paymentStatus === 'PAID'" [class.text-emerald-800]="inv.paymentStatus === 'PAID'" [class.dark:text-emerald-300]="inv.paymentStatus === 'PAID'">{{ inv.paymentStatus }}</span>
-                          </td>
-                          <td class="p-3 text-right font-mono font-bold tabular-nums">{{ inv.agingDays }} Days</td>
-                          <td class="p-3 font-mono text-[10px] text-[var(--ff-text-muted)] uppercase">{{ inv.agingBucket }}</td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="10" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No outstanding invoices matching criteria.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                    } @empty { <tr><td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)]">No customer owes anything. 🎉</td></tr> }
+                  </tbody>
+                </table>
               </div>
-            </mat-tab>
+            </section>
 
-            <!-- Tab C: Receipt reconciliation -->
-            <mat-tab label="Receipt Allocations Audit">
-              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
-                <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider shrink-0">Allocations Reconciliation Sheet</span>
-
-                <div class="flex-grow min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
-                  <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold text-[10px]">
-                        <th class="p-3">Receipt Number</th>
-                        <th class="p-3">Receipt Date</th>
-                        <th class="p-3">Customer</th>
-                        <th class="p-3">Status</th>
-                        <th class="p-3 text-right">Received Amount</th>
-                        <th class="p-3 text-right">Total Allocated</th>
-                        <th class="p-3 text-right">Advance Held</th>
-                        <th class="p-3 text-right">Difference</th>
-                        <th class="p-3 text-right">Allocations Count</th>
-                        <th class="p-3 text-center">Audit Status</th>
+            <!-- Open invoices, most overdue first -->
+            <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] flex flex-col min-h-[260px]">
+              <div class="p-3 border-b border-[var(--ff-border-divider)] text-sm font-semibold">Open invoices — most overdue first{{ agingBucketFilter() ? ' (' + bucketLabel(agingBucketFilter()) + ')' : '' }}</div>
+              <div class="overflow-auto">
+                <table class="w-full text-xs">
+                  <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] text-left">
+                    <th class="p-2">Invoice</th><th class="p-2">Customer</th><th class="p-2">Due date</th><th class="p-2 text-right">Days late</th><th class="p-2 text-right">Amount</th><th class="p-2 text-right">Balance</th>
+                  </tr></thead>
+                  <tbody>
+                    @for (i of visibleAgingInvoices(); track i.invoiceId) {
+                      <tr class="border-t border-[var(--ff-border-divider)]">
+                        <td class="p-2 font-mono">{{ i.invoiceNumber }}<div class="text-[10px] text-[var(--ff-text-muted)]">{{ i.invoiceDate | date:'dd MMM yy' }}</div></td>
+                        <td class="p-2">{{ i.customerName }}</td>
+                        <td class="p-2 whitespace-nowrap">{{ i.dueDate | date:'dd MMM yy' }}</td>
+                        <td class="p-2 text-right tabular-nums" [style.color]="i.agingDays > 60 ? '#dc2626' : (i.agingDays > 0 ? '#b45309' : null)">{{ i.agingDays > 0 ? i.agingDays : 'Not due' }}</td>
+                        <td class="p-2 text-right tabular-nums">{{ i.invoiceAmount | number:'1.0-0' }}</td>
+                        <td class="p-2 text-right tabular-nums font-bold">{{ i.outstandingAmount | number:'1.2-2' }}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      @for (row of reconciliationRows(); track row.receiptId) {
-                        <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
-                          <td class="p-3 font-mono font-bold text-[var(--ff-text-primary)]">{{ row.receiptNumber }}</td>
-                          <td class="p-3 text-[var(--ff-text-muted)]">{{ row.receiptDate | date:'mediumDate' }}</td>
-                          <td class="p-3 text-[var(--ff-text-primary)] font-semibold">{{ row.customerName }}</td>
-                          <td class="p-3 font-bold text-[10px] uppercase"
-                              [class.text-amber-500]="row.status === 'DRAFT'" [class.dark:text-amber-400]="row.status === 'DRAFT'"
-                              [class.text-emerald-600]="row.status === 'APPROVED'" [class.dark:text-emerald-400]="row.status === 'APPROVED'"
-                              [class.text-rose-600]="row.status === 'CANCELLED'" [class.dark:text-rose-500]="row.status === 'CANCELLED'">{{ row.status }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums font-bold">₹{{ row.amountReceived | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-primary-600)]">₹{{ row.totalAllocated | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-text-secondary)]">₹{{ row.advanceAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums" [class.text-rose-600]="row.reconciliationDifference > 0" [class.dark:text-rose-500]="row.reconciliationDifference > 0" [class.font-bold]="row.reconciliationDifference > 0">₹{{ row.reconciliationDifference | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums">{{ row.allocationCount }}</td>
-                          <td class="p-3 text-center">
-                            <span class="px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase font-mono tracking-wide"
-                                  [class.bg-emerald-100]="row.reconciliationStatus === 'BALANCED'" [class.dark:bg-emerald-950]="row.reconciliationStatus === 'BALANCED'" [class.text-emerald-800]="row.reconciliationStatus === 'BALANCED'" [class.dark:text-emerald-300]="row.reconciliationStatus === 'BALANCED'"
-                                  [class.bg-rose-100]="row.reconciliationStatus === 'MISMATCH'" [class.dark:bg-rose-950]="row.reconciliationStatus === 'MISMATCH'" [class.text-rose-800]="row.reconciliationStatus === 'MISMATCH'" [class.dark:text-rose-300]="row.reconciliationStatus === 'MISMATCH'">
-                              {{ row.reconciliationStatus }}
-                            </span>
-                          </td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="10" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No receipt reconciliation records available.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                    } @empty { <tr><td colspan="6" class="p-8 text-center text-[var(--ff-text-muted)]">No open invoices{{ agingBucketFilter() ? ' in this age group' : '' }}.</td></tr> }
+                  </tbody>
+                </table>
               </div>
-            </mat-tab>
+            </section>
+          </div>
 
-            <!-- Tab D: Customer Payment Performance -->
-            <mat-tab label="Payment Performance Metrics">
-              <div class="pt-4 flex flex-col gap-3 h-full min-h-0">
-                <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider shrink-0">Customer Settlement Speed & Volume metrics</span>
-
-                <div class="flex-grow min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
-                  <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold text-[10px]">
-                        <th class="p-3">Customer Name</th>
-                        <th class="p-3 text-right">Total Payments</th>
-                        <th class="p-3 text-right">Total Received</th>
-                        <th class="p-3 text-right">Allocated Amount</th>
-                        <th class="p-3 text-right">Advance Portions</th>
-                        <th class="p-3 text-right">Cancelled Vouchers</th>
-                        <th class="p-3 text-right">Avg Receipt Size</th>
-                        <th class="p-3 text-right">Last Payment</th>
-                        <th class="p-3 text-right">Current Outstanding</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (perf of paymentPerformance(); track perf.customerId) {
-                        <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)] transition">
-                          <td class="p-3 text-[var(--ff-text-primary)] font-bold">{{ perf.customerName }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums">{{ perf.paymentCount }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums font-bold">₹{{ perf.totalReceived | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-primary-600)]">₹{{ perf.totalAllocated | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-success-500)] font-bold">₹{{ perf.totalAdvance | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-text-muted)]">₹{{ perf.totalCancelled | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums font-bold">₹{{ perf.averageReceiptAmount | number:'1.2-2' }}</td>
-                          <td class="p-3 text-right text-[var(--ff-text-muted)]">{{ perf.lastPaymentDate ? (perf.lastPaymentDate | date:'mediumDate') : 'No Payments' }}</td>
-                          <td class="p-3 text-right font-mono tabular-nums text-[var(--ff-color-danger-500)] font-bold">₹{{ perf.outstandingAmount | number:'1.2-2' }}</td>
-                        </tr>
-                      } @empty {
-                        <tr>
-                          <td colspan="9" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No customer metrics computed.</td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </mat-tab>
-          </mat-tab-group>
+          <!-- Recent receipts -->
+          <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)]">
+            <div class="p-3 border-b border-[var(--ff-border-divider)] text-sm font-semibold">Latest approved receipts</div>
+            <div class="overflow-auto">
+              <table class="w-full text-xs">
+                <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] text-left">
+                  <th class="p-2">Receipt</th><th class="p-2">Date</th><th class="p-2">Customer</th><th class="p-2">Mode</th><th class="p-2 text-right">Received</th><th class="p-2 text-right">Settled</th><th class="p-2 text-right">Advance</th>
+                </tr></thead>
+                <tbody>
+                  @for (r of recentApprovedReceipts(); track r.receiptId) {
+                    <tr class="border-t border-[var(--ff-border-divider)]">
+                      <td class="p-2 font-mono">{{ r.receiptNumber }}</td><td class="p-2">{{ r.receiptDate | date:'dd MMM yy' }}</td><td class="p-2">{{ r.customerName }}</td>
+                      <td class="p-2">{{ r.paymentMethod }}</td>
+                      <td class="p-2 text-right tabular-nums">{{ r.paymentAmount | number:'1.2-2' }}</td>
+                      <td class="p-2 text-right tabular-nums">{{ r.totalAllocated | number:'1.2-2' }}</td>
+                      <td class="p-2 text-right tabular-nums">{{ (r.paymentAmount - r.totalAllocated) > 0.009 ? ((r.paymentAmount - r.totalAllocated) | number:'1.2-2') : '—' }}</td>
+                    </tr>
+                  } @empty { <tr><td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)]">No approved receipts yet.</td></tr> }
+                </tbody>
+              </table>
+            </div>
+          </section>
         }
       }
 

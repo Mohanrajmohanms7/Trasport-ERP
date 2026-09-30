@@ -1,5 +1,7 @@
 package com.transport.erp.controller;
 
+import java.util.Map;
+
 import com.transport.erp.dto.ApiResponse;
 import com.transport.erp.dto.CustomerReceiptDTO;
 import com.transport.erp.dto.CustomerReceiptResponseDTO;
@@ -64,6 +66,22 @@ public class CustomerReceiptController {
     public ApiResponse<CustomerReceiptDetailDTO> getReceiptById(@PathVariable Long id) {
         CustomerReceiptDetailDTO details = receiptService.getReceiptDetails(id);
         return ApiResponse.success(details, "Customer receipt details fetched successfully");
+    }
+
+    /** Apply an approved receipt's unallocated advance to this customer's open invoices (body optional: {"allocations":[{"invoiceId":1,"amount":100}]}; empty = oldest first). */
+    @PostMapping("/{receiptId}/apply-advance")
+    public ApiResponse<Map<String, Object>> applyAdvance(@PathVariable Long receiptId,
+                                                         @RequestBody(required = false) Map<String, List<Map<String, Object>>> body) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Map<String, Object> r = receiptService.applyAdvance(receiptId, body == null ? null : body.get("allocations"), username);
+        return ApiResponse.success(r, "Advance applied to " + r.get("invoices") + " invoice(s)");
+    }
+
+    @PostMapping("/customers/{customerId}/apply-advance")
+    public ApiResponse<Map<String, Object>> applyCustomerAdvances(@PathVariable Long customerId) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Map<String, Object> r = receiptService.applyCustomerAdvances(customerId, username);
+        return ApiResponse.success(r, "₹" + r.get("applied") + " of advance applied to " + r.get("invoices") + " invoice(s)");
     }
 
     @GetMapping("/{receiptId}/allocations")
@@ -164,7 +182,7 @@ public class CustomerReceiptController {
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate toDate) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         CustomerReceiptSettlementSummaryDTO data = receiptService.getSettlementSummary(companyId, branchId, fromDate, toDate);
         return ApiResponse.success(data, "Dashboard summary stats fetched successfully");
     }
@@ -175,7 +193,7 @@ public class CustomerReceiptController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         Pageable pageable = PageRequest.of(page, size);
         Page<CustomerOutstandingSummaryDTO> data = receiptService.getCustomerOutstandingSummary(companyId, branchId, search, pageable);
         return ApiResponse.success(data, "Customer outstanding summaries fetched successfully");
@@ -185,7 +203,7 @@ public class CustomerReceiptController {
     public ApiResponse<CustomerAgingSummaryDTO> getDashboardAging(
             @RequestParam(required = false) Long customerId) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         CustomerAgingSummaryDTO data = receiptService.getAgingSummary(companyId, branchId, customerId);
         return ApiResponse.success(data, "Customer invoice aging summary fetched successfully");
     }
@@ -198,7 +216,7 @@ public class CustomerReceiptController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         Pageable pageable = PageRequest.of(page, size);
         Page<CustomerInvoiceAgingDTO> data = receiptService.getCustomerInvoiceAging(companyId, branchId, customerId, bucket, search, pageable);
         return ApiResponse.success(data, "Invoice aging details page fetched successfully");
@@ -209,7 +227,7 @@ public class CustomerReceiptController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         Pageable pageable = PageRequest.of(page, size);
         Page<ReceiptSettlementReconciliationDTO> data = receiptService.getReceiptSettlementReconciliation(companyId, branchId, pageable);
         return ApiResponse.success(data, "Payment allocations reconciliation page fetched successfully");
@@ -220,17 +238,25 @@ public class CustomerReceiptController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
+        Long branchId = scopeBranch();
         Pageable pageable = PageRequest.of(page, size);
         Page<CustomerPaymentPerformanceDTO> data = receiptService.getCustomerPaymentPerformance(companyId, branchId, pageable);
         return ApiResponse.success(data, "Customer payment performance page fetched successfully");
     }
 
+    /** Branch the dashboard is limited to: none for platform / company-wide admins, else the user's branch. */
+    private Long scopeBranch() {
+        com.transport.erp.model.AppUser u = tenantAccess.requireCurrentUser();
+        return tenantAccess.isSuperAdmin(u) || tenantAccess.isCompanyWideAdmin(u) ? null : u.getBranchId();
+    }
+
     @GetMapping("/dashboard")
-    public ApiResponse<ReceiptSettlementDashboardDTO> getDashboard() {
+    public ApiResponse<ReceiptSettlementDashboardDTO> getDashboard(
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fromDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate toDate) {
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(tenantAccess.requireCurrentUser()) ? null : tenantAccess.requireCurrentUser().getBranchId();
-        ReceiptSettlementDashboardDTO data = receiptService.getSettlementDashboard(companyId, branchId);
+        Long branchId = scopeBranch();
+        ReceiptSettlementDashboardDTO data = receiptService.getSettlementDashboard(companyId, branchId, fromDate, toDate);
         return ApiResponse.success(data, "Dashboard root stats payload fetched successfully");
     }
 

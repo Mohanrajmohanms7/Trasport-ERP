@@ -155,8 +155,13 @@ export class PaymentMgmtService {
     return this.http.get<ApiResponse<any>>('/api/v1/receipts/dashboard/payment-performance', { params });
   }
 
-  getReceiptSettlementDashboard(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>('/api/v1/receipts/dashboard');
+  getReceiptSettlementDashboard(params: { fromDate?: string; toDate?: string } = {}): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>('/api/v1/receipts/dashboard', { params: params as any });
+  }
+
+  /** Use a customer's unallocated advance against their oldest open invoices. */
+  applyCustomerAdvance(customerId: number): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(`/api/v1/receipts/customers/${customerId}/apply-advance`, {});
   }
 }
 

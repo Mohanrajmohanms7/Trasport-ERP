@@ -956,10 +956,93 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     this.loadSettlementDashboard();
   }
 
+  // ---------------- Settlement dashboard helpers
+  dashPreset = signal<string>('all');
+  agingBucketFilter = signal<string>('');
+  dashCustomerSearch = signal<string>('');
+
+  private isoDate(d: Date): string {
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+
+  setDashPreset(kind: string): void {
+    const now = new Date();
+    let from: Date | null = null;
+    let to: Date | null = now;
+    if (kind === 'month') from = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (kind === 'last-month') { from = new Date(now.getFullYear(), now.getMonth() - 1, 1); to = new Date(now.getFullYear(), now.getMonth(), 0); }
+    if (kind === 'fy') from = new Date(now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1, 3, 1);
+    if (kind === 'all') { from = null; to = null; }
+    this.dashboardFromDateControl.setValue(from ? this.isoDate(from) : '' as any, { emitEvent: false });
+    this.dashboardToDateControl.setValue(to ? this.isoDate(to) : '' as any, { emitEvent: false });
+    this.dashPreset.set(kind);
+    this.refreshDashboard();
+  }
+
+  readonly BUCKETS = [
+    { key: 'CURRENT', label: 'Not yet due', field: 'currentAmount' },
+    { key: '1_30', label: '1–30 days', field: 'days1To30' },
+    { key: '31_60', label: '31–60 days', field: 'days31To60' },
+    { key: '61_90', label: '61–90 days', field: 'days61To90' },
+    { key: '91_180', label: '91–180 days', field: 'days91To180' },
+    { key: 'ABOVE_180', label: 'Over 180 days', field: '' }
+  ];
+
+  agingBuckets(a: any): { key: string; label: string; amount: number }[] {
+    return this.BUCKETS.map(b => ({
+      key: b.key, label: b.label,
+      amount: b.key === 'ABOVE_180' ? Number(a.days181To365 || 0) + Number(a.above365 || 0) : Number(a[b.field] || 0)
+    }));
+  }
+
+  bucketLabel(key: string): string {
+    return this.BUCKETS.find(b => b.key === key)?.label || key;
+  }
+
+  overdueTotal(): number {
+    const a = this.agingSummary();
+    if (!a) return 0;
+    return Number(a.totalOutstanding || 0) - Number(a.currentAmount || 0);
+  }
+
+  owingCustomers(): any[] {
+    const q = this.dashCustomerSearch().trim().toLowerCase();
+    return (this.customerOutstanding() || []).filter((c: any) => !q || String(c.customerName || '').toLowerCase().includes(q)
+      || String(c.customerCode || '').toLowerCase().includes(q));
+  }
+
+  visibleAgingInvoices(): any[] {
+    const f = this.agingBucketFilter();
+    return (this.agingInvoices() || []).filter((i: any) => !f
+      || (f === 'ABOVE_180' ? (i.agingBucket === '181_365' || i.agingBucket === 'ABOVE_365') : i.agingBucket === f));
+  }
+
+  receiveFrom(c: any): void {
+    this.openAddReceipt();
+    this.receiptForm.patchValue({ customer: { id: c.customerId }, amountReceived: Number(c.totalOutstanding || 0) } as any);
+  }
+
+  openLedgerFor(c: any): void {
+    this.selectedCustomerId.set(c.customerId);
+    this.activeTab.set('ledger');
+    this.loadLedger();
+  }
+
+  applyAdvance(c: any): void {
+    if (!confirm(`Apply ₹${Number(c.totalAdvance).toFixed(2)} advance of ${c.customerName} to their oldest open invoices?`)) return;
+    this.paymentMgmtService.applyCustomerAdvance(c.customerId).subscribe({
+      next: (r: any) => { this.notify.success(r?.message || 'Advance applied'); this.refreshDashboard(); },
+      error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not apply advance')
+    });
+  }
+
   loadSettlementDashboard() {
     this.dashboardLoading.set(true);
     this.dashboardError.set(null);
-    this.paymentMgmtService.getReceiptSettlementDashboard().subscribe({
+    const period: any = {};
+    if (this.dashboardFromDateControl.value) period.fromDate = this.dashboardFromDateControl.value;
+    if (this.dashboardToDateControl.value) period.toDate = this.dashboardToDateControl.value;
+    this.paymentMgmtService.getReceiptSettlementDashboard(period).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           const d = res.data;
@@ -971,7 +1054,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
           this.reconciliationRows.set(d.reconciliationSummary || []);
           this.paymentPerformance.set(d.paymentPerformance || []);
         } else {
-          this.dashboardError.set(res.message || 'Failed to load dashboard statistics.');
+          this.dashboardError.set(res.message || 'Could not load the settlement figures.');
         }
         this.dashboardLoading.set(false);
       },
