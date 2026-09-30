@@ -11,6 +11,12 @@ export const authGuard: CanActivateFn = (route, state) => {
     const isSuperAdmin = roles.includes('SUPER_ADMIN');
     const url = state.url;
 
+    // Temporary password: only the profile page (to change it) is available.
+    if (authService.passwordChangeRequired() && !url.startsWith('/profile')) {
+      router.navigate(['/profile'], { queryParams: { changePassword: 1 } });
+      return false;
+    }
+
     if (isSuperAdmin) {
       // Super Admin is only allowed on /platform-admin and /profile
       if (!url.startsWith('/platform-admin') && !url.startsWith('/profile')) {

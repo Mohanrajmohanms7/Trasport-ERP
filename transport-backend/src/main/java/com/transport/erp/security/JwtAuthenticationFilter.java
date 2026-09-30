@@ -76,6 +76,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (user != null && user.getCompanyId() != null) {
                         Company company = companyRepository.findById(user.getCompanyId()).orElse(null);
                         if (company != null) {
+                            // A temporary password (generated at onboarding or by a reset) must be replaced before
+                            // anything else can be used: only the auth endpoints (profile, change password, logout) stay open.
+                            if (Boolean.TRUE.equals(user.getForcePasswordChange()) && !request.getRequestURI().startsWith("/api/v1/auth/")) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"success\":false,\"message\":\"PASSWORD_CHANGE_REQUIRED\",\"data\":null,\"errors\":[\"Change your temporary password to continue.\"]}");
+                                return;
+                            }
                             // Use the already-loaded authorities: reading user.getRoles() here (outside a transaction)
                             // could fail lazily and silently skip this check.
                             boolean isSuperAdmin = userDetails.getAuthorities().stream()

@@ -30,6 +30,8 @@ public class SupplierController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Supplier> suppliers = supplierService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(suppliers, "Suppliers fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch suppliers");
         }
@@ -41,6 +43,8 @@ public class SupplierController {
             return supplierService.getById(id)
                     .map(s -> ApiResponse.success(s, "Supplier fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Supplier not found"), "Supplier not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch supplier");
         }
@@ -52,6 +56,8 @@ public class SupplierController {
             supplier.setCompanyId(tenantAccess.resolveCompanyId(supplier.getCompanyId()));
             Supplier created = supplierService.create(supplier);
             return ApiResponse.success(created, "Supplier created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create supplier");
         }
@@ -62,6 +68,8 @@ public class SupplierController {
         try {
             Supplier updated = supplierService.update(id, supplier);
             return ApiResponse.success(updated, "Supplier updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update supplier");
         }
@@ -72,6 +80,8 @@ public class SupplierController {
         try {
             supplierService.delete(id);
             return ApiResponse.success(null, "Supplier deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete supplier");
         }
@@ -82,6 +92,8 @@ public class SupplierController {
         try {
             Supplier toggled = supplierService.toggleStatus(id);
             return ApiResponse.success(toggled, "Supplier status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

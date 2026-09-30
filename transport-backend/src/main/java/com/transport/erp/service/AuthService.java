@@ -132,6 +132,7 @@ public class AuthService {
             response.put("companyId", user.getCompanyId());
             response.put("branchId", user.getBranchId());
             response.put("subscriptionExpired", subscriptionExpired);
+            response.put("forcePasswordChange", Boolean.TRUE.equals(user.getForcePasswordChange()));
             response.putAll(tenantBrand(user.getCompanyId()));
 
             return response;
@@ -201,8 +202,12 @@ public class AuthService {
 
         // Password policy checks
         validatePasswordPolicy(newPassword);
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from the current password.");
+        }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setForcePasswordChange(false);       // temporary password replaced — full access again
         userRepository.save(user);
 
         auditService.log(username, "PASSWORD_RESET_SUCCESS", "app_users", user.getId(), null,
@@ -219,8 +224,12 @@ public class AuthService {
         }
 
         validatePasswordPolicy(newPassword);
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from the current password.");
+        }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setForcePasswordChange(false);       // temporary password replaced — full access again
         userRepository.save(user);
 
         auditService.log(username, "PASSWORD_CHANGE", "app_users", user.getId(), ipAddress, "User changed password successfully");

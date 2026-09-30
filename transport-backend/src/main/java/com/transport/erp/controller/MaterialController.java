@@ -30,6 +30,8 @@ public class MaterialController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<Material> materials = materialService.getAll(scopedCompanyId, search, pageable);
             return ApiResponse.success(materials, "Materials fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch materials");
         }
@@ -41,6 +43,8 @@ public class MaterialController {
             return materialService.getById(id)
                     .map(m -> ApiResponse.success(m, "Material fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Material not found"), "Material not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch material");
         }
@@ -52,6 +56,8 @@ public class MaterialController {
             material.setCompanyId(tenantAccess.resolveCompanyId(material.getCompanyId()));
             Material created = materialService.create(material);
             return ApiResponse.success(created, "Material created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create material");
         }
@@ -62,6 +68,8 @@ public class MaterialController {
         try {
             Material updated = materialService.update(id, material);
             return ApiResponse.success(updated, "Material updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update material");
         }
@@ -74,6 +82,8 @@ public class MaterialController {
             return ApiResponse.success(null, "Material deleted successfully");
         } catch (com.transport.erp.exception.BusinessValidationException e) {
             return ApiResponse.error(e.getErrors(), e.getTitle() != null ? e.getTitle() : e.getMessage());
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete material");
         }
@@ -84,6 +94,8 @@ public class MaterialController {
         try {
             Material toggled = materialService.toggleStatus(id);
             return ApiResponse.success(toggled, "Material status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }

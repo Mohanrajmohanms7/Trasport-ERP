@@ -85,34 +85,14 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   paymentPerformance = signal<any[]>([]);
   recentApprovedReceipts = signal<any[]>([]);
   
-  showCustomerOutstanding = signal<boolean>(false);
-  showAgingDetails = signal<boolean>(false);
-  showReconciliation = signal<boolean>(false);
   
-  selectedDashboardCustomer = signal<number | ''>('');
-  selectedAgingBucket = signal<string>('');
   
-  dashboardCustomerFilterControl = new FormControl<number | ''>('');
-  dashboardStatusFilterControl = new FormControl<string>('');
-  dashboardPaymentStatusFilterControl = new FormControl<string>('');
   dashboardFromDateControl = new FormControl<string>('');
   dashboardToDateControl = new FormControl<string>('');
 
-  customerOutstandingPage = signal<number>(0);
-  customerOutstandingPageSize = signal<number>(10);
-  customerOutstandingTotal = signal<number>(0);
 
-  agingInvoicesPage = signal<number>(0);
-  agingInvoicesPageSize = signal<number>(10);
-  agingInvoicesTotal = signal<number>(0);
 
-  reconciliationPage = signal<number>(0);
-  reconciliationPageSize = signal<number>(10);
-  reconciliationTotal = signal<number>(0);
 
-  paymentPerformancePage = signal<number>(0);
-  paymentPerformancePageSize = signal<number>(10);
-  paymentPerformanceTotal = signal<number>(0);
 
   // Lists
   receipts = signal<any[]>([]);
@@ -1065,127 +1045,15 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     });
   }
 
-  loadSettlementSummary() {
-    const params: any = {};
-    if (this.dashboardFromDateControl.value) params.fromDate = this.dashboardFromDateControl.value;
-    if (this.dashboardToDateControl.value) params.toDate = this.dashboardToDateControl.value;
 
-    this.paymentMgmtService.getReceiptDashboardSummary(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.settlementSummary.set(res.data);
-      }
-    });
-  }
 
-  loadCustomerOutstanding() {
-    const params: any = {
-      page: this.customerOutstandingPage(),
-      size: this.customerOutstandingPageSize()
-    };
-    const search = this.searchControl.value;
-    if (search) params.search = search;
 
-    this.paymentMgmtService.getCustomerOutstandingSummary(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.customerOutstanding.set(res.data.content);
-        this.customerOutstandingTotal.set(res.data.totalElements);
-      }
-    });
-  }
 
-  loadAgingSummary() {
-    const params: any = {};
-    const custId = this.selectedDashboardCustomer();
-    if (custId) params.customerId = custId;
 
-    this.paymentMgmtService.getReceiptAgingSummary(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.agingSummary.set(res.data);
-      }
-    });
-  }
 
-  loadAgingInvoices() {
-    const params: any = {
-      page: this.agingInvoicesPage(),
-      size: this.agingInvoicesPageSize()
-    };
-    const custId = this.selectedDashboardCustomer();
-    if (custId) params.customerId = custId;
-    
-    const bucket = this.selectedAgingBucket();
-    if (bucket) params.bucket = bucket;
 
-    const search = this.searchControl.value;
-    if (search) params.search = search;
 
-    this.paymentMgmtService.getReceiptAgingInvoices(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.agingInvoices.set(res.data.content);
-        this.agingInvoicesTotal.set(res.data.totalElements);
-      }
-    });
-  }
 
-  loadReconciliation() {
-    const params: any = {
-      page: this.reconciliationPage(),
-      size: this.reconciliationPageSize()
-    };
-    this.paymentMgmtService.getReceiptReconciliation(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.reconciliationRows.set(res.data.content);
-        this.reconciliationTotal.set(res.data.totalElements);
-      }
-    });
-  }
 
-  loadPaymentPerformance() {
-    const params: any = {
-      page: this.paymentPerformancePage(),
-      size: this.paymentPerformancePageSize()
-    };
-    this.paymentMgmtService.getCustomerPaymentPerformance(params).subscribe(res => {
-      if (res.success && res.data) {
-        this.paymentPerformance.set(res.data.content);
-        this.paymentPerformanceTotal.set(res.data.totalElements);
-      }
-    });
-  }
-
-  openCustomerOutstanding(customerId: number) {
-    this.selectedDashboardCustomer.set(customerId);
-    this.showCustomerOutstanding.set(true);
-    this.loadAgingSummary();
-    this.loadAgingInvoices();
-  }
-
-  openAgingBucket(bucket: string) {
-    this.selectedAgingBucket.set(bucket);
-    this.showAgingDetails.set(true);
-    this.loadAgingInvoices();
-  }
-
-  openReconciliation() {
-    this.showReconciliation.set(true);
-    this.loadReconciliation();
-  }
-
-  applyDashboardFilters() {
-    this.loadSettlementSummary();
-    this.loadCustomerOutstanding();
-    this.loadAgingSummary();
-    this.loadAgingInvoices();
-    this.loadReconciliation();
-    this.loadPaymentPerformance();
-  }
-
-  clearDashboardFilters() {
-    this.dashboardFromDateControl.setValue('');
-    this.dashboardToDateControl.setValue('');
-    this.selectedDashboardCustomer.set('');
-    this.selectedAgingBucket.set('');
-    this.applyDashboardFilters();
-  }
 }
 

@@ -32,6 +32,8 @@ public class LookupValueController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             Page<LookupValue> lookups = lookupValueService.getAllByType(scopedCompanyId, type, search, pageable);
             return ApiResponse.success(lookups, "Lookup values fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch lookup values");
         }
@@ -45,6 +47,8 @@ public class LookupValueController {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
             List<LookupValue> list = lookupValueService.getListByType(scopedCompanyId, type);
             return ApiResponse.success(list, "Lookup values list fetched successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch lookup values list");
         }
@@ -56,6 +60,8 @@ public class LookupValueController {
             return lookupValueService.getById(id)
                     .map(l -> ApiResponse.success(l, "Lookup value fetched successfully"))
                     .orElse(ApiResponse.error(Collections.singletonList("Lookup value not found"), "Lookup value not found"));
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch lookup value");
         }
@@ -67,6 +73,8 @@ public class LookupValueController {
             lookupValue.setCompanyId(tenantAccess.resolveCompanyId(lookupValue.getCompanyId()));
             LookupValue created = lookupValueService.create(lookupValue);
             return ApiResponse.success(created, "Lookup value created successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to create lookup value");
         }
@@ -80,6 +88,8 @@ public class LookupValueController {
             tenantAccess.assertCompanyAccess(existing.getCompanyId());
             LookupValue updated = lookupValueService.update(id, lookupValue);
             return ApiResponse.success(updated, "Lookup value updated successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to update lookup value");
         }
@@ -93,6 +103,8 @@ public class LookupValueController {
             tenantAccess.assertCompanyAccess(existing.getCompanyId());
             lookupValueService.delete(id);
             return ApiResponse.success(null, "Lookup value deleted successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to delete lookup value");
         }
@@ -106,6 +118,8 @@ public class LookupValueController {
             tenantAccess.assertCompanyAccess(existing.getCompanyId());
             LookupValue toggled = lookupValueService.toggleStatus(id);
             return ApiResponse.success(toggled, "Lookup value status toggled successfully");
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            throw e; // → 403 via GlobalExceptionHandler
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to toggle status");
         }
