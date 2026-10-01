@@ -113,13 +113,14 @@ def main():
     # ------------------------------------------------------------------ 2. Materials, quarries, loading points
     print('[2] Materials, quarries, loading points')
     mats = {}
+    # PKC orders by the Unit (1 Unit = 100 cft), so rates are per Unit; quantities below are Units.
     for code, name, rate, tr, roy, load, gst in [
-        ('MSAND', 'M-Sand (Manufactured Sand)', 950, 320, 60, 40, 5),
-        ('PSAND', 'P-Sand (Plastering Sand)', 1150, 320, 60, 40, 5),
-        ('BM20', 'Blue Metal 20 mm', 820, 300, 55, 35, 5),
-        ('BM40', 'Blue Metal 40 mm', 780, 300, 55, 35, 5),
-        ('JALLI6', 'Jalli 6 mm (Chips)', 900, 300, 55, 35, 5),
-        ('GRAVEL', 'Red Gravel (Earth Fill)', 450, 260, 40, 30, 5)]:
+        ('MSAND', 'M-Sand (Manufactured Sand)', 4300, 1450, 270, 180, 5),
+        ('PSAND', 'P-Sand (Plastering Sand)', 5200, 1450, 270, 180, 5),
+        ('BM20', 'Blue Metal 20 mm', 3700, 1350, 250, 160, 5),
+        ('BM40', 'Blue Metal 40 mm', 3500, 1350, 250, 160, 5),
+        ('JALLI6', 'Jalli 6 mm (Chips)', 4050, 1350, 250, 160, 5),
+        ('GRAVEL', 'Red Gravel (Earth Fill)', 2000, 1150, 180, 130, 5)]:
         m = api.post('/materials', {'code': code, 'name': name, 'status': 'ACTIVE', 'defaultRate': rate})
         if m:
             mats[code] = {'id': m['id'], 'rate': rate, 'tr': tr, 'roy': roy, 'load': load, 'gst': gst}
@@ -257,11 +258,11 @@ def main():
     # ------------------------------------------------------------------ 6. Bookings
     print('[6] Bookings')
     plan = [  # customer idx, material, qty, days ago, action
-        (0, 'MSAND', 200, 68, 'APPROVE'), (1, 'BM20', 150, 66, 'APPROVE'), (2, 'GRAVEL', 300, 64, 'APPROVE'),
-        (3, 'PSAND', 100, 60, 'APPROVE'), (4, 'BM20', 250, 58, 'APPROVE'), (5, 'BM40', 200, 55, 'APPROVE'),
-        (6, 'MSAND', 80, 50, 'APPROVE'), (7, 'JALLI6', 60, 45, 'APPROVE'), (8, 'GRAVEL', 120, 40, 'APPROVE'),
-        (9, 'MSAND', 90, 35, 'APPROVE'), (0, 'PSAND', 60, 20, 'APPROVE'), (4, 'MSAND', 150, 12, 'APPROVE'),
-        (2, 'BM20', 100, 6, 'PENDING'), (6, 'GRAVEL', 40, 4, 'REJECT')]
+        (0, 'MSAND', 44, 68, 'APPROVE'), (1, 'BM20', 33, 66, 'APPROVE'), (2, 'GRAVEL', 66, 64, 'APPROVE'),
+        (3, 'PSAND', 22, 60, 'APPROVE'), (4, 'BM20', 55, 58, 'APPROVE'), (5, 'BM40', 44, 55, 'APPROVE'),
+        (6, 'MSAND', 18, 50, 'APPROVE'), (7, 'JALLI6', 14, 45, 'APPROVE'), (8, 'GRAVEL', 26, 40, 'APPROVE'),
+        (9, 'MSAND', 20, 35, 'APPROVE'), (0, 'PSAND', 14, 20, 'APPROVE'), (4, 'MSAND', 33, 12, 'APPROVE'),
+        (2, 'BM20', 22, 6, 'PENDING'), (6, 'GRAVEL', 9, 4, 'REJECT')]
     bookings = []
     for ci, mc, qty, ago, action in plan:
         if ci >= len(customers) or mc not in mats:
@@ -284,12 +285,12 @@ def main():
     # ------------------------------------------------------------------ 7. Trips (dispatch, complete, weighbridge)
     print('[7] Trips')
     trips = []
-    loads = {'MSAND': 18, 'PSAND': 16, 'BM20': 20, 'BM40': 20, 'JALLI6': 15, 'GRAVEL': 22}
+    loads = {'MSAND': 4, 'PSAND': 3.5, 'BM20': 4.5, 'BM40': 4.5, 'JALLI6': 3.5, 'GRAVEL': 5}  # Units per lorry load
     qmap = {'MSAND': 2, 'PSAND': 2, 'BM20': 0, 'BM40': 1, 'JALLI6': 3, 'GRAVEL': 4}
     k = 0
     for b in [x for x in bookings if x['action'] == 'APPROVE']:
         per = loads[b['mc']]
-        n = max(2, min(6, int(b['qty'] * (0.6 if b['ago'] > 20 else 0.4)) // per))
+        n = int(max(2, min(6, int(b['qty'] * (0.6 if b['ago'] > 20 else 0.4)) // per)))
         for t in range(n):
             ago = max(1, b['ago'] - 2 - t * max(1, (b['ago'] - 3) // max(n, 1)))
             vi = k % len(vehicles)
@@ -311,8 +312,8 @@ def main():
                 trips.append({'id': tr['id'], 'status': 'DISPATCHED', 'ago': ago, 'b': b, 'v': v, 'dr': dr})
                 continue
             api.post(f"/trips/{tr['id']}/complete")
-            loaded = per + 0.2
-            delivered = round(per - (0.35 if (k % 5 == 0) else 0.1), 2)
+            loaded = per
+            delivered = round(per - (0.1 if (k % 5 == 0) else 0.05), 2)  # small shortfall at site, in Units
             tr['details'][0].update({'loadedQuantity': loaded, 'deliveredQuantity': delivered})
             api.put(f"/trips/{tr['id']}", {'booking': {'id': b['id']}, 'tripDate': d(ago), 'vehicle': {'id': v['id']},
                                           'driver': {'id': dr['id']}, 'quarry': {'id': q['id']} if q else None,

@@ -5,6 +5,10 @@ DATE = lambda col: f"{col} BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE)"
 STATUS = lambda col: f"(CAST(:status AS VARCHAR) IS NULL OR {col} = CAST(:status AS VARCHAR))"
 def C(key,label,typ='text',total=False): return {"key":key,"label":label,"type":typ,"total":total}
 R=[]
+# Unit of measure of an order line (booking / trip / invoice line): "Unit", "Ton" ... Quantities are never converted, so
+# every quantity column is shown with its unit; summary rows list the units they add up ("Unit" or "Ton, Unit").
+UL = lambda a: f"COALESCE(NULLIF({a}.symbol,''), {a}.code)"
+UNITS = lambda a: f"string_agg(DISTINCT {UL(a)}, ', ')"
 def rep(key,cat,title,purpose,filters,cols,sql,finance=False):
     R.append(dict(key=key,category=cat,title=title,purpose=purpose,filters=filters,columns=cols,sql=" ".join(sql.split()),finance=finance))
 
@@ -12,16 +16,17 @@ def rep(key,cat,title,purpose,filters,cols,sql,finance=False):
 TRIP_JOINS="""FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
  LEFT JOIN bookings b ON b.id = t.booking_id LEFT JOIN customers c ON c.id = b.customer_id
  LEFT JOIN vehicles v ON v.id = t.vehicle_id LEFT JOIN drivers d ON d.id = t.driver_id
- LEFT JOIN quarries q ON q.id = t.quarry_id LEFT JOIN materials m ON m.id = td.material_id"""
+ LEFT JOIN quarries q ON q.id = t.quarry_id LEFT JOIN materials m ON m.id = td.material_id
+ LEFT JOIN uom_master um ON um.id = td.uom_id"""
 TRIP_WHERE=f"""WHERE t.company_id = :companyId AND t.is_deleted = false AND {DATE('t.trip_date')} AND {B('t')}
  AND {OPT('t.vehicle_id','vehicleId')} AND {OPT('t.driver_id','driverId')} AND {OPT('b.customer_id','customerId')}"""
 rep("trip-register","Operations","Trip register","Every trip line in the period with weighbridge weights and billing status — the daily dispatch record.",
  ["date","branch","vehicle","driver","customer","status"],
  [C("trip_no","Trip No"),C("trip_date","Date","date"),C("booking","Booking"),C("customer","Customer"),C("vehicle","Vehicle"),C("driver","Driver"),
-  C("quarry","Quarry"),C("material","Material"),C("planned_qty","Planned","qty",True),C("loaded_qty","Loaded","qty",True),C("delivered_qty","Delivered","qty",True),
+  C("quarry","Quarry"),C("material","Material"),C("uom","Unit"),C("planned_qty","Planned","qty",True),C("loaded_qty","Loaded","qty",True),C("delivered_qty","Delivered","qty",True),
   C("shortage_qty","Shortage","qty",True),C("status","Status"),C("invoice_no","Invoice")],
  f"""SELECT t.trip_number AS trip_no, t.trip_date, b.booking_number AS booking, c.name AS customer, v.name AS vehicle, d.name AS driver,
- q.name AS quarry, m.name AS material, td.quantity AS planned_qty, td.loaded_quantity AS loaded_qty, td.delivered_quantity AS delivered_qty,
+ q.name AS quarry, m.name AS material, {UL('um')} AS uom, td.quantity AS planned_qty, td.loaded_quantity AS loaded_qty, td.delivered_quantity AS delivered_qty,
  CASE WHEN td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL THEN td.loaded_quantity - td.delivered_quantity END AS shortage_qty,
  t.status, inv.invoice_number AS invoice_no {TRIP_JOINS}
  LEFT JOIN LATERAL (SELECT si.invoice_number FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id
@@ -31,21 +36,22 @@ rep("trip-register","Operations","Trip register","Every trip line in the period 
 rep("daily-dispatch","Operations","Daily dispatch summary","Trips planned, on the road and completed per day, with vehicles and quantity moved.",
  ["date","branch"],
  [C("day","Date","date"),C("trips","Trips","number",True),C("planned","Planned","number",True),C("dispatched","On road","number",True),C("completed","Completed","number",True),
-  C("vehicles","Vehicles used","number"),C("drivers","Drivers","number"),C("delivered_qty","Qty delivered","qty",True)],
+  C("vehicles","Vehicles used","number"),C("drivers","Drivers","number"),C("delivered_qty","Qty delivered","qty",True),C("uom","Unit")],
  f"""SELECT t.trip_date AS day, COUNT(DISTINCT t.id) AS trips,
  COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'PLANNED') AS planned, COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'DISPATCHED') AS dispatched,
  COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'COMPLETED') AS completed, COUNT(DISTINCT t.vehicle_id) AS vehicles, COUNT(DISTINCT t.driver_id) AS drivers,
- COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)) FILTER (WHERE t.status = 'COMPLETED'),0) AS delivered_qty
- FROM trips t LEFT JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
+ COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)) FILTER (WHERE t.status = 'COMPLETED'),0) AS delivered_qty,
+ {UNITS('um')} AS uom
+ FROM trips t LEFT JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false LEFT JOIN uom_master um ON um.id = td.uom_id
  WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status <> 'CANCELLED' AND {DATE('t.trip_date')} AND {B('t')}
  GROUP BY t.trip_date ORDER BY t.trip_date""")
 
 rep("weighbridge-shortage","Operations","Weighbridge shortage","Loaded vs delivered weight per trip line; finds loss in transit by vehicle, driver and quarry.",
  ["date","branch","vehicle","driver","customer"],
- [C("trip_no","Trip No"),C("trip_date","Date","date"),C("vehicle","Vehicle"),C("driver","Driver"),C("quarry","Quarry"),C("customer","Customer"),C("material","Material"),
+ [C("trip_no","Trip No"),C("trip_date","Date","date"),C("vehicle","Vehicle"),C("driver","Driver"),C("quarry","Quarry"),C("customer","Customer"),C("material","Material"),C("uom","Unit"),
   C("loaded_qty","Loaded","qty",True),C("delivered_qty","Delivered","qty",True),C("shortage_qty","Shortage","qty",True),C("shortage_pct","Shortage %","percent")],
  f"""SELECT t.trip_number AS trip_no, t.trip_date, v.name AS vehicle, d.name AS driver, q.name AS quarry, c.name AS customer, m.name AS material,
- td.loaded_quantity AS loaded_qty, td.delivered_quantity AS delivered_qty, td.loaded_quantity - td.delivered_quantity AS shortage_qty,
+ {UL('um')} AS uom, td.loaded_quantity AS loaded_qty, td.delivered_quantity AS delivered_qty, td.loaded_quantity - td.delivered_quantity AS shortage_qty,
  ROUND(100 * (td.loaded_quantity - td.delivered_quantity) / NULLIF(td.loaded_quantity,0), 2) AS shortage_pct {TRIP_JOINS}
  {TRIP_WHERE} AND td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL AND td.loaded_quantity > td.delivered_quantity
  ORDER BY shortage_pct DESC NULLS LAST""")
@@ -53,11 +59,11 @@ rep("weighbridge-shortage","Operations","Weighbridge shortage","Loaded vs delive
 # ---------------- VEHICLES ----------------
 rep("vehicle-performance","Vehicles & trips","Vehicle performance & profitability","Per vehicle: trips, quantity, revenue, fuel, expenses, maintenance and net contribution for the period.",
  ["date","branch","vehicle"],
- [C("vehicle","Vehicle"),C("trips","Trips","number",True),C("delivered_qty","Qty delivered","qty",True),C("revenue","Revenue (taxable)","money",True),
+ [C("vehicle","Vehicle"),C("trips","Trips","number",True),C("delivered_qty","Qty delivered","qty",True),C("uom","Unit"),C("revenue","Revenue (taxable)","money",True),
   C("fuel_litres","Fuel (L)","qty",True),C("fuel_cost","Fuel cost","money",True),C("km_run","Km run","number",True),C("km_per_litre","Km/L","number"),
   C("other_expenses","Other expenses","money",True),C("maintenance","Maintenance","money",True),C("net_contribution","Net contribution","money",True)],
- f"""WITH tr AS (SELECT t.vehicle_id, COUNT(DISTINCT t.id) trips, SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)) qty
-   FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
+ f"""WITH tr AS (SELECT t.vehicle_id, COUNT(DISTINCT t.id) trips, SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)) qty, {UNITS('um')} uom
+   FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false LEFT JOIN uom_master um ON um.id = td.uom_id
    WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND {DATE('t.trip_date')} GROUP BY t.vehicle_id),
  rv AS (SELECT t.vehicle_id, SUM(sd.taxable_amount) revenue FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id
    JOIN trips t ON t.id = sd.trip_id WHERE si.company_id = :companyId AND si.is_deleted = false AND sd.is_deleted = false AND si.status NOT IN ('DRAFT','CANCELLED')
@@ -68,7 +74,7 @@ rep("vehicle-performance","Vehicles & trips","Vehicle performance & profitabilit
    AND e.status IN ('APPROVED','PAID') AND {DATE('e.expense_date')} GROUP BY e.vehicle_id),
  mt AS (SELECT w.vehicle_id, SUM(COALESCE(w.actual_cost,0)) amt FROM work_orders w WHERE w.company_id = :companyId AND w.is_deleted = false
    AND w.status = 'COMPLETED' AND CAST(w.completed_at AS DATE) BETWEEN CAST(:from AS DATE) AND CAST(:to AS DATE) GROUP BY w.vehicle_id)
- SELECT v.name AS vehicle, COALESCE(tr.trips,0) trips, COALESCE(tr.qty,0) delivered_qty, COALESCE(rv.revenue,0) revenue,
+ SELECT v.name AS vehicle, COALESCE(tr.trips,0) trips, COALESCE(tr.qty,0) delivered_qty, tr.uom, COALESCE(rv.revenue,0) revenue,
  COALESCE(fu.litres,0) fuel_litres, COALESCE(fu.cost,0) fuel_cost, COALESCE(fu.km,0) km_run, ROUND(fu.km / NULLIF(fu.litres,0), 2) km_per_litre,
  COALESCE(ex.amt,0) other_expenses, COALESCE(mt.amt,0) maintenance,
  COALESCE(rv.revenue,0) - COALESCE(fu.cost,0) - COALESCE(ex.amt,0) - COALESCE(mt.amt,0) net_contribution
@@ -94,12 +100,12 @@ rep("compliance-expiry","Vehicles & trips","Document expiry (compliance)","Vehic
 rep("driver-performance","Drivers & settlement","Driver performance","Per driver: trips, working days, quantity, shortage, fuel drawn, bata, payroll and advance balance.",
  ["date","branch","driver"],
  [C("driver","Driver"),C("trips","Trips","number",True),C("trip_days","Trip days","number",True),C("delivered_qty","Qty delivered","qty",True),
-  C("shortage_qty","Shortage","qty",True),C("fuel_litres","Fuel (L)","qty",True),C("bata","Bata paid","money",True),C("payroll_gross","Payroll gross","money",True),
+  C("shortage_qty","Shortage","qty",True),C("uom","Unit"),C("fuel_litres","Fuel (L)","qty",True),C("bata","Bata paid","money",True),C("payroll_gross","Payroll gross","money",True),
   C("advance_outstanding","Advance outstanding","money",True)],
  f"""WITH tr AS (SELECT t.driver_id, COUNT(DISTINCT t.id) trips, COUNT(DISTINCT t.trip_date) days,
    SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)) qty,
-   SUM(CASE WHEN td.loaded_quantity > td.delivered_quantity THEN td.loaded_quantity - td.delivered_quantity ELSE 0 END) short
-   FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
+   SUM(CASE WHEN td.loaded_quantity > td.delivered_quantity THEN td.loaded_quantity - td.delivered_quantity ELSE 0 END) short, {UNITS('um')} uom
+   FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false LEFT JOIN uom_master um ON um.id = td.uom_id
    WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND {DATE('t.trip_date')} GROUP BY t.driver_id),
  fu AS (SELECT f.driver_id, SUM(f.fuel_quantity) litres FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false
    AND f.status = 'APPROVED' AND {DATE('f.fuel_date')} GROUP BY f.driver_id),
@@ -109,7 +115,7 @@ rep("driver-performance","Drivers & settlement","Driver performance","Per driver
    AND p.status IN ('POSTED','PAID') AND make_date(p.pay_year, p.pay_month, 1) BETWEEN date_trunc('month', CAST(:from AS DATE)) AND CAST(:to AS DATE) GROUP BY p.driver_id),
  ad AS (SELECT a.driver_id, SUM(a.amount - a.recovered_amount) bal FROM driver_advances a WHERE a.company_id = :companyId AND a.is_deleted = false
    AND a.status = 'ISSUED' GROUP BY a.driver_id)
- SELECT d.name AS driver, COALESCE(tr.trips,0) trips, COALESCE(tr.days,0) trip_days, COALESCE(tr.qty,0) delivered_qty, COALESCE(tr.short,0) shortage_qty,
+ SELECT d.name AS driver, COALESCE(tr.trips,0) trips, COALESCE(tr.days,0) trip_days, COALESCE(tr.qty,0) delivered_qty, COALESCE(tr.short,0) shortage_qty, tr.uom,
  COALESCE(fu.litres,0) fuel_litres, COALESCE(bt.amt,0) bata, COALESCE(pr.gross,0) payroll_gross, COALESCE(ad.bal,0) advance_outstanding
  FROM drivers d LEFT JOIN tr ON tr.driver_id = d.id LEFT JOIN fu ON fu.driver_id = d.id LEFT JOIN bt ON bt.driver_id = d.id
  LEFT JOIN pr ON pr.driver_id = d.id LEFT JOIN ad ON ad.driver_id = d.id
@@ -302,24 +308,26 @@ DELIV="""(SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quant
 rep("booking-register","Bookings & delivery","Booking & delivery status","Booked vs delivered vs pending quantity per booking and material.",
  ["date","branch","customer","status"],
  [C("booking_no","Booking"),C("booking_date","Date","date"),C("customer","Customer"),C("site","Delivery site"),C("material","Material"),
-  C("booked","Booked","qty",True),C("delivered","Delivered","qty",True),C("pending","Pending","qty",True),C("fulfilment_pct","Done %","percent"),
+  C("uom","Unit"),C("booked","Booked","qty",True),C("delivered","Delivered","qty",True),C("pending","Pending","qty",True),C("fulfilment_pct","Done %","percent"),
   C("value","Booking value","money",True),C("status","Status")],
- f"""SELECT bk.booking_number booking_no, bk.booking_date, c.name customer, ds.site_name site, m.name material, bd.quantity booked,
+ f"""SELECT bk.booking_number booking_no, bk.booking_date, c.name customer, ds.site_name site, m.name material, {UL('um')} uom, bd.quantity booked,
  {DELIV} delivered, GREATEST(bd.quantity - {DELIV}, 0) pending, ROUND(100 * {DELIV} / NULLIF(bd.quantity,0), 1) fulfilment_pct, bd.net_amount value, bk.status
  FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false LEFT JOIN customers c ON c.id = bk.customer_id
  LEFT JOIN customer_delivery_sites ds ON ds.id = bk.delivery_site_id LEFT JOIN materials m ON m.id = bd.material_id
+ LEFT JOIN uom_master um ON um.id = bd.uom_id
  WHERE bk.company_id = :companyId AND bk.is_deleted = false AND {DATE('bk.booking_date')} AND {B('bk')} AND {OPT('bk.customer_id','customerId')}
  AND {STATUS('bk.status')} ORDER BY bk.booking_date, bk.booking_number""")
 
 rep("pending-deliveries","Bookings & delivery","Pending deliveries","Approved bookings that still have quantity to deliver, oldest first.",
  ["branch","customer"],
  [C("booking_no","Booking"),C("booking_date","Date","date"),C("age_days","Age (days)","number"),C("customer","Customer"),C("site","Site"),C("material","Material"),
-  C("booked","Booked","qty",True),C("delivered","Delivered","qty",True),C("pending","Pending","qty",True),C("open_trips","Trips on road","number",True)],
- f"""SELECT * FROM (SELECT bk.booking_number booking_no, bk.booking_date, CURRENT_DATE - bk.booking_date age_days, c.name customer, ds.site_name site, m.name material,
+  C("uom","Unit"),C("booked","Booked","qty",True),C("delivered","Delivered","qty",True),C("pending","Pending","qty",True),C("open_trips","Trips on road","number",True)],
+ f"""SELECT * FROM (SELECT bk.booking_number booking_no, bk.booking_date, CURRENT_DATE - bk.booking_date age_days, c.name customer, ds.site_name site, m.name material, {UL('um')} uom,
  bd.quantity booked, {DELIV} delivered, bd.quantity - {DELIV} pending,
  (SELECT COUNT(*) FROM trips t WHERE t.booking_id = bk.id AND t.is_deleted = false AND t.status IN ('PLANNED','DISPATCHED')) open_trips
  FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false LEFT JOIN customers c ON c.id = bk.customer_id
  LEFT JOIN customer_delivery_sites ds ON ds.id = bk.delivery_site_id LEFT JOIN materials m ON m.id = bd.material_id
+ LEFT JOIN uom_master um ON um.id = bd.uom_id
  WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND {B('bk')} AND {OPT('bk.customer_id','customerId')}) x
  WHERE pending > 0 ORDER BY booking_date""")
 
@@ -391,9 +399,9 @@ rep("customer-outstanding","Outstanding & pending","Customer outstanding & agein
 rep("unbilled-trips","Outstanding & pending","Unbilled completed trips","Completed trips not on any active invoice — revenue at risk. Estimated value from booking rates.",
  ["date","branch","customer","vehicle"],
  [C("trip_no","Trip"),C("trip_date","Date","date"),C("age_days","Age (days)","number"),C("customer","Customer"),C("vehicle","Vehicle"),C("material","Material"),
-  C("qty","Qty","qty",True),C("est_taxable","Est. taxable","money",True)],
+  C("qty","Qty","qty",True),C("uom","Unit"),C("est_taxable","Est. taxable","money",True)],
  f"""SELECT t.trip_number trip_no, t.trip_date, CURRENT_DATE - t.trip_date age_days, c.name customer, v.name vehicle, m.name material,
- COALESCE(NULLIF(td.delivered_quantity,0), td.quantity) qty,
+ COALESCE(NULLIF(td.delivered_quantity,0), td.quantity) qty, {UL('um')} uom,
  ROUND(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity) * (COALESCE(NULLIF(td.rate,0), bd.rate, 0) + COALESCE(bd.transport_rate,0)
    + COALESCE(NULLIF(td.loading_charges,0), bd.loading_charge, 0) + COALESCE(NULLIF(td.royalty,0), bd.royalty_rate, 0)), 2) est_taxable
  {TRIP_JOINS} LEFT JOIN LATERAL (SELECT * FROM booking_details x WHERE x.booking_id = t.booking_id AND x.material_id = td.material_id AND x.is_deleted = false LIMIT 1) bd ON true
@@ -505,7 +513,7 @@ rep("supplier-payment-register","Invoices & receipts","Supplier payment register
 # ---------------- TRIP PROFITABILITY ----------------
 rep("trip-profitability","Vehicles & trips","Trip profitability","Per completed trip: billed value minus fuel and expenses linked to the trip (tolls, bata…) and the driver's day pay shared across that day's trips.",
  ["date","branch","vehicle","driver","customer"],
- [C("trip_no","Trip"),C("trip_date","Date","date"),C("customer","Customer"),C("vehicle","Vehicle"),C("driver","Driver"),C("qty","Qty","qty",True),
+ [C("trip_no","Trip"),C("trip_date","Date","date"),C("customer","Customer"),C("vehicle","Vehicle"),C("driver","Driver"),C("qty","Qty","qty",True),C("uom","Unit"),
   C("revenue","Revenue (taxable)","money",True),C("fuel","Fuel","money",True),C("trip_expenses","Trip expenses","money",True),C("driver_pay","Driver pay share","money",True),
   C("profit","Profit","money",True),C("margin_pct","Margin %","percent"),C("billed","Invoiced?")],
  f"""WITH base AS (SELECT t.id, t.trip_number, t.trip_date, t.driver_id, t.vehicle_id, t.booking_id, t.company_id, t.branch_id FROM trips t
@@ -518,6 +526,7 @@ rep("trip-profitability","Vehicles & trips","Trip profitability","Per completed 
    WHERE p.company_id = :companyId AND p.is_deleted = false AND d.is_deleted = false AND p.status <> 'CANCELLED')
  SELECT base.trip_number trip_no, base.trip_date, c.name customer, v.name vehicle, dr.name driver,
  (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td WHERE td.trip_id = base.id AND td.is_deleted = false) qty,
+ (SELECT {UNITS('um')} FROM trip_details td JOIN uom_master um ON um.id = td.uom_id WHERE td.trip_id = base.id AND td.is_deleted = false) uom,
  COALESCE(rv.revenue,0) revenue, COALESCE(fu.amt,0) fuel, COALESCE(ex.amt,0) trip_expenses, ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) driver_pay,
  COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - ROUND(COALESCE(dp.daily_amount / NULLIF(ds.n,0),0), 2) profit,
  ROUND(100 * (COALESCE(rv.revenue,0) - COALESCE(fu.amt,0) - COALESCE(ex.amt,0) - COALESCE(dp.daily_amount / NULLIF(ds.n,0),0)) / NULLIF(rv.revenue,0), 1) margin_pct,
@@ -549,7 +558,7 @@ rep("unlinked-costs","Outstanding & pending","Fuel & expenses not linked to a tr
 MONTHS="generate_series(date_trunc('month', CAST(:from AS DATE)), date_trunc('month', CAST(:to AS DATE)), interval '1 month')"
 rep("monthly-summary","Monthly & management","Monthly business summary","Month by month: trips, quantity, billing, collections, fuel, expenses, maintenance, payroll and operating margin.",
  ["date","branch"],
- [C("month","Month"),C("trips","Trips","number",True),C("qty","Qty delivered","qty",True),C("billed","Billed (taxable)","money",True),C("collected","Collected","money",True),
+ [C("month","Month"),C("trips","Trips","number",True),C("qty","Qty delivered","qty",True),C("uom","Unit"),C("billed","Billed (taxable)","money",True),C("collected","Collected","money",True),
   C("fuel","Fuel","money",True),C("expenses","Other expenses","money",True),C("maintenance","Maintenance","money",True),C("payroll","Driver payroll","money",True),
   C("margin","Operating margin","money",True),C("margin_pct","Margin %","percent")],
  f"""WITH m AS (SELECT CAST(g AS DATE) m0, CAST(g + interval '1 month' - interval '1 day' AS DATE) m1 FROM {MONTHS} g)
@@ -557,6 +566,8 @@ rep("monthly-summary","Monthly & management","Monthly business summary","Month b
  (SELECT COUNT(*) FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN m.m0 AND m.m1 AND {B('t')}) trips,
  (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false
    WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN m.m0 AND m.m1 AND {B('t')}) qty,
+ (SELECT {UNITS('um')} FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false JOIN uom_master um ON um.id = td.uom_id
+   WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN m.m0 AND m.m1 AND {B('t')}) uom,
  (SELECT COALESCE(SUM(si.taxable_amount),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND {INV_OK} AND si.invoice_date BETWEEN m.m0 AND m.m1 AND {B('si')}) billed,
  (SELECT COALESCE(SUM(r.amount_received),0) FROM customer_receipts r WHERE r.company_id = :companyId AND r.is_deleted = false AND r.status = 'APPROVED' AND r.receipt_date BETWEEN m.m0 AND m.m1 AND {B('r')}) collected,
  (SELECT COALESCE(SUM(f.total_amount),0) FROM fuel_entries f WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN m.m0 AND m.m1 AND {B('f')}) fuel,
@@ -576,8 +587,8 @@ rep("management-kpis","Monthly & management","Management KPIs","Headline numbers
  UNION ALL SELECT 4, 'Sales', 'Dues older than 60 days', (SELECT COALESCE(SUM(si.net_amount - COALESCE(si.paid_amount,0)),0) FROM sales_invoices si WHERE si.company_id = :companyId AND si.is_deleted = false AND {INV_OK} AND si.invoice_date < CURRENT_DATE - 60 AND {B('si')}), '₹'
  UNION ALL SELECT 5, 'Sales', 'Completed trips not invoiced', (SELECT COUNT(*) FROM trips t WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND {B('t')} AND NOT EXISTS (SELECT 1 FROM sales_invoice_details sd JOIN sales_invoices si ON si.id = sd.invoice_id WHERE sd.trip_id = t.id AND sd.is_deleted = false AND si.is_deleted = false AND si.status <> 'CANCELLED')), 'trips'
  UNION ALL SELECT 6, 'Operations', 'Trips completed', (SELECT COUNT(*) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), 'trips'
- UNION ALL SELECT 7, 'Operations', 'Quantity delivered', (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), 'qty'
- UNION ALL SELECT 8, 'Operations', 'Pending delivery quantity (approved bookings)', (SELECT COALESCE(SUM(GREATEST(bd.quantity - (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false),0)),0) FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND {B('bk')}), 'qty'
+ UNION ALL SELECT 7, 'Operations', 'Quantity delivered', (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), COALESCE((SELECT {UNITS('um')} FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false JOIN uom_master um ON um.id = td.uom_id, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), 'qty')
+ UNION ALL SELECT 8, 'Operations', 'Pending delivery quantity (approved bookings)', (SELECT COALESCE(SUM(GREATEST(bd.quantity - (SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false),0)),0) FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND {B('bk')}), COALESCE((SELECT {UNITS('um')} FROM bookings bk JOIN booking_details bd ON bd.booking_id = bk.id AND bd.is_deleted = false JOIN uom_master um ON um.id = bd.uom_id WHERE bk.company_id = :companyId AND bk.is_deleted = false AND bk.status = 'APPROVED' AND {B('bk')}), 'qty')
  UNION ALL SELECT 9, 'Operations', 'Weighbridge shortage %', (SELECT ROUND(100 * SUM(td.loaded_quantity - td.delivered_quantity) / NULLIF(SUM(td.loaded_quantity),0), 2) FROM trips t JOIN trip_details td ON td.trip_id = t.id AND td.is_deleted = false, p WHERE t.company_id = :companyId AND t.is_deleted = false AND td.loaded_quantity IS NOT NULL AND td.delivered_quantity IS NOT NULL AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), '%'
  UNION ALL SELECT 10, 'Fleet', 'Vehicles used / active', (SELECT ROUND(100.0 * COUNT(DISTINCT t.vehicle_id) / NULLIF((SELECT COUNT(*) FROM vehicles v WHERE v.company_id = :companyId AND v.is_deleted = false AND v.status = 'ACTIVE' AND {B('v')}),0), 1) FROM trips t, p WHERE t.company_id = :companyId AND t.is_deleted = false AND t.status = 'COMPLETED' AND t.trip_date BETWEEN p.d0 AND p.d1 AND {B('t')}), '%'
  UNION ALL SELECT 11, 'Fleet', 'Average km per litre', (SELECT ROUND(SUM(CASE WHEN f.previous_odometer IS NOT NULL THEN f.current_odometer - f.previous_odometer ELSE 0 END) / NULLIF(SUM(f.fuel_quantity),0), 2) FROM fuel_entries f, p WHERE f.company_id = :companyId AND f.is_deleted = false AND f.status = 'APPROVED' AND f.fuel_date BETWEEN p.d0 AND p.d1 AND {B('f')}), 'km/L'

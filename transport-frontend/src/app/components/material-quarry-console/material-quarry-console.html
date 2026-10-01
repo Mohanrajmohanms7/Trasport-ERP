@@ -207,6 +207,7 @@
 
       @if (activeTab() === 'uoms' && features.has('materials.uoms')) {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
+          <app-order-units-panel [canEdit]="isAdmin()" />
           <div class="flex justify-between items-center shrink-0">
             <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Unit of Measurement (UOM) Master</span>
             <button type="button" (click)="openAddUom()"
@@ -245,6 +246,7 @@
                       <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)] uppercase">{{ row.status }}</span>
                     </td>
                     <td class="p-4 text-center">
+                      @if (canChangeUom(row)) {
                       <div class="flex items-center justify-center gap-2">
                         <button type="button" (click)="openEditUom(row)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition" title="Edit">
                           <span class="material-icons text-sm">edit</span>
@@ -253,6 +255,9 @@
                           <span class="material-icons text-sm">delete</span>
                         </button>
                       </div>
+                      } @else {
+                        <span class="text-[11px] text-[var(--ff-text-muted)]" title="Shared by all companies">Standard</span>
+                      }
                     </td>
                   </tr>
                 } @empty {

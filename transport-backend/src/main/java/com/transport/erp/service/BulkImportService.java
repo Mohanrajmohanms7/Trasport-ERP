@@ -116,7 +116,7 @@ public class BulkImportService {
         MODULES.put("materials", new Module("materials", "Materials", List.of(
                 c("code", "Material Code", true, "code", "MSAND", "Unique in your company"),
                 c("name", "Material Name", true, "text", "M-Sand", ""),
-                c("unit", "Unit (UOM code)", false, "uom", "TON", "Must exist in UOM master"),
+                c("unit", "Default order unit (UOM code)", false, "uom", "UNIT", "Must exist in UOM master; used on orders when switched on"),
                 c("defaultRate", "Default Rate (₹)", false, "number", "950", "0 or more"),
                 c("status", "Status", false, "enum:ACTIVE,INACTIVE", "ACTIVE", "Blank = ACTIVE"))));
         MODULES.put("spare-parts", new Module("spare-parts", "Spare Parts", List.of(

@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 export interface BookingDetail {
   id?: number;
   material: { id: number; name?: string; code?: string };
+  /** Unit the quantity is in (Unit, Ton …). Rates are per this unit. */
+  uom?: { id: number; code?: string; name?: string; symbol?: string } | null;
   quantity: number;
   rate: number;
   transportRate: number;

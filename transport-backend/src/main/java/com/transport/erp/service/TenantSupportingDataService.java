@@ -19,6 +19,7 @@ public class TenantSupportingDataService {
 
     private final LookupValueRepository lookupValueRepository;
     private final BranchRepository branchRepository;
+    private final OrderUomService orderUomService;
 
     @Transactional
     public Map<String, Object> seedForCompany(Long companyId, Long branchId) {
@@ -29,6 +30,8 @@ public class TenantSupportingDataService {
         }
 
         int lookups = seedAllLookups(companyId, branch);
+        // Orders start in Unit only; the company admin / platform admin can switch Ton, KG, CFT … on later.
+        orderUomService.ensureConfigured(companyId, "SYSTEM");
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("companyId", companyId);

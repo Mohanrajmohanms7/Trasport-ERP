@@ -15,7 +15,7 @@ python3 tools/demo/seed_pkc_demo.py --url https://<backend-host>/api/v1 --userna
 
 Creates: 2 branches, pay slabs, 6 materials, 5 quarries, 5 loading points, 10 customers + delivery sites,
 6 vehicles + 6 drivers (assigned), 10 suppliers, 2 stores, 11 spare parts with opening stock and 10 purchases,
-14 bookings, ~47 trips (dispatched, completed, weighbridge weights), ~25 fuel entries, ~36 expenses, ~17 invoices,
+14 bookings in **Units** (PKC orders by the Unit, rates per Unit), ~47 trips (dispatched, completed, loaded/delivered Units), ~25 fuel entries, ~36 expenses, ~17 invoices,
 10 receipts, 10 driver advances, 10 payrolls, 10 maintenance requests, ~10 work orders, 10 supplier bills, 10 supplier payments.
 Some items are deliberately left pending (draft invoices, unpaid invoices, open jobs, unbilled trips, expiring documents)
 so the pending / outstanding / compliance reports have content.

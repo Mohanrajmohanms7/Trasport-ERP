@@ -16,6 +16,8 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfNumberComponent, FfButtonComponent, FfDatepickerComponent, FfTextboxComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
+import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 @Component({
   selector: 'app-invoice-details-console',
@@ -45,6 +47,43 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
+  private uomMgmtService = inject(UomMgmtService);
+
+  /** Units switched on for orders (default first) + units of lines being edited that were switched off later. */
+  orderUnits = signal<OrderUnit[]>([]);
+  private legacyUnits = signal<OrderUnit[]>([]);
+
+  get defaultUnitId(): number | null {
+    const u = this.orderUnits();
+    return (u.find(x => x.isDefault) || u[0])?.id ?? null;
+  }
+  private allUnits(): OrderUnit[] {
+    const list = [...this.orderUnits()];
+    for (const l of this.legacyUnits()) if (!list.some(x => x.id === l.id)) list.push(l);
+    return list;
+  }
+  uomOptions(): FfSelectOption[] {
+    return this.allUnits().map(u => ({ label: u.label || u.name, value: u.id }));
+  }
+  /** Display text of a billing row's unit, e.g. "Unit". */
+  rowUnit(row: any): string {
+    const id = Number(row.get('uom.id')?.value);
+    const u = this.allUnits().find(x => x.id === id);
+    return u ? uomLabel(u) : '';
+  }
+  perUnitLabel(text: string, row: any): string {
+    return `${text} / ${this.rowUnit(row) || 'unit'}`;
+  }
+  /** "2 Unit M-Sand" (ready-to-bill trip list). */
+  lineText(d: any): string {
+    const q = d?.deliveredQuantity && d.deliveredQuantity > 0 ? d.deliveredQuantity : d?.quantity;
+    return orderLineText(q, d?.uom, d?.material?.name);
+  }
+  private rememberUnit(u: any) {
+    if (u?.id && !this.allUnits().some(x => x.id === u.id)) {
+      this.legacyUnits.set([...this.legacyUnits(), { id: u.id, code: u.code || '', name: u.name || '', symbol: u.symbol, label: uomLabel(u) }]);
+    }
+  }
 
   private companyId = resolveTenantCompanyId();
   readonly today = new Date().toISOString().slice(0, 10);
@@ -112,6 +151,14 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     this.masterService.getMasters<any>('trips', this.companyId, { size: 100 }).subscribe(res => {
       if (res.success && res.data) {
         this.trips.set(res.data.content || res.data);
+      }
+    });
+    this.uomMgmtService.getOrderUnits().subscribe(res => {
+      if (res.success && res.data) {
+        this.orderUnits.set(res.data);
+        for (const row of this.detailsArray?.controls ?? []) {
+          if (!row.get('uom.id')?.value && this.defaultUnitId) row.get('uom.id')?.setValue(this.defaultUnitId);
+        }
       }
     });
     this.masterService.getMasters<any>('materials', this.companyId, { size: 100 }).subscribe(res => {
@@ -199,12 +246,16 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   }
 
   private buildDetailRow(d?: any) {
-    return this.fb.group({
+    if (d?.uom) this.rememberUnit(d.uom);
+    const row = this.fb.group({
       trip: this.fb.group({
         id: [d?.trip?.id || '']
       }),
       material: this.fb.group({
         id: [d?.material?.id ?? '', Validators.required]
+      }),
+      uom: this.fb.group({
+        id: [d?.uom?.id ?? this.defaultUnitId, Validators.required]
       }),
       quantity: [d?.quantity ?? 1, [Validators.required, Validators.min(0.01)]],
       rate: [d?.rate ?? 0, [Validators.required, Validators.min(0)]],
@@ -213,6 +264,16 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       royalty: [d?.royalty ?? 0, [Validators.required, Validators.min(0)]],
       gstPercentage: [d?.gstPercentage ?? 5, [Validators.required, Validators.min(0), Validators.max(28)]]
     });
+    // A trip line is billed in the trip's unit (the server enforces it); follow it on screen too.
+    const syncTripUnit = () => {
+      const trip = this.trips().find(t => t.id === Number(row.get('trip.id')?.value));
+      const matId = Number(row.get('material.id')?.value);
+      const line = trip?.details?.find((x: any) => x.material?.id === matId);
+      if (line?.uom?.id) { this.rememberUnit(line.uom); row.get('uom.id')?.setValue(line.uom.id, { emitEvent: false }); }
+    };
+    row.get('trip.id')?.valueChanges.subscribe(syncTripUnit);
+    row.get('material.id')?.valueChanges.subscribe(syncTripUnit);
+    return row;
   }
 
   addDetail() {
@@ -511,7 +572,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${index + 1}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.materialName || 'General Freight'}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.tripNumber || 'N/A'}</td>
-        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.quantity}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.quantity}${item.uomLabel ? ' ' + item.uomLabel : ''}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.rate || 0).toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${((item.freightCharges || 0) + (item.loadingCharges || 0) + (item.royalty || 0)).toFixed(2)}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.lineTaxable || 0).toFixed(2)}</td>

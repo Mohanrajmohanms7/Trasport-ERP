@@ -27,6 +27,9 @@ public class UomController {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    @Autowired
+    private com.transport.erp.service.OrderUomService orderUomService;
+
     @GetMapping
     public ApiResponse<List<UomMaster>> getAllUoms(@RequestParam(required = false) Long companyId) {
         try {
@@ -54,6 +57,40 @@ public class UomController {
         } catch (Exception e) {
             return ApiResponse.error(Collections.singletonList(e.getMessage()), "Failed to fetch paged UOMs");
         }
+    }
+
+    // --- Units for material orders (booking / trip / invoice). See docs/UNITS_OF_MEASURE.md ---
+
+    /** Units switched on for this company's orders, default first (order screen dropdowns). */
+    @GetMapping("/order-units")
+    public ApiResponse<List<Map<String, Object>>> getOrderUnits(@RequestParam(required = false) Long companyId) {
+        Long scoped = tenantAccess.resolveCompanyId(companyId);
+        return ApiResponse.success(orderUomService.enabledUnits(scoped), "Order units fetched successfully");
+    }
+
+    /** Every unit the company could use on orders, with on/off and default (admin settings). */
+    @GetMapping("/order-settings")
+    public ApiResponse<List<Map<String, Object>>> getOrderSettings(@RequestParam(required = false) Long companyId) {
+        Long scoped = tenantAccess.resolveCompanyId(companyId);
+        return ApiResponse.success(orderUomService.settings(scoped), "Order unit settings fetched successfully");
+    }
+
+    /** Switch a unit on/off for orders or make it the default. Company admins for their company; platform admins for any client. */
+    @PutMapping("/order-settings/{uomId}")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'ADMIN')")
+    public ApiResponse<List<Map<String, Object>>> updateOrderSetting(@PathVariable Long uomId,
+                                                                     @RequestParam(required = false) Long companyId,
+                                                                     @RequestBody Map<String, Object> body,
+                                                                     java.security.Principal principal) {
+        Long scoped = tenantAccess.resolveCompanyId(companyId);
+        if (scoped == null) {
+            return ApiResponse.error(Collections.singletonList("Choose a client first."), "Company is required");
+        }
+        Boolean enabled = body.get("enabled") == null ? null : Boolean.valueOf(String.valueOf(body.get("enabled")));
+        Boolean makeDefault = body.get("isDefault") == null ? null : Boolean.valueOf(String.valueOf(body.get("isDefault")));
+        String user = principal != null ? principal.getName() : "SYSTEM";
+        return ApiResponse.success(orderUomService.updateSetting(scoped, uomId, enabled, makeDefault, user),
+                "Order units updated");
     }
 
     @GetMapping("/{id}")

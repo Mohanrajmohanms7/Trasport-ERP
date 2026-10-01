@@ -30,6 +30,10 @@ public interface UomMasterRepository extends JpaRepository<UomMaster, Long> {
 
     Page<UomMaster> findByCompanyIdAndIsDeletedFalse(Long companyId, Pageable pageable);
 
+    /** Global units plus the company's own units, any status (UOM master list, order-unit settings). */
+    @Query("SELECT u FROM UomMaster u WHERE u.isDeleted = false AND (u.companyId IS NULL OR u.companyId = :companyId) ORDER BY u.code")
+    List<UomMaster> findAllForCompanyOrGlobal(@Param("companyId") Long companyId);
+
     @Query("SELECT u FROM UomMaster u WHERE u.isDeleted = false AND " +
            "(:companyId IS NULL OR u.companyId IS NULL OR u.companyId = :companyId) AND " +
            "(LOWER(u.code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')))")

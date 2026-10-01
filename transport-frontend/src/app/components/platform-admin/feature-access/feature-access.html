@@ -34,6 +34,11 @@
     }
   </div>
 
+  @if (selectedId() && mode() === 'client') {
+    <!-- Units this client may use on bookings / trips / invoices (saved immediately, separate from the feature switches) -->
+    <app-order-units-panel [companyId]="selectedId()" [canEdit]="true" />
+  }
+
   @if (selectedId()) {
     @for (g of groups(); track g.group) {
       <section class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
