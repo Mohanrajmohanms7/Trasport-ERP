@@ -645,5 +645,69 @@ LR=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"u
 C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/customers/$CUST); [ "$C" = "403" ] && pass "other company's record returns HTTP 403" || fail "403 status" "$C"
 CT=$(curl -s -o /tmp/r.pdf -w "%{http_code}" -H "Authorization: Bearer $TC" $API/receipts/$RC/pdf); [ "$CT" = "200" ] && [ "$(head -c 4 /tmp/r.pdf)" = "%PDF" ] && pass "receipt voucher PDF" || fail "receipt pdf" "$CT"
 
+# ---------------- Units of measure on orders (V76, docs/UNITS_OF_MEASURE.md) ----------------
+UNIT_ID=$($PSQL "SELECT id FROM uom_master WHERE code='UNIT' AND company_id IS NULL")
+TON_ID=$($PSQL "SELECT id FROM uom_master WHERE code='TON' AND company_id IS NULL")
+UC() { echo "$1" | j "','.join(u['code'] for u in d['data'])"; }
+R=$(api GET /uoms/order-units); [ "$(UC "$R")" = "UNIT" ] && [ "$(echo "$R" | j "d['data'][0]['isDefault']")" = "True" ] && pass "company orders in Unit only, Unit is default" || fail "order units" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $PT" $API/uoms/order-units); [ "$(UC "$R")" = "UNIT" ] && pass "onboarded client (PKC) starts with Unit only" || fail "pkc order units" "$(echo $R | cut -c1-200)"
+R=$(api GET /uoms); echo "$R" | grep -q '"code":"TON"' && pass "company sees the standard units in UOM master" || fail "global uoms visible" "$(echo $R | cut -c1-200)"
+# booking without a unit -> company default Unit; display "2 Unit"
+UB='{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":4,"rate":4500,"transportRate":500,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}'
+R=$(api POST /bookings "$UB"); UBK=$(echo "$R" | j "d['data']['id']"); UBU=$(echo "$R" | j "d['data']['details'][0]['uom']['code'] + '/' + d['data']['details'][0]['uom']['symbol']")
+[ "$UBU" = "UNIT/Unit" ] && pass "booking line defaults to Unit" || fail "booking default unit" "$UBU $(echo $R | cut -c1-200)"
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":5,"rate":900,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+echo "$R" | grep -q "Unit Not Switched On" && pass "Ton refused while it is switched off" || fail "ton refused" "$(echo $R | cut -c1-200)"
+api POST /bookings/$UBK/approve >/dev/null
+# trip takes the booking unit even if the client sends another one
+R=$(api POST /trips '{"booking":{"id":'$UBK'},"details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":2}]}'); UTR=$(echo "$R" | j "d['data']['id']")
+[ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "UNIT" ] && pass "trip line keeps the booking unit (Unit)" || fail "trip unit" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$UBK'},"details":[{"material":{"id":'$MAT'},"quantity":3}]}')
+echo "$R" | grep -q "Unit left on booking" && pass "over-booking message shows the unit" || fail "unit in qty message" "$(echo $R | cut -c1-250)"
+$PSQL "UPDATE trips SET status='COMPLETED' WHERE id=$UTR" >/dev/null
+R=$(api PUT /trips/$UTR '{"booking":{"id":'$UBK'},"details":[{"material":{"id":'$MAT'},"quantity":2,"loadedQuantity":2,"deliveredQuantity":2}]}')
+[ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "UNIT" ] && pass "completed trip with delivered 2 Unit" || fail "trip update unit" "$(echo $R | cut -c1-200)"
+R=$(api POST /invoices/from-trip/$UTR); UINV=$(echo "$R" | j "d['data']['id']"); UIU=$(echo "$R" | j "d['data']['details'][0]['uom']['code']"); UTX=$(echo "$R" | j "d['data']['taxableAmount']")
+[ "$UIU" = "UNIT" ] && python3 -c "import sys; sys.exit(0 if abs(float('$UTX')-10000)<0.01 else 1)" && pass "invoice billed 2 Unit x 5000 = 10000, no conversion" || fail "invoice unit" "$UIU $UTX"
+R=$(api GET /invoices/$UINV/print); [ "$(echo "$R" | j "d['data']['items'][0]['uomLabel']")" = "Unit" ] && pass "invoice print shows quantity unit" || fail "print unit" "$(echo $R | cut -c1-200)"
+CT=$(curl -s -o /tmp/u.pdf -w "%{http_code}" -H "Authorization: Bearer $TC" $API/invoices/$UINV/pdf); [ "$CT" = "200" ] && [ "$(head -c 4 /tmp/u.pdf)" = "%PDF" ] && pass "invoice PDF with unit" || fail "invoice pdf" "$CT"
+R=$(curl -s -H "Authorization: Bearer $TC" "$API/report-hub/run/trip-register?from=$(date -d '-30 day' +%F)&to=$(date +%F)")
+echo "$R" | j "'ok' if any(c['key']=='uom' for c in d['data']['columns']) and any(r.get('uom')=='Unit' for r in d['data']['rows']) else 'no'" | grep -q ok && pass "trip register shows the Unit column" || fail "report unit" "$(echo $R | cut -c1-200)"
+# who may change order units; standard units are protected
+C=$(as $TO PUT /uoms/order-settings/$TON_ID '{"enabled":true}'); [ "$C" = "403" ] && pass "operator cannot change order units (403)" || fail "operator order units" "$C"
+C=$(as $TC PUT /uoms/$TON_ID '{"code":"TON","name":"Hacked","category":"WEIGHT"}'); [ "$C" = "403" ] && pass "company cannot edit a standard unit (403)" || fail "edit global uom" "$C $(head -c 150 /tmp/r.json)"
+C=$(as $TC DELETE /uoms/$TON_ID); [ "$C" = "403" ] && [ "$($PSQL "SELECT is_deleted FROM uom_master WHERE id=$TON_ID")" = "f" ] && pass "company cannot delete a standard unit (403)" || fail "delete global uom" "$C"
+# company admin switches Ton on
+R=$(api PUT /uoms/order-settings/$TON_ID '{"enabled":true}'); R=$(api GET /uoms/order-units); [ "$(UC "$R")" = "UNIT,TON" ] && pass "company admin switched Ton on (Unit stays default)" || fail "enable ton" "$(echo $R | cut -c1-200)"
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":5,"rate":900,"transportRate":100,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+TBK=$(echo "$R" | j "d['data']['id']"); [ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "TON" ] && pass "5 Ton booking once Ton is on" || fail "ton booking" "$(echo $R | cut -c1-200)"
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":5,"rate":900,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5},{"material":{"id":'$MAT'},"uom":{"id":'$UNIT_ID'},"quantity":2,"rate":900,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+echo "$R" | grep -q "One Unit Per Material" && pass "one material cannot be booked in two units" || fail "mixed units" "$(echo $R | cut -c1-200)"
+R=$(api PUT /bookings/$UBK '{"priority":"MEDIUM","details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":4,"rate":4500,"transportRate":500,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+echo "$R" | grep -q "Unit Locked" && pass "unit cannot change after trips moved the material" || fail "unit lock" "$(echo $R | cut -c1-200)"
+MCODE=$($PSQL "SELECT code FROM materials WHERE id=$MAT"); MNAME=$($PSQL "SELECT name FROM materials WHERE id=$MAT")
+R=$(api PUT /materials/$MAT '{"code":"'"$MCODE"'","name":"'"$MNAME"'","status":"ACTIVE","defaultUom":{"id":'$TON_ID'}}')
+[ "$($PSQL "SELECT default_uom_id FROM materials WHERE id=$MAT")" = "$TON_ID" ] && pass "material default unit is saved on edit" || fail "material default uom" "$(echo $R | cut -c1-200)"
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":3,"rate":900,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+[ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "TON" ] && pass "line takes the material default unit when it is on" || fail "material default on line" "$(echo $R | cut -c1-200)"
+R=$(api PUT /uoms/order-settings/$UNIT_ID '{"enabled":false}'); echo "$R" | grep -q "Default Unit" && pass "default unit cannot be switched off" || fail "default off" "$(echo $R | cut -c1-200)"
+R=$(api PUT /uoms/order-settings/$TON_ID '{"isDefault":true}'); [ "$(echo "$R" | j "[u['code'] for u in d['data'] if u['isDefault']][0]")" = "TON" ] && pass "Ton made the default" || fail "make default" "$(echo $R | cut -c1-200)"
+api PUT /uoms/order-settings/$UNIT_ID '{"isDefault":true}' >/dev/null
+R=$(api PUT /uoms/order-settings/$TON_ID '{"enabled":false}'); R=$(api GET /uoms/order-units); [ "$(UC "$R")" = "UNIT" ] && pass "Ton switched off again, Unit default" || fail "disable ton" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM company_uoms WHERE company_id=(SELECT company_id FROM app_users WHERE username='ca1') AND is_default AND is_deleted=false")" = "1" ] && pass "exactly one default unit" || fail "one default" "x"
+R=$(api PUT /bookings/$TBK '{"priority":"MEDIUM","details":[{"material":{"id":'$MAT'},"uom":{"id":'$TON_ID'},"quantity":6,"rate":900,"transportRate":100,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+[ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "TON" ] && pass "old Ton booking still edits after Ton is switched off" || fail "legacy unit edit" "$(echo $R | cut -c1-200)"
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":3,"rate":900,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+[ "$(echo "$R" | j "d['data']['details'][0]['uom']['code']")" = "UNIT" ] && pass "material default Ton is off -> company default Unit" || fail "fallback to default" "$(echo $R | cut -c1-200)"
+$PSQL "UPDATE materials SET default_uom_id=NULL WHERE id=$MAT" >/dev/null
+# tenants are isolated; the platform admin sets units per client
+curl -s -X PUT -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' "$API/uoms/order-settings/$TON_ID?companyId=1" -d '{"enabled":true}' >/dev/null
+R=$(api GET /uoms/order-units); R2=$(curl -s -H "Authorization: Bearer $NT" $API/uoms/order-units)
+[ "$(UC "$R")" = "UNIT" ] && [ "$(UC "$R2")" = "UNIT,TON" ] && pass "another company's change does not touch this company" || fail "uom tenant isolation" "$(UC "$R") / $(UC "$R2")"
+R=$(put "/uoms/order-settings/$TON_ID?companyId=$NCID" '{"enabled":false}')
+R2=$(curl -s -H "Authorization: Bearer $NT" $API/uoms/order-units); [ "$(UC "$R2")" = "UNIT" ] && pass "platform admin switched Ton off for a client" || fail "platform order units" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $PT" "$API/report-hub/run/booking-register?from=$(date -d '-90 day' +%F)&to=$(date +%F)")
+echo "$R" | j "'ok' if d['data']['rows'] and all(r.get('uom') for r in d['data']['rows']) else 'no'" | grep -q ok && pass "booking register: every line has a unit" || fail "booking register unit" "$(echo $R | cut -c1-200)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

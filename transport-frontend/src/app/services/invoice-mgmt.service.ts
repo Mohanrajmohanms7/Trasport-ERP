@@ -6,6 +6,8 @@ export interface SalesInvoiceDetail {
   id?: number;
   trip?: { id: number; tripNumber?: string };
   material: { id: number; name?: string };
+  /** Unit of the quantity; trip lines are billed in the trip's (booking's) unit. Rates are per this unit. */
+  uom?: { id: number; code?: string; name?: string; symbol?: string } | null;
   quantity: number;
   rate: number;
   freightCharges: number;

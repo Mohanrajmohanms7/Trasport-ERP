@@ -15,6 +15,7 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent, FfDatepickerComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 
 @Component({
@@ -90,6 +91,28 @@ export class TripDetailsConsoleComponent implements OnInit {
     const delivered = row.get('deliveredQuantity')?.value;
     if (loaded === null || loaded === '' || loaded === undefined || delivered === null || delivered === '' || delivered === undefined) return null;
     return Number(loaded) - Number(delivered);
+  }
+  /**
+   * Unit of a trip line: the unit the material was booked in (trips never change or convert it).
+   * Falls back to the saved trip line while the booking list is still loading.
+   */
+  rowUnit(row: any): string {
+    const bookingId = Number(this.tripForm?.getRawValue()?.booking?.id);
+    const matId = Number(row.get('material.id')?.value);
+    const booking = this.bookings().find(b => b.id === bookingId);
+    const line = booking?.details?.find((d: any) => d.material?.id === matId && !d.isDeleted);
+    if (line?.uom) return uomLabel(line.uom);
+    const saved = this.editingTrip()?.details?.find(d => d.material?.id === matId);
+    return saved?.uom ? uomLabel(saved.uom) : '';
+  }
+  qtyLabel(text: string, row: any): string {
+    const u = this.rowUnit(row);
+    return u ? `${text} (${u})` : text;
+  }
+  /** "2 Unit M-Sand" per trip line (list view); delivered quantity once recorded. */
+  lineText(d: TripDetail): string {
+    const q = d.deliveredQuantity && d.deliveredQuantity > 0 ? d.deliveredQuantity : d.quantity;
+    return orderLineText(q, d.uom, d.material?.name || this.materials().find(m => m.id === d.material?.id)?.name);
   }
   /** Material/quantity/vehicle are locked once the truck has delivered; only weighbridge values stay editable. */
   get isCompletedEdit(): boolean {

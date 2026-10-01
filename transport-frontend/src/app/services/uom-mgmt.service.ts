@@ -30,6 +30,22 @@ export interface UomConversion {
   companyId?: number;
 }
 
+/** A unit as used on material orders (booking / trip / invoice lines). */
+export interface OrderUnit {
+  id: number;
+  code: string;
+  name: string;
+  symbol?: string;
+  /** Display text, e.g. "Unit", "Ton". */
+  label: string;
+  category?: string;
+  global?: boolean;
+  isDefault?: boolean;
+  /** Settings list only: switched on for this company's orders. */
+  enabled?: boolean;
+  masterStatus?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -61,6 +77,24 @@ export class UomMgmtService {
 
   deleteUom(id: number): Observable<ApiResponse<void>> {
     return this.http.delete<ApiResponse<void>>(`/api/v1/uoms/${id}`);
+  }
+
+  // --- Units for material orders (see docs/UNITS_OF_MEASURE.md) ---
+
+  /** Units switched on for this company's orders, default first. */
+  getOrderUnits(): Observable<ApiResponse<OrderUnit[]>> {
+    return this.http.get<ApiResponse<OrderUnit[]>>('/api/v1/uoms/order-units', { params: this.companyParams() });
+  }
+
+  /** All units with on/off + default for a company (platform admin passes the client's company id). */
+  getOrderSettings(companyId?: number): Observable<ApiResponse<OrderUnit[]>> {
+    const params = companyId ? new HttpParams().set('companyId', String(companyId)) : this.companyParams();
+    return this.http.get<ApiResponse<OrderUnit[]>>('/api/v1/uoms/order-settings', { params });
+  }
+
+  updateOrderSetting(uomId: number, change: { enabled?: boolean; isDefault?: boolean }, companyId?: number): Observable<ApiResponse<OrderUnit[]>> {
+    const params = companyId ? new HttpParams().set('companyId', String(companyId)) : this.companyParams();
+    return this.http.put<ApiResponse<OrderUnit[]>>(`/api/v1/uoms/order-settings/${uomId}`, change, { params });
   }
 
   // --- UOM Conversion ---

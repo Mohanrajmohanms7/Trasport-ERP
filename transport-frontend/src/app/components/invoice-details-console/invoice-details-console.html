@@ -152,7 +152,7 @@
                     <button type="button" class="block text-[10px] font-normal text-[var(--ff-color-primary-600)] underline" (click)="selectAllForCustomer(trip)">select all of this customer</button></td>
                   <td class="p-4 text-[var(--ff-text-secondary)]">
                     @for (dt of trip.details; track dt.id) {
-                      <div>{{ dt.material?.name }} — {{ dt.quantity }} Tons</div>
+                      <div>{{ lineText(dt) }}</div>
                     }
                   </td>
                   <td class="p-4 text-[var(--ff-text-secondary)] font-mono">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</td>
@@ -239,18 +239,21 @@
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-2 lg:grid-cols-5 xl:grid-cols-10 gap-3 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-2 lg:grid-cols-6 xl:grid-cols-11 gap-3 items-end">
                     <div formGroupName="trip">
                       <ff-dropdown formControlName="id" label="Trip reference" [options]="tripOptions" searchPlaceholder="Search options..." />
                     </div>
                     <div formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Master" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
-                    <ff-number formControlName="quantity" label="Quantity (Tons)" [min]="0" [required]="true" />
-                    <ff-number formControlName="rate" label="Rate (INR)" [min]="0" [required]="true" />
-                    <ff-number formControlName="freightCharges" label="Freight / Ton" [min]="0" [required]="true" />
-                    <ff-number formControlName="loadingCharges" label="Loading / Ton" [min]="0" [required]="true" />
-                    <ff-number formControlName="royalty" label="Royalty / Ton" [min]="0" [required]="true" />
+                    <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
+                    <div formGroupName="uom">
+                      <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptions()" [required]="true" />
+                    </div>
+                    <ff-number formControlName="rate" [label]="perUnitLabel('Rate', row) + ' (INR)'" [min]="0" [required]="true" />
+                    <ff-number formControlName="freightCharges" [label]="perUnitLabel('Freight', row)" [min]="0" [required]="true" />
+                    <ff-number formControlName="loadingCharges" [label]="perUnitLabel('Loading', row)" [min]="0" [required]="true" />
+                    <ff-number formControlName="royalty" [label]="perUnitLabel('Royalty', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="gstPercentage" label="GST %" [min]="0" [max]="28" [required]="true" />
 
                     <div class="flex flex-col gap-1">

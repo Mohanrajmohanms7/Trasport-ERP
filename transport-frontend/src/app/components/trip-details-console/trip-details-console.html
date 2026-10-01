@@ -40,6 +40,7 @@
               <th class="p-4">Trip Number</th>
               <th class="p-4">Trip Date</th>
               <th class="p-4">Booking Code</th>
+              <th class="p-4">Load</th>
               <th class="p-4">Allocated Vehicle / Driver</th>
               <th class="p-4">Status</th>
               <th class="p-4">Billing Status</th>
@@ -52,6 +53,11 @@
                 <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold tabular-nums">{{ trip.tripNumber }}</td>
                 <td class="p-4 text-[var(--ff-text-secondary)]">{{ trip.tripDate }}</td>
                 <td class="p-4 font-mono text-[var(--ff-text-secondary)] font-semibold">{{ trip.booking?.bookingNumber }}</td>
+                <td class="p-4 text-[var(--ff-text-primary)] font-semibold">
+                  @for (d of trip.details || []; track $index) {
+                    <div class="whitespace-nowrap tabular-nums">{{ lineText(d) }}</div>
+                  } @empty { <span class="text-[var(--ff-text-muted)]">—</span> }
+                </td>
                 <td class="p-4">
                   <span class="inline-flex items-center gap-2 max-w-full bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-full px-2.5 py-1">
                     <span class="font-mono text-[var(--ff-text-primary)] font-semibold truncate">{{ trip.vehicle?.registrationNumber || 'Not Allocated' }}</span>
@@ -128,7 +134,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No planned trips in transit.</td>
+                <td colspan="8" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No planned trips in transit.</td>
               </tr>
             }
           </tbody>
@@ -183,7 +189,7 @@
 
             @if (isCompletedEdit) {
               <div class="text-xs rounded-[8px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-hover)] px-3 py-2 text-[var(--ff-text-secondary)]">
-                This trip is completed. You can record weighbridge weights, the trip date and loading source. The delivered quantity is what gets billed.
+                This trip is completed. You can record the loaded and delivered quantity (in the booking's unit), the trip date and loading source. The delivered quantity is what gets billed.
               </div>
             }
 
@@ -201,14 +207,14 @@
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
-                    <ff-number formControlName="quantity" label="Planned Payload (Tons)" [min]="0" [required]="true" />
-                    <ff-number formControlName="loadedQuantity" label="Loaded Wt. (Tons)" [min]="0" />
-                    <ff-number formControlName="deliveredQuantity" label="Delivered Wt. (Tons)" [min]="0" />
+                    <ff-number formControlName="quantity" [label]="qtyLabel('Planned Qty', row)" [min]="0" [required]="true" />
+                    <ff-number formControlName="loadedQuantity" [label]="qtyLabel('Loaded Qty', row)" [min]="0" />
+                    <ff-number formControlName="deliveredQuantity" [label]="qtyLabel('Delivered Qty', row)" [min]="0" />
                     <div class="flex flex-col gap-1">
                       <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Shortage</span>
                       <div class="h-10 px-3 rounded-[8px] border border-[var(--ff-border-default)] flex items-center justify-end font-mono text-xs tabular-nums"
                            [style.color]="(getShortage(row) ?? 0) > 0 ? 'var(--ff-color-danger-500)' : null">
-                        {{ getShortage(row) === null ? '—' : (getShortage(row) | number:'1.2-2') + ' t' }}
+                        {{ getShortage(row) === null ? '—' : (getShortage(row) | number:'1.2-2') + (rowUnit(row) ? ' ' + rowUnit(row) : '') }}
                       </div>
                     </div>
                     <div class="flex items-center justify-end gap-2 lg:pb-2">

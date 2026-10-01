@@ -161,6 +161,43 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await ctx.close();
   }
 }
+{ // UOM_SHOTS: order units — PKC (Unit-only client) booking / trip / invoice screens, UOM tab, platform admin per client
+  const pk = (await (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'pkc.admin', password: 'Pkc@2026' }) })).json()).data || tenant;
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(s.roles || ['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false');
+    localStorage.setItem('companyId', String(s.companyId)); if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+  }, pk);
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
+  const shot = async (name) => { await pg.waitForTimeout(1500); await pg.screenshot({ path: `shots/uom-${name}.png` }); };
+  try {
+    await pg.goto('http://localhost:4200/bookings', { waitUntil: 'networkidle' }); await shot('booking-list');
+    await pg.locator('button:has-text("Register Booking")').first().click(); await shot('booking-new');
+    await pg.keyboard.press('Escape');
+    await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await shot('trip-list');
+    await pg.locator('button[title*="Edit"], button:has-text("Edit")').first().click(); await shot('trip-edit');
+    await pg.goto('http://localhost:4200/billing-invoices', { waitUntil: 'networkidle' }); await shot('invoice-list');
+    await pg.locator('text=Ready for billing').first().click().catch(() => {}); await shot('invoice-ready');
+    await pg.goto('http://localhost:4200/materials-quarries', { waitUntil: 'networkidle' });
+    await pg.locator('button:has-text("UOM Master")').first().click(); await shot('uom-tab');
+  } catch (e) { console.log('UOM shot', e.message.slice(0, 160)); await shot('error'); }
+  await ctx.close();
+  const pc = await browser0().newContext({ viewport: { width: 1440, height: 900 } });
+  await pc.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(['SUPER_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+  }, d);
+  const pp = await pc.newPage();
+  try {
+    await pp.goto('http://localhost:4200/platform-admin/features', { waitUntil: 'networkidle' }); await pp.waitForTimeout(1500);
+    const sel = pp.locator('select').first(); const opts = await sel.locator('option').allTextContents();
+    const i = opts.findIndex(o => o.includes('PKC')); await sel.selectOption({ index: i > 0 ? i : 1 });
+    await pp.waitForTimeout(2000); await pp.screenshot({ path: 'shots/uom-platform-client.png' });
+  } catch (e) { console.log('UOM platform shot', e.message.slice(0, 160)); }
+  await pc.close();
+}
 const lg = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const lp = await lg.newPage();
 await lp.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });

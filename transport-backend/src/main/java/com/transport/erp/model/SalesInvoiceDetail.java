@@ -25,6 +25,11 @@ public class SalesInvoiceDetail extends BaseEntity {
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
 
+    /** Unit the quantity is in (UNIT, TON, KG …). Rates on this line are per this unit. No conversion is applied. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uom_id")
+    private UomMaster uom;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal quantity = BigDecimal.ZERO;
 

@@ -14,6 +14,8 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfButtonComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
+import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 @Component({
   selector: 'app-booking-details-console',
@@ -107,11 +109,16 @@ export class BookingDetailsConsoleComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
+  private uomMgmtService = inject(UomMgmtService);
 
   private companyId = resolveTenantCompanyId();
 
   // Lists
   bookings = signal<Booking[]>([]);
+  /** Units switched on for this company's orders (default first). */
+  orderUnits = signal<OrderUnit[]>([]);
+  /** Units of lines being edited that are no longer switched on (kept so old bookings still save). */
+  private legacyUnits = signal<OrderUnit[]>([]);
   customers = signal<any[]>([]);
   materials = signal<any[]>([]);
   sites = signal<any[]>([]);
@@ -130,6 +137,28 @@ export class BookingDetailsConsoleComponent implements OnInit {
   }
   get materialOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Material --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
+  }
+
+  get defaultUnitId(): number | null {
+    const u = this.orderUnits();
+    return (u.find(x => x.isDefault) || u[0])?.id ?? null;
+  }
+  uomOptionsFor(row: any): FfSelectOption[] {
+    const current = Number(row.get('uom.id')?.value) || null;
+    const list = [...this.orderUnits()];
+    const legacy = this.legacyUnits().find(x => x.id === current);
+    if (legacy && !list.some(x => x.id === legacy.id)) list.push(legacy);
+    return list.map(u => ({ label: u.label || u.name, value: u.id }));
+  }
+  /** Display text of a form row's unit, e.g. "Unit". */
+  rowUnit(row: any): string {
+    const id = Number(row.get('uom.id')?.value);
+    const u = this.orderUnits().find(x => x.id === id) || this.legacyUnits().find(x => x.id === id);
+    return u ? uomLabel(u) : '';
+  }
+  /** "2 Unit M-Sand" for each line of a booking (list view). */
+  lineText(d: BookingDetail): string {
+    return orderLineText(d.quantity, d.uom, d.material?.name || this.materials().find(m => m.id === d.material?.id)?.name);
   }
 
   // States
@@ -161,6 +190,15 @@ export class BookingDetailsConsoleComponent implements OnInit {
     this.masterService.getMasters<any>('materials', this.companyId, { size: 100 }).subscribe(res => {
       if (res.success && res.data) {
         this.materials.set(res.data.content || res.data);
+      }
+    });
+    this.uomMgmtService.getOrderUnits().subscribe(res => {
+      if (res.success && res.data) {
+        this.orderUnits.set(res.data);
+        // Rows added before the units arrived get the default unit.
+        for (const row of this.detailsArray?.controls ?? []) {
+          if (!row.get('uom.id')?.value && this.defaultUnitId) row.get('uom.id')?.setValue(this.defaultUnitId);
+        }
       }
     });
   }
@@ -199,7 +237,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
     return this.bookingForm.get('details') as FormArray;
   }
 
-  // Same formula as the backend: quantity x (material rate + transport + royalty + loading), all per ton.
+  // Same formula as the backend: quantity x (material rate + transport + royalty + loading), all per unit of the line.
   getItemSubtotal(row: any): number {
     const qty = Number(row.get('quantity')?.value || 0);
     const base = Number(row.get('rate')?.value || 0) + Number(row.get('transportRate')?.value || 0)
@@ -234,6 +272,9 @@ export class BookingDetailsConsoleComponent implements OnInit {
     const detailGroup = this.fb.group({
       material: this.fb.group({
         id: ['', Validators.required]
+      }),
+      uom: this.fb.group({
+        id: [this.defaultUnitId, Validators.required]
       }),
       quantity: [1, [Validators.required, Validators.min(0.01)]],
       rate: [0, Validators.required],
@@ -274,6 +315,9 @@ export class BookingDetailsConsoleComponent implements OnInit {
         royaltyRate: mat.royaltyRate ?? 0,
         loadingCharge: mat.loadingCharge ?? 0
       });
+      // The material's default unit when it is switched on for orders, else the company default.
+      const preferred = this.orderUnits().find(u => u.id === mat.defaultUom?.id)?.id ?? this.defaultUnitId;
+      if (preferred) row.get('uom.id')?.setValue(preferred);
     }
   }
 
@@ -289,6 +333,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
 
   openAddBooking() {
     this.editingBooking.set(null);
+    this.legacyUnits.set([]);
     this.bookingForm.reset({ priority: 'MEDIUM' });
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
@@ -313,11 +358,19 @@ export class BookingDetailsConsoleComponent implements OnInit {
       this.detailsArray.removeAt(0);
     }
 
+    // Old lines may be in a unit that has since been switched off (e.g. Ton); keep it selectable for this booking.
+    this.legacyUnits.set((bkg.details || [])
+      .filter(d => d.uom?.id && !this.orderUnits().some(u => u.id === d.uom!.id))
+      .map(d => ({ id: d.uom!.id, code: d.uom!.code || '', name: d.uom!.name || '', symbol: d.uom!.symbol, label: uomLabel(d.uom) })));
+
     if (bkg.details) {
       for (const d of bkg.details) {
         const row = this.fb.group({
           material: this.fb.group({
             id: [d.material?.id, Validators.required]
+          }),
+          uom: this.fb.group({
+            id: [d.uom?.id ?? this.defaultUnitId, Validators.required]
           }),
           quantity: [d.quantity, [Validators.required, Validators.min(0.01)]],
           rate: [d.rate, Validators.required],
@@ -351,7 +404,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to update booking');
+          this.notify.error(this.apiError(err, 'Failed to update booking'));
         }
       });
     } else {
@@ -364,7 +417,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to register booking');
+          this.notify.error(this.apiError(err, 'Failed to register booking'));
         }
       });
     }

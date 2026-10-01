@@ -384,6 +384,8 @@ public class TripService {
                         "Check the weighbridge slips; delivered cannot exceed loaded.");
             }
             d.setMaterial(bd.getMaterial());
+            // The trip moves the material in the unit it was booked in (no conversion); clients cannot override it.
+            d.setUom(bd.getUom());
             if (d.getRate() == null || d.getRate().signum() <= 0) d.setRate(nz(bd.getRate()));
             if (d.getRoyalty() == null || d.getRoyalty().signum() <= 0) d.setRoyalty(nz(bd.getRoyaltyRate()));
             if (d.getLoadingCharges() == null || d.getLoadingCharges().signum() <= 0) d.setLoadingCharges(nz(bd.getLoadingCharge()));
@@ -408,12 +410,14 @@ public class TripService {
             BigDecimal moved = alreadyMoved.getOrDefault(e.getKey(), BigDecimal.ZERO);
             BigDecimal total = moved.add(e.getValue());
             if (total.compareTo(allowed) > 0) {
-                String name = bookingLines.get(e.getKey()).getMaterial().getName();
+                BookingDetail line = bookingLines.get(e.getKey());
+                String name = line.getMaterial().getName();
+                String unit = line.getUom() != null ? " " + OrderUomService.label(line.getUom()) : "";
                 BigDecimal remaining = allowed.subtract(moved).max(BigDecimal.ZERO);
                 throw new BusinessValidationException("Booking Quantity Exceeded", "TRIP_EXCEEDS_BOOKING_QTY",
-                        String.format("%s: booked %s, already moved %s, this trip %s. Only %s left on booking %s.",
-                                name, booked.toPlainString(), moved.toPlainString(), e.getValue().toPlainString(),
-                                remaining.toPlainString(), booking.getBookingNumber()),
+                        String.format("%s: booked %s%s, already moved %s%s, this trip %s%s. Only %s%s left on booking %s.",
+                                name, booked.toPlainString(), unit, moved.toPlainString(), unit, e.getValue().toPlainString(), unit,
+                                remaining.toPlainString(), unit, booking.getBookingNumber()),
                         "Reduce the trip quantity, increase the booking quantity, or set BOOKING_QTY_TOLERANCE_PERCENT in settings.");
             }
         }

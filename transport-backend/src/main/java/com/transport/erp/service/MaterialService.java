@@ -23,6 +23,9 @@ public class MaterialService {
     @Autowired
     private BusinessDependencyValidationService validationService;
 
+    @Autowired
+    private com.transport.erp.repository.UomMasterRepository uomMasterRepository;
+
     public Page<Material> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return materialRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(
@@ -48,6 +51,7 @@ public class MaterialService {
             throw new IllegalArgumentException("Material code already exists: " + material.getCode());
         }
         material.setIsDeleted(false);
+        material.setDefaultUom(resolveDefaultUom(material.getDefaultUom(), companyId));
         return materialRepository.save(material);
     }
 
@@ -72,11 +76,26 @@ public class MaterialService {
         material.setUnit(materialDetails.getUnit());
         material.setDefaultRate(materialDetails.getDefaultRate());
         material.setDensity(materialDetails.getDensity());
+        // The default order unit was only saved on create before; edits from the Material screen were lost.
+        material.setDefaultUom(resolveDefaultUom(materialDetails.getDefaultUom(), material.getCompanyId()));
         if (materialDetails.getBranchId() != null) {
             material.setBranchId(materialDetails.getBranchId());
         }
 
         return materialRepository.save(material);
+    }
+
+    /** A material's default unit must be a standard unit or one of the company's own units. */
+    private com.transport.erp.model.UomMaster resolveDefaultUom(com.transport.erp.model.UomMaster requested, Long companyId) {
+        if (requested == null || requested.getId() == null) return null;
+        com.transport.erp.model.UomMaster uom = uomMasterRepository.findById(requested.getId())
+                .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()))
+                .orElseThrow(() -> new com.transport.erp.exception.BusinessValidationException("Unit Not Found", "MATERIAL_UOM_NOT_FOUND",
+                        "The default unit chosen for this material is not in the UOM master.", "Pick a unit from the list."));
+        if (uom.getCompanyId() != null && !uom.getCompanyId().equals(companyId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Access denied to another company's unit");
+        }
+        return uom;
     }
 
     @Transactional

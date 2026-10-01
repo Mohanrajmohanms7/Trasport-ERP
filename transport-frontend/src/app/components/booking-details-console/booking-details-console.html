@@ -41,6 +41,7 @@
               <th class="p-4">Booking Date</th>
               <th class="p-4">Customer Name</th>
               <th class="p-4">Site Location</th>
+              <th class="p-4">Order</th>
               <th class="p-4">Priority</th>
               <th class="p-4">Status</th>
               <th class="p-4 text-center">Workflow Actions</th>
@@ -53,6 +54,11 @@
                 <td class="p-4 text-[var(--ff-text-secondary)]">{{ bkg.bookingDate }}</td>
                 <td class="p-4 text-[var(--ff-text-primary)] font-semibold">{{ bkg.customer?.name }}</td>
                 <td class="p-4 text-[var(--ff-text-secondary)]">{{ bkg.deliverySite?.siteName || '-' }}</td>
+                <td class="p-4 text-[var(--ff-text-primary)] font-semibold">
+                  @for (d of bkg.details || []; track $index) {
+                    <div class="whitespace-nowrap tabular-nums">{{ lineText(d) }}</div>
+                  } @empty { <span class="text-[var(--ff-text-muted)]">—</span> }
+                </td>
                 <td class="p-4">
                   <span class="inline-flex items-center gap-2">
                     <span class="bkg-dot"
@@ -107,7 +113,7 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No booking requests found.</td>
+                <td colspan="8" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No booking requests found.</td>
               </tr>
             }
           </tbody>
@@ -161,12 +167,15 @@
 
               <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 items-end">
+                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Master" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
-                    <ff-number formControlName="quantity" label="Quantity (Tons)" [min]="0" [required]="true" />
-                    <ff-number formControlName="rate" label="Base Rate (INR)" [min]="0" [required]="true" />
+                    <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
+                    <div formGroupName="uom">
+                      <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptionsFor(row)" [required]="true" />
+                    </div>
+                    <ff-number formControlName="rate" [label]="'Rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
                     <ff-number formControlName="gstPercentage" label="GST (%)" [min]="0" [max]="100" />
                     
                     <div class="flex flex-col gap-1">

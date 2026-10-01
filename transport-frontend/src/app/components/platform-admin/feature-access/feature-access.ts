@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { FfNotificationService } from '../../../shared-ui/infrastructure/services/ff-notification.service';
+import { OrderUnitsPanelComponent } from '../../../shared/order-units/order-units-panel';
 
 interface Feature { code: string; parent: string | null; group: string; label: string; description: string; kind: 'MODULE' | 'TAB' | 'ACTION'; core: boolean; }
 interface Row { code: string; plan?: boolean; override?: boolean | null; effective?: boolean; enabled?: boolean; }
@@ -14,7 +15,7 @@ interface Row { code: string; plan?: boolean; override?: boolean | null; effecti
 @Component({
   selector: 'app-feature-access',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OrderUnitsPanelComponent],
   templateUrl: './feature-access.html'
 })
 export class FeatureAccessComponent implements OnInit {

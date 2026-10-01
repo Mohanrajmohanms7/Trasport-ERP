@@ -24,12 +24,14 @@ public class UomService {
 
     private final UomMasterRepository uomMasterRepository;
     private final UomConversionRepository uomConversionRepository;
+    private final com.transport.erp.security.TenantAccessService tenantAccess;
 
     // --- UOM Master Operations ---
 
     public List<UomMaster> getAllUoms(Long companyId) {
         if (companyId != null) {
-            return uomMasterRepository.findByCompanyIdAndIsDeletedFalse(companyId);
+            // Standard (global) units plus the company's own; before this a company saw only its own rows.
+            return uomMasterRepository.findAllForCompanyOrGlobal(companyId);
         }
         return uomMasterRepository.findByIsDeletedFalse();
     }
@@ -70,6 +72,7 @@ public class UomService {
     @Transactional
     public UomMaster updateUom(Long id, UomMaster updatedUom) {
         UomMaster existing = getUomById(id);
+        assertCanChange(existing.getCompanyId());
         existing.setName(updatedUom.getName());
         existing.setSymbol(updatedUom.getSymbol());
         existing.setCategory(updatedUom.getCategory());
@@ -84,8 +87,24 @@ public class UomService {
     @Transactional
     public void deleteUom(Long id) {
         UomMaster uom = getUomById(id);
+        assertCanChange(uom.getCompanyId());
         uom.setIsDeleted(true);
         uomMasterRepository.save(uom);
+    }
+
+    /**
+     * Standard (global) rows are shared by every company, so only the platform administrator may change them;
+     * a company's own rows only by that company.
+     */
+    private void assertCanChange(Long rowCompanyId) {
+        if (rowCompanyId == null) {
+            if (!tenantAccess.isSuperAdmin()) {
+                throw new org.springframework.security.access.AccessDeniedException(
+                        "Standard units are shared by all companies; only the platform administrator can change them.");
+            }
+            return;
+        }
+        tenantAccess.assertOwned(rowCompanyId);
     }
 
     // --- UOM Conversion Operations ---
@@ -134,6 +153,7 @@ public class UomService {
     @Transactional
     public UomConversion updateConversion(Long id, UomConversion updated) {
         UomConversion existing = getConversionById(id);
+        assertCanChange(existing.getCompanyId());
         existing.setConversionFactor(updated.getConversionFactor());
         existing.setDescription(updated.getDescription());
         if (updated.getStatus() != null) {
@@ -145,6 +165,7 @@ public class UomService {
     @Transactional
     public void deleteConversion(Long id) {
         UomConversion conversion = getConversionById(id);
+        assertCanChange(conversion.getCompanyId());
         conversion.setIsDeleted(true);
         uomConversionRepository.save(conversion);
     }

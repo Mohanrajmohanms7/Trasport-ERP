@@ -33,6 +33,9 @@ class UomServiceTest {
     @Mock
     private UomConversionRepository uomConversionRepository;
 
+    @Mock
+    private com.transport.erp.security.TenantAccessService tenantAccess;
+
     private UomService uomService;
 
     private UomMaster unitUom;
@@ -42,7 +45,7 @@ class UomServiceTest {
 
     @BeforeEach
     void setUp() {
-        uomService = new UomService(uomMasterRepository, uomConversionRepository);
+        uomService = new UomService(uomMasterRepository, uomConversionRepository, tenantAccess);
 
         unitUom = new UomMaster();
         unitUom.setId(1L);

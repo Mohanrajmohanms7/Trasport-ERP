@@ -210,7 +210,9 @@ public class SalesInvoicePdfGenerator {
                 itemsTable.addCell(createBodyCell(String.valueOf(count++), normalFont, Element.ALIGN_CENTER));
                 itemsTable.addCell(createBodyCell(item.getMaterialName() != null ? item.getMaterialName() : "General Freight", normalFont));
                 itemsTable.addCell(createBodyCell(item.getTripNumber() != null ? item.getTripNumber() : "N/A", normalFont));
-                itemsTable.addCell(createBodyCell(item.getQuantity() != null ? item.getQuantity().stripTrailingZeros().toPlainString() : "0", normalFont, Element.ALIGN_RIGHT));
+                String qty = item.getQuantity() != null ? item.getQuantity().stripTrailingZeros().toPlainString() : "0";
+                if (item.getUomLabel() != null && !item.getUomLabel().isBlank()) qty = qty + " " + item.getUomLabel();
+                itemsTable.addCell(createBodyCell(qty, normalFont, Element.ALIGN_RIGHT));
                 itemsTable.addCell(createBodyCell(curFormat.format(item.getRate()), normalFont, Element.ALIGN_RIGHT));
                 itemsTable.addCell(createBodyCell(curFormat.format(addCharges), normalFont, Element.ALIGN_RIGHT));
                 itemsTable.addCell(createBodyCell(item.getGstPercentage() != null ? item.getGstPercentage().stripTrailingZeros().toPlainString() + "%" : "0%", normalFont, Element.ALIGN_RIGHT));

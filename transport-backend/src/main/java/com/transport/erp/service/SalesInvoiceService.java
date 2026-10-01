@@ -44,6 +44,12 @@ public class SalesInvoiceService {
     private ApprovalPolicyService approvalPolicy;
 
     @Autowired
+    private OrderUomService orderUomService;
+
+    @Autowired
+    private com.transport.erp.repository.MaterialRepository materialRepository;
+
+    @Autowired
     private SalesInvoiceRepository invoiceRepository;
 
     @Autowired
@@ -145,6 +151,7 @@ public class SalesInvoiceService {
         }
 
         validateTripLines(invoice, null);
+        applyLineUnits(invoice, java.util.Map.of());
         recalculate(invoice);
 
         SalesInvoice saved = invoiceRepository.save(invoice);
@@ -176,6 +183,10 @@ public class SalesInvoiceService {
         existing.setPlaceOfSupply(details.getPlaceOfSupply());
         existing.setUpdatedBy(username);
 
+        java.util.Map<Long, com.transport.erp.model.UomMaster> previousUnits = new java.util.HashMap<>();
+        for (SalesInvoiceDetail d : existing.getDetails()) {
+            if (d.getMaterial() != null && d.getUom() != null) previousUnits.putIfAbsent(d.getMaterial().getId(), d.getUom());
+        }
         existing.getDetails().clear();
         if (details.getDetails() == null || details.getDetails().isEmpty()) {
             throw new IllegalArgumentException("Add at least one billing line to the invoice.");
@@ -194,6 +205,7 @@ public class SalesInvoiceService {
         }
 
         validateTripLines(existing, existing.getId());
+        applyLineUnits(existing, previousUnits);
         recalculate(existing);
 
         SalesInvoice saved = invoiceRepository.save(existing);
@@ -235,6 +247,40 @@ public class SalesInvoiceService {
                     "Use today's date or an earlier date.");
         }
         return date;
+    }
+
+    /**
+     * Unit of each invoice line. A trip line is billed in the unit of that trip's line for the material; a manual line
+     * uses the requested unit (switched on for the company, or the one it already had), else the material/company default.
+     */
+    private void applyLineUnits(SalesInvoice invoice, java.util.Map<Long, com.transport.erp.model.UomMaster> previousUnits) {
+        OrderUomService.OrderUnits units = null;
+        java.util.Map<Long, com.transport.erp.model.Material> materials = null;
+        for (SalesInvoiceDetail d : invoice.getDetails()) {
+            if (d.getMaterial() == null || d.getMaterial().getId() == null) continue;
+            Long matId = d.getMaterial().getId();
+            if (d.getTrip() != null && d.getTrip().getDetails() != null) {
+                com.transport.erp.model.UomMaster tripUnit = d.getTrip().getDetails().stream()
+                        .filter(td -> td.getMaterial() != null && matId.equals(td.getMaterial().getId()) && td.getUom() != null)
+                        .map(TripDetail::getUom).findFirst().orElse(null);
+                if (tripUnit != null) {
+                    d.setUom(tripUnit);
+                    continue;
+                }
+            }
+            if (units == null) {
+                units = orderUomService.forCompany(invoice.getCompanyId());
+                java.util.Set<Long> ids = new java.util.HashSet<>();
+                for (SalesInvoiceDetail x : invoice.getDetails()) {
+                    if (x.getMaterial() != null && x.getMaterial().getId() != null) ids.add(x.getMaterial().getId());
+                }
+                materials = new java.util.HashMap<>();
+                for (com.transport.erp.model.Material m : materialRepository.findAllById(ids)) materials.put(m.getId(), m);
+            }
+            com.transport.erp.model.Material m = materials.get(matId);
+            String name = m != null && m.getName() != null ? m.getName() : "material ID " + matId;
+            d.setUom(units.resolve(d.getUom(), m, previousUnits.get(matId), name));
+        }
     }
 
     private void fillLineIdentity(SalesInvoiceDetail d) {
@@ -610,6 +656,7 @@ public class SalesInvoiceService {
             SalesInvoiceDetail detail = new SalesInvoiceDetail();
             detail.setTrip(trip);
             detail.setMaterial(td.getMaterial());
+            detail.setUom(td.getUom());   // billed in the unit the trip moved (booking unit); never converted
             // Bill the weighbridge delivered quantity when recorded; trip-level rates win, booking rates fill gaps.
             detail.setQuantity(billQty);
             detail.setRate(positiveOr(td.getRate(), bookingDetail.getRate()));
@@ -722,6 +769,10 @@ public class SalesInvoiceService {
                     idto.setMaterialName(detail.getMaterial().getName());
                 }
                 idto.setQuantity(detail.getQuantity() != null ? detail.getQuantity() : BigDecimal.ZERO);
+                if (detail.getUom() != null) {
+                    idto.setUomCode(detail.getUom().getCode());
+                    idto.setUomLabel(OrderUomService.label(detail.getUom()));
+                }
                 idto.setRate(detail.getRate() != null ? detail.getRate() : BigDecimal.ZERO);
                 idto.setFreightCharges(detail.getFreightCharges() != null ? detail.getFreightCharges() : BigDecimal.ZERO);
                 idto.setLoadingCharges(detail.getLoadingCharges() != null ? detail.getLoadingCharges() : BigDecimal.ZERO);

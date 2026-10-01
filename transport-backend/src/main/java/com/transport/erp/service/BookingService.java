@@ -51,6 +51,12 @@ public class BookingService {
     @Autowired
     private AppSettingService settingService;
 
+    @Autowired
+    private OrderUomService orderUomService;
+
+    @Autowired
+    private com.transport.erp.repository.MaterialRepository materialRepository;
+
 
 
 
@@ -97,6 +103,9 @@ public class BookingService {
         booking.setCompanyId(tenantAccess.resolveCompanyId(booking.getCompanyId()));
         booking.setBranchId(tenantAccess.resolveBranchId(booking.getBranchId()));
 
+
+        // Unit of every line (Unit / Ton / …): requested, else material default, else company default. Never converted.
+        applyLineUnits(booking.getDetails(), booking.getCompanyId(), java.util.Map.of(), java.util.Map.of());
 
         // Map parent links and calculate totals
         if (booking.getDetails() != null) {
@@ -157,6 +166,16 @@ public class BookingService {
                 }
             }
         }
+
+        // Units already on the booking stay valid even if the company later switches them off; a material that
+        // already has trips keeps its unit (trip and invoice lines were recorded in it).
+        java.util.Map<Long, com.transport.erp.model.UomMaster> previousUnits = new java.util.HashMap<>();
+        for (BookingDetail d : existing.getDetails()) {
+            if (d.getMaterial() != null && d.getUom() != null && !Boolean.TRUE.equals(d.getIsDeleted())) {
+                previousUnits.putIfAbsent(d.getMaterial().getId(), d.getUom());
+            }
+        }
+        applyLineUnits(details.getDetails(), existing.getCompanyId(), previousUnits, moved);
 
         existing.setPriority(details.getPriority());
         existing.setRemarks(details.getRemarks());
@@ -288,6 +307,48 @@ public class BookingService {
 
         auditService.log(deletedByUsername, "BOOKING_DELETED", "bookings", booking.getId(), null,
                 "Soft deleted booking: " + booking.getBookingNumber());
+    }
+
+    /**
+     * Sets the unit of measure on each booking line (see {@link OrderUomService.OrderUnits#resolve}).
+     * One material is booked in one unit per booking, so trips and invoices of that material share it.
+     */
+    private void applyLineUnits(java.util.List<BookingDetail> lines, Long companyId,
+                                java.util.Map<Long, com.transport.erp.model.UomMaster> previousUnits,
+                                java.util.Map<Long, BigDecimal> movedByMaterial) {
+        if (lines == null || lines.isEmpty()) return;
+        OrderUomService.OrderUnits units = orderUomService.forCompany(companyId);
+        java.util.Set<Long> materialIds = new java.util.HashSet<>();
+        for (BookingDetail d : lines) {
+            if (d.getMaterial() != null && d.getMaterial().getId() != null) materialIds.add(d.getMaterial().getId());
+        }
+        java.util.Map<Long, com.transport.erp.model.Material> materials = new java.util.HashMap<>();
+        for (com.transport.erp.model.Material m : materialRepository.findAllById(materialIds)) materials.put(m.getId(), m);
+
+        java.util.Map<Long, com.transport.erp.model.UomMaster> unitByMaterial = new java.util.HashMap<>();
+        for (BookingDetail d : lines) {
+            if (d.getMaterial() == null || d.getMaterial().getId() == null) continue;
+            Long matId = d.getMaterial().getId();
+            com.transport.erp.model.Material m = materials.get(matId);
+            String matName = m != null && m.getName() != null ? m.getName() : "material ID " + matId;
+            com.transport.erp.model.UomMaster previous = previousUnits.get(matId);
+            com.transport.erp.model.UomMaster uom = units.resolve(d.getUom(), m, previous, matName);
+
+            com.transport.erp.model.UomMaster seen = unitByMaterial.putIfAbsent(matId, uom);
+            if (seen != null && !seen.getId().equals(uom.getId())) {
+                throw new com.transport.erp.exception.BusinessValidationException("One Unit Per Material", "BOOKING_MIXED_UOM",
+                        matName + " is on this booking in both " + OrderUomService.label(seen) + " and "
+                                + OrderUomService.label(uom) + ".",
+                        "Use one unit for " + matName + " on this booking (add the quantities together), or make a separate booking.");
+            }
+            if (previous != null && movedByMaterial.containsKey(matId) && !previous.getId().equals(uom.getId())) {
+                throw new com.transport.erp.exception.BusinessValidationException("Unit Locked", "BOOKING_UOM_LOCKED",
+                        "Trips for " + matName + " were already recorded in " + OrderUomService.label(previous)
+                                + ", so its unit cannot change to " + OrderUomService.label(uom) + ".",
+                        "Keep " + OrderUomService.label(previous) + " for " + matName + " on this booking.");
+            }
+            d.setUom(uom);
+        }
     }
 
     private static BigDecimal nz(BigDecimal v) {

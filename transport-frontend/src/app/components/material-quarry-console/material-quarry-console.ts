@@ -15,11 +15,13 @@ import { ConfirmationDialogComponent } from '../../shared/confirmation-dialog/co
 import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberComponent, FfDatepickerComponent, FfButtonComponent, FfTextareaComponent } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { OrderUnitsPanelComponent } from '../../shared/order-units/order-units-panel';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-material-quarry-console',
   standalone: true,
-  imports: [BulkUploadDialogComponent, ExportButtonsComponent, 
+  imports: [BulkUploadDialogComponent, ExportButtonsComponent, OrderUnitsPanelComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -47,6 +49,15 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
+  private auth = inject(AuthService);
+
+  private readonly roles = computed(() => this.auth.currentUser()?.roles || []);
+  /** Company admins switch order units on/off (the API enforces the same rule). */
+  readonly isAdmin = computed(() => this.roles().some((r: string) => ['SUPER_ADMIN', 'COMPANY_ADMIN', 'ADMIN'].includes(r)));
+  /** Standard units are shared by all companies: only the platform admin may edit/delete them. */
+  canChangeUom(row: UomMaster): boolean {
+    return row.companyId != null || this.roles().includes('SUPER_ADMIN');
+  }
 
   private companyId = resolveTenantCompanyId();
 

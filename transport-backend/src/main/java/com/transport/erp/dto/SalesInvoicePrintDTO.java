@@ -67,6 +67,9 @@ public class SalesInvoicePrintDTO {
         private Long materialId;
         private String materialName;
         private BigDecimal quantity = BigDecimal.ZERO;
+        /** Unit of the quantity (UNIT, TON …) and its display text ("Unit", "Ton"). */
+        private String uomCode;
+        private String uomLabel;
         private BigDecimal rate = BigDecimal.ZERO;
         private BigDecimal freightCharges = BigDecimal.ZERO;
         private BigDecimal loadingCharges = BigDecimal.ZERO;

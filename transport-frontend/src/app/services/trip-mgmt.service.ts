@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 export interface TripDetail {
   id?: number;
   material: { id: number; name?: string };
+  /** Unit of the quantities (always the booking line's unit; set by the server). */
+  uom?: { id: number; code?: string; name?: string; symbol?: string } | null;
   quantity: number;
   rate: number;
   loadingCharges: number;

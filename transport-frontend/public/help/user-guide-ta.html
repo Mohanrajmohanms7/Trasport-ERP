@@ -204,12 +204,16 @@ blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px so
 </blockquote>
 <h3 id="21-material-quarry-masters-material-quarry">2.1 Material &amp; Quarry — <em>Masters → Material &amp; Quarry</em></h3>
 <p><strong>நோக்கம்:</strong> நீங்கள் எதை ஏற்றுகிறீர்கள், எங்கே ஏற்றுகிறீர்கள்.
-- <strong>Materials டேப்</strong> — <em>Code*, Name*, Category*, Unit*</em>, இயல்பு <strong>மெட்டீரியல் விலை</strong>, <strong>போக்குவரத்து விலை</strong>,
-  <strong>ராயல்டி</strong>, <strong>லோடிங் கட்டணம்</strong> (அனைத்தும் <em>ஒரு யூனிட்டுக்கு</em>, பொதுவாக ஒரு டன்னுக்கு).
-  உதா: <code>MSAND</code> — <em>M-Sand</em> — டன் — மெட்டீரியல் ₹900, போக்குவரத்து ₹350, ராயல்டி ₹60, லோடிங் ₹40.
+- <strong>Materials டேப்</strong> — <em>Code*, Name*, Category*</em>, <strong>Default UOM</strong> (புதிய ஆர்டர் வரி தொடங்கும் அலகு, உதா: <em>Unit</em>),
+  இயல்பு <strong>மெட்டீரியல் விலை</strong>, <strong>போக்குவரத்து விலை</strong>, <strong>ராயல்டி</strong>, <strong>லோடிங் கட்டணம்</strong> (அனைத்தும் <em>ஆர்டரின் ஒரு அலகுக்கு</em>).
+  உதா: <code>MSAND</code> — <em>M-Sand</em> — Unit — மெட்டீரியல் ₹4,300, போக்குவரத்து ₹1,450, ராயல்டி ₹270, லோடிங் ₹180 (ஒரு யூனிட்டுக்கு).
 - <strong>Quarries டேப்</strong> — குவாரி பெயர், இடம்; உதா: <em>மதுக்கரை குவாரி</em>.
-- <strong>Loading Locations</strong> — லோடிங் இடங்கள் மற்றும் கட்டணம்; <strong>Pricing</strong> — தேதி வாரியான விலை; <strong>UOM Conversions</strong>
-  (உதா: 1 யூனிட் = 4.5 டன்).
+- <strong>Loading Locations</strong> — லோடிங் இடங்கள் மற்றும் கட்டணம்; <strong>Pricing</strong> — தேதி வாரியான விலை.
+- <strong>UOM Master → Order units</strong> — புக்கிங், ட்ரிப், இன்வாய்ஸில் பயன்படுத்தக்கூடிய அலகுகள். புதிய நிறுவனம் <strong>Unit</strong> மட்டும்
+  (Active, Default) உடன் தொடங்கும்; Ton, KG, CFT … Inactive. கம்பெனி அட்மின் ஒரு அலகை <strong>Active</strong> செய்யலாம் அல்லது
+  <strong>Make default</strong> செய்யலாம்; Default அலகை நிறுத்த முடியாது. ஒரு அலகை நிறுத்தினாலும் ஏற்கனவே சேமித்த ஆர்டர்கள் மாறாது.
+  அலகுகளுக்கு இடையே அளவு <strong>மாற்றப்படாது</strong> (2 Unit என்றால் 2 Unit தான்). பொது அலகுகளை (Unit, Ton, KG …)
+  பிளாட்ஃபார்ம் அட்மின் மட்டுமே மாற்ற முடியும்.
 - <strong>அடுத்து:</strong> Customer Master.</p>
 <h3 id="22-customer-master-masters-customer-master">2.2 Customer Master — <em>Masters → Customer Master</em></h3>
 <p><strong>நோக்கம்:</strong> யாருக்கு டெலிவரி செய்கிறீர்கள், யாருக்கு பில் போடுகிறீர்கள்.
@@ -264,12 +268,14 @@ blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px so
 <p><strong>நோக்கம்:</strong> வாடிக்கையாளர் என்ன ஆர்டர் செய்தார் என்பதைப் பதிவு செய்தல்.
 1. <strong>Register Booking Request</strong> கிளிக் செய்யவும்.
 2. <strong>Customer*</strong> மற்றும் <strong>Delivery site</strong>, முன்னுரிமை (priority) தேர்வு செய்யவும்.
-3. மெட்டீரியல் வரிகள்: <strong>Material*</strong>, <strong>Quantity*</strong> (உதா: 60 டன்), <strong>மெட்டீரியல் விலை*</strong>, <strong>போக்குவரத்து விலை*</strong>,
-   <strong>ராயல்டி*</strong>, <strong>லோடிங்*</strong>, <strong>GST %*</strong> (உதா: 5). இயல்பு விலைகள் மெட்டீரியல் மாஸ்டரில் இருந்து வரும்.
+3. மெட்டீரியல் வரிகள்: <strong>Material*</strong>, <strong>Quantity*</strong> (உதா: 2), <strong>Unit*</strong> (உதா: <em>Unit</em> — மெட்டீரியலின் இயல்பு அலகு
+   அல்லது கம்பெனி Default தானாக வரும்), <strong>Rate / Unit*</strong>, <strong>போக்குவரத்து விலை*</strong>, <strong>ராயல்டி*</strong>, <strong>லோடிங்*</strong>,
+   <strong>GST %*</strong> (உதா: 5). இயல்பு விலைகள் மெட்டீரியல் மாஸ்டரில் இருந்து வரும். பட்டியலில் ஆர்டர் <strong>2 Unit M-Sand</strong> என தெரியும்.
 4. சேமித்தால் நிலை <strong>PENDING</strong>. புக்கிங் மதிப்பு = அளவு × (மெட்டீரியல் + போக்குவரத்து + ராயல்டி + லோடிங்) + GST.
 5. புக்கிங்கை <strong>Approve</strong> செய்யுங்கள். <em>அப்ரூவ் செய்த புக்கிங்கில் மட்டுமே ட்ரிப் திட்டமிட முடியும்.</em></p>
 <p><strong>தெரிந்து கொள்ள வேண்டிய விதிகள்</strong>
 - ட்ரிப் உள்ள புக்கிங்கை Reject செய்ய முடியாது; ஏற்கனவே சென்ற அளவைவிட குறைவாக புக்கிங் அளவை மாற்ற முடியாது.
+- ஒரு புக்கிங்கில் ஒரு மெட்டீரியல் <strong>ஒரே அலகில்</strong> மட்டும். ட்ரிப் சென்ற பிறகு அந்த மெட்டீரியலின் அலகை மாற்ற முடியாது.
 - புக் செய்த முழு அளவும் டெலிவரி ஆனதும் புக்கிங் தானாக <strong>COMPLETED</strong> ஆகும்.
 - வாடிக்கையாளருக்கு இனி லோடு தேவையில்லை என்றால் <strong>Close</strong> செய்யலாம் (சாலையில் எந்த ட்ரிப்பும் இருக்கக்கூடாது).
 - வாடிக்கையாளரின் <strong>பர்ச்சேஸ் ஆர்டர்</strong> (PO) நகலை புக்கிங்கில் இணைக்கவும்.</p>
@@ -281,7 +287,8 @@ blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px so
 <p><strong>Plan Dispatch Trip</strong> கிளிக் செய்து உள்ளிடவும்:
 - <strong>Booking*</strong> (அப்ரூவ் செய்தவை மட்டும் தெரியும்), <strong>Trip date*</strong> (எதிர்காலம் கூடாது, புக்கிங் தேதிக்கு முன் கூடாது),
 - <strong>Vehicle</strong> மற்றும் <strong>Driver</strong> (டிஸ்பாட்ச் செய்ய தேவை), <strong>Quarry</strong> மற்றும் <strong>Loading point</strong>,
-- மெட்டீரியல் வரி: <strong>Material*</strong> (புக்கிங்கில் இருக்க வேண்டும்) மற்றும் <strong>Quantity*</strong> (உதா: 20 டன்).</p>
+- மெட்டீரியல் வரி: <strong>Material*</strong> (புக்கிங்கில் இருக்க வேண்டும்) மற்றும் <strong>Quantity*</strong> (உதா: 2). அலகு எப்போதும்
+  புக்கிங்கின் அலகுதான் (உதா: <em>Planned Qty (Unit)</em>) — ட்ரிப்பில் மாற்ற முடியாது.</p>
 <p>சேமித்தால் நிலை <strong>PLANNED</strong>, எண் <code>TRP-2627/00001</code> போல வரும்.
 அனைத்து ட்ரிப்களின் மொத்த அளவும் புக் செய்த அளவை (+ அனுமதி %) தாண்டக்கூடாது.</p>
 <h3 id="52-dispatch-complete">5.2 Dispatch → Complete</h3>
@@ -292,9 +299,9 @@ blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px so
 </ul>
 <h3 id="53-weighbridge-pod">5.3 எடைப்பாலம் (Weighbridge) மற்றும் POD</h3>
 <p>முடிந்த ட்ரிப்பைத் திறக்கவும் (<strong>Edit</strong>):
-- <strong>Loaded weight</strong> (குவாரி எடைப்பாலம்) மற்றும் <strong>Delivered weight</strong> (சைட் எடைப்பாலம்), உதா: 20.00 / 19.80 →
-  <strong>குறைவு 0.20 டன்</strong>. டெலிவரி எடை ஏற்றிய எடையைவிட அதிகமாக இருக்கக்கூடாது.
-  <strong>பில் போடுவது டெலிவரி எடைக்குத்தான்.</strong>
+- <strong>Loaded Qty</strong> மற்றும் <strong>Delivered Qty</strong>, புக்கிங்கின் அலகில், உதா: 2.00 / 1.95 Unit → <strong>குறைவு 0.05 Unit</strong>
+  (டன் புக்கிங் என்றால் எடைப்பாலம் டன்). டெலிவரி அளவு ஏற்றிய அளவைவிட அதிகமாக இருக்கக்கூடாது.
+  <strong>பில் போடுவது டெலிவரி அளவுக்குத்தான்.</strong>
 - <strong>POD / டெலிவரி சலான் / LR</strong> ஐ ட்ரிப் ஆவணங்களில் பதிவேற்றவும்.
 - ட்ரிப் இன்வாய்ஸில் சேர்ந்த பின் அது பூட்டப்படும் (மாற்ற முடியாது).</p>
 <p><strong>அடுத்து:</strong> டீசல் &amp; செலவுகள், பிறகு இன்வாய்ஸ்.</p>
@@ -323,13 +330,13 @@ blockquote{margin:14px 0;padding:10px 16px;background:#fff6e0;border-left:4px so
 1. <strong>Ready for billing</strong> திறக்கவும் — இன்னும் பில் போடாத அனைத்து முடிந்த ட்ரிப்களும் தெரியும்.
 2. <strong>ஒரே வாடிக்கையாளரின்</strong> ட்ரிப்களை டிக் செய்யவும் (அல்லது <em>select all of this customer</em>) →
    <strong>One invoice for N trips</strong>. (ஒரு ட்ரிப்புக்கு மட்டும் <strong>Generate</strong> பட்டனும் பயன்படுத்தலாம்.)
-3. <strong>DRAFT</strong> இன்வாய்ஸ் உருவாகும்: அளவு = டெலிவரி எடை; விலைகள் புக்கிங்கில் இருந்து.
+3. <strong>DRAFT</strong> இன்வாய்ஸ் உருவாகும்: அளவு = டெலிவரி அளவு, ட்ரிப்பின் அலகில் (உதா: <em>2 Unit</em>); விலைகள் புக்கிங்கில் இருந்து.
    வரி மதிப்பு = அளவு × (விலை + போக்குவரத்து + லோடிங் + ராயல்டி). <strong>தள்ளுபடி GST-க்கு முன்பே கழிக்கப்படும்.</strong>
 4. தேவைப்பட்டால் டிராஃப்டை <strong>Edit</strong>: இன்வாய்ஸ் தேதி (எதிர்காலம் கூடாது, ட்ரிப் தேதிக்கு முன் கூடாது),
    Place of supply (2 இலக்க மாநில குறியீடு, உதா: 33), தள்ளுபடி, கட்டண விதிமுறைகள்.
 5. <strong>Approve</strong> → <strong>Customer Receivable</strong> / <strong>Freight Income</strong> + <strong>GST Liability</strong> கணக்குகளில் பதிவாகும்.
    எண் <code>INV-2627/000xx</code>.
-6. <strong>Print / PDF</strong> எடுத்து, <strong>கையொப்பமிட்ட நகல் / இ-வே பில்</strong> இணைக்கவும்.</p>
+6. <strong>Print / PDF</strong> எடுத்து (அளவு அலகுடன் அச்சாகும், உதா: <em>2 Unit</em>), <strong>கையொப்பமிட்ட நகல் / இ-வே பில்</strong> இணைக்கவும்.</p>
 <p><strong>GST உதாரணம்:</strong> 19.8 டன் × ₹1,350 = ₹26,730 வரிக்குட்பட்ட மதிப்பு; GST 5% = ₹1,336.50 →
 CGST ₹668.25 + SGST ₹668.25 (அதே மாநிலம்) → மொத்தம் ₹28,066.50. வேறு மாநில வாடிக்கையாளருக்கு IGST ₹1,336.50.</p>
 <p><strong>விதிகள்:</strong> ஒரு ட்ரிப்புக்கு ஒருமுறை மட்டுமே பில்; ஒரு இன்வாய்ஸில் ஒரு வாடிக்கையாளர் மட்டும்; அப்ரூவ் ஆன
