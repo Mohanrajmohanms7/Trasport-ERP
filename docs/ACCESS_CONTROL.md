@@ -65,3 +65,17 @@ that was never provisioned (no flag and no business data); other roles are never
 - Nobody can delete or deactivate their own login, and the last active COMPANY_ADMIN of a company cannot be deleted,
   deactivated or demoted.
 - Accounting duplicate/reversal checks look up postings per company (document numbers repeat across companies).
+
+## Subscription / client feature access (V75)
+Platform Admin → **Feature Access** decides, per **plan** and per **client**, which modules, inner tabs and actions are included.
+- Catalog: `features/FeatureCatalog.java` — every module (menu), tab and action with its screen route(s) and API rules.
+  To add a module/tab later: add one line there; hide the tab in its screen with `features.has('<code>')` (or `*ffFeature`).
+- Effective access = client override (`company_features`) → else plan setting (`plan_features`) → else allowed.
+  A feature works only if it and all its parents are on. Core (always on): Dashboard, Users & Roles, System Settings.
+- Enforcement: `features/FeatureAccessFilter` (in the security chain) answers 403 `FEATURE_DISABLED` for API calls of switched-off
+  features (most specific rule wins); report categories are checked in `ReportHubService`. Platform admins are never limited.
+  Master data (customers, vehicles, drivers, materials, suppliers, parts, warehouses, branches, dropdowns): when switched off,
+  their read APIs stay open because other screens need them for dropdowns; the screen is hidden and changes are blocked.
+- Screens: `FeatureService` (`/api/v1/auth/features`) hides menu items and tabs; `featureGuard` blocks direct URLs;
+  shared components (export buttons, attachments, photos, bulk upload) follow their features.
+- Roles still apply on top (feature access decides what the client bought; roles decide what each user may do).
