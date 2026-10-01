@@ -1367,6 +1367,10 @@
       </div>
 
       <!-- 10. BACKUP & RESTORE -->
+      <div *ngIf="activeTab() === 'features'">
+        <app-feature-access />
+      </div>
+
       <div *ngIf="activeTab() === 'backups'" class="space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Backup checkpoints</h2>

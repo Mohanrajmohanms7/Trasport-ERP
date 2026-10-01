@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -30,6 +31,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   styles: []
 })
 export class AccountsDetailsConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private accountsMgmtService = inject(AccountsMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);

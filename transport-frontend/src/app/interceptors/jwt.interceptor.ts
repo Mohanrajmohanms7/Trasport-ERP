@@ -1,3 +1,4 @@
+import { FfNotificationService } from '../shared-ui/infrastructure/services/ff-notification.service';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
@@ -14,6 +15,7 @@ const PUBLIC_AUTH_URLS = [
 export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const notify = inject(FfNotificationService);
 
   const isPublicAuth = PUBLIC_AUTH_URLS.some(url => req.url.includes(url));
   if (isPublicAuth) {
@@ -35,6 +37,9 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(err => {
+      if (err.status === 403 && err.error?.message === 'FEATURE_DISABLED') {
+        notify.error(err.error?.errors?.[0] || 'This feature is not included in your subscription.');
+      }
       if (err.status === 403 && err.error?.message === 'PASSWORD_CHANGE_REQUIRED') {
         authService.setPasswordChangeRequired(true);
         router.navigate(['/profile'], { queryParams: { changePassword: 1 } });

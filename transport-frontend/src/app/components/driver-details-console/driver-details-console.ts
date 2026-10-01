@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
@@ -76,6 +77,8 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
   styleUrl: './driver-details-console.css'
 })
 export class DriverDetailsConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
   showUpload = signal(false);
   private http = inject(HttpClient);
@@ -153,6 +156,11 @@ export class DriverDetailsConsoleComponent implements OnInit {
         ];
   }
 
+  get visibleOpsTabs(): FfTabItem[] {
+    const map: Record<string, string> = { documents: 'drivers.documents', attendance: 'drivers.attendance', salary: 'drivers.salary',
+      payrolls: 'payroll', login: 'drivers.login' };
+    return this.opsTabs.filter(t => !map[t.id] || this.features.has(map[t.id]));
+  }
   opsTabs: FfTabItem[] = [
     { id: 'documents', label: 'Documents', icon: 'description' },
     { id: 'attendance', label: 'Attendance', icon: 'event_available' },

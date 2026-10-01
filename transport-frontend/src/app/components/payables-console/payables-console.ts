@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +21,8 @@ type Tab = 'bills' | 'payments';
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
   private companyId = resolveTenantCompanyId();

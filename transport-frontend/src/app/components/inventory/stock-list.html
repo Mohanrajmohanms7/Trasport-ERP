@@ -8,11 +8,17 @@
       <p class="ops-sub">On-hand spare parts by warehouse. Opening balance and receipts add stock; work-order issues take it out; returns bring it back.</p>
     </div>
     <div class="ops-actions">
+      @if (features.has('bulk-upload')) {
       <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload opening stock</button>
+      }
       <app-export-buttons module="stock" />
       @if (canWrite()) {
+        @if (features.has('stock.opening')) {
         <button type="button" class="ops-btn" (click)="opening()"><span class="material-icons">playlist_add</span>Opening stock</button>
+        }
+        @if (features.has('stock.receipt')) {
         <button type="button" class="ops-btn ops-btn--primary" (click)="receive()"><span class="material-icons">move_to_inbox</span>Receive stock</button>
+        }
       }
     </div>
   </header>

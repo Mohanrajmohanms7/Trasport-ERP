@@ -40,6 +40,12 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private com.transport.erp.features.FeatureAccessService featureAccessService;
+
+    @Autowired
+    private com.transport.erp.repository.AppUserRepository appUserRepository;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -134,6 +140,9 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            // Subscription / client feature access (after the user is known)
+            .addFilterAfter(new com.transport.erp.features.FeatureAccessFilter(featureAccessService, appUserRepository),
+                    com.transport.erp.security.JwtAuthenticationFilter.class)
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();

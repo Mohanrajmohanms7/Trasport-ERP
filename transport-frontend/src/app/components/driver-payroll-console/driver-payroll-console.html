@@ -16,7 +16,7 @@
           <app-export-buttons module="payroll" />
           <ff-button label="Generate Payroll" icon="calculate" variant="primary" (ffClick)="openGenerate()" />
         }
-        @if (tab() === 'advances') {
+        @if (tab() === 'advances' && features.has('payroll.advances')) {
           <app-export-buttons module="driver-advances" />
           <ff-button label="Give Advance" icon="savings" variant="primary" (ffClick)="openAdvance()" />
         }
@@ -28,10 +28,12 @@
     @if (!isDriverOnly()) {
       <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 gap-2 select-none overflow-x-auto">
         @for (t of [{ id: 'payrolls', label: 'Payrolls' }, { id: 'advances', label: 'Advances' }, { id: 'slabs', label: 'Daily Pay Slabs' }]; track t.id) {
+          @if (features.has('payroll.' + t.id)) {
           <button type="button" (click)="setTab($any(t.id))"
                   class="pb-3 px-4 font-bold text-xs uppercase tracking-wider border-b-2 whitespace-nowrap"
                   [style.border-color]="tab() === t.id ? 'var(--ff-color-primary-600)' : 'transparent'"
                   [style.color]="tab() === t.id ? null : 'var(--ff-text-muted)'">{{ t.label }}</button>
+          }
         }
       </div>
     }

@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
@@ -35,6 +36,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   styleUrl: './customer-details-console.css'
 })
 export class CustomerDetailsConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private http = inject(HttpClient);
   private customerMgmtService = inject(CustomerMgmtService);
   private masterService = inject(MasterService);

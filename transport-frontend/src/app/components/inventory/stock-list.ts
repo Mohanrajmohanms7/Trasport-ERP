@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -16,6 +17,8 @@ import { workOrderError } from '../../services/work-order.service';
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
   showUpload = signal(false);
   /** One-time cost for stock entered before costing existed (posts it to the inventory account). */

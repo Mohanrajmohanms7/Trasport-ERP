@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { Component, signal, computed, inject, HostListener, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
@@ -211,6 +212,7 @@ export class AppShellComponent implements OnDestroy {
   private router = inject(Router);
   private theme = inject(FfThemeService);
   private auth = inject(AuthService);
+  readonly features = inject(FeatureService);
   private masterService = inject(MasterService);
   private bookingService = inject(BookingMgmtService);
   private tripService = inject(TripMgmtService);
@@ -373,6 +375,14 @@ export class AppShellComponent implements OnDestroy {
     }
   ]);
 
+  /** Menu after subscription feature access (modules not in the client's plan are hidden). */
+  readonly visibleMenuGroups = computed(() => {
+    this.features.disabled();
+    return this.filteredMenuGroups()
+      .map((g: any) => ({ ...g, items: g.items.filter((i: any) => this.features.routeAllowed(i.route)) }))
+      .filter((g: any) => g.items.length > 0);
+  });
+
   readonly filteredMenuGroups = computed(() => {
     const groups = this.menuGroups();
     const currentUser = this.auth.currentUser();
@@ -388,6 +398,7 @@ export class AppShellComponent implements OnDestroy {
           { label: 'Clients & Companies', route: '/platform-admin/companies', icon: 'business' },
           { label: 'Subscriptions & Plans', route: '/platform-admin/subscriptions', icon: 'card_membership' },
           { label: 'Licenses', route: '/platform-admin/licenses', icon: 'vpn_key' },
+          { label: 'Feature Access', route: '/platform-admin/features', icon: 'toggle_on' },
           { label: 'Billing Invoices', route: '/platform-admin/billing', icon: 'receipt' }
         ]},
         { groupName: 'ACCESS & SECURITY', items: [
@@ -478,6 +489,7 @@ export class AppShellComponent implements OnDestroy {
     this.theme.loadPersisted();
     this.refreshProfile();
     this.auth.refreshTenantBrand();
+    this.features.load(true);
 
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),

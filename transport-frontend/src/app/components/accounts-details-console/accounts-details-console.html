@@ -17,22 +17,28 @@
     
     <!-- Tab Controls selector -->
     <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+      @if (features.has('accounts.chart')) {
       <button (click)="activeTab.set('chart')" [class.border-b-2]="activeTab() === 'chart'" [class.border-blue-600]="activeTab() === 'chart'" [class.text-slate-900]="activeTab() === 'chart'" [class.dark:text-white]="activeTab() === 'chart'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Chart of Accounts
       </button>
+      }
+      @if (features.has('accounts.journal')) {
       <button (click)="activeTab.set('journal')" [class.border-b-2]="activeTab() === 'journal'" [class.border-blue-600]="activeTab() === 'journal'" [class.text-slate-900]="activeTab() === 'journal'" [class.dark:text-white]="activeTab() === 'journal'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Journal Book
       </button>
+      }
+      @if (features.has('accounts.trial')) {
       <button (click)="activeTab.set('trial')" [class.border-b-2]="activeTab() === 'trial'" [class.border-blue-600]="activeTab() === 'trial'" [class.text-slate-900]="activeTab() === 'trial'" [class.dark:text-white]="activeTab() === 'trial'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Trial Balance summary
       </button>
+      }
     </div>
 
     <!-- Tab Viewports -->
     <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
       
       <!-- 1. Chart of Accounts Viewport -->
-      @if (activeTab() === 'chart') {
+      @if (activeTab() === 'chart' && features.has('accounts.chart')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">General Ledger Accounts</span>
           <button (click)="openAddAccount()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
@@ -89,7 +95,7 @@
       }
 
       <!-- 2. Journal Book Viewport -->
-      @if (activeTab() === 'journal') {
+      @if (activeTab() === 'journal' && features.has('accounts.journal')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Posted Journal Vouchers</span>
           <button (click)="openAddJournal()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
@@ -137,7 +143,7 @@
       }
 
       <!-- 3. Trial Balance Viewport -->
-      @if (activeTab() === 'trial') {
+      @if (activeTab() === 'trial' && features.has('accounts.trial')) {
         <div class="flex flex-col gap-4">
           <div class="flex justify-between items-center border-b border-[var(--ff-border-divider)] pb-3">
             <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Unadjusted Trial Balance Sheet</span>

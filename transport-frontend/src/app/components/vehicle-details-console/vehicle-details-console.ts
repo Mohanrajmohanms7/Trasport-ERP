@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
 import { MasterFormDialogComponent } from '../../shared/master-forms/master-form-dialog';
@@ -44,6 +45,8 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
   styles: []
 })
 export class VehicleDetailsConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private http = inject(HttpClient);
   private vehicleMgmtService = inject(VehicleMgmtService);
   private masterService = inject(MasterService);

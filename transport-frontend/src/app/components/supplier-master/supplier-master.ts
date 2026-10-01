@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -17,6 +18,8 @@ import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attach
   templateUrl: './supplier-master.html'
 })
 export class SupplierMasterComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
   showUpload = signal(false);
   private http = inject(HttpClient);

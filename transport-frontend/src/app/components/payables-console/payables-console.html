@@ -22,7 +22,9 @@
   <main class="flex-1 min-h-0 flex flex-col rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] overflow-hidden">
     <div class="flex border-b border-[var(--ff-border-divider)] px-4 pt-2 gap-1">
       @for (t of [{id:'bills',l:'Bills'},{id:'payments',l:'Payments'}]; track t.id) {
+        @if (features.has('payables.' + t.id)) {
         <button type="button" class="pb-2 px-3 text-sm font-semibold border-b-2" [style.border-color]="tab() === t.id ? 'var(--ff-color-primary-600)' : 'transparent'" [style.color]="tab() === t.id ? null : 'var(--ff-text-muted)'" (click)="setTab($any(t.id))">{{ t.l }}</button>
+        }
       }
     </div>
     <div class="p-3 grid grid-cols-2 md:grid-cols-4 gap-2 items-end border-b border-[var(--ff-border-divider)]">

@@ -1,0 +1,68 @@
+<div class="space-y-4">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-base font-bold">Feature access by plan and client</h2>
+      <p class="text-xs text-slate-500 max-w-3xl">Choose which modules, inner tabs and actions are included. A client gets its plan's features unless you
+        set something different for that client. Switched-off items disappear from the client's menu and screens and their APIs answer
+        "not included in your subscription". Users &amp; Roles, System Settings and the Dashboard are always available.</p>
+    </div>
+    <div class="inline-flex rounded-lg border overflow-hidden text-xs font-semibold">
+      <button type="button" class="px-3 py-2" [class.bg-slate-800]="mode() === 'client'" [class.text-white]="mode() === 'client'" (click)="setMode('client')">Per client</button>
+      <button type="button" class="px-3 py-2 border-l" [class.bg-slate-800]="mode() === 'plan'" [class.text-white]="mode() === 'plan'" (click)="setMode('plan')">Per plan</button>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-2">
+    <label class="flex flex-col gap-1 text-[11px] font-semibold text-slate-500">{{ mode() === 'client' ? 'Client' : 'Plan' }}
+      <select class="border rounded-lg px-2 py-2 text-sm min-w-[260px] bg-white dark:bg-slate-900" [ngModel]="selectedId()" (ngModelChange)="select($event)">
+        <option [ngValue]="null">Select…</option>
+        @if (mode() === 'client') {
+          @for (c of clients(); track c.id) { <option [ngValue]="c.id">{{ c.name }} ({{ c.code }}){{ c.subscriptionPlanName ? ' — ' + c.subscriptionPlanName : '' }}</option> }
+        } @else {
+          @for (p of plans(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+        }
+      </select>
+    </label>
+    <input class="border rounded-lg px-2 py-2 text-sm w-56 bg-white dark:bg-slate-900" placeholder="Search module or tab" [ngModel]="filter()" (ngModelChange)="filter.set($event)" />
+    @if (selectedId()) {
+      <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="setAll(true)">Allow all</button>
+      <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="setAll(false)">Block all (except core)</button>
+      @if (mode() === 'client') { <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="resetToPlan()">Reset to plan</button> }
+      <button type="button" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:opacity-50" [disabled]="!dirty() || saving()" (click)="save()">
+        {{ saving() ? 'Saving…' : 'Save changes' }}</button>
+      <span class="text-xs text-slate-500">{{ offCount() }} item(s) switched off</span>
+    }
+  </div>
+
+  @if (selectedId()) {
+    @for (g of groups(); track g.group) {
+      <section class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs font-bold uppercase tracking-wider text-slate-500">{{ g.group }}</div>
+        @for (x of g.modules; track x.m.code) {
+          <div class="border-t border-slate-100 dark:border-slate-800 px-3 py-2">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" class="w-4 h-4" [checked]="value(x.m.code)" [disabled]="x.m.core" (change)="toggle(x.m, $any($event.target).checked)" />
+              <span class="font-semibold text-sm">{{ x.m.label }}</span>
+              @if (x.m.core) { <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">always on</span> }
+              <span class="text-[11px] text-slate-500 truncate">{{ x.m.description }}</span>
+              <span class="ml-auto text-[10px] text-slate-400">{{ source(x.m.code) }}</span>
+            </label>
+            @if (x.children.length) {
+              <div class="mt-2 ml-7 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-1" [class.opacity-40]="!value(x.m.code)">
+                @for (c of x.children; track c.code) {
+                  <label class="flex items-center gap-2 text-xs cursor-pointer" [title]="c.description">
+                    <input type="checkbox" class="w-3.5 h-3.5" [checked]="value(c.code)" [disabled]="!value(x.m.code)" (change)="toggle(c, $any($event.target).checked)" />
+                    <span>{{ c.label }}</span>
+                    <span class="text-[10px] text-slate-400">{{ kindLabel(c.kind) }}</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <div class="p-10 text-center text-sm text-slate-500 rounded-xl border border-dashed">Select a {{ mode() === 'client' ? 'client' : 'plan' }} to see and change what it includes.</div>
+  }
+</div>

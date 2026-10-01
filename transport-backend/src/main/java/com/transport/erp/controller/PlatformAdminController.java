@@ -341,6 +341,45 @@ public class PlatformAdminController {
                 .body(bos.toByteArray());
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.features.FeatureAccessService featureAccessService;
+
+    @GetMapping("/features/catalog")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> featureCatalog() {
+        return ApiResponse.success(featureAccessService.catalog(), "Feature catalog");
+    }
+
+    @GetMapping("/companies/{id}/features")
+    public ApiResponse<java.util.Map<String, Object>> companyFeatures(@PathVariable Long id) {
+        return ApiResponse.success(featureAccessService.companyView(id), "Client features");
+    }
+
+    /** Body: {"features":{"code":true|false,...}} — values equal to the plan follow the plan. */
+    @PutMapping("/companies/{id}/features")
+    public ApiResponse<java.util.Map<String, Object>> saveCompanyFeatures(@PathVariable Long id, @RequestBody java.util.Map<String, java.util.Map<String, Boolean>> body) {
+        java.util.Map<String, Object> r = featureAccessService.saveCompany(id, body.get("features"), getActiveUser());
+        auditService.log(getActiveUser(), "CLIENT_FEATURES_UPDATED", "companies", id, null, "Client feature access updated");
+        return ApiResponse.success(r, "Client feature access saved");
+    }
+
+    @PostMapping("/companies/{id}/features/reset")
+    public ApiResponse<java.util.Map<String, Object>> resetCompanyFeatures(@PathVariable Long id) {
+        auditService.log(getActiveUser(), "CLIENT_FEATURES_RESET", "companies", id, null, "Client feature access reset to plan");
+        return ApiResponse.success(featureAccessService.resetCompany(id), "Client now follows its plan");
+    }
+
+    @GetMapping("/plans/{id}/features")
+    public ApiResponse<java.util.Map<String, Object>> planFeatures(@PathVariable Long id) {
+        return ApiResponse.success(featureAccessService.planView(id), "Plan features");
+    }
+
+    @PutMapping("/plans/{id}/features")
+    public ApiResponse<java.util.Map<String, Object>> savePlanFeatures(@PathVariable Long id, @RequestBody java.util.Map<String, java.util.Map<String, Boolean>> body) {
+        java.util.Map<String, Object> r = featureAccessService.savePlan(id, body.get("features"), getActiveUser());
+        auditService.log(getActiveUser(), "PLAN_FEATURES_UPDATED", "saas_plans", id, null, "Plan feature access updated");
+        return ApiResponse.success(r, "Plan features saved");
+    }
+
     @GetMapping("/backups")
     public ApiResponse<Page<SaaSBackup>> getBackups(
             @RequestParam(defaultValue = "0") int page,
