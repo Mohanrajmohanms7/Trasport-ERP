@@ -10,7 +10,9 @@
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Create vehicles, keep registration, insurance, fitness and permit dates, documents, service history and driver assignments</p>
     </div>
     <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      @if (features.has('bulk-upload')) {
       <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
+      }
       <app-export-buttons module="vehicles" />
       @if (selectedVehicle() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openVehicleForm(selectedVehicle())"><span class="material-icons text-base">edit</span>Edit vehicle</button>
@@ -190,36 +192,48 @@
         <!-- Segmented Tab switcher capsule -->
         <div class="flex items-center justify-between border-b border-[var(--ff-border-divider)] px-6 py-4 shrink-0 select-none bg-[var(--ff-surface-hover)]">
           <div class="flex bg-[var(--ff-surface-hover)] p-1 rounded-[10px] gap-1">
+            @if (features.has('vehicles.documents')) {
             <button type="button" (click)="activeTab.set('documents')" 
                     [class]="activeTab() === 'documents' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">assignment</span> Documents
             </button>
+            }
+            @if (features.has('vehicles.maintenance')) {
             <button type="button" (click)="activeTab.set('maintenance')" 
                     [class]="activeTab() === 'maintenance' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">build</span> Workshop Logs
             </button>
+            }
+            @if (features.has('vehicles.driver')) {
             <button type="button" (click)="activeTab.set('driver')" 
                     [class]="activeTab() === 'driver' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-[8px] transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">person</span> Assignments
             </button>
+            }
+            @if (features.has('vehicles.service-history')) {
             <button type="button" (click)="activeTab.set('service-history')" 
                     [class]="activeTab() === 'service-history' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">history</span> Service History
             </button>
+            }
+            @if (features.has('maintenance-requests')) {
             <button type="button" (click)="activeTab.set('maintenance-requests')" 
                     [class]="activeTab() === 'maintenance-requests' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">report</span> Requests
             </button>
+            }
+            @if (features.has('work-orders')) {
             <button type="button" (click)="activeTab.set('work-orders')" 
                     [class]="activeTab() === 'work-orders' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-white shadow-sm font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-850 dark:hover:text-slate-200'"
                     class="px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition duration-200 cursor-pointer flex items-center gap-1.5 border-none outline-none">
               <span class="material-icons text-sm">handyman</span> Work Orders
             </button>
+            }
           </div>
         </div>
 
@@ -227,7 +241,7 @@
         <div class="flex-1 min-h-0 p-6 overflow-y-auto flex flex-col gap-4">
           
           <!-- 1. Documents Tab Viewport -->
-          @if (activeTab() === 'documents') {
+          @if (activeTab() === 'documents' && features.has('vehicles.documents')) {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
                 <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Registration & Expiry Documents</span>
@@ -284,7 +298,7 @@
           }
 
           <!-- 2. Maintenance Logs Tab Viewport -->
-          @if (activeTab() === 'maintenance') {
+          @if (activeTab() === 'maintenance' && features.has('vehicles.maintenance')) {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
                 <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Workshop Repairs History</span>
@@ -371,7 +385,7 @@
           }
 
           <!-- 3. Driver Assignments Tab Viewport -->
-          @if (activeTab() === 'driver') {
+          @if (activeTab() === 'driver' && features.has('vehicles.driver')) {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
                 <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Active Driver Assignments Logs</span>
@@ -435,7 +449,7 @@
             </div>
           }
 
-          @if (activeTab() === 'service-history') {
+          @if (activeTab() === 'service-history' && features.has('vehicles.service-history')) {
             <div class="flex flex-col shrink-0">
               <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Service History</span>
               <p class="text-[10px] text-slate-400 dark:text-slate-550">Completed work orders and workshop service logs, newest first</p>
@@ -482,7 +496,7 @@
             }
           }
 
-          @if (activeTab() === 'maintenance-requests') {
+          @if (activeTab() === 'maintenance-requests' && features.has('maintenance-requests')) {
             <div class="flex flex-col shrink-0">
               <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Maintenance Requests</span>
               <p class="text-[10px] text-slate-400 dark:text-slate-550">Reported problems for this vehicle. Work orders stay on their own tab.</p>
@@ -531,7 +545,7 @@
             }
           }
 
-          @if (activeTab() === 'work-orders') {
+          @if (activeTab() === 'work-orders' && features.has('work-orders')) {
             <div class="flex justify-between items-center shrink-0">
               <div class="flex flex-col">
                 <span class="text-xs font-bold text-slate-805 dark:text-slate-200 uppercase tracking-wider">Work Orders</span>

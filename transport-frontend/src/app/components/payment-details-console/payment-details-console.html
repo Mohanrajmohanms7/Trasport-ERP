@@ -17,22 +17,28 @@
 
     <!-- Tab Controls selector -->
     <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none overflow-x-auto whitespace-nowrap scrollbar-none">
+      @if (features.has('receipts.receipts')) {
       <button (click)="activeTab.set('receipts')" [class.border-b-2]="activeTab() === 'receipts'" [class.border-blue-600]="activeTab() === 'receipts'" [class.text-slate-900]="activeTab() === 'receipts'" [class.dark:text-white]="activeTab() === 'receipts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
         Receipts
       </button>
+      }
+      @if (features.has('receipts.ledger')) {
       <button (click)="activeTab.set('ledger')" [class.border-b-2]="activeTab() === 'ledger'" [class.border-blue-600]="activeTab() === 'ledger'" [class.text-slate-900]="activeTab() === 'ledger'" [class.dark:text-white]="activeTab() === 'ledger'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
         Customer Ledger
       </button>
+      }
+      @if (features.has('receipts.dashboard')) {
       <button (click)="toggleDashboard()" [class.border-b-2]="activeTab() === 'dashboard'" [class.border-blue-600]="activeTab() === 'dashboard'" [class.text-slate-900]="activeTab() === 'dashboard'" [class.dark:text-white]="activeTab() === 'dashboard'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)] shrink-0">
         Settlement Dashboard
       </button>
+      }
     </div>
 
     <!-- Tab Viewports -->
     <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
 
       <!-- 1. Customer Receipts Viewport -->
-      @if (activeTab() === 'receipts') {
+      @if (activeTab() === 'receipts' && features.has('receipts.receipts')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Deposited Receipts</span>
           <button (click)="openAddReceipt()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
@@ -146,7 +152,7 @@
       }
 
       <!-- 2. Customer Ledgers Viewport -->
-      @if (activeTab() === 'ledger') {
+      @if (activeTab() === 'ledger' && features.has('receipts.ledger')) {
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
           <div class="flex items-center gap-4">
             <div class="w-64">
@@ -203,7 +209,7 @@
       }
 
       <!-- 3. Settlement Dashboard -->
-      @if (activeTab() === 'dashboard') {
+      @if (activeTab() === 'dashboard' && features.has('receipts.dashboard')) {
         <!-- Period filter: applies to money received; dues and ageing are always as of today -->
         <div class="flex flex-wrap items-end gap-2 shrink-0">
           @for (p of [{k:'month',l:'This month'},{k:'last-month',l:'Last month'},{k:'fy',l:'This financial year'},{k:'all',l:'All time'}]; track p.k) {

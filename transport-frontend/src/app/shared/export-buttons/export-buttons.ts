@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { Component, inject, input, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
@@ -7,6 +8,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   selector: 'app-export-buttons',
   standalone: true,
   template: `
+    @if (features.has('export')) {
     <div class="inline-flex rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] overflow-hidden" role="group" aria-label="Export">
       <button type="button" (click)="download('xlsx')" [disabled]="busy() !== null"
               class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50"
@@ -19,11 +21,13 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
         <span class="material-icons text-base text-rose-600">picture_as_pdf</span>{{ busy() === 'pdf' ? 'Preparing…' : 'PDF' }}
       </button>
     </div>
+    }
   `
 })
 export class ExportButtonsComponent {
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
+  readonly features = inject(FeatureService);
 
   readonly module = input.required<string>();
   readonly label = input<string>('');

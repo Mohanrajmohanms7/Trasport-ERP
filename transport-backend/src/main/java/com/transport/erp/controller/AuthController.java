@@ -109,6 +109,20 @@ public class AuthController {
         return ApiResponse.success(null, "Password changed successfully");
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.features.FeatureAccessService featureAccessService;
+
+    /** Features switched off for the signed-in user's company (screens, tabs and actions to hide). */
+    @GetMapping("/features")
+    public ApiResponse<java.util.Map<String, Object>> myFeatures(java.security.Principal principal) {
+        com.transport.erp.model.AppUser user = authService.getProfile(principal.getName());
+        boolean superAdmin = user.getRoles() != null && user.getRoles().stream().anyMatch(r -> "SUPER_ADMIN".equals(r.getCode()));
+        java.util.Map<String, Object> out = new java.util.HashMap<>();
+        out.put("disabled", superAdmin || user.getCompanyId() == null ? java.util.List.of() : featureAccessService.disabledFor(user.getCompanyId()));
+        out.put("catalog", featureAccessService.catalog());
+        return ApiResponse.success(out, "Features");
+    }
+
     /** Company name + initials of the signed-in user (header branding). */
     @GetMapping("/tenant-brand")
     public ApiResponse<java.util.Map<String, Object>> tenantBrand(java.security.Principal principal) {

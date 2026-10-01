@@ -10,7 +10,9 @@
       <p class="text-[var(--ff-text-secondary)] text-sm">Create customers with GSTIN and credit limit; manage delivery sites, contact persons and documents</p>
     </div>
     <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      @if (features.has('bulk-upload')) {
       <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
+      }
       <app-export-buttons module="customers" />
       @if (selectedCustomer() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(selectedCustomer())"><span class="material-icons text-base">edit</span>Edit customer</button>
@@ -91,22 +93,28 @@
     
     <!-- Tab Controls selector -->
     <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none shrink-0">
+      @if (features.has('customers.sites')) {
       <button (click)="activeTab.set('sites')" [class.border-b-2]="activeTab() === 'sites'" [class.border-blue-600]="activeTab() === 'sites'" [class.text-slate-900]="activeTab() === 'sites'" [class.dark:text-white]="activeTab() === 'sites'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Unloading Delivery Sites
       </button>
+      }
+      @if (features.has('customers.contacts')) {
       <button (click)="activeTab.set('contacts')" [class.border-b-2]="activeTab() === 'contacts'" [class.border-blue-600]="activeTab() === 'contacts'" [class.text-slate-900]="activeTab() === 'contacts'" [class.dark:text-white]="activeTab() === 'contacts'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Contact Persons Directory
       </button>
+      }
+      @if (features.has('customers.documents')) {
       <button (click)="activeTab.set('documents')" [class.border-b-2]="activeTab() === 'documents'" [class.border-blue-600]="activeTab() === 'documents'" [class.text-slate-900]="activeTab() === 'documents'" [class.dark:text-white]="activeTab() === 'documents'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Compliance Documents
       </button>
+      }
     </div>
 
     <!-- Tab Viewports -->
     <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
       
       <!-- 1. Delivery Sites Viewport -->
-      @if (activeTab() === 'sites') {
+      @if (activeTab() === 'sites' && features.has('customers.sites')) {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Registered Sites</span>
@@ -158,7 +166,7 @@
       }
 
       <!-- 2. Contact Persons Viewport -->
-      @if (activeTab() === 'contacts') {
+      @if (activeTab() === 'contacts' && features.has('customers.contacts')) {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Contact Personnel</span>
@@ -210,7 +218,7 @@
       }
 
       <!-- 3. Documents Viewport -->
-      @if (activeTab() === 'documents') {
+      @if (activeTab() === 'documents' && features.has('customers.documents')) {
         <div class="flex-1 min-h-0 flex flex-col gap-3">
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Compliance Documents</span>

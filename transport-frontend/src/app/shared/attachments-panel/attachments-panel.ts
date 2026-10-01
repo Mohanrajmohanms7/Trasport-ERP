@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { Component, OnChanges, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -27,7 +28,7 @@ interface AttachmentRow {
     <section class="rounded-[10px] border border-[var(--ff-border-default)] p-3 flex flex-col gap-2">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="text-sm font-semibold">{{ title() }} <span class="text-[var(--ff-text-muted)] font-normal">({{ rows().length }})</span></div>
-        @if (!readonly()) {
+        @if (!readonly() && features.has('attachments')) {
           <div class="flex items-center gap-2">
             @if (categories().length) {
               <select class="h-9 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-input)] text-xs px-2"
@@ -54,7 +55,7 @@ interface AttachmentRow {
               {{ (a.category || 'OTHER').replace('_', ' ') | titlecase }} · {{ size(a.fileSize) }} · {{ a.createdBy }} · {{ a.createdDate | date:'dd MMM yyyy' }}
             </div>
           </button>
-          @if (!readonly()) {
+          @if (!readonly() && features.has('attachments')) {
             <button type="button" (click)="remove(a)" class="w-9 h-9 flex items-center justify-center rounded-lg text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)]" [attr.aria-label]="'Remove ' + a.originalName">
               <span class="material-icons text-base">delete</span>
             </button>
@@ -69,6 +70,7 @@ interface AttachmentRow {
 export class AttachmentsPanelComponent implements OnChanges {
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
+  readonly features = inject(FeatureService);
 
   readonly entityType = input.required<string>();
   readonly entityId = input<number | null | undefined>(null);

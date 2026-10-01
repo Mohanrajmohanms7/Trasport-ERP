@@ -52,7 +52,7 @@
       }
 
       <!-- Dynamic Menu Groups -->
-      @for (group of filteredMenuGroups(); track group.groupName) {
+      @for (group of visibleMenuGroups(); track group.groupName) {
         <div class="app-nav-group flex flex-col gap-0.5">
           @if (!navCollapsed()) {
             <span class="app-nav-group-label px-3 mb-1 select-none">{{ group.groupName }}</span>

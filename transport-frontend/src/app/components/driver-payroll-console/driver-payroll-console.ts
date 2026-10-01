@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -25,6 +26,8 @@ type Tab = 'payrolls' | 'advances' | 'slabs';
   templateUrl: './driver-payroll-console.html'
 })
 export class DriverPayrollConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private api = inject(DriverPayrollService);
   private auth = inject(AuthService);
   private masters = inject(MasterService);

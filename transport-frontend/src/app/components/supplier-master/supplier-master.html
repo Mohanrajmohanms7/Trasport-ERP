@@ -8,7 +8,9 @@
       <p class="text-sm text-[var(--ff-text-secondary)]">Workshops, spare-part shops, tyre dealers and fuel pumps. Credit days set the due date of their bills.</p>
     </div>
     <div class="flex flex-wrap gap-2">
+      @if (features.has('bulk-upload')) {
       <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
+      }
       <app-export-buttons module="suppliers" />
       <a routerLink="/payables" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5"><span class="material-icons text-base">request_quote</span>Bills &amp; payments</a>
       <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="add()"><span class="material-icons text-base">add</span>New supplier</button>

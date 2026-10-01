@@ -1,3 +1,4 @@
+import { FeatureAccessComponent } from './feature-access/feature-access';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -26,7 +27,7 @@ import {
 @Component({
   selector: 'app-platform-admin',
   standalone: true,
-  imports: [
+  imports: [FeatureAccessComponent, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
@@ -438,7 +439,8 @@ export class PlatformAdminComponent implements OnInit {
   static readonly SECTIONS: Record<string, string> = {
     dashboard: 'Dashboard & Analytics', companies: 'Clients & Companies', subscriptions: 'Subscriptions & Plans',
     licenses: 'Licenses', billing: 'Billing Invoices', users: 'Users & Sessions', audit: 'Audit Logs',
-    tickets: 'Support Tickets', announcements: 'Announcements', settings: 'System Settings', backups: 'Backup & Data Export'
+    tickets: 'Support Tickets', announcements: 'Announcements', settings: 'System Settings', backups: 'Backup & Data Export',
+    features: 'Feature Access'
   };
   readonly sectionTitle = computed(() => PlatformAdminComponent.SECTIONS[this.activeTab()] ?? 'Platform Administration');
 

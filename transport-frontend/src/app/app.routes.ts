@@ -1,3 +1,4 @@
+import { featureGuard } from './guards/feature.guard';
 import { BranchMasterComponent } from './components/branch-master/branch-master';
 import { SupplierMasterComponent } from './components/supplier-master/supplier-master';
 import { PayablesConsoleComponent } from './components/payables-console/payables-console';
@@ -59,7 +60,7 @@ export const routes: Routes = [
     path: '',
     component: AppShellComponent,
     canActivate: [authGuard, subscriptionGuard],
-
+    canActivateChild: [featureGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent, canActivate: [setupGuard] },

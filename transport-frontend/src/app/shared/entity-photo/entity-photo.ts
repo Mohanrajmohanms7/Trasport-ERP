@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { Component, OnChanges, OnDestroy, inject, input, output, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
@@ -19,7 +20,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
           <span class="material-icons text-[var(--ff-text-muted)]" [style.font-size.px]="size() / 2">{{ icon() }}</span>
         }
       </div>
-      @if (!readonly() && entityId()) {
+      @if (!readonly() && entityId() && features.has('attachments')) {
         <div class="flex flex-col gap-1">
           <label class="text-xs font-semibold text-[var(--ff-color-primary-600)] cursor-pointer">
             {{ busy() ? 'Uploading…' : (src() ? 'Change photo' : 'Add photo') }}
@@ -37,6 +38,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 export class EntityPhotoComponent implements OnChanges, OnDestroy {
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
+  readonly features = inject(FeatureService);
 
   readonly type = input.required<'vehicles' | 'drivers' | 'spare-parts'>();
   readonly entityId = input<number | null | undefined>(null);

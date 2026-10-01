@@ -15,7 +15,9 @@
     ]"
     [actions]="headerActions"
     (actionClick)="onHeaderAction($event)">
+    @if (features.has('bulk-upload')) {
     <button type="button" ffActions class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="showUpload.set(true)"><span class="material-icons text-base text-emerald-600">upload_file</span>Upload</button>
+    }
     <app-export-buttons ffActions module="drivers" />
   </ff-page-header>
 
@@ -95,7 +97,7 @@
       <span class="driver-ops-meta__code text-[11px] font-semibold text-[var(--ff-text-muted)]">{{ driver.code }} · {{ driver.licenseNumber }}</span>
     </div>
 
-    <ff-tabs [tabs]="opsTabs" [activeTab]="opsTab()" (tabChange)="opsTab.set($event)" />
+    <ff-tabs [tabs]="visibleOpsTabs" [activeTab]="opsTab()" (tabChange)="opsTab.set($event)" />
 
     @if (opsTab() === 'documents') {
       <div class="driver-ops-actions">

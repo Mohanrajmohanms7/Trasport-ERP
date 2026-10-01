@@ -23,12 +23,14 @@
               class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Invoices Ledger
       </button>
+      @if (features.has('invoices.ready')) {
       <button (click)="setTab('ready')"
               [class.border-b-2]="billingTab() === 'ready'" [class.border-blue-600]="billingTab() === 'ready'"
               [class.text-slate-900]="billingTab() === 'ready'" [class.dark:text-white]="billingTab() === 'ready'"
               class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Ready for Billing
       </button>
+      }
 
     </div>
 
@@ -113,7 +115,7 @@
       }
 
       <!-- Ready for Billing view -->
-      @if (billingTab() === 'ready') {
+      @if (billingTab() === 'ready' && features.has('invoices.ready')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Completed Trips Ready for Invoicing ({{ readyTrips().length }})</span>
           @if (selectedTripIds().length) {

@@ -44,6 +44,7 @@ public class ReportHubService {
     @Autowired private CompanyRepository companyRepository;
     @Autowired private XlsxExportService xlsx;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private com.transport.erp.features.FeatureAccessService featureAccessService;
 
     private List<Map<String, Object>> catalog = List.of();
     private final Map<String, Map<String, Object>> byKey = new LinkedHashMap<>();
@@ -59,9 +60,12 @@ public class ReportHubService {
     /** Reports this user may run (no SQL). */
     public List<Map<String, Object>> catalog() {
         boolean finance = hasFinanceRole();
+        com.transport.erp.model.AppUser me = tenantAccess.requireCurrentUser();
+        java.util.Set<String> off = tenantAccess.isSuperAdmin(me) ? java.util.Set.of() : featureAccessService.disabledFor(me.getCompanyId());
         List<Map<String, Object>> out = new ArrayList<>();
         for (Map<String, Object> r : catalog) {
             if (Boolean.TRUE.equals(r.get("finance")) && !finance) continue;
+            if (off.contains(com.transport.erp.features.FeatureCatalog.reportFeature((String) r.get("category")))) continue;
             Map<String, Object> m = new LinkedHashMap<>(r);
             m.remove("sql");
             out.add(m);
@@ -78,6 +82,7 @@ public class ReportHubService {
         if (def == null) {
             throw new BusinessValidationException("Report Not Found", "REPORT_NOT_FOUND", "Unknown report: " + key, "Pick a report from the list.");
         }
+        featureAccessService.require(com.transport.erp.features.FeatureCatalog.reportFeature((String) def.get("category")));
         if (Boolean.TRUE.equals(def.get("finance")) && !hasFinanceRole()) {
             throw new AccessDeniedException("This report needs an accounts or admin role.");
         }

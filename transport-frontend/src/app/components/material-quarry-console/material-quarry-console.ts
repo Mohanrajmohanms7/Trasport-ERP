@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -36,6 +37,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   styleUrl: './material-quarry-console.css'
 })
 export class MaterialQuarryConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
   showUpload = signal(false);
   private materialMgmtService = inject(MaterialMgmtService);

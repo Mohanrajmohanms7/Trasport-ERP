@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -36,6 +37,8 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   styles: []
 })
 export class InvoiceDetailsConsoleComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   private invoiceMgmtService = inject(InvoiceMgmtService);
   private tripService = inject(TripMgmtService);
   private masterService = inject(MasterService);

@@ -1,3 +1,4 @@
+import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { EntityPhotoComponent } from '../../shared/entity-photo/entity-photo';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -15,6 +16,8 @@ import { workOrderError } from '../../services/work-order.service';
   templateUrl: './spare-part-catalog.html'
 })
 export class SparePartCatalogComponent implements OnInit {
+  /** Subscription feature access (hides tabs/buttons not in the client's plan). */
+  readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
   showUpload = signal(false);
   /** Photo edit is available inline; the server checks company access. */

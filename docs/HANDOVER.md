@@ -4,7 +4,7 @@ TransaFlow is a multi-tenant SaaS **transport ERP for quarry-to-site haulage** (
 trips with weighbridge weights, fuel, expenses, GST invoicing, receipts, driver daily-slab payroll, maintenance, spare-parts
 stock, supplier payables, accounts and 40 reports. First live client: **PKC Transport, Perambalur** (single Company Admin login).
 
-This file is the up-to-date summary (as of commit `a429a50`, migration **V74**). Older baseline docs from before
+This file is the up-to-date summary (updated with client feature access, migration **V75**). Older baseline docs from before
 2026-09-22 (`AI_PROJECT_CONTEXT.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DEVELOPMENT_RULES.md`, the lower-case module
 notes) are still useful background, but **where they disagree with this file or the newer docs listed below, this file wins.**
 
@@ -54,6 +54,10 @@ writes for journals/accounts; VIEWER read-only), `@EnableMethodSecurity` is on (
 `config/DriverScopeAuthorizationManager` (DRIVER logins: maintenance requests, own salary slips, files/attachments only),
 `security/JwtAuthenticationFilter` (subscription expiry block; temporary-password block `PASSWORD_CHANGE_REQUIRED`).
 Access denied must surface as HTTP 403 (controllers re-throw `AccessDeniedException`; `GlobalExceptionHandler` maps it).
+
+**Client feature access.** `features/FeatureCatalog` (modules / tabs / actions → routes + API rules),
+`FeatureAccessService` (plan + client overrides), `FeatureAccessFilter` (API 403 `FEATURE_DISABLED`), frontend `FeatureService`,
+`featureGuard`, `*ffFeature`. New module or tab = one catalog line + hide it in the screen. See `docs/ACCESS_CONTROL.md`.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
