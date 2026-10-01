@@ -45,7 +45,7 @@ public class OrderUomService {
     /** The units a company may use on new order lines, default first. Loaded once per request and reused for every line. */
     @Transactional(readOnly = true)
     public OrderUnits forCompany(Long companyId) {
-        List<CompanyUom> rows = companyUomRepository.findByCompanyIdAndIsDeletedFalse(companyId);
+        List<CompanyUom> rows = new ArrayList<>(companyUomRepository.findByCompanyIdAndIsDeletedFalse(companyId));
         LinkedHashMap<Long, UomMaster> enabled = new LinkedHashMap<>();
         UomMaster def = null;
         if (rows.isEmpty()) {

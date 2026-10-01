@@ -4,7 +4,7 @@ TransaFlow is a multi-tenant SaaS **transport ERP for quarry-to-site haulage** (
 trips with weighbridge weights, fuel, expenses, GST invoicing, receipts, driver daily-slab payroll, maintenance, spare-parts
 stock, supplier payables, accounts and 40 reports. First live client: **PKC Transport, Perambalur** (single Company Admin login).
 
-This file is the up-to-date summary (updated with client feature access, migration **V75**). Older baseline docs from before
+This file is the up-to-date summary (updated with order units of measure, migration **V76**). Older baseline docs from before
 2026-09-22 (`AI_PROJECT_CONTEXT.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DEVELOPMENT_RULES.md`, the lower-case module
 notes) are still useful background, but **where they disagree with this file or the newer docs listed below, this file wins.**
 
@@ -15,7 +15,7 @@ notes) are still useful background, but **where they disagree with this file or 
 | Part | Tech | Path |
 |---|---|---|
 | Backend | Spring Boot 3.4 / Java 17, Spring Security (JWT), JPA/Hibernate, Flyway, Apache POI, OpenPDF | `transport-backend/` (`com.transport.erp`: `controller`, `service`, `repository`, `model`, `dto`, `security`, `config`, `util`, `exception`) |
-| Database | PostgreSQL 16, Flyway migrations `V1…V74` | `transport-backend/src/main/resources/db/migration` |
+| Database | PostgreSQL 16, Flyway migrations `V1…V76` | `transport-backend/src/main/resources/db/migration` |
 | Frontend | Angular 20 standalone components + signals, Tailwind, Angular Material, IBM Plex Sans | `transport-frontend/src/app` (`components/`, `shared/`, `shared-ui/`, `services/`, `layout/`, `guards/`, `interceptors/`) |
 | Help / brand | Static user guide pages, logo | `transport-frontend/public/help`, `public/brand` |
 | Tools | Demo data loader, report catalog generator/tester | `tools/demo`, `tools/reports` |
@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V75__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V77__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -59,6 +59,11 @@ Access denied must surface as HTTP 403 (controllers re-throw `AccessDeniedExcept
 `FeatureAccessService` (plan + client overrides), `FeatureAccessFilter` (API 403 `FEATURE_DISABLED`), frontend `FeatureService`,
 `featureGuard`, `*ffFeature`. New module or tab = one catalog line + hide it in the screen. See `docs/ACCESS_CONTROL.md`.
 
+**Units of measure on orders (V76).** Booking / trip / invoice lines store `uom_id`; a trip line takes its booking line's
+unit, an invoice line its trip line's unit; nothing is converted. Which units a client may use + the default:
+`company_uoms` via `OrderUomService` (PKC: Unit only). Company admin: UOM Master tab → Order units; platform admin:
+Feature Access → per client. See `docs/UNITS_OF_MEASURE.md`.
+
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
 
@@ -84,7 +89,7 @@ Menu in `layout/app-shell/app-shell.ts` (see `docs/MENU_STRUCTURE.md`). Show ser
 ## 4. Business flow & rules decided so far
 
 Masters (branches with GSTIN, materials/quarries, customers + delivery sites, vehicles, drivers, suppliers with credit days)
-→ **Booking** (approve; credit limit enforced: dues + booking value ≤ limit, 0 = no limit; can be back-dated; auto-COMPLETED
+→ **Booking** (lines in a unit — Unit by default, one unit per material, never converted; approve; credit limit enforced: dues + booking value ≤ limit, 0 = no limit; can be back-dated; auto-COMPLETED
 when fully delivered; Close early) → **Trip** (approved booking only; PLANNED → DISPATCHED (vehicle+driver) → COMPLETED;
 quantity ≤ booked + tolerance %; weighbridge loaded/delivered, bill on delivered; vehicle with open work order blocked;
 locked once invoiced) → **Fuel / Expenses** (approve; link to trip for trip profit) → **Invoice** (from one or many completed
@@ -118,7 +123,8 @@ at first login (admin-chosen onboarding passwords are not forced).
 | Settlement dashboard, apply advance | `CustomerReceiptService.getSettlementDashboard / applyAdvance / applyCustomerAdvances`, `components/payment-details-console` |
 | Branch Master, Supplier Master, Dropdown Lists | `components/branch-master`, `supplier-master`, `master-management` (dropdowns) |
 | Subscription notice, tenant brand | `AuthService.subscriptionInfo / tenantBrand`, `layout/app-shell` |
-| PKC demo data | `tools/demo/seed_pkc_demo.py` (API-based; run once per environment) |
+| PKC demo data | `tools/demo/seed_pkc_demo.py` (API-based; run once per environment; quantities in Units) |
+| Order units of measure | `service/OrderUomService`, `model/CompanyUom`, `/api/v1/uoms/order-units` + `/order-settings`, `shared/order-units`, `shared/uom-label.ts` — `docs/UNITS_OF_MEASURE.md` |
 
 ## 6. Open items / next steps
 
@@ -128,7 +134,9 @@ at first login (admin-chosen onboarding passwords are not forced).
 4. Review customer credit limits (now enforced at booking approval).
 5. Native Tamil review of `docs/user-guide/USER_GUIDE_TA.md`.
 6. Ideas not built: supplier payment due reminders; "force password change" action per user in Platform Admin UI (API exists);
-   trip-wise fuel auto-linking; e-way bill / e-invoice (IRN) integration.
+   trip-wise fuel auto-linking; e-way bill / e-invoice (IRN) integration; separate weighbridge tonnage on Unit-based trips
+   (today loaded/delivered are in the order unit); vehicle capacity check against orders (needs a per-material conversion rule).
+7. Confirm with PKC whether any real orders were entered before V76 — they were marked Ton (see `UNITS_OF_MEASURE.md`).
 
 ## 7. Starting prompt for a new AI session
 

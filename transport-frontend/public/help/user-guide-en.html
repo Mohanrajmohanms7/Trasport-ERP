@@ -200,12 +200,16 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 </blockquote>
 <h3 id="21-material-quarry-masters-material-quarry">2.1 Material &amp; Quarry — <em>Masters → Material &amp; Quarry</em></h3>
 <p><strong>Purpose:</strong> what you carry and where you load it.
-- <strong>Materials tab</strong> — <em>Code*, Name*, Category*, Unit*</em>, default <strong>material rate</strong>, <strong>transport rate</strong>, <strong>royalty rate</strong>,
-  <strong>loading charge</strong> (all <em>per unit</em>, usually per ton).
-  Example: <code>MSAND</code> — <em>M-Sand</em> — Ton — material ₹900, transport ₹350, royalty ₹60, loading ₹40.
+- <strong>Materials tab</strong> — <em>Code*, Name*, Category*</em>, <strong>Default UOM</strong> (the unit new order lines start with, e.g. <em>Unit</em>),
+  default <strong>material rate</strong>, <strong>transport rate</strong>, <strong>royalty rate</strong>, <strong>loading charge</strong> (all <em>per unit of the order</em>).
+  Example: <code>MSAND</code> — <em>M-Sand</em> — Unit — material ₹4,300, transport ₹1,450, royalty ₹270, loading ₹180 (per Unit).
 - <strong>Quarries tab</strong> — quarry name and location, e.g. <em>Madukkarai Quarry</em>.
-- <strong>Loading Locations</strong> — loading points with charges; <strong>Pricing</strong> — dated material prices; <strong>UOM Conversions</strong>
-  (e.g. 1 unit = 4.5 tons).
+- <strong>Loading Locations</strong> — loading points with charges; <strong>Pricing</strong> — dated material prices.
+- <strong>UOM Master → Order units</strong> — which units can be used on bookings, trips and invoices. A new company starts with
+  <strong>Unit</strong> only (Active, Default); Ton, KG, CFT … are Inactive. A company admin can switch a unit <strong>Active</strong> or
+  <strong>Make default</strong>; the default unit cannot be switched off. Switching a unit off never changes orders already saved.
+  Quantities are <strong>never converted</strong> between units (2 Unit stays 2 Unit). Standard units (Unit, Ton, KG …) are shared
+  by all companies and can only be edited by the platform administrator.
 - <strong>Next:</strong> Customer Master.</p>
 <h3 id="22-customer-master-masters-customer-master">2.2 Customer Master — <em>Masters → Customer Master</em></h3>
 <p><strong>Purpose:</strong> who you deliver to and bill.
@@ -259,12 +263,15 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 <p><strong>Purpose:</strong> record what the customer ordered.
 1. Click <strong>Register Booking Request</strong>.
 2. Choose <strong>Customer*</strong> and <strong>Delivery site</strong>, priority.
-3. Add material lines: <strong>Material*</strong>, <strong>Quantity*</strong> (e.g. 60 tons), <strong>Material rate*</strong>, <strong>Transport rate*</strong>,
-   <strong>Royalty*</strong>, <strong>Loading*</strong>, <strong>GST %*</strong> (e.g. 5). Default rates come from the material master.
+3. Add material lines: <strong>Material*</strong>, <strong>Quantity*</strong> (e.g. 2), <strong>Unit*</strong> (e.g. <em>Unit</em> — pre-filled with the material's
+   default unit or the company default), <strong>Rate / Unit*</strong>, <strong>Transport rate*</strong>, <strong>Royalty*</strong>, <strong>Loading*</strong>,
+   <strong>GST %*</strong> (e.g. 5). Default rates come from the material master. The list shows the order as <strong>2 Unit M-Sand</strong>.
 4. Save → status <strong>PENDING</strong>. Booking value = quantity × (material + transport + royalty + loading) + GST.
+   All rates are per the line's unit.
 5. <strong>Approve</strong> the booking. <em>Trips can only be planned on approved bookings.</em></p>
 <p><strong>Rules to know</strong>
 - A booking with trips cannot be rejected; its quantity cannot be reduced below what trips already moved.
+- One material is booked in <strong>one unit</strong> per booking. After trips have moved a material, its unit cannot change.
 - When all booked quantity is delivered the booking becomes <strong>COMPLETED</strong> automatically.
 - <strong>Close</strong> an approved booking early when the customer needs no more loads (no trips may be on the road).
 - Attach the customer's <strong>purchase order</strong> in the booking.</p>
@@ -276,7 +283,8 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 <p>Click <strong>Plan Dispatch Trip</strong> and enter:
 - <strong>Booking*</strong> (only approved bookings are listed), <strong>Trip date*</strong> (not future, not before the booking date),
 - <strong>Vehicle</strong> and <strong>Driver</strong> (needed before dispatch), <strong>Quarry</strong> and <strong>Loading point</strong>,
-- Material line(s): <strong>Material*</strong> (must be on the booking) and <strong>Quantity*</strong> (e.g. 20 tons).</p>
+- Material line(s): <strong>Material*</strong> (must be on the booking) and <strong>Quantity*</strong> (e.g. 2). The unit is always the
+  booking's unit (e.g. <em>Planned Qty (Unit)</em>) — it cannot be changed on the trip.</p>
 <p>Save → status <strong>PLANNED</strong>, number like <code>TRP-2627/00001</code>.
 The total of all trips cannot exceed the booked quantity (plus the tolerance %).</p>
 <h3 id="52-dispatch-complete">5.2 Dispatch → Complete</h3>
@@ -287,8 +295,8 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 </ul>
 <h3 id="53-weighbridge-and-pod">5.3 Weighbridge and POD</h3>
 <p>Open the completed trip (<strong>Edit</strong>):
-- <strong>Loaded weight</strong> (quarry weighbridge) and <strong>Delivered weight</strong> (site weighbridge), e.g. 20.00 / 19.80 →
-  <strong>shortage 0.20 t</strong>. Delivered cannot be more than loaded. <strong>The delivered weight is what gets billed.</strong>
+- <strong>Loaded Qty</strong> and <strong>Delivered Qty</strong>, in the booking's unit, e.g. 2.00 / 1.95 Unit → <strong>shortage 0.05 Unit</strong>
+  (for a Ton booking: weighbridge tons). Delivered cannot be more than loaded. <strong>The delivered quantity is what gets billed.</strong>
 - Upload <strong>POD / delivery challan / LR</strong> in the trip documents.
 - Once the trip is on an invoice it is locked.</p>
 <p><strong>Next:</strong> fuel &amp; expenses, then invoice.</p>
@@ -317,12 +325,12 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 1. Open <strong>Ready for billing</strong> — all completed trips not yet invoiced.
 2. Tick the trips of <strong>one customer</strong> (or <em>select all of this customer</em>) → <strong>One invoice for N trips</strong>.
    (Or use the <strong>Generate</strong> button on a single trip.)
-3. A <strong>DRAFT</strong> invoice is created: quantity = delivered weight; rates from the booking.
+3. A <strong>DRAFT</strong> invoice is created: quantity = delivered quantity, in the trip's unit (e.g. <em>2 Unit</em>); rates from the booking.
    Line value = qty × (rate + freight + loading + royalty). <strong>Discount is taken before GST.</strong>
 4. <strong>Edit</strong> the draft if needed: invoice date (not future, not before the trip date), place of supply (2-digit state code,
    e.g. 33), discount, payment terms.
 5. <strong>Approve</strong> → posts <strong>Customer Receivable</strong> / <strong>Freight Income</strong> + <strong>GST Liability</strong>. Number <code>INV-2627/000xx</code>.
-6. <strong>Print / PDF</strong> and attach the <strong>signed copy / e-way bill</strong>.</p>
+6. <strong>Print / PDF</strong> (quantity is printed with its unit, e.g. <em>2 Unit</em>) and attach the <strong>signed copy / e-way bill</strong>.</p>
 <p><strong>GST example:</strong> 19.8 t × ₹1,350 = ₹26,730 taxable; GST 5% = ₹1,336.50 → CGST ₹668.25 + SGST ₹668.25
 (same state) → total ₹28,066.50. For an out-of-state customer the tax is IGST ₹1,336.50.</p>
 <p><strong>Rules:</strong> a trip can be billed only once; one invoice per customer; cancelling an approved invoice reverses its

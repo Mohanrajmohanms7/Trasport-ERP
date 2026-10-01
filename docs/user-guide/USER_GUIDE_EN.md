@@ -106,12 +106,16 @@ Vehicle types (Tipper, Trailer), capacities (10 T, 20 T), fuel types, expense ca
 
 ### 2.1 Material & Quarry — *Masters → Material & Quarry*
 **Purpose:** what you carry and where you load it.
-- **Materials tab** — *Code\*, Name\*, Category\*, Unit\**, default **material rate**, **transport rate**, **royalty rate**,
-  **loading charge** (all *per unit*, usually per ton).
-  Example: `MSAND` — *M-Sand* — Ton — material ₹900, transport ₹350, royalty ₹60, loading ₹40.
+- **Materials tab** — *Code\*, Name\*, Category\**, **Default UOM** (the unit new order lines start with, e.g. *Unit*),
+  default **material rate**, **transport rate**, **royalty rate**, **loading charge** (all *per unit of the order*).
+  Example: `MSAND` — *M-Sand* — Unit — material ₹4,300, transport ₹1,450, royalty ₹270, loading ₹180 (per Unit).
 - **Quarries tab** — quarry name and location, e.g. *Madukkarai Quarry*.
-- **Loading Locations** — loading points with charges; **Pricing** — dated material prices; **UOM Conversions**
-  (e.g. 1 unit = 4.5 tons).
+- **Loading Locations** — loading points with charges; **Pricing** — dated material prices.
+- **UOM Master → Order units** — which units can be used on bookings, trips and invoices. A new company starts with
+  **Unit** only (Active, Default); Ton, KG, CFT … are Inactive. A company admin can switch a unit **Active** or
+  **Make default**; the default unit cannot be switched off. Switching a unit off never changes orders already saved.
+  Quantities are **never converted** between units (2 Unit stays 2 Unit). Standard units (Unit, Ton, KG …) are shared
+  by all companies and can only be edited by the platform administrator.
 - **Next:** Customer Master.
 
 ### 2.2 Customer Master — *Masters → Customer Master*
@@ -174,13 +178,16 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 **Purpose:** record what the customer ordered.
 1. Click **Register Booking Request**.
 2. Choose **Customer\*** and **Delivery site**, priority.
-3. Add material lines: **Material\***, **Quantity\*** (e.g. 60 tons), **Material rate\***, **Transport rate\***,
-   **Royalty\***, **Loading\***, **GST %\*** (e.g. 5). Default rates come from the material master.
+3. Add material lines: **Material\***, **Quantity\*** (e.g. 2), **Unit\*** (e.g. *Unit* — pre-filled with the material's
+   default unit or the company default), **Rate / Unit\***, **Transport rate\***, **Royalty\***, **Loading\***,
+   **GST %\*** (e.g. 5). Default rates come from the material master. The list shows the order as **2 Unit M-Sand**.
 4. Save → status **PENDING**. Booking value = quantity × (material + transport + royalty + loading) + GST.
+   All rates are per the line's unit.
 5. **Approve** the booking. *Trips can only be planned on approved bookings.*
 
 **Rules to know**
 - A booking with trips cannot be rejected; its quantity cannot be reduced below what trips already moved.
+- One material is booked in **one unit** per booking. After trips have moved a material, its unit cannot change.
 - When all booked quantity is delivered the booking becomes **COMPLETED** automatically.
 - **Close** an approved booking early when the customer needs no more loads (no trips may be on the road).
 - Attach the customer's **purchase order** in the booking.
@@ -196,7 +203,8 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 Click **Plan Dispatch Trip** and enter:
 - **Booking\*** (only approved bookings are listed), **Trip date\*** (not future, not before the booking date),
 - **Vehicle** and **Driver** (needed before dispatch), **Quarry** and **Loading point**,
-- Material line(s): **Material\*** (must be on the booking) and **Quantity\*** (e.g. 20 tons).
+- Material line(s): **Material\*** (must be on the booking) and **Quantity\*** (e.g. 2). The unit is always the
+  booking's unit (e.g. *Planned Qty (Unit)*) — it cannot be changed on the trip.
 
 Save → status **PLANNED**, number like `TRP-2627/00001`.
 The total of all trips cannot exceed the booked quantity (plus the tolerance %).
@@ -208,8 +216,8 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 
 ### 5.3 Weighbridge and POD
 Open the completed trip (**Edit**):
-- **Loaded weight** (quarry weighbridge) and **Delivered weight** (site weighbridge), e.g. 20.00 / 19.80 →
-  **shortage 0.20 t**. Delivered cannot be more than loaded. **The delivered weight is what gets billed.**
+- **Loaded Qty** and **Delivered Qty**, in the booking's unit, e.g. 2.00 / 1.95 Unit → **shortage 0.05 Unit**
+  (for a Ton booking: weighbridge tons). Delivered cannot be more than loaded. **The delivered quantity is what gets billed.**
 - Upload **POD / delivery challan / LR** in the trip documents.
 - Once the trip is on an invoice it is locked.
 
@@ -241,12 +249,12 @@ Open the completed trip (**Edit**):
 1. Open **Ready for billing** — all completed trips not yet invoiced.
 2. Tick the trips of **one customer** (or *select all of this customer*) → **One invoice for N trips**.
    (Or use the **Generate** button on a single trip.)
-3. A **DRAFT** invoice is created: quantity = delivered weight; rates from the booking.
+3. A **DRAFT** invoice is created: quantity = delivered quantity, in the trip's unit (e.g. *2 Unit*); rates from the booking.
    Line value = qty × (rate + freight + loading + royalty). **Discount is taken before GST.**
 4. **Edit** the draft if needed: invoice date (not future, not before the trip date), place of supply (2-digit state code,
    e.g. 33), discount, payment terms.
 5. **Approve** → posts **Customer Receivable** / **Freight Income** + **GST Liability**. Number `INV-2627/000xx`.
-6. **Print / PDF** and attach the **signed copy / e-way bill**.
+6. **Print / PDF** (quantity is printed with its unit, e.g. *2 Unit*) and attach the **signed copy / e-way bill**.
 
 **GST example:** 19.8 t × ₹1,350 = ₹26,730 taxable; GST 5% = ₹1,336.50 → CGST ₹668.25 + SGST ₹668.25
 (same state) → total ₹28,066.50. For an out-of-state customer the tax is IGST ₹1,336.50.
