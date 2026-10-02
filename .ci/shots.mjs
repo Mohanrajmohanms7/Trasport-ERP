@@ -258,6 +258,18 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
   try {
     await pg.goto('http://localhost:4200/bookings', { waitUntil: 'networkidle' });
     await pg.locator('button:has-text("Register Booking")').first().click(); await typeIn('booking-customer', 'Sakthi');
+    // Quick Create: type a new name, Create, save, and the new customer is selected in the booking form
+    await pg.locator('.ff-dd__search-input').first().fill('Quick Test Builders'); await pg.waitForTimeout(1200);
+    const createBtn = pg.locator('.ff-dd__create').first();
+    console.log('QC button: ' + ((await createBtn.textContent().catch(() => '')) || 'NOT SHOWN').trim());
+    await createBtn.click(); await pg.waitForTimeout(800);
+    await pg.locator('app-master-form-dialog input[name="code"]').fill('QTB01');
+    await pg.screenshot({ path: 'shots/qc-customer-form.png' });
+    await pg.locator('app-master-form-dialog button[type="submit"]').click(); await pg.waitForTimeout(2000);
+    const picked = (await pg.locator('ff-dropdown .ff-dd__trigger').first().textContent().catch(() => '')) || '';
+    console.log('QC selected after save: ' + picked.trim().slice(0, 80));
+    await pg.screenshot({ path: 'shots/qc-customer-selected.png' });
+    await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/work-orders/new', { waitUntil: 'networkidle' }); await typeIn('workorder-vehicle', 'TN');
     await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');
     await pg.goto('http://localhost:4200/reports?r=vehicle-performance', { waitUntil: 'networkidle' }); await typeIn('report-vehicle', 'TN46');

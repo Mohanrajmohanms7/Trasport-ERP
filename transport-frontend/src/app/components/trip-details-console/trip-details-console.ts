@@ -19,10 +19,11 @@ import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-  imports: [ExportButtonsComponent, 
+  imports: [QuickCreateComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -62,6 +63,15 @@ export class TripDetailsConsoleComponent implements OnInit {
   materials = signal<any[]>([]);
   quarries = signal<any[]>([]);
   readonly quarryPick = this.picker.bind('quarries', this.quarries);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newVehicle(text: string): void {
+    this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.tripForm.get('vehicle.id')?.setValue(rec.id); });
+  }
+  newDriver(text: string): void {
+    this.quick.start('driver', text, rec => { PickerService.merge(this.drivers, [rec]); this.tripForm.get('driver.id')?.setValue(rec.id); });
+  }
+
   loadingLocations = signal<LoadingLocation[]>([]);
   readonly today = new Date().toISOString().slice(0, 10);
 

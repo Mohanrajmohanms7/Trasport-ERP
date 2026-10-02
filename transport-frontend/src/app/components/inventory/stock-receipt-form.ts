@@ -8,10 +8,11 @@ import { workOrderError } from '../../services/work-order.service';
 
 import { PickerService, activeOrSelected } from '../../services/picker.service';
 import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-stock-receipt-form',
   standalone: true,
-  imports: [FfDropdownComponent, CommonModule, FormsModule],
+  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule],
   templateUrl: './stock-receipt-form.html'
 })
 export class StockReceiptFormComponent implements OnInit {
@@ -26,6 +27,15 @@ export class StockReceiptFormComponent implements OnInit {
   parts = signal<SparePart[]>([]);
   readonly partPick = { search: (q: string) => this.picker.spareParts(q).subscribe(r => PickerService.merge(this.parts as any, r)), resolve: (_: unknown) => {} };
   suppliers = signal<{ id: number; code?: string; name?: string }[]>([]);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newPart(text: string): void {
+    this.quick.start('sparePart', text, rec => { PickerService.merge(this.parts as any, [rec]); this.sparePartId.set(String(rec.id)); this.refreshCurrent(); });
+  }
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers as any, [rec]); this.supplierId.set(String(rec.id)); });
+  }
+
   readonly supplierPick = this.picker.bind('suppliers', this.suppliers as any);
   warehouseId = signal('');
   sparePartId = signal('');

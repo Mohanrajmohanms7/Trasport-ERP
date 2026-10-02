@@ -16,10 +16,11 @@ type Tab = 'bills' | 'payments';
  */
 import { PickerService, activeOrSelected } from '../../services/picker.service';
 import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-payables-console',
   standalone: true,
-  imports: [FfDropdownComponent, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
+  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {
@@ -38,6 +39,11 @@ export class PayablesConsoleComponent implements OnInit {
   tab = signal<Tab>('bills');
   suppliers = signal<any[]>([]);
   readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers as any, [rec]); this.bill.supplierId = String(rec.id); this.onSupplierForBill(); });
+  }
   vehicles = signal<any[]>([]);
   readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   bills = signal<any[]>([]);

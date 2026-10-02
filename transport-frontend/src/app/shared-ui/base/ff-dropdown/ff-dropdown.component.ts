@@ -56,6 +56,21 @@ export class FfDropdownComponent extends FfControlBase<unknown> {
    * first page) so the caller can load it and the field shows its name instead of blank. Optional.
    */
   readonly resolveMissing = input<((value: unknown) => void) | null>(null);
+  /**
+   * Quick Create: when set (e.g. "+ Create new customer"), the panel shows a create button; clicking it closes the
+   * panel and emits the typed text so the screen can open its create popup pre-filled. Only set it for users who may
+   * create that record.
+   */
+  readonly createLabel = input<string | null>(null);
+  readonly ffCreate = output<string>();
+
+  requestCreate(event: Event): void {
+    event.stopPropagation();
+    const text = this.query().trim();
+    this.closePanel();
+    this.ffCreate.emit(text);
+  }
+
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly askedFor = new Set<unknown>();
   private readonly missingValueWatch = effect(() => {

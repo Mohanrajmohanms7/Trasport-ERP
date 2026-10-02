@@ -18,10 +18,11 @@ import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
 import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-booking-details-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -123,6 +124,12 @@ export class BookingDetailsConsoleComponent implements OnInit {
   private legacyUnits = signal<OrderUnit[]>([]);
   customers = signal<any[]>([]);
   readonly customerPick = this.picker.bind('customers', this.customers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCustomer(text: string): void {
+    this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.bookingForm.get('customer.id')?.setValue(rec.id); });
+  }
+
   materials = signal<any[]>([]);
   readonly materialPick = this.picker.bind('materials', this.materials);
   sites = signal<any[]>([]);

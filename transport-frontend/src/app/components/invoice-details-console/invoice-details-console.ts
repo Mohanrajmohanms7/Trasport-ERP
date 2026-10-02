@@ -20,10 +20,11 @@ import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
 import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-invoice-details-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -102,6 +103,12 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   readyTrips = signal<any[]>([]);
   customers = signal<any[]>([]);
   readonly customerPick = this.picker.bind('customers', this.customers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCustomer(text: string): void {
+    this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.invoiceForm.get('customer.id')?.setValue(rec.id); });
+  }
+
   trips = signal<any[]>([]);
   readonly tripPick = this.picker.bindTrips(this.trips, true);
   materials = signal<any[]>([]);
