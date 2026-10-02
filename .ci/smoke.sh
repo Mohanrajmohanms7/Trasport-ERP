@@ -709,5 +709,67 @@ R2=$(curl -s -H "Authorization: Bearer $NT" $API/uoms/order-units); [ "$(UC "$R2
 R=$(curl -s -H "Authorization: Bearer $PT" "$API/report-hub/run/booking-register?from=$(date -d '-90 day' +%F)&to=$(date +%F)")
 echo "$R" | j "'ok' if d['data']['rows'] and all(r.get('uom') for r in d['data']['rows']) else 'no'" | grep -q ok && pass "booking register: every line has a unit" || fail "booking register unit" "$(echo $R | cut -c1-200)"
 
+# ---------------- Family Expenses add-on (V77, docs/FAMILY_EXPENSES.md) ----------------
+C1=$($PSQL "SELECT company_id FROM app_users WHERE username='ca1'")
+# Switch one client feature on/off without touching its other settings (the save replaces the whole client map).
+setfx() { # $1 company  $2 feature code  $3 true|false
+  curl -s "${H[@]}" $API/platform-admin/companies/$1/features | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']; m={f['code']: (f['override'] if f['override'] is not None else f['plan']) for f in d['features']}; m['$2']=$3; print(json.dumps({'features': m}))" > /tmp/fx.json
+  curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$1/features -d @/tmp/fx.json > /dev/null; }
+FX() { curl -s -X $1 -H "Authorization: Bearer $TC" -H 'Content-Type: application/json' "$API/family-expenses$2" ${3:+-d "$3"}; }
+C=$(as $TC GET /family-expenses); grep -q FEATURE_DISABLED /tmp/r.json && [ "$C" = "403" ] && pass "family expenses are OFF by default (add-on)" || fail "fx default off" "$C $(head -c 150 /tmp/r.json)"
+curl -s -H "Authorization: Bearer $TC" $API/auth/features | j "'family-expenses' in d['data']['disabled']" | grep -q True && pass "menu hides Family Expenses until enabled" || fail "fx menu hidden" "x"
+JV0=$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE company_id=$C1"); EX0=$($PSQL "SELECT COUNT(*) FROM expenses WHERE company_id=$C1")
+DB0=$(curl -s -H "Authorization: Bearer $TC" $API/dashboard/admin | j "str(d['data'].get('expense'))+'/'+str(d['data'].get('todayExpenses'))")
+setfx $C1 family-expenses true
+R=$(FX GET /options); NC=$(echo "$R" | j "len(d['data']['categories'])"); NCR=$(echo "$R" | j "any(m['code']=='CREDIT' for m in d['data']['paymentModes'])")
+[ "$NC" = "10" ] && [ "$NCR" = "False" ] && pass "enabled: 10 starting categories, payment modes without Credit" || fail "fx options" "$NC $NCR"
+TD=$(date +%F)
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":4500,"paymentMode":"CASH","description":"Monthly groceries"}'); FX1=$(echo "$R" | j "d['data']['id']"); FXN=$(echo "$R" | j "d['data']['expenseNumber']")
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"EDUCATION","amount":8000,"paymentMode":"BANK_TRANSFER","description":"School fees","memberName":"Son"}'); FX2=$(echo "$R" | j "d['data']['id']")
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"MEDICAL","amount":2500,"paymentMode":"CASH","description":"Family medical expense"}'); FX3=$(echo "$R" | j "d['data']['id']")
+[[ "$FXN" == FX-* ]] && [ -n "$FX3" ] && pass "3 family expenses saved ($FXN …)" || fail "fx create" "$(echo $R | cut -c1-200)"
+R=$(FX GET /summary); S=$(echo "$R" | j "'%s/%s/%s/%s' % (float(d['data']['total']), float(d['data']['cash']), float(d['data']['bank']), d['data']['topCategory']['code'])")
+[ "$S" = "15000.0/7000.0/8000.0/EDUCATION" ] && pass "this month: total 15000, cash 7000, bank 8000, top Education" || fail "fx summary" "$S"
+R=$(FX POST "" '{"expenseDate":"'$(date -d '+1 day' +%F)'","category":"GROCERIES","amount":10,"paymentMode":"CASH"}'); echo "$R" | grep -q "future" && pass "future date refused" || fail "fx future" "$(echo $R | cut -c1-160)"
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":0,"paymentMode":"CASH"}'); echo "$R" | grep -q "more than" && pass "zero amount refused" || fail "fx zero" "$(echo $R | cut -c1-160)"
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":10,"paymentMode":"CREDIT"}'); echo "$R" | grep -q "payment mode" && pass "credit is not a family payment mode" || fail "fx credit" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /$FX3 '{"expenseDate":"'$TD'","category":"MEDICAL","amount":3000,"paymentMode":"UPI","description":"Medicines"}'); [ "$(echo "$R" | j "float(d['data']['amount'])")" = "3000.0" ] && pass "edit family expense" || fail "fx edit" "$(echo $R | cut -c1-160)"
+FX DELETE /$FX3 >/dev/null; R=$(FX GET "?from=$TD&to=$TD"); [ "$(echo "$R" | j "float(d['data']['totalAmount'])")" = "12500.0" ] && pass "delete family expense (list total 12500)" || fail "fx delete" "$(echo $R | cut -c1-160)"
+OK=1; for k in register daily monthly category mode yearly comparison; do R=$(FX GET "/reports/$k?from=$(date -d '-30 day' +%F)&to=$TD"); [ "$(echo "$R" | j "d['success'] and len(d['data']['rows'])>0")" = "True" ] || { OK=0; fail "fx report $k" "$(echo $R | cut -c1-160)"; }; done
+[ "$OK" = "1" ] && pass "7 family reports return data"
+R=$(FX GET "/reports/comparison"); [ "$(echo "$R" | j "len(d['data']['columns'])")" = "14" ] && pass "category comparison has 12 months + total" || fail "fx comparison" "$(echo $R | cut -c1-160)"
+CT=$(curl -s -o /tmp/fx.xlsx -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/family-expenses/export/category?format=xlsx"); [ "$CT" = "200" ] && [ "$(head -c 2 /tmp/fx.xlsx)" = "PK" ] && pass "family report Excel" || fail "fx xlsx" "$CT"
+CT=$(curl -s -o /tmp/fx.pdf -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/family-expenses/export/register?format=pdf"); [ "$CT" = "200" ] && [ "$(head -c 4 /tmp/fx.pdf)" = "%PDF" ] && pass "family list PDF" || fail "fx pdf" "$CT"
+# completely separate from the business
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE company_id=$C1")" = "$JV0" ] && [ "$($PSQL "SELECT COUNT(*) FROM expenses WHERE company_id=$C1")" = "$EX0" ] && pass "no journal entry and no business expense created" || fail "fx separation" "jv/expenses changed"
+DB1=$(curl -s -H "Authorization: Bearer $TC" $API/dashboard/admin | j "str(d['data'].get('expense'))+'/'+str(d['data'].get('todayExpenses'))"); [ "$DB1" = "$DB0" ] && pass "business dashboard expense figures unchanged" || fail "fx dashboard" "$DB0 -> $DB1"
+R=$(curl -s -H "Authorization: Bearer $TC" "$API/report-hub/run/expense-register?from=$TD&to=$TD"); echo "$R" | grep -q "Monthly groceries" && fail "fx in business report" "found" || pass "family expenses not in business expense report"
+# privacy: admins of this company only
+C=$(as $TO GET /family-expenses); [ "$C" = "403" ] && pass "operator cannot open family expenses (403)" || fail "fx operator" "$C"
+C=$(as $TOKEN GET /family-expenses); [ "$C" = "403" ] && pass "platform admin cannot read a client's family expenses (403)" || fail "fx platform" "$C"
+setfx $NCID family-expenses true
+C=$(as $NT GET /family-expenses/$FX1); [ "$C" = "403" ] && pass "another company cannot open this family expense (403)" || fail "fx cross tenant" "$C $(head -c 120 /tmp/r.json)"
+[ "$(curl -s -H "Authorization: Bearer $NT" $API/family-expenses | j "d['data']['totalElements']")" = "0" ] && pass "another company sees only its own (none)" || fail "fx other list" "x"
+setfx $NCID family-expenses false
+printf '%%PDF-1.4 bill' > /tmp/bill.pdf
+C=$(curl -s -o /tmp/r.json -w "%{http_code}" -H "Authorization: Bearer $TC" -F entityType=FAMILY_EXPENSE -F entityId=$FX1 -F category=BILL -F "file=@/tmp/bill.pdf;type=application/pdf" $API/attachments); [ "$C" = "200" ] && pass "bill attached to family expense" || fail "fx attach" "$C $(head -c 150 /tmp/r.json)"
+C=$(as $TO GET "/attachments?entityType=FAMILY_EXPENSE&entityId=$FX1"); [ "$C" = "403" ] && pass "operator cannot see family bills (403)" || fail "fx attach privacy" "$C"
+# categories
+R=$(FX POST /categories '{"name":"Festival"}'); FC=$(echo "$R" | j "[c['id'] for c in d['data'] if c['name']=='Festival'][0]"); [ -n "$FC" ] && pass "category added (Festival)" || fail "fx add cat" "$(echo $R | cut -c1-160)"
+GC=$(FX GET /categories | j "[c['id'] for c in d['data'] if c['code']=='GROCERIES'][0]")
+R=$(FX DELETE /categories/$GC); echo "$R" | grep -q "Category In Use" && pass "used category cannot be deleted" || fail "fx del used cat" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /categories/$GC '{"status":"INACTIVE"}'); R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":10,"paymentMode":"CASH"}'); echo "$R" | grep -q "active category" && pass "inactive category not offered for new entries" || fail "fx inactive cat" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /$FX1 '{"expenseDate":"'$TD'","category":"GROCERIES","amount":4600,"paymentMode":"CASH"}'); [ "$(echo "$R" | j "d['data']['categoryName']")" = "Food / Groceries" ] && pass "old entry keeps its inactive category on edit" || fail "fx keep cat" "$(echo $R | cut -c1-160)"
+FX PUT /categories/$GC '{"status":"ACTIVE"}' >/dev/null
+R=$(FX DELETE /categories/$FC); echo "$R" | j "d['success']" | grep -q True && pass "unused category deleted" || fail "fx del cat" "$(echo $R | cut -c1-160)"
+# per-client actions, then module off: data kept, API blocked
+setfx $C1 family-expenses.delete false
+C=$(as $TC DELETE /family-expenses/$FX2); grep -q FEATURE_DISABLED /tmp/r.json && [ "$C" = "403" ] && pass "Delete action switched off for the client" || fail "fx delete off" "$C"
+setfx $C1 family-expenses.delete true
+setfx $C1 family-expenses false
+C=$(as $TC GET /family-expenses); [ "$C" = "403" ] && [ "$($PSQL "SELECT COUNT(*) FROM family_expenses WHERE company_id=$C1 AND is_deleted=false")" = "2" ] && pass "module off again: API blocked, entries kept" || fail "fx off" "$C"
+setfx $C1 family-expenses true
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

@@ -47,7 +47,8 @@ public class FeatureAccessService {
     private boolean isOn(FeatureCatalog.Feature f, Map<String, Boolean> settings) {
         for (FeatureCatalog.Feature x = f; x != null; x = x.parent() == null ? null : FeatureCatalog.get(x.parent())) {
             if (x.core()) continue;
-            if (Boolean.FALSE.equals(settings.get(x.code()))) return false;
+            Boolean v = settings.get(x.code());
+            if (!(v != null ? v : FeatureCatalog.defaultOn(x.code()))) return false;
         }
         return true;
     }
@@ -104,6 +105,7 @@ public class FeatureAccessService {
             m.put("description", f.description());
             m.put("kind", f.kind().name());
             m.put("core", f.core());
+            m.put("defaultOn", FeatureCatalog.defaultOn(f.code()));
             m.put("routes", f.routes());
             m.put("tabKey", f.tabKey());
             out.add(m);
@@ -122,7 +124,7 @@ public class FeatureAccessService {
         for (FeatureCatalog.Feature f : FeatureCatalog.all()) {
             Map<String, Object> r = new LinkedHashMap<>();
             r.put("code", f.code());
-            r.put("plan", plan.getOrDefault(f.code(), true));
+            r.put("plan", plan.getOrDefault(f.code(), FeatureCatalog.defaultOn(f.code())));
             r.put("override", overrides.get(f.code()));
             r.put("effective", !disabled.contains(f.code()));
             rows.add(r);
@@ -138,7 +140,7 @@ public class FeatureAccessService {
         Map<String, Boolean> plan = planSettings(planId);
         List<Map<String, Object>> rows = new ArrayList<>();
         for (FeatureCatalog.Feature f : FeatureCatalog.all()) {
-            rows.add(Map.of("code", f.code(), "enabled", plan.getOrDefault(f.code(), true)));
+            rows.add(Map.of("code", f.code(), "enabled", plan.getOrDefault(f.code(), FeatureCatalog.defaultOn(f.code()))));
         }
         return Map.of("planId", planId, "features", rows);
     }
@@ -155,7 +157,7 @@ public class FeatureAccessService {
         for (Map.Entry<String, Boolean> e : requested.entrySet()) {
             FeatureCatalog.Feature f = FeatureCatalog.get(e.getKey());
             if (f.core() || e.getValue() == null) continue;
-            boolean planValue = plan.getOrDefault(e.getKey(), true);
+            boolean planValue = plan.getOrDefault(e.getKey(), FeatureCatalog.defaultOn(e.getKey()));
             if (e.getValue() == planValue) continue;
             jdbc.update("INSERT INTO company_features (company_id, feature_code, enabled, updated_by, updated_date) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
                     companyId, e.getKey(), e.getValue(), username);
@@ -177,9 +179,10 @@ public class FeatureAccessService {
         jdbc.update("DELETE FROM plan_features WHERE plan_id = ?", planId);
         for (Map.Entry<String, Boolean> e : requested.entrySet()) {
             FeatureCatalog.Feature f = FeatureCatalog.get(e.getKey());
-            if (f.core() || e.getValue() == null || Boolean.TRUE.equals(e.getValue())) continue;   // only store what is OFF
-            jdbc.update("INSERT INTO plan_features (plan_id, feature_code, enabled, updated_by, updated_date) VALUES (?, ?, false, ?, CURRENT_TIMESTAMP)",
-                    planId, e.getKey(), username);
+            // Only store what differs from the default (OFF for normal features, ON for opt-in add-ons).
+            if (f.core() || e.getValue() == null || e.getValue() == FeatureCatalog.defaultOn(e.getKey())) continue;
+            jdbc.update("INSERT INTO plan_features (plan_id, feature_code, enabled, updated_by, updated_date) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                    planId, e.getKey(), e.getValue(), username);
         }
         cache.clear();
         return planView(planId);

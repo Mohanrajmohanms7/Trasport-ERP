@@ -4,7 +4,7 @@ TransaFlow is a multi-tenant SaaS **transport ERP for quarry-to-site haulage** (
 trips with weighbridge weights, fuel, expenses, GST invoicing, receipts, driver daily-slab payroll, maintenance, spare-parts
 stock, supplier payables, accounts and 40 reports. First live client: **PKC Transport, Perambalur** (single Company Admin login).
 
-This file is the up-to-date summary (updated with order units of measure, migration **V76**). Older baseline docs from before
+This file is the up-to-date summary (updated with the Family Expenses add-on, migration **V77**). Older baseline docs from before
 2026-09-22 (`AI_PROJECT_CONTEXT.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `DEVELOPMENT_RULES.md`, the lower-case module
 notes) are still useful background, but **where they disagree with this file or the newer docs listed below, this file wins.**
 
@@ -15,7 +15,7 @@ notes) are still useful background, but **where they disagree with this file or 
 | Part | Tech | Path |
 |---|---|---|
 | Backend | Spring Boot 3.4 / Java 17, Spring Security (JWT), JPA/Hibernate, Flyway, Apache POI, OpenPDF | `transport-backend/` (`com.transport.erp`: `controller`, `service`, `repository`, `model`, `dto`, `security`, `config`, `util`, `exception`) |
-| Database | PostgreSQL 16, Flyway migrations `V1…V76` | `transport-backend/src/main/resources/db/migration` |
+| Database | PostgreSQL 16, Flyway migrations `V1…V77` | `transport-backend/src/main/resources/db/migration` |
 | Frontend | Angular 20 standalone components + signals, Tailwind, Angular Material, IBM Plex Sans | `transport-frontend/src/app` (`components/`, `shared/`, `shared-ui/`, `services/`, `layout/`, `guards/`, `interceptors/`) |
 | Help / brand | Static user guide pages, logo | `transport-frontend/public/help`, `public/brand` |
 | Tools | Demo data loader, report catalog generator/tester | `tools/demo`, `tools/reports` |
@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V77__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V78__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -63,6 +63,10 @@ Access denied must surface as HTTP 403 (controllers re-throw `AccessDeniedExcept
 unit, an invoice line its trip line's unit; nothing is converted. Which units a client may use + the default:
 `company_uoms` via `OrderUomService` (PKC: Unit only). Company admin: UOM Master tab → Order units; platform admin:
 Feature Access → per client. See `docs/UNITS_OF_MEASURE.md`.
+
+**Family Expenses add-on (V77).** Opt-in feature `family-expenses` (off unless Platform Admin switches it on per client /
+plan — `FeatureCatalog.OPT_IN`). Own table and API, company admins only, no accounting or business-report effect.
+See `docs/FAMILY_EXPENSES.md`.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
@@ -124,6 +128,7 @@ at first login (admin-chosen onboarding passwords are not forced).
 | Branch Master, Supplier Master, Dropdown Lists | `components/branch-master`, `supplier-master`, `master-management` (dropdowns) |
 | Subscription notice, tenant brand | `AuthService.subscriptionInfo / tenantBrand`, `layout/app-shell` |
 | PKC demo data | `tools/demo/seed_pkc_demo.py` (API-based; run once per environment; quantities in Units) |
+| Family Expenses (add-on) | `service/FamilyExpenseService`, `controller/FamilyExpenseController`, `components/family-expenses` — `docs/FAMILY_EXPENSES.md` |
 | Order units of measure | `service/OrderUomService`, `model/CompanyUom`, `/api/v1/uoms/order-units` + `/order-settings`, `shared/order-units`, `shared/uom-label.ts` — `docs/UNITS_OF_MEASURE.md` |
 
 ## 6. Open items / next steps
