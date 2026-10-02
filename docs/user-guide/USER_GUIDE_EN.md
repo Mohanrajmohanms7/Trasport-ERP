@@ -203,6 +203,9 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 Click **Plan Dispatch Trip** and enter:
 - **Booking\*** (only approved bookings are listed), **Trip date\*** (not future, not before the booking date),
 - **Vehicle** and **Driver** (needed before dispatch), **Quarry** and **Loading point**,
+- Selecting the **booking** fills the form from it: customer, delivery site, booking remarks and one line per booking
+  material that still has quantity left. Each line shows *Booked · On other trips · Remaining* and the rate; tap
+  **Use 6 Unit** to plan the whole remaining quantity, or type the lorry's quantity. Only the booking's materials can be chosen.
 - Material line(s): **Material\*** (must be on the booking) and **Quantity\*** (e.g. 2). The unit is always the
   booking's unit (e.g. *Planned Qty (Unit)*) — it cannot be changed on the trip.
 

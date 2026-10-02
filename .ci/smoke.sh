@@ -771,5 +771,25 @@ setfx $C1 family-expenses false
 C=$(as $TC GET /family-expenses); [ "$C" = "403" ] && [ "$($PSQL "SELECT COUNT(*) FROM family_expenses WHERE company_id=$C1 AND is_deleted=false")" = "2" ] && pass "module off again: API blocked, entries kept" || fail "fx off" "$C"
 setfx $C1 family-expenses true
 
+# ---------------- Booking -> trip auto-fill: booking balance for the trip form ----------------
+BAL() { curl -s -H "Authorization: Bearer $TC" "$API/trips/booking-balance/$1${2:+?excludeTripId=$2}"; }
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":10,"rate":4300,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+ABK=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); [ "$(echo "$R" | j "d['data']['canPlanTrips']")" = "False" ] && pass "pending booking: balance says trips cannot be planned yet" || fail "balance pending" "$(echo $R | cut -c1-200)"
+api POST /bookings/$ABK/approve >/dev/null
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s|%s|%s|%s' % (float(l['booked']), float(l['moved']), float(l['remaining']), l['uom']['label'], bool(d['data']['customer']['name'])))(d['data']['lines'][0])")
+[ "$V" = "10.0|0.0|10.0|Unit|True" ] && pass "balance auto-fill data: customer, material, 10 Unit booked, 10 remaining" || fail "balance fresh" "$V $(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":4}]}'); AT1=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s' % (float(l['moved']), float(l['remaining'])))(d['data']['lines'][0])")
+[ "$V" = "4.0|6.0" ] && pass "after a 4 Unit trip: 4 on other trips, 6 remaining" || fail "balance after trip" "$V"
+R=$(BAL $ABK $AT1); [ "$(echo "$R" | j "float(d['data']['lines'][0]['remaining'])")" = "10.0" ] && pass "editing that trip does not count its own quantity" || fail "balance exclude" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":7}]}')
+echo "$R" | grep -q "Only 6.00 Unit left" && pass "save check agrees with the balance (7 > 6 refused)" || fail "balance vs save" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":6}]}'); AT2=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); [ "$(echo "$R" | j "'%s|%s' % (float(d['data']['lines'][0]['remaining']), d['data']['anythingLeft'])")" = "0.0|False" ] && pass "remaining 6 accepted; booking fully planned (nothing left)" || fail "balance full" "$(echo $R | cut -c1-200)"
+api DELETE /trips/$AT2 >/dev/null; R=$(BAL $ABK); [ "$(echo "$R" | j "float(d['data']['lines'][0]['remaining'])")" = "6.0" ] && pass "deleted trip frees its quantity again" || fail "balance after delete" "$(echo $R | cut -c1-200)"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" "$API/trips/booking-balance/$ABK"); [ "$C" = "403" ] && pass "another company cannot read the booking balance (403)" || fail "balance tenant" "$C"
+R=$(curl -s -H "Authorization: Bearer $TC" "$API/bookings?companyId=1&status=APPROVED&size=1000"); echo "$R" | j "'ok' if d['data']['content'] and all(b['status']=='APPROVED' for b in d['data']['content']) else 'no'" | grep -q ok && pass "trip form booking list: approved bookings only" || fail "approved list" "$(echo $R | cut -c1-150)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

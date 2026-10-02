@@ -394,19 +394,12 @@ public class TripService {
             thisTripQty.merge(bd.getMaterial().getId(), d.getBillableQuantity(), BigDecimal::add);
         }
 
-        BigDecimal tolerancePct = settingService.getByKey("BOOKING_QTY_TOLERANCE_PERCENT", booking.getCompanyId())
-                .map(s -> {
-                    try { return new BigDecimal(s.getValueData().trim()); } catch (Exception e) { return BigDecimal.ZERO; }
-                }).orElse(BigDecimal.ZERO);
-
-        Map<Long, BigDecimal> alreadyMoved = new HashMap<>();
-        for (Object[] row : tripRepository.sumQuantityByMaterialForBooking(booking.getId(), excludeTripId != null ? excludeTripId : -1L)) {
-            alreadyMoved.put((Long) row[0], (BigDecimal) row[1]);
-        }
+        BigDecimal tolerancePct = tolerancePercent(booking.getCompanyId());
+        Map<Long, BigDecimal> alreadyMoved = movedByMaterial(booking.getId(), excludeTripId);
 
         for (Map.Entry<Long, BigDecimal> e : thisTripQty.entrySet()) {
             BigDecimal booked = bookedQty.getOrDefault(e.getKey(), BigDecimal.ZERO);
-            BigDecimal allowed = booked.add(booked.multiply(tolerancePct).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+            BigDecimal allowed = allowedQuantity(booked, tolerancePct);
             BigDecimal moved = alreadyMoved.getOrDefault(e.getKey(), BigDecimal.ZERO);
             BigDecimal total = moved.add(e.getValue());
             if (total.compareTo(allowed) > 0) {
@@ -421,6 +414,109 @@ public class TripService {
                         "Reduce the trip quantity, increase the booking quantity, or set BOOKING_QTY_TOLERANCE_PERCENT in settings.");
             }
         }
+    }
+
+    /** BOOKING_QTY_TOLERANCE_PERCENT setting (default 0). */
+    private BigDecimal tolerancePercent(Long companyId) {
+        return settingService.getByKey("BOOKING_QTY_TOLERANCE_PERCENT", companyId)
+                .map(s -> {
+                    try { return new BigDecimal(s.getValueData().trim()); } catch (Exception e) { return BigDecimal.ZERO; }
+                }).orElse(BigDecimal.ZERO);
+    }
+
+    /** Booked quantity plus the tolerance, as used by the trip quantity check. */
+    private static BigDecimal allowedQuantity(BigDecimal booked, BigDecimal tolerancePct) {
+        return booked.add(booked.multiply(tolerancePct).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP));
+    }
+
+    /** Quantity already moved per material by the booking's other active trips (delivered if recorded, else planned). */
+    private Map<Long, BigDecimal> movedByMaterial(Long bookingId, Long excludeTripId) {
+        Map<Long, BigDecimal> moved = new HashMap<>();
+        for (Object[] row : tripRepository.sumQuantityByMaterialForBooking(bookingId, excludeTripId != null ? excludeTripId : -1L)) {
+            moved.put((Long) row[0], (BigDecimal) row[1]);
+        }
+        return moved;
+    }
+
+    /**
+     * What a new (or edited) trip can still take from a booking, per material — the same numbers the save check uses,
+     * so the trip screen can fill the form from the booking and warn before saving. Read-only.
+     * {@code excludeTripId}: the trip being edited (its own quantity is not counted as already moved).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getBookingTripBalance(Long bookingId, Long excludeTripId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .filter(b -> !Boolean.TRUE.equals(b.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
+        tenantAccess.assertOwned(booking.getCompanyId());
+
+        BigDecimal tolerancePct = tolerancePercent(booking.getCompanyId());
+        Map<Long, BigDecimal> moved = movedByMaterial(booking.getId(), excludeTripId);
+
+        // One row per material (a material is booked in one unit per booking; quantities of repeated lines add up).
+        Map<Long, BookingDetail> firstLine = new java.util.LinkedHashMap<>();
+        Map<Long, BigDecimal> booked = new HashMap<>();
+        for (BookingDetail bd : booking.getDetails()) {
+            if (bd.getMaterial() == null || Boolean.TRUE.equals(bd.getIsDeleted())) continue;
+            firstLine.putIfAbsent(bd.getMaterial().getId(), bd);
+            booked.merge(bd.getMaterial().getId(), nz(bd.getQuantity()), BigDecimal::add);
+        }
+
+        List<Map<String, Object>> lines = new ArrayList<>();
+        boolean anythingLeft = false;
+        for (Map.Entry<Long, BookingDetail> e : firstLine.entrySet()) {
+            BookingDetail bd = e.getValue();
+            BigDecimal bookedQty = booked.get(e.getKey());
+            BigDecimal allowed = allowedQuantity(bookedQty, tolerancePct);
+            BigDecimal movedQty = moved.getOrDefault(e.getKey(), BigDecimal.ZERO);
+            BigDecimal remaining = allowed.subtract(movedQty).max(BigDecimal.ZERO);
+            if (remaining.signum() > 0) anythingLeft = true;
+            Map<String, Object> line = new java.util.LinkedHashMap<>();
+            line.put("materialId", e.getKey());
+            line.put("materialName", bd.getMaterial().getName());
+            line.put("materialCode", bd.getMaterial().getCode());
+            if (bd.getUom() != null) {
+                Map<String, Object> u = new java.util.LinkedHashMap<>();
+                u.put("id", bd.getUom().getId());
+                u.put("code", bd.getUom().getCode());
+                u.put("symbol", bd.getUom().getSymbol());
+                u.put("label", OrderUomService.label(bd.getUom()));
+                line.put("uom", u);
+            }
+            line.put("booked", bookedQty);
+            line.put("allowed", allowed);
+            line.put("moved", movedQty);
+            line.put("remaining", remaining);
+            line.put("rate", nz(bd.getRate()));
+            line.put("transportRate", nz(bd.getTransportRate()));
+            line.put("royaltyRate", nz(bd.getRoyaltyRate()));
+            line.put("loadingCharge", nz(bd.getLoadingCharge()));
+            lines.add(line);
+        }
+
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("bookingId", booking.getId());
+        out.put("bookingNumber", booking.getBookingNumber());
+        out.put("bookingDate", booking.getBookingDate());
+        out.put("status", booking.getStatus());
+        out.put("priority", booking.getPriority());
+        out.put("remarks", booking.getRemarks());
+        if (booking.getCustomer() != null) {
+            out.put("customer", Map.of("id", booking.getCustomer().getId(),
+                    "name", booking.getCustomer().getName() == null ? "" : booking.getCustomer().getName()));
+        }
+        if (booking.getDeliverySite() != null) {
+            Map<String, Object> site = new java.util.LinkedHashMap<>();
+            site.put("id", booking.getDeliverySite().getId());
+            site.put("siteName", booking.getDeliverySite().getSiteName());
+            site.put("address", booking.getDeliverySite().getAddress());
+            out.put("deliverySite", site);
+        }
+        out.put("tolerancePercent", tolerancePct);
+        out.put("canPlanTrips", "APPROVED".equals(booking.getStatus()));
+        out.put("anythingLeft", anythingLeft);
+        out.put("lines", lines);
+        return out;
     }
 
     private static BigDecimal nz(BigDecimal v) {
