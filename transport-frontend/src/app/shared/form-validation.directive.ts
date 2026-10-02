@@ -93,7 +93,7 @@ export class FormValidationDirective implements OnInit, OnDestroy {
       clone.querySelectorAll('input, select, textarea, .ff-native-error, span.material-icons').forEach(n => n.remove());
       name = (clone.textContent || '').replace(/\*/g, '').replace(/\s+/g, ' ').trim();
     }
-    name = name || ctrl.getAttribute('aria-label') || ctrl.getAttribute('placeholder') || 'this field';
+    name = (name || ctrl.getAttribute('aria-label') || ctrl.getAttribute('placeholder') || 'this field').replace(/^(select|enter|choose)\s+/i, '');
     const empty = !ctrl.value || (ctrl.value + '').trim() === '';
     if (!empty) {
       if (ctrl.validity?.rangeUnderflow) return `${name} must be at least ${ctrl.min}`;

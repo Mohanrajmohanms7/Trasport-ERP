@@ -115,7 +115,8 @@ export abstract class FfControlBase<T = unknown> implements ControlValueAccessor
     const errors = this.controlErrors();
     const custom = this.errorMessages();
     if (errors?.['required'] && !custom['required']) {
-      const name = (this.displayLabel() || '').replace(/\*/g, '').trim();
+      // "Select Customer" → "Please select Customer" (no doubled verbs)
+      const name = (this.displayLabel() || '').replace(/\*/g, '').trim().replace(/^(select|enter|choose)\s+/i, '');
       return name ? `Please ${this.requiredVerb} ${name}` : `Please ${this.requiredVerb} a value`;
     }
     return ffResolveErrorMessage(errors, custom, FF_VALIDATION_MESSAGES);
