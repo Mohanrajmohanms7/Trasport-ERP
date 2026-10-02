@@ -209,8 +209,7 @@
 
   <!-- Centered Add/Edit Ledger Account Popup -->
   @if (showAccountEditor()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]"
-         (click)="showAccountEditor.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]">
       <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
@@ -245,7 +244,7 @@
 
           <div class="flex justify-end gap-2 px-6 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showAccountEditor.set(false)" />
-            <ff-button type="submit" label="Save Account" icon="save" variant="primary" [disabled]="accountForm.invalid" />
+            <ff-button type="submit" label="Save Account" icon="save" variant="primary" />
           </div>
         </form>
       </div>
@@ -254,8 +253,7 @@
 
   <!-- Centered Journal Entry Popup -->
   @if (showJournalEditor()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]"
-         (click)="showJournalEditor.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/50 dark:bg-black/60 backdrop-blur-[2px]">
       <div class="w-full max-w-4xl max-h-[92vh] overflow-visible rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col"
            (click)="$event.stopPropagation()">
 
@@ -288,7 +286,7 @@
 
           <div class="flex justify-end gap-2 px-6 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showJournalEditor.set(false)" />
-            <ff-button type="submit" label="Post Entry" icon="save" variant="primary" [disabled]="journalForm.invalid" />
+            <ff-button type="submit" label="Post Entry" icon="save" variant="primary" />
           </div>
         </form>
       </div>

@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -21,7 +22,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-material-quarry-console',
   standalone: true,
-  imports: [BulkUploadDialogComponent, ExportButtonsComponent, OrderUnitsPanelComponent, 
+  imports: [FormValidationDirective, BulkUploadDialogComponent, ExportButtonsComponent, OrderUnitsPanelComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

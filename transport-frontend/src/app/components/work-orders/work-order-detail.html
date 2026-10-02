@@ -40,7 +40,7 @@
         <h2 class="ops-card-title">Complete work order</h2>
         <div class="ops-form">
           <label class="ops-field span-all">What was done *
-            <textarea class="ops-input" rows="2" [ngModel]="completionNotes()" (ngModelChange)="completionNotes.set($event)" name="completionNotes" placeholder="e.g. Replaced front brake pads and oil filter"></textarea>
+            <textarea required class="ops-input" rows="2" [ngModel]="completionNotes()" (ngModelChange)="completionNotes.set($event)" name="completionNotes" placeholder="e.g. Replaced front brake pads and oil filter"></textarea>
           </label>
           <label class="ops-field">Actual cost to post (₹)
             <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="actualCost()" (ngModelChange)="actualCost.set($event)" name="actualCost" placeholder="Leave empty to not post" />
@@ -77,7 +77,7 @@
         }
         <div class="ops-form">
           <label class="ops-field span-all">Reason *
-            <textarea class="ops-input" rows="2" [ngModel]="cancellationReason()" (ngModelChange)="cancellationReason.set($event)" name="cancellationReason" placeholder="Why is this job cancelled?"></textarea>
+            <textarea required class="ops-input" rows="2" [ngModel]="cancellationReason()" (ngModelChange)="cancellationReason.set($event)" name="cancellationReason" placeholder="Why is this job cancelled?"></textarea>
           </label>
           <div class="ops-form-actions span-all">
             <button type="button" class="ops-btn" (click)="panel.set(null)">Keep work order</button>

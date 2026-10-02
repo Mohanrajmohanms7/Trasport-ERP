@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import {
 @Component({
   selector: 'app-maintenance-request-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
   templateUrl: './maintenance-request-form.html'
 })
 export class MaintenanceRequestFormComponent implements OnInit {

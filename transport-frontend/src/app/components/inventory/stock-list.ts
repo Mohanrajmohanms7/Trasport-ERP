@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -13,7 +14,7 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-stock-list',
   standalone: true,
-  imports: [BulkUploadDialogComponent, ExportButtonsComponent, CommonModule, FormsModule],
+  imports: [FormValidationDirective, BulkUploadDialogComponent, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './stock-list.html'
 })
 export class StockListComponent implements OnInit {

@@ -26,11 +26,11 @@
       <h2 class="ops-card-title">{{ editingId() ? 'Edit ' + code() : 'New spare part' }}</h2>
       <div class="ops-form">
         <label class="ops-field">Code *
-          <input class="ops-input" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" placeholder="e.g. FLT-OIL" [disabled]="!!editingId()" />
+          <input required class="ops-input" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" placeholder="e.g. FLT-OIL" [disabled]="!!editingId()" />
         </label>
-        <label class="ops-field">Name *<input class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="e.g. Oil filter" /></label>
+        <label class="ops-field">Name *<input required class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" placeholder="e.g. Oil filter" /></label>
         <label class="ops-field">Unit *
-          <select class="ops-input" [ngModel]="defaultUomId()" (ngModelChange)="defaultUomId.set($event)" name="uom">
+          <select required class="ops-input" [ngModel]="defaultUomId()" (ngModelChange)="defaultUomId.set($event)" name="uom">
             <option value="">Select unit…</option>
             @for (uom of uoms(); track uom.id) { <option [value]="uom.id">{{ uom.code }} — {{ uom.name }}</option> }
           </select>

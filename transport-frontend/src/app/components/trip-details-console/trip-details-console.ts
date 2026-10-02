@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -21,7 +22,7 @@ import { uomLabel, orderLineText } from '../../shared/uom-label';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-  imports: [ExportButtonsComponent, 
+  imports: [FormValidationDirective, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

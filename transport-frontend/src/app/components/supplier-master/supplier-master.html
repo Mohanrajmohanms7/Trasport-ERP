@@ -55,7 +55,7 @@
   </main>
 
   @if (showForm()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showForm.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form (ngSubmit)="save()" (click)="$event.stopPropagation()" class="w-full max-w-xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-bold">{{ form.id ? 'Edit supplier' : 'New supplier' }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-semibold text-[var(--ff-text-muted)]">
@@ -69,7 +69,7 @@
         </div>
         <div class="flex justify-end gap-2">
           <button type="button" class="h-10 px-4 rounded-lg border" (click)="showForm.set(false)">Close</button>
-          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold" [disabled]="!form.code || !form.name">Save</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold">Save</button>
         </div>
       </form>
     </div>

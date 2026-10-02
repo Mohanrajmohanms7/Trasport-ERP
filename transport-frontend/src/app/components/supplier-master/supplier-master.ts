@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -14,7 +15,7 @@ import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attach
 @Component({
   selector: 'app-supplier-master',
   standalone: true,
-  imports: [BulkUploadDialogComponent, CommonModule, FormsModule, RouterLink, ExportButtonsComponent, AttachmentsPanelComponent],
+  imports: [FormValidationDirective, BulkUploadDialogComponent, CommonModule, FormsModule, RouterLink, ExportButtonsComponent, AttachmentsPanelComponent],
   templateUrl: './supplier-master.html'
 })
 export class SupplierMasterComponent implements OnInit {

@@ -16,7 +16,7 @@ interface RowResult { rowNumber: number; values: Record<string, string>; errors:
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70" (click)="closed.emit()">
+    <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70">
       <div class="w-full max-w-6xl max-h-full flex flex-col rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] shadow-xl" (click)="$event.stopPropagation()" role="dialog" [attr.aria-label]="'Upload ' + title()">
         <header class="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--ff-border-divider)]">
           <div>

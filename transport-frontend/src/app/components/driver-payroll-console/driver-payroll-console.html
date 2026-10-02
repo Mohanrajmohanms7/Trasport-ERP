@@ -280,7 +280,7 @@
 
   <!-- ================= GENERATE / EDIT ================= -->
   @if (showGenerate()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showGenerate.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form [formGroup]="generateForm" (ngSubmit)="submitGenerate()" (click)="$event.stopPropagation()"
             class="w-full max-w-3xl max-h-full overflow-y-auto rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-5 flex flex-col gap-4">
         <h2 class="text-lg font-extrabold">{{ editingId() ? 'Edit Draft Payroll' : 'Generate Payroll' }}</h2>
@@ -324,7 +324,7 @@
 
   <!-- ================= PAY ================= -->
   @if (showPay()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showPay.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form [formGroup]="payForm" (ngSubmit)="submitPay()" (click)="$event.stopPropagation()"
             class="w-full max-w-md rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-extrabold">Pay Salary · ₹{{ selected()?.netSalaryPayable | number:'1.2-2' }}</h2>
@@ -341,7 +341,7 @@
 
   <!-- ================= ADVANCE ================= -->
   @if (showAdvance()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showAdvance.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form [formGroup]="advanceForm" (ngSubmit)="submitAdvance()" (click)="$event.stopPropagation()"
             class="w-full max-w-md rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-extrabold">Give Advance to Driver</h2>

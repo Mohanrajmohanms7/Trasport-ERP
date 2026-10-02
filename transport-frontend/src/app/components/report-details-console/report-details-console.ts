@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -15,7 +16,7 @@ import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfButtonCompon
 @Component({
   selector: 'app-report-details-console',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

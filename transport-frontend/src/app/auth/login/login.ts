@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -11,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, MatButtonModule, MatCardModule, MatInputModule, MatIconModule],
+  imports: [FormValidationDirective, CommonModule, ReactiveFormsModule, RouterModule, MatButtonModule, MatCardModule, MatInputModule, MatIconModule],
   templateUrl: './login.html',
   styles: []
 })

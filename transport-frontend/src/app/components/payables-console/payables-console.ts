@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -17,7 +18,7 @@ type Tab = 'bills' | 'payments';
 @Component({
   selector: 'app-payables-console',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
+  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {

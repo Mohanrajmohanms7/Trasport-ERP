@@ -17,6 +17,7 @@ import { FfSelectOption } from '../../infrastructure/models/ff-config.interface'
   ]
 })
 export class FfRadioComponent extends FfControlBase<unknown> {
+  protected override readonly requiredVerb = 'select' as const;
   readonly options = input<FfSelectOption[]>([]);
   readonly layout = input<'vertical' | 'horizontal'>('vertical');
 

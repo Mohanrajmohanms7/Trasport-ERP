@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { MasterService } from '../../services/master.service';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -11,7 +12,7 @@ import { WorkOrder, WorkOrderService, workOrderError } from '../../services/work
 @Component({
   selector: 'app-work-order-list',
   standalone: true,
-  imports: [ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-list.html'
 })
 export class WorkOrderListComponent implements OnInit {

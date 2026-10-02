@@ -24,6 +24,7 @@ import { FfSelectOption } from '../../infrastructure/models/ff-config.interface'
   ]
 })
 export class FfAutocompleteComponent extends FfControlBase<unknown> {
+  protected override readonly requiredVerb = 'select' as const;
   readonly options = input<FfSelectOption[]>([]);
   readonly displayWith = input<(value: unknown) => string>((v) => {
     const opt = this.options().find(o => o.value === v);

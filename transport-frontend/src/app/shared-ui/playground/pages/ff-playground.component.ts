@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -62,7 +63,7 @@ interface DemoDriver {
 @Component({
   selector: 'app-ff-playground',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     FfPageContainerComponent,

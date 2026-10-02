@@ -108,13 +108,18 @@ export abstract class FfControlBase<T = unknown> implements ControlValueAccessor
     () => this.touched() && !!this.controlErrors()
   );
 
-  readonly errorMessage = computed(() =>
-    ffResolveErrorMessage(
-      this.controlErrors(),
-      this.errorMessages(),
-      FF_VALIDATION_MESSAGES
-    )
-  );
+  /** "enter" for typed fields, "select" for pickers — used in "Please enter Vehicle Name" / "Please select Vehicle Type". */
+  protected readonly requiredVerb: 'enter' | 'select' | 'choose' = 'enter';
+
+  readonly errorMessage = computed(() => {
+    const errors = this.controlErrors();
+    const custom = this.errorMessages();
+    if (errors?.['required'] && !custom['required']) {
+      const name = (this.displayLabel() || '').replace(/\*/g, '').trim();
+      return name ? `Please ${this.requiredVerb} ${name}` : `Please ${this.requiredVerb} a value`;
+    }
+    return ffResolveErrorMessage(errors, custom, FF_VALIDATION_MESSAGES);
+  });
 
   readonly ruleEffects = computed(() => this.ruleService.evaluate(this.ruleId() || undefined));
 
@@ -158,6 +163,13 @@ export abstract class FfControlBase<T = unknown> implements ControlValueAccessor
       control.statusChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(syncFromControl);
+      // markAllAsTouched() on submit does not emit statusChanges — follow touched changes too, so errors appear.
+      (control as any).events
+        ?.pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((ev: any) => {
+          if (ev && 'touched' in ev) this.touched.set(!!ev.touched);
+          this.controlErrors.set(control.errors);
+        });
       control.valueChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(syncFromControl);

@@ -9,24 +9,24 @@
   }
 
   <form class="ops-card ops-form max-w-3xl" (ngSubmit)="save()">
-    <label class="ops-field">Warehouse
-      <select class="ops-input" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event); refreshCurrent()" name="warehouse">
+    <label class="ops-field">Warehouse *
+      <select required class="ops-input" [ngModel]="warehouseId()" (ngModelChange)="warehouseId.set($event); refreshCurrent()" name="warehouse">
       <option value="">Select…</option>
       @for (row of warehouses(); track row.id) {
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
     </label>
-    <label class="ops-field">Spare part
-      <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
+    <label class="ops-field">Spare part *
+      <select required class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
       <option value="">Select…</option>
       @for (part of parts(); track part.id) {
         <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
       }
     </select>
     </label>
-    <label class="ops-field">Quantity
-      <input type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />
+    <label class="ops-field">Quantity *
+      <input required type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />
     </label>
     <label class="ops-field">Unit cost (₹)
       <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Optional — values the stock in accounts" />

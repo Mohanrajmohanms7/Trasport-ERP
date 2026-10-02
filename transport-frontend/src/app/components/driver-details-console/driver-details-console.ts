@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
@@ -50,7 +51,7 @@ import { MaintenanceRequestService, maintenanceRequestError } from '../../servic
 @Component({
   selector: 'app-driver-details-console',
   standalone: true,
-  imports: [BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [FormValidationDirective, BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FfPageContainerComponent,

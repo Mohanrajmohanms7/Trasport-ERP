@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 @Component({
   selector: 'app-work-order-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-form.html'
 })
 export class WorkOrderFormComponent implements OnInit {

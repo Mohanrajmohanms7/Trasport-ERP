@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-branch-master',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
   templateUrl: './branch-master.html'
 })
 export class BranchMasterComponent implements OnInit {

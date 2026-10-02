@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -12,7 +13,7 @@ import { WorkOrder, WorkOrderLabourLine, WorkOrderPartLine, WorkOrderService, wo
 @Component({
   selector: 'app-work-order-detail',
   standalone: true,
-  imports: [AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-detail.html'
 })
 export class WorkOrderDetailComponent implements OnInit {
