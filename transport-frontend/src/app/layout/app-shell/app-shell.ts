@@ -359,6 +359,13 @@ export class AppShellComponent implements OnDestroy {
       ]
     },
     {
+      // Optional add-on (Platform Admin → Feature Access); admins only. Kept apart from business screens.
+      groupName: 'PERSONAL',
+      items: [
+        { label: 'Family Expenses', route: '/family-expenses', icon: 'family_restroom' }
+      ]
+    },
+    {
       groupName: 'REPORTS',
       items: [
         { label: 'Reports', route: '/reports', icon: 'assessment' },
@@ -430,7 +437,7 @@ export class AppShellComponent implements OnDestroy {
     const isAdmin = roles.some(r => r === 'COMPANY_ADMIN' || r === 'ADMIN');
     if (!isAdmin) {
       return groups
-        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin', '/lookup-values'].includes(i.route)) }))
+        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin', '/lookup-values', '/family-expenses'].includes(i.route)) }))
         .filter(g => g.items.length > 0);
     }
     return groups;
@@ -471,6 +478,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'opening-balance') return 'Opening Stock';
       if (segment === 'receipt') return 'Receive Stock';
       if (segment === 'expense-logs') return 'Expenses';
+      if (segment === 'family-expenses') return 'Family Expenses';
       if (segment === 'billing-invoices') return 'Invoices';
       if (segment === 'payment-logs') return 'Customer Receipts';
       if (segment === 'accounts-ledger') return 'Accounts';

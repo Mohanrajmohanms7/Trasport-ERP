@@ -378,6 +378,18 @@ Every list screen also has **Excel** and **PDF** buttons.
 
 ---
 
+## Family Expenses (optional) — *Personal → Family Expenses*
+**Purpose:** record the owner's family spending (groceries, school fees, medical …) **separately from the business**.
+It does not change cash, bank, accounts, profit, the dashboard or any business report.
+- Shown only if TransaFlow has switched it on for your company, and only to **Company Admin / Admin** logins.
+- **Add Expense** → **Date\*** (not future), **Category\***, **Amount\***, **Payment mode\*** (Cash, UPI, Bank …),
+  description, family member and reference (optional) → **Save**. Then attach the bill if you like.
+  Example: 02-10-2026 — Groceries — Monthly groceries — ₹4,500 — Cash.
+- The top cards show **this month**: total, cash, bank / UPI and the highest category. Filter by month, category or mode.
+- **Reports** tab: Daily, Monthly, Category-wise, Payment mode, Yearly (financial year), Category comparison by month,
+  All entries — each with **Excel** and **PDF**.
+- **Categories** tab: rename, add or make a category inactive. A category already used cannot be deleted — make it inactive.
+
 ## Common questions
 
 | Question | Answer |

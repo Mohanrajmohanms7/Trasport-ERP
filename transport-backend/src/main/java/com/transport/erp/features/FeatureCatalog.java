@@ -30,6 +30,12 @@ public final class FeatureCatalog {
 
     private static String currentGroup = "";
 
+    /**
+     * Optional add-ons: OFF unless the plan or the client switches them on (every other feature is ON unless switched off).
+     * Children (tabs / actions) of an add-on follow their module, so only the module code is listed.
+     */
+    private static final Set<String> OPT_IN = Set.of("family-expenses");
+
     private static ApiRule all(String p) { return new ApiRule(p, ALL); }
     private static ApiRule writes(String p) { return new ApiRule(p, WRITES); }
     private static ApiRule only(String p, String... m) { return new ApiRule(p, Set.of(m)); }
@@ -115,6 +121,17 @@ public final class FeatureCatalog {
         module("expenses", "Expenses", "Expense vouchers", false, "/expense-logs", all("/api/v1/expenses/**"), all("/api/v1/expenses"));
         crud("expenses", "/api/v1/expenses");
 
+        group("Personal");
+        // Optional add-on (off by default): owner's family expenses, kept apart from the business. docs/FAMILY_EXPENSES.md
+        module("family-expenses", "Family Expenses", "Owner's family / personal expenses, kept apart from the business (add-on, off by default)",
+                false, "/family-expenses", all("/api/v1/family-expenses/**"), all("/api/v1/family-expenses"));
+        crud("family-expenses", "/api/v1/family-expenses");
+        tab("family-expenses", "reports", "Reports", "Daily, monthly, category, payment mode, yearly, comparison",
+                only("/api/v1/family-expenses/reports/**", "GET"));
+        action("family-expenses", "export", "Export", "Excel / PDF", only("/api/v1/family-expenses/export/**", "GET"));
+        tab("family-expenses", "categories", "Categories", "Family expense categories",
+                writes("/api/v1/family-expenses/categories/**"), writes("/api/v1/family-expenses/categories"));
+
         group("Maintenance & Stores");
         module("maintenance-requests", "Maintenance Requests", "Problems reported by drivers / staff", false, "/maintenance-requests",
                 all("/api/v1/maintenance-requests/**"), all("/api/v1/maintenance-requests"));
@@ -188,6 +205,9 @@ public final class FeatureCatalog {
     public static Feature get(String code) { return BY_CODE.get(code); }
 
     public static boolean exists(String code) { return BY_CODE.containsKey(code); }
+
+    /** Value used when neither the plan nor the client has a setting: true, except for opt-in add-ons. */
+    public static boolean defaultOn(String code) { return !OPT_IN.contains(code); }
 
     /** Feature governing this request, or null when the request is not feature-controlled. Most specific pattern wins. */
     public static Feature match(String path, String method) {

@@ -63,7 +63,7 @@ Canonical context: `PROJECT_CONTEXT.md`, `BUSINESS_FLOW.md`, `ARCHITECTURE.md`, 
 
 ## Database
 
-1. **Next migration: V77+** (see `HANDOVER.md`) under `transport-backend/src/main/resources/db/migration/`.
+1. **Next migration: V78+** (see `HANDOVER.md`) under `transport-backend/src/main/resources/db/migration/`.
 2. Never edit old Flyway files on shared databases. Dev `repair-on-migrate` is not a license to rewrite history.
 3. Include full `BaseEntity` columns on new tables (`code`, `name`, `status`, tenant, audit, `is_deleted`, `version`).
 4. Use PostgreSQL types consistent with neighbors: `NUMERIC(12,2)` money, `TEXT` long strings, `VARCHAR` statuses.

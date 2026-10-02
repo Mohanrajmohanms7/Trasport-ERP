@@ -198,6 +198,36 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
   } catch (e) { console.log('UOM platform shot', e.message.slice(0, 160)); }
   await pc.close();
 }
+{ // FX_SHOTS: Family Expenses add-on (company admin of company 1; smoke switched it on)
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+  }, tenant);
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
+  try {
+    await pg.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/fx-list.png' });
+    await pg.locator('button:has-text("Add Expense")').first().click(); await pg.waitForTimeout(1000);
+    await pg.screenshot({ path: 'shots/fx-add.png' }); await pg.keyboard.press('Escape');
+    await pg.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+    await pg.locator('button:has-text("Reports")').first().click(); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/fx-reports.png' });
+    await pg.locator('button:has-text("Categories")').first().click(); await pg.waitForTimeout(1200);
+    await pg.screenshot({ path: 'shots/fx-categories.png' });
+  } catch (e) { console.log('FX shot', e.message.slice(0, 160)); }
+  await ctx.close();
+  const mc = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await mc.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+  }, tenant);
+  const mp = await mc.newPage();
+  await mp.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await mp.waitForTimeout(1500);
+  await mp.screenshot({ path: 'shots/fx-mobile.png' });
+  await mc.close();
+}
 const lg = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const lp = await lg.newPage();
 await lp.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
