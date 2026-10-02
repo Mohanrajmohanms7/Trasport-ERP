@@ -714,7 +714,7 @@ C1=$($PSQL "SELECT company_id FROM app_users WHERE username='ca1'")
 # Switch one client feature on/off without touching its other settings (the save replaces the whole client map).
 setfx() { # $1 company  $2 feature code  $3 true|false
   curl -s "${H[@]}" $API/platform-admin/companies/$1/features | python3 -c "
-import sys,json; d=json.load(sys.stdin)['data']; m={f['code']: (f['override'] if f['override'] is not None else f['plan']) for f in d['features']}; m['$2']=$3; print(json.dumps({'features': m}))" > /tmp/fx.json
+import sys,json; d=json.load(sys.stdin)['data']; m={f['code']: (f['override'] if f['override'] is not None else f['plan']) for f in d['features']}; m['$2']=('$3'=='true'); print(json.dumps({'features': m}))" > /tmp/fx.json
   curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$1/features -d @/tmp/fx.json > /dev/null; }
 FX() { curl -s -X $1 -H "Authorization: Bearer $TC" -H 'Content-Type: application/json' "$API/family-expenses$2" ${3:+-d "$3"}; }
 C=$(as $TC GET /family-expenses); grep -q FEATURE_DISABLED /tmp/r.json && [ "$C" = "403" ] && pass "family expenses are OFF by default (add-on)" || fail "fx default off" "$C $(head -c 150 /tmp/r.json)"
