@@ -1,4 +1,4 @@
-import { Component, OnChanges, inject, input, output, signal } from '@angular/core';
+import { Component, OnChanges, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -110,7 +110,8 @@ export class QuickCreateComponent implements OnChanges {
   uoms = signal<any[]>([]);
 
   title(): string { return LABEL[this.kind()]; }
-  prefillRecord(): any { return { name: this.prefill() || '', status: 'ACTIVE', ownerType: 'SELF', creditLimit: 0 }; }
+  /** Built once per prefill text: a new object on every change detection would re-run the form's ngOnChanges and wipe what the user typed. */
+  readonly prefillRecord = computed(() => ({ name: this.prefill() || '', status: 'ACTIVE', ownerType: 'SELF', creditLimit: 0 }));
 
   ngOnChanges(): void {
     this.f = { name: this.prefill() || '', defaultUomId: null, defaultRate: 0, reorderLevel: 0 };
