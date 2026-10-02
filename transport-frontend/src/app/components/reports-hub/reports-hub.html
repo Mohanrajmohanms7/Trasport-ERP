@@ -66,19 +66,19 @@
               <label class="rh-field">Branch<select class="rh-input" [(ngModel)]="f['branchId']"><option value="">All branches</option>@for (o of branches(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
             }
             @if (has('vehicle')) {
-              <label class="rh-field">Vehicle<select class="rh-input" [(ngModel)]="f['vehicleId']"><option value="">All vehicles</option>@for (o of vehicles(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+              <div class="rh-field">Vehicle<ff-dropdown [options]="opts(vehicles(), 'All vehicles')" emptyLabel="All vehicles" [(ngModel)]="f['vehicleId']" [clearable]="false" searchPlaceholder="Type to search…" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" /></div>
             }
             @if (has('driver')) {
-              <label class="rh-field">Driver<select class="rh-input" [(ngModel)]="f['driverId']"><option value="">All drivers</option>@for (o of drivers(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+              <div class="rh-field">Driver<ff-dropdown [options]="opts(drivers(), 'All drivers')" emptyLabel="All drivers" [(ngModel)]="f['driverId']" [clearable]="false" searchPlaceholder="Type to search…" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" /></div>
             }
             @if (has('customer')) {
-              <label class="rh-field">Customer<select class="rh-input" [(ngModel)]="f['customerId']"><option value="">All customers</option>@for (o of customers(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+              <div class="rh-field">Customer<ff-dropdown [options]="opts(customers(), 'All customers')" emptyLabel="All customers" [(ngModel)]="f['customerId']" [clearable]="false" searchPlaceholder="Type to search…" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" /></div>
             }
             @if (has('warehouse')) {
               <label class="rh-field">Warehouse<select class="rh-input" [(ngModel)]="f['warehouseId']"><option value="">All warehouses</option>@for (o of warehouses(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
             }
             @if (has('sparePart')) {
-              <label class="rh-field">Spare part<select class="rh-input" [(ngModel)]="f['sparePartId']"><option value="">All parts</option>@for (o of parts(); track o.id) {<option [value]="o.id">{{ o.label }}</option>}</select></label>
+              <div class="rh-field">Spare part<ff-dropdown [options]="opts(parts(), 'All parts')" emptyLabel="All parts" [(ngModel)]="f['sparePartId']" [clearable]="false" searchPlaceholder="Type to search…" [remoteSearch]="partPick.search" [resolveMissing]="partPick.resolve" /></div>
             }
             @if (has('status') && statusOptions().length) {
               <label class="rh-field">{{ r.key === 'sales-register' ? 'Payment status' : 'Status' }}<select class="rh-input" [(ngModel)]="f['status']"><option value="">All</option>@for (s of statusOptions(); track s) {<option [value]="s">{{ s.replace('_', ' ') | titlecase }}</option>}</select></label>

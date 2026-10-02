@@ -260,6 +260,8 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.locator('button:has-text("Register Booking")').first().click(); await typeIn('booking-customer', 'Sakthi');
     await pg.goto('http://localhost:4200/work-orders/new', { waitUntil: 'networkidle' }); await typeIn('workorder-vehicle', 'TN');
     await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');
+    await pg.goto('http://localhost:4200/reports?r=vehicle-performance', { waitUntil: 'networkidle' }); await typeIn('report-vehicle', 'TN46');
+    await pg.goto('http://localhost:4200/reports?r=booking-register', { waitUntil: 'networkidle' }); await typeIn('report-customer', 'Builders');
   } catch (e) { console.log('DD shot', e.message.slice(0, 160)); await pg.screenshot({ path: 'shots/dd-error.png' }); }
   await ctx.close();
 }
