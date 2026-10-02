@@ -384,7 +384,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div formGroupName="customer">
-                    <ff-dropdown formControlName="id" label="Select Customer Profile" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+                    <ff-dropdown formControlName="id" label="Select Customer Profile" [createLabel]="qc.label('customer')" (ffCreate)="newCustomer($event)" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
                   </div>
                   <div formGroupName="booking">
                     <ff-dropdown formControlName="id" label="Link Active Booking Request" [remoteSearch]="bookingPick.search" [resolveMissing]="bookingPick.resolve" [options]="bookingOptions" searchPlaceholder="Search options..." />
@@ -496,3 +496,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

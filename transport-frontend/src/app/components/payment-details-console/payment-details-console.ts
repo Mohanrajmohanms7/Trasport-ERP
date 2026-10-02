@@ -17,10 +17,11 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-payment-details-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -104,6 +105,12 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   ledgerEntries = signal<CustomerLedger[]>([]);
   customers = signal<any[]>([]);
   readonly customerPick = this.picker.bind('customers', this.customers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCustomer(text: string): void {
+    this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.receiptForm.get('customer.id')?.setValue(rec.id); });
+  }
+
   bookings = signal<any[]>([]);
   /** Booking link: only the chosen customer's bookings (server search), never another customer's. */
   readonly bookingPick = {

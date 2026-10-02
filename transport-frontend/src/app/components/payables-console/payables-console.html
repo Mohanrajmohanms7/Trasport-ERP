@@ -111,7 +111,7 @@
         <h2 class="text-lg font-bold">{{ bill.id ? 'Edit bill' : 'New supplier bill' }}</h2>
         <p class="text-xs text-[var(--ff-text-secondary)]">For workshop, tyre, fuel-pump or office bills received on credit. Parts bought into stock on credit are billed automatically from the stock receipt.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-semibold text-[var(--ff-text-muted)]">
-          <label class="flex flex-col gap-1">Supplier *<ff-dropdown [options]="supplierOpts" [(ngModel)]="bill.supplierId" name="supplierId" (ngModelChange)="onSupplierForBill()" [required]="true" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="Select…" searchPlaceholder="Type to search…" /></label>
+          <label class="flex flex-col gap-1">Supplier *<ff-dropdown [options]="supplierOpts" [(ngModel)]="bill.supplierId" [createLabel]="qc.label('supplier')" (ffCreate)="newSupplier($event)" name="supplierId" (ngModelChange)="onSupplierForBill()" [required]="true" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="Select…" searchPlaceholder="Type to search…" /></label>
           <label class="flex flex-col gap-1">Their bill no<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.supplierBillNo" name="sbn" /></label>
           <label class="flex flex-col gap-1">Bill date *<input type="date" required [max]="today" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.billDate" name="bd" (ngModelChange)="onSupplierForBill()" /></label>
           <label class="flex flex-col gap-1">Due date<input type="date" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.dueDate" name="dd" placeholder="From supplier credit days" /></label>
@@ -184,3 +184,7 @@
     </div>
   }
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

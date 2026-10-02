@@ -31,6 +31,11 @@ from setting up the company to sending invoices, collecting money, paying driver
 
 ---
 
+
+> **Tip — dropdowns.** Type in any customer, vehicle, driver, supplier or spare-part dropdown to search all records.
+> If it does not exist yet, click **+ Create "…"** at the bottom, fill the short form and **Save** — it is selected for you.
+> (Shown only if you are allowed to add that record.)
+
 ## Before you begin
 
 - **Signing in:** open the TransaFlow link, enter the **username** and **password** given by your administrator.

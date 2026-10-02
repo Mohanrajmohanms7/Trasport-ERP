@@ -16,10 +16,11 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-fuel-details-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -62,6 +63,15 @@ export class FuelDetailsConsoleComponent implements OnInit {
   readonly driverPick = this.picker.bind('drivers', this.drivers);
   trips = signal<any[]>([]);
   readonly tripPick = this.picker.bindTrips(this.trips, false);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newVehicle(text: string): void {
+    this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.entryForm.get('vehicle.id')?.setValue(rec.id); });
+  }
+  newDriver(text: string): void {
+    this.quick.start('driver', text, rec => { PickerService.merge(this.drivers, [rec]); this.entryForm.get('driver.id')?.setValue(rec.id); });
+  }
+
   paymentMethods = signal<any[]>([]);
 
   get vehicleOptions(): FfSelectOption[] {

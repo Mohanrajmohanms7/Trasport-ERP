@@ -190,10 +190,10 @@
           <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div formGroupName="vehicle">
-                <ff-dropdown formControlName="id" label="Select Vehicle" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Select Vehicle" [createLabel]="qc.label('vehicle')" (ffCreate)="newVehicle($event)" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="driver">
-                <ff-dropdown formControlName="id" label="Select Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Select Driver" [createLabel]="qc.label('driver')" (ffCreate)="newDriver($event)" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
             </div>
 
@@ -278,3 +278,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

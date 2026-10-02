@@ -170,10 +170,10 @@
                 <ff-dropdown formControlName="id" label="Select Approved Booking" [options]="bookingOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="vehicle">
-                <ff-dropdown formControlName="id" label="Allocate Vehicle" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Vehicle" [createLabel]="qc.label('vehicle')" (ffCreate)="newVehicle($event)" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="driver">
-                <ff-dropdown formControlName="id" label="Allocate Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Driver" [createLabel]="qc.label('driver')" (ffCreate)="newDriver($event)" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-datepicker formControlName="tripDate" label="Trip Date" [max]="today" [required]="true" />
               <div formGroupName="quarry">
@@ -289,3 +289,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
