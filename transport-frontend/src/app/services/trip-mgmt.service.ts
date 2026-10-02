@@ -2,6 +2,38 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export interface BookingTripBalanceLine {
+  materialId: number;
+  materialName: string;
+  materialCode?: string;
+  uom?: { id: number; code?: string; symbol?: string; label?: string } | null;
+  booked: number;
+  /** Booked + tolerance. */
+  allowed: number;
+  /** Already on the booking's other active trips (delivered if recorded, else planned). */
+  moved: number;
+  remaining: number;
+  rate: number;
+  transportRate: number;
+  royaltyRate: number;
+  loadingCharge: number;
+}
+
+export interface BookingTripBalance {
+  bookingId: number;
+  bookingNumber: string;
+  bookingDate?: string;
+  status: string;
+  priority?: string;
+  remarks?: string;
+  customer?: { id: number; name: string };
+  deliverySite?: { id: number; siteName?: string; address?: string };
+  tolerancePercent: number;
+  canPlanTrips: boolean;
+  anythingLeft: boolean;
+  lines: BookingTripBalanceLine[];
+}
+
 export interface TripDetail {
   id?: number;
   material: { id: number; name?: string };
@@ -51,6 +83,13 @@ export class TripMgmtService {
 
   getTrips(params?: any): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>('/api/v1/trips', { params });
+  }
+
+  /** Booking details for the trip form: customer, site and per-material booked / moved / remaining quantity. */
+  getBookingBalance(bookingId: number, excludeTripId?: number | null): Observable<ApiResponse<BookingTripBalance>> {
+    const params: any = {};
+    if (excludeTripId) params.excludeTripId = excludeTripId;
+    return this.http.get<ApiResponse<BookingTripBalance>>(`/api/v1/trips/booking-balance/${bookingId}`, { params });
   }
 
   getTripsReadyForBilling(params?: any): Observable<ApiResponse<any>> {

@@ -3,7 +3,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TripMgmtService, Trip, TripDetail } from '../../services/trip-mgmt.service';
+import { TripMgmtService, Trip, TripDetail, BookingTripBalance, BookingTripBalanceLine } from '../../services/trip-mgmt.service';
 import { InvoiceMgmtService } from '../../services/invoice-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { MaterialMgmtService, LoadingLocation } from '../../services/material-mgmt.service';
@@ -65,7 +65,7 @@ export class TripDetailsConsoleComponent implements OnInit {
     const currentBookingId = this.editingTrip()?.booking?.id;
     return [{ label: '-- Choose Booking Reference --', value: '' }, ...this.bookings()
       .filter(booking => booking.status === 'APPROVED' || booking.id === currentBookingId)
-      .map(booking => ({ label: [booking.bookingNumber || booking.code, booking.customer?.name].filter(Boolean).join(' — '), value: booking.id }))];
+      .map(booking => ({ label: [booking.bookingNumber || booking.code, booking.customer?.name, this.bookingOrderText(booking)].filter(Boolean).join(' — '), value: booking.id }))];
   }
   get vehicleOptions(): FfSelectOption[] {
     const currentVehicleId = this.editingTrip()?.vehicle?.id;
@@ -102,6 +102,8 @@ export class TripDetailsConsoleComponent implements OnInit {
     const booking = this.bookings().find(b => b.id === bookingId);
     const line = booking?.details?.find((d: any) => d.material?.id === matId && !d.isDeleted);
     if (line?.uom) return uomLabel(line.uom);
+    const bal = this.balance()?.lines.find(l => l.materialId === matId);
+    if (bal?.uom) return uomLabel(bal.uom);
     const saved = this.editingTrip()?.details?.find(d => d.material?.id === matId);
     return saved?.uom ? uomLabel(saved.uom) : '';
   }
@@ -119,7 +121,156 @@ export class TripDetailsConsoleComponent implements OnInit {
     return this.editingTrip()?.status === 'COMPLETED';
   }
   get materialOptions(): FfSelectOption[] {
+    const b = this.balance();
+    if (b) {
+      // Only the booking's materials (the server rejects any other material for this booking).
+      return [{ label: '-- Choose Material --', value: '' }, ...b.lines.map(l => ({ label: l.materialName, value: l.materialId }))];
+    }
     return [{ label: '-- Choose Material --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
+  }
+
+  // ---------------------------------------------------------------- booking → trip auto-fill
+
+  /** Booked / already moved / remaining per material of the selected booking (from the server, same as the save check). */
+  balance = signal<BookingTripBalance | null>(null);
+  balanceLoading = signal(false);
+  private lastBookingId: number | null = null;
+  private suppressBookingChange = false;
+
+  /** "10 Unit M-Sand, 5 Unit P-Sand" for the booking dropdown. */
+  private bookingOrderText(booking: any): string {
+    const lines = (booking?.details || []).filter((d: any) => !d.isDeleted);
+    const parts = lines.slice(0, 2).map((d: any) => orderLineText(d.quantity, d.uom, d.material?.name));
+    if (lines.length > 2) parts.push(`+${lines.length - 2} more`);
+    return parts.join(', ');
+  }
+
+  balanceLine(row: any): BookingTripBalanceLine | null {
+    const matId = Number(row.get('material.id')?.value);
+    return this.balance()?.lines.find(l => l.materialId === matId) ?? null;
+  }
+
+  /** Quantity this trip takes for a material (delivered if recorded, else planned) — same rule as the server. */
+  private tripQtyFor(materialId: number, exceptRow?: any): number {
+    let total = 0;
+    for (const r of this.detailsArray.controls) {
+      if (r === exceptRow || Number(r.get('material.id')?.value) !== materialId) continue;
+      const delivered = Number(r.get('deliveredQuantity')?.value);
+      const planned = Number(r.get('quantity')?.value);
+      total += delivered > 0 ? delivered : (planned > 0 ? planned : 0);
+    }
+    return total;
+  }
+
+  /** Remaining on the booking for this row after the trip's other rows of the same material. */
+  rowRemaining(row: any): number | null {
+    const line = this.balanceLine(row);
+    if (!line) return null;
+    return Math.max(0, Number(line.remaining) - this.tripQtyFor(line.materialId, row));
+  }
+
+  /** How much this trip is over the booking balance for the row's material (0 = fine). The server makes the final check. */
+  overBy(row: any): number {
+    const line = this.balanceLine(row);
+    if (!line) return 0;
+    const over = this.tripQtyFor(line.materialId) - Number(line.remaining);
+    return over > 0.0001 ? Math.round(over * 1000) / 1000 : 0;
+  }
+
+  canUseRemaining(row: any): boolean {
+    const rem = this.rowRemaining(row);
+    return rem !== null && rem > 0 && !row.get('quantity')?.disabled;
+  }
+
+  useRemaining(row: any): void {
+    const rem = this.rowRemaining(row);
+    if (rem !== null && rem > 0) {
+      row.get('quantity')?.setValue(Math.round(rem * 1000) / 1000);
+      row.get('quantity')?.markAsDirty();
+    }
+  }
+
+  private linesHaveInput(): boolean {
+    return this.detailsArray.controls.some(r => !!r.get('material.id')?.value || !!r.get('quantity')?.value
+      || !!r.get('loadedQuantity')?.value || !!r.get('deliveredQuantity')?.value);
+  }
+
+  /** New trip: selecting a booking loads its customer, site and materials (quantity left blank to enter per lorry). */
+  private onBookingChange(rawId: any): void {
+    if (this.suppressBookingChange || this.editingTrip()) return;
+    const id = Number(rawId) || null;
+    if (id === this.lastBookingId) return;
+    if (!id) {
+      this.lastBookingId = null;
+      this.balance.set(null);
+      return;
+    }
+    if (this.lastBookingId && this.linesHaveInput()) {
+      const previous = this.lastBookingId;
+      this.dialog.open(ConfirmationDialogComponent, {
+        data: {
+          title: 'Change Booking',
+          message: 'The material lines will be replaced with the materials of the newly selected booking. Continue?',
+          confirmText: 'Change booking',
+          type: 'warning'
+        }
+      }).afterClosed().subscribe(ok => {
+        if (ok) {
+          this.loadBookingIntoForm(id);
+        } else {
+          this.suppressBookingChange = true;
+          this.tripForm.get('booking.id')?.setValue(previous);
+          this.suppressBookingChange = false;
+        }
+      });
+      return;
+    }
+    this.loadBookingIntoForm(id);
+  }
+
+  private loadBookingIntoForm(id: number): void {
+    this.lastBookingId = id;
+    this.balance.set(null);
+    this.balanceLoading.set(true);
+    this.tripMgmtService.getBookingBalance(id).subscribe({
+      next: res => {
+        if (this.lastBookingId !== id) return;          // user picked another booking meanwhile
+        this.balanceLoading.set(false);
+        const b = res?.data;
+        if (!res?.success || !b) {
+          this.notify.error(res?.message || 'Could not load the booking details');
+          return;
+        }
+        this.balance.set(b);
+        while (this.detailsArray.length !== 0) this.detailsArray.removeAt(0);
+        for (const line of b.lines) {
+          if (Number(line.remaining) > 0) {
+            this.detailsArray.push(this.buildDetailRow({ material: { id: line.materialId }, quantity: null }));
+          }
+        }
+      },
+      error: err => {
+        if (this.lastBookingId !== id) return;
+        this.balanceLoading.set(false);
+        this.notify.error(this.tripError(err, 'Could not load the booking details'));
+      }
+    });
+  }
+
+  /** Editing: show the booking summary and balances, excluding this trip's own quantity. Lines are not touched. */
+  private loadBalanceForEdit(trip: Trip): void {
+    this.balance.set(null);
+    const bookingId = trip.booking?.id;
+    if (!bookingId) return;
+    this.balanceLoading.set(true);
+    this.tripMgmtService.getBookingBalance(bookingId, trip.id).subscribe({
+      next: res => {
+        if (this.editingTrip()?.id !== trip.id) return;
+        this.balanceLoading.set(false);
+        if (res?.success && res.data) this.balance.set(res.data);
+      },
+      error: () => { this.balanceLoading.set(false); }
+    });
   }
 
   // States
@@ -138,7 +289,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
 
   loadDropdownData() {
-    this.masterService.getMasters<any>('bookings', this.companyId, { size: 100 }).subscribe(res => {
+    this.masterService.getMasters<any>('bookings', this.companyId, { status: 'APPROVED', size: 1000 }).subscribe(res => {
       if (res.success && res.data) {
         this.bookings.set(res.data.content || res.data);
       }
@@ -187,6 +338,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       remarks: [''],
       details: this.fb.array([])
     });
+    this.tripForm.get('booking.id')?.valueChanges.subscribe(id => this.onBookingChange(id));
   }
 
   private buildDetailRow(d?: any) {
@@ -194,7 +346,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       material: this.fb.group({
         id: [d?.material?.id ?? '', Validators.required]
       }),
-      quantity: [d?.quantity ?? 1, [Validators.required, Validators.min(0.01)]],
+      quantity: [d && d.quantity !== undefined ? d.quantity : null, [Validators.required, Validators.min(0.01)]],
       loadedQuantity: [d?.loadedQuantity ?? null, Validators.min(0)],
       deliveredQuantity: [d?.deliveredQuantity ?? null, Validators.min(0)],
       rate: [d?.rate ?? 0],
@@ -237,8 +389,12 @@ export class TripDetailsConsoleComponent implements OnInit {
 
   openAddTrip() {
     this.editingTrip.set(null);
+    this.balance.set(null);
+    this.lastBookingId = null;
     this.tripForm.enable();
+    this.suppressBookingChange = true;
     this.tripForm.reset({ tripDate: this.today, quarry: { id: '' }, loadingLocation: { id: '' } });
+    this.suppressBookingChange = false;
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
     }
@@ -248,6 +404,12 @@ export class TripDetailsConsoleComponent implements OnInit {
 
   openEditTrip(trip: Trip) {
     this.editingTrip.set(trip);
+    this.lastBookingId = trip.booking?.id ?? null;
+    if (trip.booking?.id && !this.bookings().some(b => b.id === trip.booking!.id)) {
+      this.bookings.set([...this.bookings(), trip.booking]);
+    }
+    this.loadBalanceForEdit(trip);
+    this.suppressBookingChange = true;
     this.tripForm.patchValue({
       booking: { id: trip.booking?.id },
       vehicle: { id: trip.vehicle?.id },
@@ -257,6 +419,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       loadingLocation: { id: trip.loadingLocation?.id ?? '' },
       remarks: trip.remarks
     });
+    this.suppressBookingChange = false;
 
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
@@ -286,7 +449,17 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
 
   saveTrip() {
-    if (this.tripForm.invalid) return;
+    if (this.detailsArray.length === 0) {
+      this.notify.error(this.balance() && !this.balance()!.anythingLeft
+        ? 'Nothing is left to plan on this booking.'
+        : 'Add at least one material line to the trip.');
+      return;
+    }
+    if (this.tripForm.invalid) {
+      this.tripForm.markAllAsTouched();
+      this.notify.error('Fill the required fields — enter the planned quantity for each material.');
+      return;
+    }
 
     this.loading.set(true);
     const val = this.tripForm.getRawValue();

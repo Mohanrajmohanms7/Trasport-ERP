@@ -178,6 +178,15 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await shot('trip-list');
     await pg.locator('button[title*="Edit"], button:has-text("Edit")').first().click(); await shot('trip-edit');
+    await pg.keyboard.press('Escape');
+    // Booking -> trip auto-fill: new trip, pick the first approved booking
+    await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' });
+    await pg.locator('button:has-text("Plan Dispatch Trip")').first().click(); await pg.waitForTimeout(800);
+    await pg.locator('ff-dropdown').first().click(); await pg.waitForTimeout(500);
+    await pg.locator('[role="option"]:has-text("BKG")').first().click(); await pg.waitForTimeout(2000);
+    await shot('trip-autofill');
+    await pg.locator('button:has-text("Use ")').first().click().catch(() => {}); await shot('trip-autofill-use');
+    await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/billing-invoices', { waitUntil: 'networkidle' }); await shot('invoice-list');
     await pg.locator('text=Ready for billing').first().click().catch(() => {}); await shot('invoice-ready');
     await pg.goto('http://localhost:4200/materials-quarries', { waitUntil: 'networkidle' });

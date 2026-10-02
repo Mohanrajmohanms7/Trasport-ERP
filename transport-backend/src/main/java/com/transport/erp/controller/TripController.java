@@ -36,6 +36,16 @@ public class TripController {
         return ApiResponse.success(data, "Trips fetched successfully");
     }
 
+    /**
+     * Booking details for the trip form: customer, delivery site and, per material, booked / already moved / remaining
+     * quantity (same numbers as the save check). {@code excludeTripId} = the trip being edited.
+     */
+    @GetMapping("/booking-balance/{bookingId}")
+    public ApiResponse<java.util.Map<String, Object>> getBookingBalance(@PathVariable Long bookingId,
+                                                                        @RequestParam(required = false) Long excludeTripId) {
+        return ApiResponse.success(tripService.getBookingTripBalance(bookingId, excludeTripId), "Booking balance fetched");
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<Trip> getTripById(@PathVariable Long id) {
         Trip trip = tripService.getTripById(id);
