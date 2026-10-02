@@ -18,12 +18,7 @@
     </select>
     </label>
     <label class="ops-field">Spare part
-      <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
-      <option value="">Select…</option>
-      @for (part of parts(); track part.id) {
-        <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
-      }
-    </select>
+      <ff-dropdown [options]="partOpts" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event ?? ''); refreshCurrent()" name="part" [remoteSearch]="partPick.search" emptyLabel="Select…" searchPlaceholder="Type to search…" />
     </label>
     <label class="ops-field">Quantity
       <input type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />

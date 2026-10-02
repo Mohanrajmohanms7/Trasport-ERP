@@ -9,13 +9,17 @@ import { InventoryService, Warehouse, WarehouseStock } from '../../services/inve
 import { SparePart, SparePartService } from '../../services/spare-part.service';
 import { WorkOrder, WorkOrderLabourLine, WorkOrderPartLine, WorkOrderService, workOrderError } from '../../services/work-order.service';
 
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-work-order-detail',
   standalone: true,
-  imports: [AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
+  imports: [FfDropdownComponent, AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-detail.html'
 })
 export class WorkOrderDetailComponent implements OnInit {
+  private picker = inject(PickerService);
+  get partOpts(): FfSelectOption[] { return this.spareParts().map((p: any) => ({ label: [p.code, p.name].filter(Boolean).join(' — '), value: String(p.id) })); }
   /** Which action panel is open: complete, cancel or edit. */
   panel = signal<'complete' | 'cancel' | 'edit' | null>(null);
 
@@ -58,6 +62,7 @@ export class WorkOrderDetailComponent implements OnInit {
   cancellationReason = signal('');
 
   spareParts = signal<SparePart[]>([]);
+  readonly partPick = { search: (q: string) => this.picker.spareParts(q).subscribe(r => PickerService.merge(this.spareParts as any, r)), resolve: (_: unknown) => {} };
   people = signal<{ id: number; name: string }[]>([]);
   partSparePartId = signal('');
   partQuantity = signal('');
