@@ -69,7 +69,7 @@ plan — `FeatureCatalog.OPT_IN`). Own table and API, company admins only, no ac
 See `docs/FAMILY_EXPENSES.md`.
 
 **Dropdowns of large lists** (customers, vehicles, drivers, materials, quarries, suppliers, trips, bookings, spare parts)
-search the server as you type (`ff-dropdown` `[remoteSearch]` / `[resolveMissing]` + `services/picker.service.ts`): lists
+(incl. work orders, maintenance, inventory, payables and the report filters — reports include inactive records) search the server as you type (`ff-dropdown` `[remoteSearch]` / `[resolveMissing]` + `services/picker.service.ts`): lists
 are not cut off at the first 100, a saved value always shows its name, inactive records are offered only if already
 selected. APIs: `?status=ACTIVE&search=` on the master lists, `GET /trips/picker?billable=`, `GET /bookings/picker?customerId=`,
 `GET /spare-parts?search=`. Receipts check that a linked booking is the same company's and customer's (and now save it).
