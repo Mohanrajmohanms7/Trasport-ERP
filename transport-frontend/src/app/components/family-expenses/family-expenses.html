@@ -62,15 +62,15 @@
           <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Category
             <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[160px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
               [value]="filterCategory()" (change)="filterCategory.set($any($event.target).value); load()">
-              <option value="">All categories</option>
-              @for (c of categories(); track c.code) { <option [value]="c.code">{{ c.name }}</option> }
+              <option value="" [selected]="!filterCategory()">All categories</option>
+              @for (c of categories(); track c.code) { <option [value]="c.code" [selected]="c.code === filterCategory()">{{ c.name }}</option> }
             </select>
           </label>
           <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Payment mode
             <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[140px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
               [value]="filterMode()" (change)="filterMode.set($any($event.target).value); load()">
-              <option value="">All modes</option>
-              @for (m of modes(); track m.code) { <option [value]="m.code">{{ m.name }}</option> }
+              <option value="" [selected]="!filterMode()">All modes</option>
+              @for (m of modes(); track m.code) { <option [value]="m.code" [selected]="m.code === filterMode()">{{ m.name }}</option> }
             </select>
           </label>
           <span class="flex-1"></span>
@@ -128,7 +128,7 @@
           <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Report
             <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[180px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
               [value]="reportKey()" (change)="reportKey.set($any($event.target).value); runReport()">
-              @for (r of reportList; track r.key) { <option [value]="r.key">{{ r.label }}</option> }
+              @for (r of reportList; track r.key) { <option [value]="r.key" [selected]="r.key === reportKey()">{{ r.label }}</option> }
             </select>
           </label>
           @if (reportKey() !== 'yearly') {

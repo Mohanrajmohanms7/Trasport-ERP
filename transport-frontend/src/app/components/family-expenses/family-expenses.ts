@@ -141,7 +141,7 @@ export class FamilyExpensesComponent implements OnInit {
   // ------------------------------------------------------------- editor
   openAdd(): void {
     this.editing.set(null);
-    this.form.reset({ expenseDate: this.today, category: '', amount: null, paymentMode: this.modes()[0]?.code || 'CASH', description: '', memberName: '', referenceNo: '' });
+    this.form.reset({ expenseDate: this.today, category: '', amount: null, paymentMode: this.modes().some(m => m.code === 'CASH') ? 'CASH' : (this.modes()[0]?.code || 'CASH'), description: '', memberName: '', referenceNo: '' });
     this.showEditor.set(true);
   }
 
