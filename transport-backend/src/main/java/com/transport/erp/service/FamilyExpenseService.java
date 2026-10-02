@@ -259,7 +259,7 @@ public class FamilyExpenseService {
         FamilyExpense f = new FamilyExpense();
         f.setCompanyId(cid);
         apply(cid, f, body, null);
-        f.setExpenseNumber(documentNumberService.next(cid, DOC_TYPE, "FX", f.getExpenseDate()));
+        f.setExpenseNumber(documentNumberService.next(cid, DOC_TYPE, "FX-", f.getExpenseDate()));
         f.setCode(f.getExpenseNumber());
         f.setStatus("ACTIVE");
         f.setIsDeleted(false);
