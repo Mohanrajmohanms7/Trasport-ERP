@@ -67,6 +67,10 @@ public class BookingService {
         return bookingRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
     }
 
+    public Page<Booking> searchForPicker(Long companyId, Long customerId, String search, Pageable pageable) {
+        return bookingRepository.searchForPicker(companyId, customerId, search == null ? "" : search.trim(), pageable);
+    }
+
     public Booking getBookingById(Long id) {
         Booking booking = bookingRepository.findById(id)
                 .filter(b -> !Boolean.TRUE.equals(b.getIsDeleted()))

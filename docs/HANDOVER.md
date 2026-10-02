@@ -68,6 +68,12 @@ Feature Access → per client. See `docs/UNITS_OF_MEASURE.md`.
 plan — `FeatureCatalog.OPT_IN`). Own table and API, company admins only, no accounting or business-report effect.
 See `docs/FAMILY_EXPENSES.md`.
 
+**Dropdowns of large lists** (customers, vehicles, drivers, materials, quarries, suppliers, trips, bookings, spare parts)
+search the server as you type (`ff-dropdown` `[remoteSearch]` / `[resolveMissing]` + `services/picker.service.ts`): lists
+are not cut off at the first 100, a saved value always shows its name, inactive records are offered only if already
+selected. APIs: `?status=ACTIVE&search=` on the master lists, `GET /trips/picker?billable=`, `GET /bookings/picker?customerId=`,
+`GET /spare-parts?search=`. Receipts check that a linked booking is the same company's and customer's (and now save it).
+
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
 

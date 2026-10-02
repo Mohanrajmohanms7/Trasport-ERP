@@ -112,5 +112,23 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     long countByDriverIdAndIsDeletedFalse(Long driverId);
 
     long countByBookingIdAndIsDeletedFalse(Long bookingId);
+
+    /**
+     * Trip dropdowns. billable=false: every trip except cancelled (fuel / expense links);
+     * billable=true: completed trips not yet on an active invoice (invoice lines). Text matches trip no. or vehicle.
+     */
+    @Query("""
+            SELECT t FROM Trip t LEFT JOIN t.vehicle v
+            WHERE t.companyId = :companyId AND t.isDeleted = false
+              AND ((:billable = false AND t.status <> 'CANCELLED')
+                OR (:billable = true AND t.status = 'COMPLETED' AND NOT EXISTS (
+                      SELECT 1 FROM SalesInvoice i JOIN i.details d
+                      WHERE d.trip.id = t.id AND i.isDeleted = false AND i.status != 'CANCELLED')))
+              AND (LOWER(t.tripNumber) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(COALESCE(v.code, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+                OR LOWER(COALESCE(v.name, '')) LIKE LOWER(CONCAT('%', :q, '%')))
+            """)
+    Page<Trip> searchForPicker(@Param("companyId") Long companyId, @Param("q") String q,
+                               @Param("billable") boolean billable, Pageable pageable);
 }
 

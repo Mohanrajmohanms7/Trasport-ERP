@@ -11,6 +11,8 @@ import java.util.List;
 public class CustomerReceiptDTO {
     private Long id;
     private Long customerId;
+    /** Optional booking the money is for (advance against an order). Must be this customer's booking. */
+    private Long bookingId;
     private LocalDate receiptDate;
     private BigDecimal amountReceived;
     private BigDecimal advanceAmount;

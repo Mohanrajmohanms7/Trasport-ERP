@@ -23,6 +23,12 @@ public class SupplierService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = supplier list as before. */
+    public Page<Supplier> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return supplierRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Supplier> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return supplierRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

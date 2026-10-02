@@ -21,4 +21,13 @@ public interface SparePartRepository extends JpaRepository<SparePart, Long> {
 
     @Query("SELECT p FROM SparePart p JOIN FETCH p.defaultUom WHERE p.id = :id")
     Optional<SparePart> findDetailById(@Param("id") Long id);
+
+    /** Spare part dropdowns: text matches code or name. */
+    @Query(
+            value = "SELECT p FROM SparePart p JOIN FETCH p.defaultUom "
+                    + "WHERE p.companyId = :companyId AND p.isDeleted = false "
+                    + "AND (LOWER(p.code) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')))",
+            countQuery = "SELECT COUNT(p) FROM SparePart p WHERE p.companyId = :companyId AND p.isDeleted = false "
+                    + "AND (LOWER(p.code) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<SparePart> searchActiveByCompany(@Param("companyId") Long companyId, @Param("q") String q, Pageable pageable);
 }

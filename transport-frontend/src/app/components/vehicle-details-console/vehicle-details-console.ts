@@ -22,6 +22,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 import { ServiceHistoryRow, WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
 import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
@@ -50,6 +51,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private http = inject(HttpClient);
   private vehicleMgmtService = inject(VehicleMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -62,6 +64,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   activeTab = signal<string>('documents');
   vehicleId = signal<number | null>(null);
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   loading = signal<boolean>(false);
   private requestedVehicleId: number | null = null;
 
@@ -90,6 +93,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   assignments = signal<VehicleDriverAssignment[]>([]);
   drivers = signal<any[]>([]);
   suppliers = signal<any[]>([]);
+  readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
   documentTypes = signal<any[]>([]);
   serviceTypes = signal<any[]>([]);
 
@@ -134,7 +138,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   get supplierOptions(): FfSelectOption[] {
     return [
       { label: '-- Select Supplier / Workshop --', value: '' },
-      ...this.suppliers().map(s => ({
+      ...activeOrSelected(this.suppliers(), this.maintenanceForm?.getRawValue()?.supplierId).map(s => ({
         label: [s.code, s.name].filter(Boolean).join(' — '),
         value: s.id
       }))

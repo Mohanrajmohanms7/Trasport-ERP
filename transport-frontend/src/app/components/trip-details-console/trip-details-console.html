@@ -170,14 +170,14 @@
                 <ff-dropdown formControlName="id" label="Select Approved Booking" [options]="bookingOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="vehicle">
-                <ff-dropdown formControlName="id" label="Allocate Vehicle" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Vehicle" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="driver">
-                <ff-dropdown formControlName="id" label="Allocate Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-datepicker formControlName="tripDate" label="Trip Date" [max]="today" [required]="true" />
               <div formGroupName="quarry">
-                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
+                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [remoteSearch]="quarryPick.search" [resolveMissing]="quarryPick.resolve" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
               </div>
               <div formGroupName="loadingLocation">
                 <ff-dropdown formControlName="id" label="Loading Point" [options]="loadingLocationOptions" searchPlaceholder="Search loading points..." />

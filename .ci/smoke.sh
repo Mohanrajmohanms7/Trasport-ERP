@@ -791,5 +791,32 @@ api DELETE /trips/$AT2 >/dev/null; R=$(BAL $ABK); [ "$(echo "$R" | j "float(d['d
 C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" "$API/trips/booking-balance/$ABK"); [ "$C" = "403" ] && pass "another company cannot read the booking balance (403)" || fail "balance tenant" "$C"
 R=$(curl -s -H "Authorization: Bearer $TC" "$API/bookings?companyId=1&status=APPROVED&size=1000"); echo "$R" | j "'ok' if d['data']['content'] and all(b['status']=='APPROVED' for b in d['data']['content']) else 'no'" | grep -q ok && pass "trip form booking list: approved bookings only" || fail "approved list" "$(echo $R | cut -c1-150)"
 
+# ---------------- Dropdowns: server search, active only, trip / booking pickers, receipt booking link ----------------
+CI2=$($PSQL "SELECT company_id FROM app_users WHERE username='ca1'")
+R=$(api POST /customers '{"code":"DDINACT","name":"Dropdown Inactive Co","status":"ACTIVE"}'); DDC=$(echo "$R" | j "d['data']['id']")
+R=$(api POST /customers '{"code":"DDOTHER","name":"Dropdown Other Co","status":"ACTIVE"}'); DDO=$(echo "$R" | j "d['data']['id']")
+$PSQL "UPDATE customers SET status='INACTIVE' WHERE id=$DDC" >/dev/null
+R=$(api GET "/customers?search=Dropdown&status=ACTIVE&size=20"); N=$(echo "$R" | j "','.join(c['code'] for c in d['data']['content'])")
+[ "$N" = "DDOTHER" ] && pass "customer search: active only, by name" || fail "customer active search" "$N"
+R=$(api GET "/customers?search=Dropdown&size=20"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "2" ] && pass "customer list without status unchanged (all statuses)" || fail "customer list compat" "$(echo $R | cut -c1-160)"
+R=$(api GET "/customers?search=ddother&status=ACTIVE"); [ "$(echo "$R" | j "d['data']['content'][0]['id']")" = "$DDO" ] && pass "customer search by code, any case" || fail "customer code search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/customers/$DDC"); [ "$(echo "$R" | j "d['data']['code']")" = "DDINACT" ] && pass "saved inactive customer still loads by id (edit forms)" || fail "customer by id" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $NT" "$API/customers?search=Dropdown&status=ACTIVE"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "another company's search never sees these customers" || fail "search tenant" "$(echo $R | cut -c1-160)"
+for M in vehicles drivers materials quarries suppliers; do C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/$M?status=ACTIVE&search=a&size=5"); [ "$C" = "200" ] || fail "$M status search" "$C"; done; pass "vehicles / drivers / materials / quarries / suppliers accept status + search"
+R=$(api GET "/spare-parts?search=zzzznomatch"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "spare part search filters by text" || fail "spare search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/trips/picker?billable=true&search=&size=50"); echo "$R" | j "'ok' if all(t['status']=='COMPLETED' for t in d['data']['content']) and $UTR not in [t['id'] for t in d['data']['content']] else 'no'" | grep -q ok && pass "billable trip picker: completed and not invoiced only" || fail "billable trips" "$(echo $R | cut -c1-200)"
+CT=$($PSQL "SELECT id FROM trips WHERE company_id=$CI2 AND status='CANCELLED' AND is_deleted=false LIMIT 1")
+R=$(api GET "/trips/picker?billable=false&size=50"); echo "$R" | j "'ok' if all(t['status']!='CANCELLED' for t in d['data']['content']) else 'no'" | grep -q ok && pass "trip link picker hides cancelled trips" || fail "open trips" "$(echo $R | cut -c1-200)"
+TN=$($PSQL "SELECT trip_number FROM trips WHERE id=$UTR"); R=$(api GET "/trips/picker?search=${TN: -5}"); echo "$R" | grep -q "\"id\":$UTR" && pass "trip picker search by trip number" || fail "trip search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/bookings/picker?customerId=$DDO"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "booking picker filtered by customer" || fail "booking picker customer" "$(echo $R | cut -c1-160)"
+R=$(api GET "/bookings/picker?customerId=$CUST&size=50"); echo "$R" | grep -q "\"id\":$UBK" && pass "booking picker lists the customer's bookings" || fail "booking picker" "$(echo $R | cut -c1-160)"
+R=$(post /receipts '{"customerId":'$DDO',"bookingId":'$UBK',"receiptDate":"'$(date +%F)'","amountReceived":100,"advanceAmount":100,"paymentMethod":"CASH","allocations":[]}')
+echo "$R" | grep -q "Booking Of Another Customer" && pass "receipt refuses another customer's booking" || fail "receipt booking mismatch" "$(echo $R | cut -c1-200)"
+R=$(post /receipts '{"customerId":'$CUST',"bookingId":'$UBK',"receiptDate":"'$(date +%F)'","amountReceived":100,"advanceAmount":100,"paymentMethod":"CASH","allocations":[]}'); RB=$(echo "$R" | j "d['data'].get('receiptId') or d['data'].get('id')")
+[ "$($PSQL "SELECT booking_id FROM customer_receipts WHERE id=${RB:-0}")" = "$UBK" ] && pass "receipt booking link is saved (was dropped before)" || fail "receipt booking saved" "$(echo $R | cut -c1-200)"
+NB=$(curl -s -H "Authorization: Bearer $NT" "$API/customers?size=1" | j "d['data']['content'][0]['id']")
+R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/receipts -d '{"customerId":'$NB',"bookingId":'$UBK',"amountReceived":10,"advanceAmount":10,"paymentMethod":"CASH","allocations":[]}')
+echo "$R" | grep -q '"success":true' && fail "cross-company booking on receipt" "$(echo $R | cut -c1-200)" || pass "receipt cannot link another company's booking"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

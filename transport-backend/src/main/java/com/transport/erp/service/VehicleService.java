@@ -26,6 +26,12 @@ public class VehicleService {
     @Autowired
     private BusinessDependencyValidationService validationService;
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = vehicle list as before. */
+    public Page<Vehicle> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return vehicleRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Vehicle> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return vehicleRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

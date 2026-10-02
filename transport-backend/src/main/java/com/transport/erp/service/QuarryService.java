@@ -20,6 +20,12 @@ public class QuarryService {
     @Autowired
     private TenantAccessService tenantAccess;
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = quarry list as before. */
+    public Page<Quarry> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return quarryRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Quarry> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return quarryRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

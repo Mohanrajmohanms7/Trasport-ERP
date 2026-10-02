@@ -95,6 +95,13 @@ public class TripService {
         return trips;
     }
 
+    /** Trip dropdowns (see TripRepository.searchForPicker). */
+    public Page<Trip> searchForPicker(Long companyId, String search, boolean billable, Pageable pageable) {
+        Page<Trip> trips = tripRepository.searchForPicker(companyId, search == null ? "" : search.trim(), billable, pageable);
+        trips.forEach(this::populateBillingStatus);
+        return trips;
+    }
+
     public Trip getTripById(Long id) {
         Trip trip = tripRepository.findById(id)
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))

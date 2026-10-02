@@ -36,6 +36,18 @@ public class BookingController {
         return ApiResponse.success(data, "Bookings fetched successfully");
     }
 
+    /** Booking dropdowns (receipt link): search by booking no., optionally one customer; no rejected / cancelled. */
+    @GetMapping("/picker")
+    public ApiResponse<Page<Booking>> pickBookings(
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(0, Math.max(1, Math.min(size, 50)), Sort.by(Sort.Direction.DESC, "id"));
+        Long targetCompanyId = tenantAccess.resolveCompanyId(companyId);
+        return ApiResponse.success(bookingService.searchForPicker(targetCompanyId, customerId, search, pageable), "Bookings fetched successfully");
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<Booking> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
