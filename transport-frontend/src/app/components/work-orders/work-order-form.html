@@ -16,12 +16,7 @@
 
       <label class="ops-field">
         Vehicle
-        <select class="ops-input" [disabled]="lockedPreventive()" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId">
-          <option [ngValue]="null">Select vehicle</option>
-          @for (vehicle of vehicles(); track vehicle.id) {
-            <option [ngValue]="vehicle.id">{{ vehicle.code }} — {{ vehicle.name }}</option>
-          }
-        </select>
+        <ff-dropdown [disabled]="lockedPreventive()" [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select vehicle" searchPlaceholder="Type to search…" />
       </label>
 
       <label class="ops-field">
@@ -75,12 +70,7 @@
       </label>
       <label class="ops-field">
         Supplier
-        <select class="ops-input" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ? +$event : null)" name="supplierId">
-          <option [ngValue]="null">None</option>
-          @for (supplier of suppliers(); track supplier.id) {
-            <option [ngValue]="supplier.id">{{ supplier.name }}</option>
-          }
-        </select>
+        <ff-dropdown [options]="supplierOpts" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ? +$event : null)" name="supplierId" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="None" searchPlaceholder="Type to search…" />
       </label>
       <label class="ops-field">
         Assignee

@@ -6,20 +6,27 @@ import { InventoryService, Warehouse, WarehouseStock } from '../../services/inve
 import { SparePart, SparePartService } from '../../services/spare-part.service';
 import { workOrderError } from '../../services/work-order.service';
 
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-stock-receipt-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FfDropdownComponent, CommonModule, FormsModule],
   templateUrl: './stock-receipt-form.html'
 })
 export class StockReceiptFormComponent implements OnInit {
+  private picker = inject(PickerService);
+  get partOpts(): FfSelectOption[] { return this.parts().map((p: any) => ({ label: [p.code, p.name].filter(Boolean).join(' — '), value: String(p.id) })); }
+  get supplierOpts(): FfSelectOption[] { return activeOrSelected(this.suppliers() as any[], this.supplierId()).map((x: any) => ({ label: x.code && x.name ? x.code + ' — ' + x.name : (x.name || x.code), value: String(x.id) })); }
   private inventory = inject(InventoryService);
   private spareParts = inject(SparePartService);
   private router = inject(Router);
 
   warehouses = signal<Warehouse[]>([]);
   parts = signal<SparePart[]>([]);
+  readonly partPick = { search: (q: string) => this.picker.spareParts(q).subscribe(r => PickerService.merge(this.parts as any, r)), resolve: (_: unknown) => {} };
   suppliers = signal<{ id: number; code?: string; name?: string }[]>([]);
+  readonly supplierPick = this.picker.bind('suppliers', this.suppliers as any);
   warehouseId = signal('');
   sparePartId = signal('');
   quantity = signal('');

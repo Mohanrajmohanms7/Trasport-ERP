@@ -237,6 +237,32 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
   await mp.screenshot({ path: 'shots/fx-mobile.png' });
   await mc.close();
 }
+{ // DD_SHOTS: searchable dropdowns in a real browser (PKC admin): type a search, capture the result
+  const pk = (await (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'pkc.admin', password: 'Pkc@2026' }) })).json()).data || tenant;
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(s.roles || ['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false');
+    localStorage.setItem('companyId', String(s.companyId)); if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+  }, pk);
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
+  const typeIn = async (name, text) => {
+    await pg.waitForTimeout(1200);
+    const box = pg.locator('ff-dropdown .ff-dd__trigger').first(); await box.click();
+    await pg.locator('.ff-dd__search-input').first().fill(text); await pg.waitForTimeout(1200);
+    await pg.screenshot({ path: `shots/dd-${name}.png` });
+    const opts = await pg.locator('.ff-dd__panel [role="option"], .ff-dd__option').allTextContents().catch(() => []);
+    console.log(`DD ${name}: ${opts.length} option(s) for "${text}": ${opts.slice(0, 4).map(o => o.trim()).join(' | ')}`);
+  };
+  try {
+    await pg.goto('http://localhost:4200/bookings', { waitUntil: 'networkidle' });
+    await pg.locator('button:has-text("Register Booking")').first().click(); await typeIn('booking-customer', 'Sakthi');
+    await pg.goto('http://localhost:4200/work-orders/new', { waitUntil: 'networkidle' }); await typeIn('workorder-vehicle', 'TN');
+    await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');
+  } catch (e) { console.log('DD shot', e.message.slice(0, 160)); await pg.screenshot({ path: 'shots/dd-error.png' }); }
+  await ctx.close();
+}
 const lg = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const lp = await lg.newPage();
 await lp.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });

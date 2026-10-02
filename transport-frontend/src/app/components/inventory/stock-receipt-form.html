@@ -24,12 +24,7 @@
     </select>
     </label>
     <label class="ops-field">Spare part
-      <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event); refreshCurrent()" name="part">
-      <option value="">Select…</option>
-      @for (part of parts(); track part.id) {
-        <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
-      }
-    </select>
+      <ff-dropdown [options]="partOpts" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event ?? ''); refreshCurrent()" name="part" [remoteSearch]="partPick.search" emptyLabel="Select…" searchPlaceholder="Type to search…" />
     </label>
     <label class="ops-field">Quantity
       <input type="number" min="0.001" step="0.001" class="ops-input" [ngModel]="quantity()" (ngModelChange)="quantity.set($event)" name="quantity" />
@@ -38,12 +33,7 @@
       <input type="number" min="0" step="0.01" class="ops-input" [ngModel]="unitRate()" (ngModelChange)="unitRate.set($event)" name="unitRate" placeholder="Cost per unit (recommended)" />
     </label>
     <label class="ops-field">Supplier
-      <select class="ops-input" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event)" name="supplier">
-      <option value="">None</option>
-      @for (row of suppliers(); track row.id) {
-        <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
-      }
-    </select>
+      <ff-dropdown [options]="supplierOpts" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ?? '')" name="supplier" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="None" searchPlaceholder="Type to search…" />
     </label>
     <label class="ops-field">Paid by
       <select class="ops-input" [ngModel]="paymentMode()" (ngModelChange)="paymentMode.set($event)" name="paymentMode">

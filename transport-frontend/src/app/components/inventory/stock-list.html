@@ -36,12 +36,7 @@
         <option [value]="row.id">{{ row.code }} — {{ row.name }}</option>
       }
     </select>
-    <select class="ops-input" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event)" name="part">
-      <option value="">All spare parts</option>
-      @for (part of parts(); track part.id) {
-        <option [value]="part.id">{{ part.code }} — {{ part.name }}</option>
-      }
-    </select>
+    <ff-dropdown [options]="partOpts" [ngModel]="sparePartId()" (ngModelChange)="sparePartId.set($event ?? '')" name="part" [remoteSearch]="partPick.search" emptyLabel="All spare parts" searchPlaceholder="Type to search…" />
     <input class="ops-input" placeholder="Spare part code" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
     <label class="ops-field flex-row items-center gap-2 h-10"><input type="checkbox" [ngModel]="lowOnly()" (ngModelChange)="lowOnly.set($event)" name="lowOnly" /> Only reorder / out of stock</label>
     <button type="submit" class="ops-btn ops-btn--dark">Apply</button>

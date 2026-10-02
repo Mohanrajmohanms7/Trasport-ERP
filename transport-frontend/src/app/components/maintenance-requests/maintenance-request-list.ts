@@ -8,14 +8,19 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-maintenance-request-list',
   standalone: true,
-  imports: [ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
+  imports: [FfDropdownComponent, ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './maintenance-request-list.html'
 })
 export class MaintenanceRequestListComponent implements OnInit {
+  private picker = inject(PickerService);
+  get vehicleOpts(): FfSelectOption[] { return this.vehicles().map((v: any) => ({ label: [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: String(v.id) })); }
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   private masters = inject(MasterService);
 
   private requests = inject(MaintenanceRequestService);
