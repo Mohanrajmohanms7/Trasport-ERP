@@ -129,6 +129,7 @@ at first login (admin-chosen onboarding passwords are not forced).
 | Subscription notice, tenant brand | `AuthService.subscriptionInfo / tenantBrand`, `layout/app-shell` |
 | PKC demo data | `tools/demo/seed_pkc_demo.py` (API-based; run once per environment; quantities in Units) |
 | Family Expenses (add-on) | `service/FamilyExpenseService`, `controller/FamilyExpenseController`, `components/family-expenses` — `docs/FAMILY_EXPENSES.md` |
+| Trip form from booking | `GET /api/v1/trips/booking-balance/{bookingId}?excludeTripId=` (customer, site, per-material booked / moved / remaining — same numbers as the trip save check); trip console fills lines from it |
 | Order units of measure | `service/OrderUomService`, `model/CompanyUom`, `/api/v1/uoms/order-units` + `/order-settings`, `shared/order-units`, `shared/uom-label.ts` — `docs/UNITS_OF_MEASURE.md` |
 
 ## 6. Open items / next steps

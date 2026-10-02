@@ -777,10 +777,10 @@ R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":
 ABK=$(echo "$R" | j "d['data']['id']")
 R=$(BAL $ABK); [ "$(echo "$R" | j "d['data']['canPlanTrips']")" = "False" ] && pass "pending booking: balance says trips cannot be planned yet" || fail "balance pending" "$(echo $R | cut -c1-200)"
 api POST /bookings/$ABK/approve >/dev/null
-R=$(BAL $ABK); V=$(echo "$R" | j "l=d['data']['lines'][0]; '%s|%s|%s|%s|%s' % (float(l['booked']), float(l['moved']), float(l['remaining']), l['uom']['label'], bool(d['data']['customer']['name']))")
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s|%s|%s|%s' % (float(l['booked']), float(l['moved']), float(l['remaining']), l['uom']['label'], bool(d['data']['customer']['name'])))(d['data']['lines'][0])")
 [ "$V" = "10.0|0.0|10.0|Unit|True" ] && pass "balance auto-fill data: customer, material, 10 Unit booked, 10 remaining" || fail "balance fresh" "$V $(echo $R | cut -c1-200)"
 R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":4}]}'); AT1=$(echo "$R" | j "d['data']['id']")
-R=$(BAL $ABK); V=$(echo "$R" | j "l=d['data']['lines'][0]; '%s|%s' % (float(l['moved']), float(l['remaining']))")
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s' % (float(l['moved']), float(l['remaining'])))(d['data']['lines'][0])")
 [ "$V" = "4.0|6.0" ] && pass "after a 4 Unit trip: 4 on other trips, 6 remaining" || fail "balance after trip" "$V"
 R=$(BAL $ABK $AT1); [ "$(echo "$R" | j "float(d['data']['lines'][0]['remaining'])")" = "10.0" ] && pass "editing that trip does not count its own quantity" || fail "balance exclude" "$(echo $R | cut -c1-200)"
 R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":7}]}')
