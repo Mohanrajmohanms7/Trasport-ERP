@@ -18,7 +18,7 @@ import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 })
 export class WorkOrderListComponent implements OnInit {
   private picker = inject(PickerService);
-  get vehicleOpts(): FfSelectOption[] { return this.vehicles().map((v: any) => ({ label: [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: String(v.id) })); }
+  get vehicleOpts(): FfSelectOption[] { return this.vehicles().map((v: any) => ({ label: (v.name && v.code && String(v.name).includes(v.code)) ? v.name : [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: String(v.id) })); }
   private workOrders = inject(WorkOrderService);
   private router = inject(Router);
   private auth = inject(AuthService);

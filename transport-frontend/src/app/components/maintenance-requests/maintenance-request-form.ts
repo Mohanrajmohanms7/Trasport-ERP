@@ -21,7 +21,7 @@ import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 })
 export class MaintenanceRequestFormComponent implements OnInit {
   private picker = inject(PickerService);
-  get vehicleOpts(): FfSelectOption[] { return (this.vehicles() as any[]).map((v: any) => ({ label: [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: v.id })); }
+  get vehicleOpts(): FfSelectOption[] { return (this.vehicles() as any[]).map((v: any) => ({ label: (v.name && v.code && String(v.name).includes(v.code)) ? v.name : [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: v.id })); }
   private requests = inject(MaintenanceRequestService);
   private masters = inject(MasterService);
   private auth = inject(AuthService);
