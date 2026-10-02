@@ -19,6 +19,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
 import { uomLabel, orderLineText } from '../../shared/uom-label';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 @Component({
   selector: 'app-invoice-details-console',
   standalone: true,
@@ -44,6 +45,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   private invoiceMgmtService = inject(InvoiceMgmtService);
   private tripService = inject(TripMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -99,13 +101,16 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   invoices = signal<SalesInvoice[]>([]);
   readyTrips = signal<any[]>([]);
   customers = signal<any[]>([]);
+  readonly customerPick = this.picker.bind('customers', this.customers);
   trips = signal<any[]>([]);
+  readonly tripPick = this.picker.bindTrips(this.trips, true);
   materials = signal<any[]>([]);
+  readonly materialPick = this.picker.bind('materials', this.materials);
   paymentTerms = signal<any[]>([]);
 
 
   get customerOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Customer --', value: '' }, ...this.customers().map(customer => ({ label: customer.name, value: customer.id }))];
+    return [{ label: '-- Choose Customer --', value: '' }, ...activeOrSelected(this.customers(), this.invoiceForm?.getRawValue()?.customer?.id).map(customer => ({ label: customer.name, value: customer.id }))];
   }
   get paymentTermsOptions(): FfSelectOption[] {
     return this.paymentTerms().length > 0
@@ -123,7 +128,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       .map(trip => ({ label: trip.tripNumber, value: trip.id }))];
   }
   get materialOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
+    return [{ label: '-- Choose --', value: '' }, ...activeOrSelected(this.materials(), (this.invoiceForm?.getRawValue()?.details || []).map((d: any) => d?.material?.id)).map(material => ({ label: material.name, value: material.id }))];
   }
 
   // Forms

@@ -90,6 +90,9 @@ public class CustomerReceiptService {
     private CustomerRepository customerRepository;
 
     @Autowired
+    private com.transport.erp.repository.BookingRepository bookingRepository;
+
+    @Autowired
     private JournalVoucherRepository jvRepository;
 
 
@@ -158,7 +161,7 @@ public class CustomerReceiptService {
 
         receipt.setCompanyId(tenantAccess.resolveCompanyId(receipt.getCompanyId()));
         receipt.setBranchId(tenantAccess.resolveBranchId(receipt.getBranchId()));
-
+        validateCustomerAndBooking(receipt);
 
         CustomerReceipt saved = receiptRepository.save(receipt);
 
@@ -169,6 +172,37 @@ public class CustomerReceiptService {
                 "Registered customer receipt voucher: " + saved.getReceiptNumber());
 
         return saved;
+    }
+
+    /**
+     * The receipt's customer must belong to this company, and a linked booking must be this company's booking for the
+     * same customer (the booking list on the receipt screen was not filtered, and nothing checked it).
+     */
+    private void validateCustomerAndBooking(CustomerReceipt receipt) {
+        if (receipt.getCustomer() == null || receipt.getCustomer().getId() == null) {
+            throw new IllegalArgumentException("Select the customer for this receipt.");
+        }
+        com.transport.erp.model.Customer customer = customerRepository.findById(receipt.getCustomer().getId())
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Customer not found."));
+        tenantAccess.assertOwned(customer.getCompanyId());
+        receipt.setCustomer(customer);
+        if (receipt.getBooking() == null || receipt.getBooking().getId() == null) {
+            receipt.setBooking(null);
+            return;
+        }
+        com.transport.erp.model.Booking booking = bookingRepository.findById(receipt.getBooking().getId())
+                .filter(b -> !Boolean.TRUE.equals(b.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
+        tenantAccess.assertOwned(booking.getCompanyId());
+        if (booking.getCustomer() == null || !customer.getId().equals(booking.getCustomer().getId())) {
+            throw new BusinessValidationException("Booking Of Another Customer", "RECEIPT_BOOKING_CUSTOMER_MISMATCH",
+                    "Booking " + booking.getBookingNumber() + " belongs to "
+                            + (booking.getCustomer() != null ? booking.getCustomer().getName() : "another customer")
+                            + ", not " + customer.getName() + ".",
+                    "Pick one of " + customer.getName() + "'s bookings, or leave the booking empty.");
+        }
+        receipt.setBooking(booking);
     }
 
     @Transactional
@@ -231,6 +265,13 @@ public class CustomerReceiptService {
         receipt.setReceiptDate(dto.getReceiptDate() != null ? dto.getReceiptDate() : LocalDate.now());
         receipt.setReceiptNumber(documentNumberService.next(companyId, DocumentNumberService.RECEIPT, prefix, receipt.getReceiptDate()));
         receipt.setCustomer(customer);
+        // The booking chosen on the receipt screen was never sent (the request had no booking field).
+        if (dto.getBookingId() != null) {
+            com.transport.erp.model.Booking ref = new com.transport.erp.model.Booking();
+            ref.setId(dto.getBookingId());
+            receipt.setBooking(ref);
+        }
+        validateCustomerAndBooking(receipt);
         receipt.setAmountReceived(dto.getAmountReceived());
         receipt.setPaymentMethod(dto.getPaymentMethod() != null ? dto.getPaymentMethod() : "CASH");
         receipt.setReferenceNumber(dto.getReferenceNumber());

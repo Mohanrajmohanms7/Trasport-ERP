@@ -18,6 +18,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
@@ -42,6 +43,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   private invoiceMgmtService = inject(InvoiceMgmtService);
   private router = inject(Router);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private materialMgmtService = inject(MaterialMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
@@ -54,9 +56,12 @@ export class TripDetailsConsoleComponent implements OnInit {
   trips = signal<Trip[]>([]);
   bookings = signal<any[]>([]);
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   drivers = signal<any[]>([]);
+  readonly driverPick = this.picker.bind('drivers', this.drivers);
   materials = signal<any[]>([]);
   quarries = signal<any[]>([]);
+  readonly quarryPick = this.picker.bind('quarries', this.quarries);
   loadingLocations = signal<LoadingLocation[]>([]);
   readonly today = new Date().toISOString().slice(0, 10);
 
@@ -69,7 +74,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
   get vehicleOptions(): FfSelectOption[] {
     const currentVehicleId = this.editingTrip()?.vehicle?.id;
-    return [{ label: '-- Choose Transit Vehicle --', value: '' }, ...this.vehicles().map(v => ({
+    return [{ label: '-- Choose Transit Vehicle --', value: '' }, ...activeOrSelected(this.vehicles(), this.tripForm?.getRawValue()?.vehicle?.id).map(v => ({
       label: ([v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle')
         + (v.underMaintenance ? ' (Under maintenance)' : ''),
       value: v.id,
@@ -77,10 +82,10 @@ export class TripDetailsConsoleComponent implements OnInit {
     }))];
   }
   get driverOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Driver Assignment --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
+    return [{ label: '-- Choose Driver Assignment --', value: '' }, ...activeOrSelected(this.drivers(), this.tripForm?.getRawValue()?.driver?.id).map(driver => ({ label: driver.name, value: driver.id }))];
   }
   get quarryOptions(): FfSelectOption[] {
-    return [{ label: '-- Not recorded --', value: '' }, ...this.quarries().map(q => ({ label: q.name, value: q.id }))];
+    return [{ label: '-- Not recorded --', value: '' }, ...activeOrSelected(this.quarries(), this.tripForm?.getRawValue()?.quarry?.id).map(q => ({ label: q.name, value: q.id }))];
   }
   get loadingLocationOptions(): FfSelectOption[] {
     return [{ label: '-- Not recorded --', value: '' }, ...this.loadingLocations().map(l => ({ label: [l.locationCode, l.loadingPoint].filter(Boolean).join(' — '), value: l.id! }))];

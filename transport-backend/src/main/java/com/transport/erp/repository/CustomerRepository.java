@@ -21,4 +21,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @org.springframework.data.jpa.repository.Query("SELECT c FROM Customer c WHERE c.id = :id AND c.isDeleted = false")
     Optional<Customer> findAndLockById(@org.springframework.data.repository.query.Param("id") Long id);
+
+    /** Dropdown search: one status (e.g. ACTIVE) and an optional name/code text; empty text = all. */
+    @Query("SELECT e FROM Customer e WHERE e.companyId = :companyId AND e.isDeleted = false AND COALESCE(e.status, 'ACTIVE') = :status "
+            + "AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(e.code) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<Customer> searchByStatus(@Param("companyId") Long companyId, @Param("q") String q, @Param("status") String status, Pageable pageable);
 }

@@ -25,10 +25,11 @@ public class SupplierController {
     public ApiResponse<Page<Supplier>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Supplier> suppliers = supplierService.getAll(scopedCompanyId, search, pageable);
+            Page<Supplier> suppliers = supplierService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(suppliers, "Suppliers fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

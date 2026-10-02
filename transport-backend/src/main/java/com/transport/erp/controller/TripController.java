@@ -36,6 +36,18 @@ public class TripController {
         return ApiResponse.success(data, "Trips fetched successfully");
     }
 
+    /** Trip dropdowns: search by trip no. / vehicle; billable=true = completed trips not yet invoiced. */
+    @GetMapping("/picker")
+    public ApiResponse<Page<Trip>> pickTrips(
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean billable,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(0, Math.max(1, Math.min(size, 50)), Sort.by(Sort.Direction.DESC, "id"));
+        Long targetCompanyId = tenantAccess.resolveCompanyId(companyId);
+        return ApiResponse.success(tripService.searchForPicker(targetCompanyId, search, billable, pageable), "Trips fetched successfully");
+    }
+
     /**
      * Booking details for the trip form: customer, delivery site and, per material, booked / already moved / remaining
      * quantity (same numbers as the save check). {@code excludeTripId} = the trip being edited.

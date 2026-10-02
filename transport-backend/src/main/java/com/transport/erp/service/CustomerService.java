@@ -23,6 +23,12 @@ public class CustomerService {
     @Autowired
     private BusinessDependencyValidationService validationService;
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = customer list as before. */
+    public Page<Customer> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return customerRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Customer> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return customerRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

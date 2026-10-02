@@ -40,6 +40,12 @@ public class DriverService {
 
     private static final Set<String> LINK_ROLES = Set.of("COMPANY_ADMIN", "BRANCH_MANAGER");
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = driver list as before. */
+    public Page<Driver> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return driverRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Driver> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return driverRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

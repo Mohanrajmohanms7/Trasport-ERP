@@ -92,7 +92,7 @@
         <div [formGroup]="vehicleSelectForm">
           <ff-dropdown
             formControlName="vehicleId"
-            label="Select Vehicle"
+            label="Select Vehicle" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve"
             [options]="vehicleOptions"
             [required]="true"
             searchPlaceholder="Search vehicle code or name..." />
@@ -676,7 +676,7 @@
           </div>
 
           @if (maintenanceForm.get('paymentMethod')?.value === 'CREDIT') {
-            <ff-dropdown formControlName="supplierId" label="Select Supplier (Payable)" [options]="supplierOptions" [required]="true" searchPlaceholder="Search supplier..." />
+            <ff-dropdown formControlName="supplierId" label="Select Supplier (Payable)" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" [options]="supplierOptions" [required]="true" searchPlaceholder="Search supplier..." />
           }
 
           <ff-textarea formControlName="remarks" label="Remarks / Action notes" placeholder="Oil grade, parts replaced details" [rows]="3" />

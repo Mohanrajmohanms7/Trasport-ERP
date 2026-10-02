@@ -32,8 +32,9 @@ public class SparePartController {
     @GetMapping
     public ApiResponse<Page<SparePartResponse>> list(
             @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) String search,
             Pageable pageable) {
-        return ApiResponse.success(sparePartService.list(companyId, pageable), "Spare parts fetched successfully");
+        return ApiResponse.success(sparePartService.list(companyId, search, pageable), "Spare parts fetched successfully");
     }
 
     @GetMapping("/uoms")
