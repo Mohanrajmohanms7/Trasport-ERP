@@ -179,7 +179,9 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await shot('trip-list');
     await pg.locator('button[title*="Edit"], button:has-text("Edit")').first().click(); await shot('trip-edit');
     // Help & Support: report an issue while a trip is open — module, screen and the trip are captured
-    await pg.locator('[data-testid="report-issue"]').click(); await pg.waitForTimeout(800);
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(500);
+    await pg.locator('button:has-text("Cancel")').first().click({ timeout: 3000 }).catch(() => {}); await pg.waitForTimeout(500);
+    await pg.locator('[data-testid="report-issue"]').click({ timeout: 10000 }); await pg.waitForTimeout(800);
     const ctxText = ((await pg.locator('app-report-issue-dialog').textContent().catch(() => '')) || '').replace(/\s+/g, ' ');
     console.log('ST context: ' + (ctxText.match(/Module.*?Version\s*\S+/)?.[0] || ctxText.slice(0, 200)));
     await pg.locator('app-report-issue-dialog input[name="subject"]').fill('Unable to complete trip');

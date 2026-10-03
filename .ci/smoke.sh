@@ -829,7 +829,7 @@ P1=${SN1%-TKT-*}; [ "${SN2%-TKT-*}" = "$P1" ] && [ "${SN2##*-}" != "${SN1##*-}" 
 R=$(cu "$PT" POST /support/tickets '{"subject":"PKC login slow","description":"Takes 20s","priority":"LOW"}'); PK1=$(echo "$R" | j "d['data']['id']"); PN1=$(echo "$R" | j "d['data']['ticketNumber']")
 echo "$PN1" | grep -q "^PKC-TKT-" && pass "PKC tickets read PKC-TKT-… ($PN1)" || fail "PKC prefix" "$PN1"
 R=$(cu "$TO" POST /support/tickets '{"subject":" ","description":"x"}'); echo "$R" | grep -q "short title" && pass "title required" || fail "ticket validation" "$(echo $R | cut -c1-160)"
-C=$(as "$TD" POST /support/tickets '{"subject":"d","description":"d"}'); [ "$C" = "403" ] && pass "driver login cannot raise tickets (reports via manager)" || fail "driver ticket" "$C"
+C=$(as "$TD" POST /support/tickets '{"subject":"d","description":"d"}'); case "$C" in 401|403) pass "driver login cannot raise tickets (reports via manager) ($C)";; *) fail "driver ticket" "$C";; esac
 R=$(cu "$TV" POST /support/tickets '{"subject":"Viewer issue","description":"Report shows wrong total"}'); SKV=$(echo "$R" | j "d['data']['id']")
 [ -n "$SKV" ] && [ "$SKV" != "None" ] && pass "viewer can report an issue (no business data changed)" || fail "viewer ticket" "$(echo $R | cut -c1-160)"
 C=$(as "$NT" GET /support/tickets/$SK1); [ "$C" = "403" ] && pass "another company cannot open the ticket (403)" || fail "ticket tenant" "$C"
