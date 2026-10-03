@@ -419,6 +419,11 @@ public class PlatformAdminController {
         return ApiResponse.success(supportTickets.dashboard(), "Support dashboard fetched");
     }
 
+    @GetMapping("/tickets/notifications")
+    public ApiResponse<Map<String, Object>> getSupportNotifications() {
+        return ApiResponse.success(supportTickets.adminNotifications(), "Notifications fetched");
+    }
+
     @GetMapping("/tickets/assignees")
     public ApiResponse<java.util.List<Map<String, Object>>> getSupportAssignees() {
         return ApiResponse.success(supportTickets.assignees(), "Assignees fetched");

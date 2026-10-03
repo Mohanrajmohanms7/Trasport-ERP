@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { SupportService, TICKET_PRIORITIES, TICKET_STATUSES, priorityLabel, statusLabel } from '../../../services/support.service';
 import { FfNotificationService } from '../../../shared-ui/infrastructure/services/ff-notification.service';
 import { TicketFilesComponent } from '../../../shared/support/ticket-files';
@@ -17,6 +18,7 @@ export class SupportTicketsComponent implements OnInit {
   private api = inject(SupportService);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
+  private route = inject(ActivatedRoute);
 
   readonly statuses = TICKET_STATUSES;
   readonly priorities = TICKET_PRIORITIES;
@@ -41,7 +43,13 @@ export class SupportTicketsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboard();
-    this.load();
+    // Opened from the bell (?t=) or the critical banner (?priority=CRITICAL)
+    this.route.queryParamMap.subscribe(q => {
+      const pr = q.get('priority'); const t = Number(q.get('t'));
+      if (pr) { this.f.priority = pr; this.page = 0; }
+      if (t) this.open(t);
+      this.load();
+    });
     this.http.get<any>('/api/v1/platform-admin/clients', { params: { page: '0', size: '500' } })
       .subscribe({ next: r => this.clients.set(r?.data?.content ?? r?.data ?? []), error: () => {} });
     this.api.assignees().subscribe({ next: r => this.assignees.set(r?.data ?? []), error: () => {} });

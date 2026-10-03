@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V80__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V81__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -82,7 +82,7 @@ the new record is selected.
 
 **Help & Support tickets (V78).** Clients report issues from the header (support icon) on any screen; numbers carry the
 client prefix (PKC-TKT-00001). Client API `/api/v1/support/**` (own company; non-admins own tickets; internal notes
-stripped on the server); platform API `/api/v1/platform-admin/tickets/**`. See `docs/SUPPORT_TICKETS.md`.
+stripped on the server); platform API `/api/v1/platform-admin/tickets/**`. Header bell for support activity (V80). See `docs/SUPPORT_TICKETS.md`.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").

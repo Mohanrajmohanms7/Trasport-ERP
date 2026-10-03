@@ -104,9 +104,10 @@ public class SupportTicketService {
         return rows.map(t -> summary(t, false));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getForClient(Long id) {
         SaaSSupportTicket t = ownTicket(id);
+        markRead(t.getId(), tenantAccess.requireCurrentUser().getUsername());
         Map<String, Object> m = summary(t, false);
         m.put("description", t.getDescription());
         m.put("resolution", t.getResolution());
@@ -178,10 +179,11 @@ public class SupportTicketService {
         return rows.map(t -> summary(t, true));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getForAdmin(Long id) {
-        requirePlatformAdmin();
+        String admin = requirePlatformAdmin();
         SaaSSupportTicket t = find(id);
+        markRead(t.getId(), admin);
         Map<String, Object> m = summary(t, true);
         m.put("description", t.getDescription());
         m.put("resolution", t.getResolution());
@@ -252,6 +254,10 @@ public class SupportTicketService {
         }
         if (!Objects.equals(to, t.getAssignedTo())) {
             event(t.getId(), admin, "ASSIGNED", t.getAssignedTo(), to, true);
+            if (to != null && !to.equals(admin)) {
+                jdbc.update("DELETE FROM saas_support_ticket_reads WHERE ticket_id = :id AND username = :u",
+                        new MapSqlParameterSource("id", t.getId()).addValue("u", to));
+            }
             t.setAssignedTo(to);
             touch(t);
             auditService.log(admin, "SUPPORT_TICKET_ASSIGNED", "saas_support_tickets", t.getId(), null, t.getTicketNumber() + " → " + to);
@@ -407,6 +413,73 @@ public class SupportTicketService {
     public int runAutoCloseNow() {
         requirePlatformAdmin();
         return autoCloseResolved();
+    }
+
+    // ================================================================ notifications (bell)
+
+    /** Client bell: tickets with a support reply / status change the user has not opened yet. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> clientNotifications() {
+        AppUser user = clientUser();
+        String scope = isClientAdmin(user) ? "" : " AND t.username = :u";
+        String where = """
+                 FROM saas_support_tickets t
+                 LEFT JOIN saas_support_ticket_reads r ON r.ticket_id = t.id AND r.username = :u
+                WHERE t.company_id = :cid""" + scope + """
+                  AND t.last_admin_activity IS NOT NULL
+                  AND t.last_admin_activity > COALESCE(r.last_read_at, t.created_date)""";
+        MapSqlParameterSource p = new MapSqlParameterSource("u", user.getUsername()).addValue("cid", user.getCompanyId());
+        Long count = jdbc.queryForObject("SELECT COUNT(*)" + where, p, Long.class);
+        List<Map<String, Object>> items = jdbc.queryForList("""
+                SELECT t.id, t.ticket_number AS "ticketNumber", t.subject, t.status, t.priority,
+                       t.last_admin_activity AS at,
+                       CASE WHEN t.status = 'RESOLVED' THEN 'RESOLVED'
+                            WHEN t.status = 'WAITING_FOR_CLIENT' THEN 'WAITING_FOR_YOU' ELSE 'SUPPORT_REPLIED' END AS reason""" + where
+                + " ORDER BY t.last_admin_activity DESC LIMIT 10", p);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("unread", count == null ? 0 : count);
+        m.put("items", items);
+        return m;
+    }
+
+    /**
+     * Platform admin bell: new tickets not opened yet, client replies since last opened, tickets assigned to me.
+     * Tickets assigned to another admin notify that admin only. Critical first. Plus the open critical count (banner).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> adminNotifications() {
+        String admin = requirePlatformAdmin();
+        String where = """
+                 FROM saas_support_tickets t
+                 JOIN companies c ON c.id = t.company_id
+                 LEFT JOIN saas_support_ticket_reads r ON r.ticket_id = t.id AND r.username = :u
+                WHERE t.status <> 'CLOSED'
+                  AND (t.assigned_to IS NULL OR t.assigned_to = :u)
+                  AND (r.last_read_at IS NULL
+                       OR (t.last_client_activity IS NOT NULL AND t.last_client_activity > r.last_read_at))""";
+        MapSqlParameterSource p = new MapSqlParameterSource("u", admin);
+        Long count = jdbc.queryForObject("SELECT COUNT(*)" + where, p, Long.class);
+        List<Map<String, Object>> items = jdbc.queryForList("""
+                SELECT t.id, t.ticket_number AS "ticketNumber", t.subject, t.status, t.priority, c.name AS client,
+                       GREATEST(t.created_date, COALESCE(t.last_client_activity, t.created_date)) AS at,
+                       CASE WHEN r.last_read_at IS NULL AND t.assigned_to = :u THEN 'ASSIGNED_TO_YOU'
+                            WHEN r.last_read_at IS NULL THEN 'NEW_TICKET' ELSE 'CLIENT_REPLIED' END AS reason""" + where + """
+                 ORDER BY CASE t.priority WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1 ELSE 2 END, 7 DESC LIMIT 10""", p);
+        Long critical = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM saas_support_tickets WHERE priority = 'CRITICAL' AND status NOT IN ('RESOLVED','CLOSED')",
+                new MapSqlParameterSource(), Long.class);
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("unread", count == null ? 0 : count);
+        m.put("items", items);
+        m.put("criticalOpen", critical == null ? 0 : critical);
+        return m;
+    }
+
+    private void markRead(Long ticketId, String username) {
+        jdbc.update("""
+                INSERT INTO saas_support_ticket_reads (ticket_id, username, last_read_at) VALUES (:id, :u, :now)
+                ON CONFLICT (ticket_id, username) DO UPDATE SET last_read_at = EXCLUDED.last_read_at""",
+                new MapSqlParameterSource("id", ticketId).addValue("u", username).addValue("now", LocalDateTime.now()));
     }
 
     // ================================================================ rules

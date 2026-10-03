@@ -33,6 +33,12 @@ public class SupportController {
         return ApiResponse.success(supportTickets.listForClient(status, search, page, size), "Tickets fetched");
     }
 
+    /** Bell: support replies / status changes not opened yet. */
+    @GetMapping("/notifications")
+    public ApiResponse<Map<String, Object>> notifications() {
+        return ApiResponse.success(supportTickets.clientNotifications(), "Notifications fetched");
+    }
+
     @GetMapping("/tickets/{id}")
     public ApiResponse<Map<String, Object>> get(@PathVariable Long id) {
         return ApiResponse.success(supportTickets.getForClient(id), "Ticket fetched");
