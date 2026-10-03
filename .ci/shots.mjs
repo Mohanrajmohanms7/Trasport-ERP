@@ -222,6 +222,11 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pp.goto('http://localhost:4200/platform-admin/tickets', { waitUntil: 'networkidle' }); await pp.waitForTimeout(1500);
     await pp.locator('app-support-tickets ul li button').first().click(); await pp.waitForTimeout(1500);
     await pp.screenshot({ path: 'shots/st-admin.png', fullPage: true });
+    console.log('BELL admin count: ' + (((await pp.locator('[data-testid="bell-count"]').textContent().catch(() => '')) || '0').trim())
+      + ' | critical banner: ' + ((await pp.locator('[data-testid="critical-banner"]').count()) > 0 ? 'shown' : 'none'));
+    await pp.locator('[data-testid="bell"]').click(); await pp.waitForTimeout(800);
+    await pp.screenshot({ path: 'shots/st-bell.png' });
+    await pp.keyboard.press('Escape');
   } catch (e) { console.log('UOM platform shot', e.message.slice(0, 160)); }
   await pc.close();
 }

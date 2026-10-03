@@ -896,5 +896,26 @@ R=$(post /platform-admin/tickets/auto-close '{}'); [ "$(echo "$R" | j "d['data']
 [ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SK1")" = "RESOLVED" ] && pass "client activity after resolution keeps the ticket open" || fail "auto-close respects client activity" "x"
 C=$(as "$TC" POST /platform-admin/tickets/auto-close '{}'); [ "$C" = "403" ] && pass "only the platform admin can run auto-close" || fail "auto-close guard" "$C"
 
+# ---------------- Help & Support phase 3: notification bell (V80) ----------------
+R=$(cu "$TO" POST /support/tickets '{"subject":"Bell test","description":"Invoice PDF blank","priority":"CRITICAL"}'); NB1=$(echo "$R" | j "d['data']['id']")
+ADMN() { curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/notifications; }
+R=$(ADMN); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='NEW_TICKET' for i in d['data']['items']) and d['data']['criticalOpen']>=1 else 'no'" | grep -q ok && pass "admin bell: new critical ticket + critical count" || fail "admin bell new" "$(echo $R | cut -c1-220)"
+curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$NB1 >/dev/null
+R=$(ADMN); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "admin bell clears when the ticket is opened" || fail "admin bell read" "$(echo $R | cut -c1-200)"
+post /platform-admin/tickets/$NB1/replies '{"message":"internal only","internal":true}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "internal note does not notify the client" || fail "internal note notified" "$(echo $R | cut -c1-200)"
+post /platform-admin/tickets/$NB1/replies '{"message":"Looking now","internal":false}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if d['data']['unread']>=1 and any(i['id']==$NB1 and i['reason']=='SUPPORT_REPLIED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell: support replied" || fail "client bell reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TC" GET /support/notifications); echo "$R" | j "'ok' if any(i['id']==$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "company admin bell includes colleagues' tickets" || fail "company admin bell" "$(echo $R | cut -c1-200)"
+R=$(cu "$TV" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "other user's bell excludes the ticket" || fail "user bell scope" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $NT" $API/support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "another company's bell never shows it" || fail "bell tenant" "$(echo $R | cut -c1-200)"
+cu "$TO" GET /support/tickets/$NB1 >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell clears when the ticket is opened" || fail "client bell read" "$(echo $R | cut -c1-200)"
+cu "$TO" POST /support/tickets/$NB1/replies '{"message":"Still blank on Chrome"}' >/dev/null
+R=$(ADMN); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='CLIENT_REPLIED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "admin bell: client replied" || fail "admin bell client reply" "$(echo $R | cut -c1-200)"
+C=$(as "$TC" GET /platform-admin/tickets/notifications); [ "$C" = "403" ] && pass "client cannot read the platform bell (403)" || fail "admin bell guard" "$C"
+put "/platform-admin/tickets/$NB1/status?status=RESOLVED" '{"resolution":"Font fixed"}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='RESOLVED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell: resolved — please confirm" || fail "client bell resolved" "$(echo $R | cut -c1-200)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

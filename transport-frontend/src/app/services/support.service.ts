@@ -67,6 +67,11 @@ export class SupportService {
   }
   assignees(): Observable<any> { return this.http.get('/api/v1/platform-admin/tickets/assignees'); }
   dashboard(): Observable<any> { return this.http.get('/api/v1/platform-admin/tickets/dashboard'); }
+
+  /** Bell: unread support activity (platform admin: new tickets, client replies, assigned to me, critical count). */
+  notifications(admin: boolean): Observable<any> {
+    return this.http.get(admin ? '/api/v1/platform-admin/tickets/notifications' : '/api/v1/support/notifications');
+  }
 }
 
 /**

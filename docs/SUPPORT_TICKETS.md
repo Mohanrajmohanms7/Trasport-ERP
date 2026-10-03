@@ -48,5 +48,14 @@ which also fixes existing attachment uploads over 1 MB.
 Resolved tickets with no client answer for 7 days are closed by SYSTEM (hourly job `SupportTicketJobs`; platform admin
 can run it now: `POST /api/v1/platform-admin/tickets/auto-close`). Shown in the history as "Auto-closed".
 
+## Notifications (bell, V80)
+In-app only, no external service. `saas_support_ticket_reads` stores when each user last opened each ticket; the bell
+(header, refreshed every minute while the tab is visible) shows:
+- **client users**: support replies / status changes not opened yet (internal notes never notify); company admins for
+  all company tickets, others for their own;
+- **platform admins**: new tickets not opened yet, client replies, tickets assigned to them (tickets assigned to another
+  admin notify that admin only), critical first; a red banner while any critical ticket is open.
+Opening a ticket clears it. APIs: `GET /api/v1/support/notifications`, `GET /api/v1/platform-admin/tickets/notifications`.
+
 ## Next phases
 3. In-app notification bell for both sides. 4. Record context on more screens.
