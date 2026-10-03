@@ -23,10 +23,11 @@ import { ServiceHistoryRow, WorkOrder, WorkOrderService, workOrderError } from '
 import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -94,6 +95,11 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   drivers = signal<any[]>([]);
   suppliers = signal<any[]>([]);
   readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers, [rec]); this.maintenanceForm.get('supplierId')?.setValue(rec.id); });
+  }
   documentTypes = signal<any[]>([]);
   serviceTypes = signal<any[]>([]);
 

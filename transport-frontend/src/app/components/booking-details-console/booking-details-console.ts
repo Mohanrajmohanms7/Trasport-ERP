@@ -126,6 +126,14 @@ export class BookingDetailsConsoleComponent implements OnInit {
   readonly customerPick = this.picker.bind('customers', this.customers);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  newMaterial(text: string, row: any): void {
+    this.quick.start('material', text, rec => { PickerService.merge(this.materials, [rec]); row.get('material.id')?.setValue(rec.id); });
+  }
+  newSite(text: string): void {
+    const customerId = this.bookingForm.getRawValue()?.customer?.id;
+    if (!customerId) return;
+    this.quick.start('deliverySite', text, rec => { this.sites.set([...this.sites(), rec]); this.bookingForm.get('deliverySite.id')?.setValue(rec.id); }, { customerId });
+  }
   newCustomer(text: string): void {
     this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.bookingForm.get('customer.id')?.setValue(rec.id); });
   }

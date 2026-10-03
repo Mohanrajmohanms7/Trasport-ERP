@@ -75,7 +75,8 @@ selected. APIs: `?status=ACTIVE&search=` on the master lists, `GET /trips/picker
 `GET /spare-parts?search=`. Receipts check that a linked booking is the same company's and customer's (and now save it).
 
 **Quick Create** from dropdowns (`ff-dropdown` `[createLabel]` / `(ffCreate)`, `shared/quick-create`): customer (booking,
-invoice, receipt), vehicle and driver (trip, fuel), supplier (stock receipt, payable bill), spare part (stock receipt).
+invoice, receipt), vehicle and driver (trip, fuel), supplier (stock receipt, payable bill), spare part (stock receipt, opening balance), material and delivery site (booking), quarry (trip), expense category
+(expense; admins only), vehicle and supplier (work order), supplier (vehicle service).
 Shown only if the client has that master's Add feature and the role may create it; saves through the normal API, then
 the new record is selected.
 

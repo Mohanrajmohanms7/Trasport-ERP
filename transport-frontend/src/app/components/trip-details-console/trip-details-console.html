@@ -177,7 +177,7 @@
               </div>
               <ff-datepicker formControlName="tripDate" label="Trip Date" [max]="today" [required]="true" />
               <div formGroupName="quarry">
-                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [remoteSearch]="quarryPick.search" [resolveMissing]="quarryPick.resolve" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
+                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [createLabel]="qc.label('quarry')" (ffCreate)="newQuarry($event)" [remoteSearch]="quarryPick.search" [resolveMissing]="quarryPick.resolve" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
               </div>
               <div formGroupName="loadingLocation">
                 <ff-dropdown formControlName="id" label="Loading Point" [options]="loadingLocationOptions" searchPlaceholder="Search loading points..." />
@@ -291,5 +291,5 @@
 </div>
 
 @if (quick.open(); as q) {
-  <app-quick-create [kind]="q.kind" [prefill]="q.text" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
 }

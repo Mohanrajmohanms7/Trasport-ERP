@@ -16,7 +16,7 @@
 
       <label class="ops-field">
         Vehicle
-        <ff-dropdown [disabled]="lockedPreventive()" [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select vehicle" searchPlaceholder="Type to search…" />
+        <ff-dropdown [disabled]="lockedPreventive()" [options]="vehicleOpts" [createLabel]="lockedPreventive() ? null : qc.label('vehicle')" (ffCreate)="newVehicle($event)" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select vehicle" searchPlaceholder="Type to search…" />
       </label>
 
       <label class="ops-field">
@@ -70,7 +70,7 @@
       </label>
       <label class="ops-field">
         Supplier
-        <ff-dropdown [options]="supplierOpts" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ? +$event : null)" name="supplierId" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="None" searchPlaceholder="Type to search…" />
+        <ff-dropdown [options]="supplierOpts" [createLabel]="qc.label('supplier')" (ffCreate)="newSupplier($event)" [ngModel]="supplierId()" (ngModelChange)="supplierId.set($event ? +$event : null)" name="supplierId" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="None" searchPlaceholder="Type to search…" />
       </label>
       <label class="ops-field">
         Assignee
@@ -102,3 +102,7 @@
     </form>
   }
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
