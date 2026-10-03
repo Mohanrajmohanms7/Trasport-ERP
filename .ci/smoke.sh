@@ -887,9 +887,13 @@ C=$(curl -s -o /tmp/st-dl.bin -w "%{http_code} %{content_type}" -H "Authorizatio
 C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/support/tickets/$SF/attachments/$CA); [ "$C" = "403" ] && pass "another company cannot download the file (403)" || fail "file tenant" "$C"
 C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$SF/attachments/$SIA); [ "$C" = "200" ] && pass "platform admin opens the internal file" || fail "admin download" "$C"
 put "/platform-admin/tickets/$SF/status?status=RESOLVED" '{"resolution":"Printer driver setting"}' >/dev/null
-$PSQL "UPDATE saas_support_tickets SET resolved_at = now() - interval '8 days' WHERE id=$SF" >/dev/null
+# Simulate the whole history 8+ days ago: client activity before the resolution, resolution 8 days old.
+$PSQL "UPDATE saas_support_tickets SET last_client_activity = now() - interval '9 days', resolved_at = now() - interval '8 days' WHERE id=$SF" >/dev/null
+# A resolved ticket the client answered after resolution must NOT auto-close.
+$PSQL "UPDATE saas_support_tickets SET status='RESOLVED', resolved_at = now() - interval '8 days', last_client_activity = now() - interval '1 day' WHERE id=$SK1" >/dev/null
 R=$(post /platform-admin/tickets/auto-close '{}'); [ "$(echo "$R" | j "d['data']['closed'] >= 1")" = "True" ] && [ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SF")" = "CLOSED" ] && pass "resolved ticket auto-closes after 7 days" || fail "auto-close" "$(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT COUNT(*) FROM saas_support_ticket_events WHERE ticket_id=$SF AND action='AUTO_CLOSED' AND username='SYSTEM'")" = "1" ] && pass "auto-close recorded in the ticket history" || fail "auto-close event" "x"
+[ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SK1")" = "RESOLVED" ] && pass "client activity after resolution keeps the ticket open" || fail "auto-close respects client activity" "x"
 C=$(as "$TC" POST /platform-admin/tickets/auto-close '{}'); [ "$C" = "403" ] && pass "only the platform admin can run auto-close" || fail "auto-close guard" "$C"
 
 echo "SMOKE_FAILS=$FAILS"
