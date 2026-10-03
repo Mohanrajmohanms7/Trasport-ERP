@@ -37,10 +37,12 @@ interface SearchHit {
 
 import { FfToastComponent } from '@ff/ui';
 
+import { ReportIssueDialogComponent } from '../../shared/support/report-issue-dialog';
+import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule, FfToastComponent],
+  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule, FfToastComponent, ReportIssueDialogComponent],
   templateUrl: './app-shell.html',
   styles: [`
     :host { display: block; height: 100%; }
@@ -310,6 +312,27 @@ export class AppShellComponent implements OnDestroy {
     };
   });
 
+  /** Help & Support: "Report an issue" popup + what the user is looking at (module / screen from the menu). */
+  readonly supportCtx = inject(SupportContextService);
+  readonly currentMenuItem = computed(() => {
+    const url = (this.activeRoute() || '').split('?')[0];
+    let best: { group: string; item: MenuItem } | null = null;
+    for (const g of this.menuGroups()) for (const it of g.items) {
+      if (url === it.route || url.startsWith(it.route + '/')) {
+        if (!best || it.route.length > best.item.route.length) best = { group: g.groupName, item: it };
+      }
+    }
+    return best;
+  });
+  readonly currentModule = computed(() => this.currentMenuItem()?.item.label || '');
+  readonly currentScreen = computed(() => {
+    const hit = this.currentMenuItem();
+    const url = (this.activeRoute() || '').split('?')[0];
+    if (!hit) return url;
+    const rest = url.slice(hit.item.route.length).replace(/^\//, '');
+    return rest ? `${hit.item.label} › ${rest}` : hit.item.label;
+  });
+
   readonly isSuperAdmin = computed(() => {
     const user = this.auth.currentUser();
     const roles = user?.roles || [];
@@ -356,6 +379,12 @@ export class AppShellComponent implements OnDestroy {
         { label: 'Supplier Bills & Payments', route: '/payables', icon: 'request_quote' },
         { label: 'Driver Payroll', route: '/driver-payroll', icon: 'badge' },
         { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' }
+      ]
+    },
+    {
+      groupName: 'HELP',
+      items: [
+        { label: 'Help & Support', route: '/support', icon: 'support_agent' }
       ]
     },
     {

@@ -178,6 +178,19 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await shot('trip-list');
     await pg.locator('button[title*="Edit"], button:has-text("Edit")').first().click(); await shot('trip-edit');
+    // Help & Support: report an issue while a trip is open — module, screen and the trip are captured
+    await pg.locator('[data-testid="report-issue"]').click(); await pg.waitForTimeout(800);
+    const ctxText = ((await pg.locator('app-report-issue-dialog').textContent().catch(() => '')) || '').replace(/\s+/g, ' ');
+    console.log('ST context: ' + (ctxText.match(/Module.*?Version\s*\S+/)?.[0] || ctxText.slice(0, 200)));
+    await pg.locator('app-report-issue-dialog input[name="subject"]').fill('Unable to complete trip');
+    await pg.locator('app-report-issue-dialog textarea[name="description"]').fill('Complete button does nothing after delivery is entered.');
+    await pg.locator('app-report-issue-dialog select[name="priority"]').selectOption('HIGH');
+    await pg.screenshot({ path: 'shots/st-report-form.png' });
+    await pg.locator('app-report-issue-dialog button[type="submit"]').click(); await pg.waitForTimeout(1500);
+    console.log('ST ticket: ' + (((await pg.locator('[data-testid="ticket-number"]').textContent().catch(() => '')) || 'NONE').trim()));
+    await pg.screenshot({ path: 'shots/st-report-done.png' });
+    await pg.locator('app-report-issue-dialog a:has-text("Open ticket")').click(); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/st-my-tickets.png' });
     await pg.keyboard.press('Escape');
     // Booking -> trip auto-fill: new trip, pick the first approved booking
     await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' });
@@ -204,6 +217,9 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     const sel = pp.locator('select').first(); const opts = await sel.locator('option').allTextContents();
     const i = opts.findIndex(o => o.includes('PKC')); await sel.selectOption({ index: i > 0 ? i : 1 });
     await pp.waitForTimeout(2000); await pp.screenshot({ path: 'shots/uom-platform-client.png' });
+    await pp.goto('http://localhost:4200/platform-admin/tickets', { waitUntil: 'networkidle' }); await pp.waitForTimeout(1500);
+    await pp.locator('app-support-tickets ul li button').first().click(); await pp.waitForTimeout(1500);
+    await pp.screenshot({ path: 'shots/st-admin.png', fullPage: true });
   } catch (e) { console.log('UOM platform shot', e.message.slice(0, 160)); }
   await pc.close();
 }

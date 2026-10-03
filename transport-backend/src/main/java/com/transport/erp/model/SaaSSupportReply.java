@@ -37,4 +37,8 @@ public class SaaSSupportReply {
     protected void onCreate() {
         createdDate = LocalDateTime.now();
     }
+
+    /** Internal / admin note: never returned to the client. */
+    @Column(name = "is_internal", nullable = false)
+    private Boolean isInternal = false;
 }

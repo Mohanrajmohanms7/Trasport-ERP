@@ -818,5 +818,46 @@ NB=$(curl -s -H "Authorization: Bearer $NT" "$API/customers?size=1" | j "d['data
 R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/receipts -d '{"customerId":'$NB',"bookingId":'$UBK',"amountReceived":10,"advanceAmount":10,"paymentMethod":"CASH","allocations":[]}')
 echo "$R" | grep -q '"success":true' && fail "cross-company booking on receipt" "$(echo $R | cut -c1-200)" || pass "receipt cannot link another company's booking"
 
+# ---------------- Help & Support tickets (V78, docs/SUPPORT_TICKETS.md) ----------------
+cu() { local T=$1; shift; local M=$1; shift; curl -s -X $M -H "Authorization: Bearer $T" -H 'Content-Type: application/json' "$API$1" ${2:+-d "$2"}; }
+CC1=$($PSQL "SELECT code FROM companies WHERE id=(SELECT company_id FROM app_users WHERE username='ca1')")
+R=$(cu "$TO" POST /support/tickets '{"subject":"Trip will not complete","description":"Complete button does nothing","priority":"HIGH","module":"Trips & Dispatch","screen":"Trips & Dispatch","pageUrl":"/trips-planning","recordType":"TRIP","recordId":'$TRIP',"recordLabel":"'$TNO'","appVersion":"1.0.0"}')
+SK1=$(echo "$R" | j "d['data']['id']"); SN1=$(echo "$R" | j "d['data']['ticketNumber']")
+echo "$SN1" | grep -Eq "^[A-Z0-9]+-TKT-[0-9]{5}$" && pass "ticket number carries the client prefix ($SN1, client $CC1)" || fail "ticket number" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets '{"subject":"Second","description":"x"}'); SN2=$(echo "$R" | j "d['data']['ticketNumber']")
+P1=${SN1%-TKT-*}; [ "${SN2%-TKT-*}" = "$P1" ] && [ "${SN2##*-}" != "${SN1##*-}" ] && pass "next ticket same prefix, next number ($SN2)" || fail "ticket sequence" "$SN1 $SN2"
+R=$(cu "$PT" POST /support/tickets '{"subject":"PKC login slow","description":"Takes 20s","priority":"LOW"}'); PK1=$(echo "$R" | j "d['data']['id']"); PN1=$(echo "$R" | j "d['data']['ticketNumber']")
+echo "$PN1" | grep -q "^PKC-TKT-" && pass "PKC tickets read PKC-TKT-… ($PN1)" || fail "PKC prefix" "$PN1"
+R=$(cu "$TO" POST /support/tickets '{"subject":" ","description":"x"}'); echo "$R" | grep -q "short title" && pass "title required" || fail "ticket validation" "$(echo $R | cut -c1-160)"
+C=$(as "$TD" POST /support/tickets '{"subject":"d","description":"d"}'); [ "$C" = "403" ] && pass "driver login cannot raise tickets (reports via manager)" || fail "driver ticket" "$C"
+R=$(cu "$TV" POST /support/tickets '{"subject":"Viewer issue","description":"Report shows wrong total"}'); SKV=$(echo "$R" | j "d['data']['id']")
+[ -n "$SKV" ] && [ "$SKV" != "None" ] && pass "viewer can report an issue (no business data changed)" || fail "viewer ticket" "$(echo $R | cut -c1-160)"
+C=$(as "$NT" GET /support/tickets/$SK1); [ "$C" = "403" ] && pass "another company cannot open the ticket (403)" || fail "ticket tenant" "$C"
+C=$(as "$TV" GET /support/tickets/$SK1); [ "$C" = "403" ] && pass "a non-admin user cannot open a colleague's ticket" || fail "ticket own only" "$C"
+R=$(cu "$TC" GET "/support/tickets?size=100"); echo "$R" | j "'ok' if {$SK1,$SKV} <= {t['id'] for t in d['data']['content']} and $PK1 not in {t['id'] for t in d['data']['content']} else 'no'" | grep -q ok && pass "company admin sees all own-company tickets, no other company's" || fail "company admin list" "$(echo $R | cut -c1-160)"
+R=$(cu "$TO" GET "/support/tickets?size=100"); echo "$R" | j "'ok' if $SKV not in {t['id'] for t in d['data']['content']} else 'no'" | grep -q ok && pass "user list shows only own tickets" || fail "user list" "$(echo $R | cut -c1-160)"
+C=$(as "$TC" GET /platform-admin/tickets); [ "$C" = "403" ] && pass "client cannot use the platform ticket API (403)" || fail "admin api guard" "$C"
+R=$(put "/platform-admin/tickets/$SK1/assign?username=admin" '{}'); [ "$(echo "$R" | j "d['data']['assignedTo']")" = "admin" ] && pass "platform admin assigns the ticket" || fail "assign" "$(echo $R | cut -c1-200)"
+R=$(post /platform-admin/tickets/$SK1/replies '{"message":"SECRET-INTERNAL-NOTE db row locked","internal":true}'); echo "$R" | grep -q "SECRET-INTERNAL-NOTE" && pass "internal note saved (admin sees it)" || fail "internal note" "$(echo $R | cut -c1-200)"
+R=$(post /platform-admin/tickets/$SK1/replies '{"message":"Which vehicle was it?","internal":false,"status":"WAITING_FOR_CLIENT"}'); [ "$(echo "$R" | j "d['data']['status']")" = "WAITING_FOR_CLIENT" ] && pass "admin reply + waiting for client" || fail "admin reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" GET /support/tickets/$SK1)
+echo "$R" | grep -q "SECRET-INTERNAL-NOTE" && fail "INTERNAL NOTE LEAKED TO CLIENT" "$(echo $R | cut -c1-200)" || pass "internal note never in the client response"
+echo "$R" | grep -q '"ASSIGNED"\|assignedTo' && fail "assignment leaked to client" "$(echo $R | cut -c1-200)" || pass "assignment is internal (not in client response)"
+echo "$R" | grep -q "Which vehicle was it" && [ "$(echo "$R" | j "d['data']['supportReplied']")" = "True" ] && pass "client sees the support reply (marked as replied)" || fail "client sees reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/replies '{"message":"Vehicle TN46AB1234"}'); [ "$(echo "$R" | j "d['data']['status']")" = "IN_PROGRESS" ] && pass "client reply moves Waiting → In progress" || fail "client reply" "$(echo $R | cut -c1-200)"
+R=$(put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{}'); echo "$R" | grep -q "resolved" && pass "resolve needs a resolution" || fail "resolution required" "$(echo $R | cut -c1-200)"
+R=$(put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{"resolution":"Fixed the lock; please retry"}'); [ "$(echo "$R" | j "d['data']['status']")" = "RESOLVED" ] && pass "admin resolves with a resolution" || fail "resolve" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/reopen '{"message":"Still fails for TRP 2"}'); [ "$(echo "$R" | j "d['data']['status'] + str(d['data']['reopenCount'])")" = "IN_PROGRESS1" ] && pass "client reopens a resolved ticket" || fail "reopen" "$(echo $R | cut -c1-200)"
+put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{"resolution":"Second fix"}' >/dev/null
+R=$(cu "$TO" POST /support/tickets/$SK1/confirm); [ "$(echo "$R" | j "d['data']['status']")" = "CLOSED" ] && pass "client confirms the fix → closed" || fail "confirm" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/replies '{"message":"again"}'); echo "$R" | grep -q "closed" && pass "closed ticket takes no more replies" || fail "closed reply" "$(echo $R | cut -c1-200)"
+R=$(api GET /platform-admin/tickets/$SK1 2>/dev/null); R=$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$SK1)
+echo "$R" | j "'ok' if [e['action'] for e in d['data']['timeline'] if e['kind']=='EVENT'][:1]==['CREATED'] and any(e.get('action')=='REOPENED' for e in d['data']['timeline']) and d['data']['recordLabel']=='$TNO' else 'no'" | grep -q ok && pass "admin timeline: created … reopened … closed, trip context kept" || fail "timeline" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/platform-admin/tickets?companyId=$($PSQL "SELECT company_id FROM app_users WHERE username='pkc.admin'")&size=50")
+echo "$R" | j "'ok' if d['data']['content'] and all(t['ticketNumber'].startswith('PKC-') for t in d['data']['content']) else 'no'" | grep -q ok && pass "admin filter by client" || fail "admin client filter" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/platform-admin/tickets?search=$PN1"); [ "$(echo "$R" | j "d['data']['totalElements']")" = "1" ] && pass "admin search by ticket number" || fail "admin search" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/dashboard); echo "$R" | j "'ok' if d['data']['open_total'] >= 2 and d['data']['closed'] >= 1 and d['data']['byClient'] else 'no'" | grep -q ok && pass "support dashboard counts" || fail "support dashboard" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM audit_logs WHERE entity_name='saas_support_tickets' AND entity_id=$SK1")" -ge 6 ] && pass "ticket actions are in the audit log" || fail "ticket audit" "x"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

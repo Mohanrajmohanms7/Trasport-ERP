@@ -1,0 +1,142 @@
+<div class="flex flex-col gap-4">
+  @if (dash(); as d) {
+    @if (d.critical > 0) {
+      <button type="button" class="rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-semibold flex items-center gap-2 text-left" (click)="quick({ priority: 'CRITICAL' })">
+        <span class="material-icons">warning</span>{{ d.critical }} critical issue(s) open — click to view</button>
+    }
+    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+      @for (k of [
+        { l: 'Open', v: d.open_total, f: {} }, { l: 'New (unassigned)', v: d.new_unassigned, f: { status: 'OPEN' } },
+        { l: 'High / Critical', v: d.high_critical, f: { priority: 'HIGH' } }, { l: 'In progress', v: d.in_progress, f: { status: 'IN_PROGRESS' } },
+        { l: 'Waiting for client', v: d.waiting_for_client, f: { status: 'WAITING_FOR_CLIENT' } }, { l: 'Resolved', v: d.resolved, f: { status: 'RESOLVED' } },
+        { l: 'Closed', v: d.closed, f: { status: 'CLOSED' } }, { l: 'Overdue', v: d.overdue, f: { overdue: true } }]; track k.l) {
+        <button type="button" class="rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3 text-left hover:border-blue-300" (click)="quick(k.f)">
+          <div class="text-[10px] font-bold uppercase text-[var(--ff-text-muted)]">{{ k.l }}</div>
+          <div class="text-xl font-bold" [class.text-red-600]="k.l === 'Overdue' && k.v > 0">{{ k.v }}</div>
+        </button>
+      }
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+      <div class="rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+        <div class="font-bold mb-2">Open issues by client</div>
+        @for (c of d.byClient; track c.client) { <div class="flex justify-between py-0.5"><span>{{ c.client }}</span><b>{{ c.open_count }}</b></div> } @empty { <div class="text-[var(--ff-text-muted)]">None</div> }
+      </div>
+      <div class="rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-3">
+        <div class="font-bold mb-2">Open issues by module</div>
+        @for (m of d.byModule; track m.module) { <button type="button" class="w-full flex justify-between py-0.5 hover:underline" (click)="quick({ module: m.module === 'Other' ? '' : m.module })"><span>{{ m.module }}</span><b>{{ m.open_count }}</b></button> } @empty { <div class="text-[var(--ff-text-muted)]">None</div> }
+      </div>
+    </div>
+  }
+
+  <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] gap-4">
+    <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)]">
+      <div class="p-3 grid grid-cols-2 md:grid-cols-3 gap-2 border-b border-[var(--ff-border-divider)]">
+        <input class="st-in col-span-2 md:col-span-3" placeholder="Search ticket no., title, client or user" [(ngModel)]="f.search" (keyup.enter)="page = 0; load()" />
+        <select class="st-in" [(ngModel)]="f.companyId" (ngModelChange)="page = 0; load()"><option value="">All clients</option>@for (c of clients(); track c.id) { <option [value]="c.id">{{ c.name }}</option> }</select>
+        <select class="st-in" [(ngModel)]="f.status" (ngModelChange)="page = 0; load()"><option value="">All statuses</option>@for (s of statuses; track s.value) { <option [value]="s.value">{{ s.label }}</option> }</select>
+        <select class="st-in" [(ngModel)]="f.priority" (ngModelChange)="page = 0; load()"><option value="">All priorities</option>@for (p of priorities; track p.value) { <option [value]="p.value">{{ p.label }}</option> }</select>
+        <select class="st-in" [(ngModel)]="f.assignedTo" (ngModelChange)="page = 0; load()"><option value="">Anyone</option>@for (a of assignees(); track a.username) { <option [value]="a.username">{{ a.name }}</option> }</select>
+        <input class="st-in" placeholder="Module" [(ngModel)]="f.module" (keyup.enter)="page = 0; load()" />
+        <label class="flex items-center gap-2 text-xs"><input type="checkbox" [(ngModel)]="f.overdue" (ngModelChange)="page = 0; load()" />Overdue only</label>
+      </div>
+      <ul class="divide-y divide-[var(--ff-border-divider)]">
+        @for (t of rows(); track t.id) {
+          <li>
+            <button type="button" class="w-full text-left p-3 hover:bg-[var(--ff-surface-hover)] flex flex-col gap-1" [class.st-active]="selected()?.id === t.id" (click)="open(t.id)">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-bold">{{ t.ticketNumber }}</span>
+                <span class="flex items-center gap-2">
+                  @if (t.overdue) { <span class="text-[10px] font-bold text-red-600">OVERDUE</span> }
+                  <span class="st-badge" [attr.data-s]="t.status">{{ statusLabel(t.status) }}</span>
+                </span>
+              </div>
+              <span class="text-sm font-semibold">{{ t.subject }}</span>
+              <span class="text-[11px] text-[var(--ff-text-muted)] flex flex-wrap gap-x-3">
+                <span class="st-pri" [attr.data-p]="t.priority">{{ priorityLabel(t.priority) }}</span>
+                <span>{{ t.clientName }}</span>
+                @if (t.module) { <span>{{ t.module }}</span> }
+                <span>{{ t.assignedTo || 'Unassigned' }}</span>
+                <span>{{ t.updatedDate | date:'dd MMM, HH:mm' }}</span>
+                @if (t.clientReplied && t.status !== 'CLOSED') { <span class="text-[var(--ff-color-primary-600)] font-semibold">● Client replied</span> }
+              </span>
+            </button>
+          </li>
+        } @empty { <li class="p-6 text-center text-sm text-[var(--ff-text-muted)]">{{ loading() ? 'Loading…' : 'No tickets.' }}</li> }
+      </ul>
+      @if (total() > 20) {
+        <div class="p-2 flex justify-end gap-2 text-xs">
+          <button type="button" class="px-3 h-8 rounded border" [disabled]="page === 0" (click)="page = page - 1; load()">Previous</button>
+          <button type="button" class="px-3 h-8 rounded border" [disabled]="(page + 1) * 20 >= total()" (click)="page = page + 1; load()">Next</button>
+        </div>
+      }
+    </section>
+
+    <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-4 flex flex-col gap-3 min-h-[320px]">
+      @if (selected(); as t) {
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <div class="font-mono text-xs font-bold text-[var(--ff-text-muted)]">{{ t.ticketNumber }} · {{ t.clientName }}</div>
+            <h2 class="text-lg font-bold">{{ t.subject }}</h2>
+          </div>
+          <span class="st-badge" [attr.data-s]="t.status">{{ statusLabel(t.status) }}</span>
+        </div>
+        <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] rounded-lg bg-[var(--ff-surface-hover)] p-3">
+          <b>Reported</b><span>{{ t.createdDate | date:'dd MMM yyyy, HH:mm' }} by {{ t.reportedBy }}</span>
+          <b>Module / screen</b><span>{{ t.module || '—' }}{{ t.screen ? ' · ' + t.screen : '' }}</span>
+          @if (t.recordLabel || t.recordId) { <b>Record</b><span>{{ t.recordType }} {{ t.recordLabel || ('#' + t.recordId) }}</span> }
+          <b>Page</b><span class="break-all">{{ t.pageUrl || '—' }}</span>
+          <b>Browser</b><span class="break-all">{{ t.userAgent || '—' }}</span>
+          <b>Version</b><span>{{ t.appVersion || '—' }}</span>
+          <b>Due</b><span [class.text-red-600]="t.overdue">first reply {{ t.firstResponseDue | date:'dd MMM, HH:mm' }}{{ t.firstRespondedAt ? ' (answered)' : '' }} · fix {{ t.resolveDue | date:'dd MMM, HH:mm' }}</span>
+          @if (t.reopenCount > 0) { <b>Reopened</b><span>{{ t.reopenCount }} time(s)</span> }
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] font-semibold text-[var(--ff-text-muted)]">
+          <label class="flex flex-col gap-1">Status<select class="st-in" [ngModel]="t.status" (ngModelChange)="setStatus($event)" [disabled]="busy() || t.status === 'CLOSED'">@for (s of statuses; track s.value) { <option [value]="s.value">{{ s.label }}</option> }</select></label>
+          <label class="flex flex-col gap-1">Priority<select class="st-in" [ngModel]="t.priority" (ngModelChange)="setPriority($event)" [disabled]="busy() || t.status === 'CLOSED'">@for (p of priorities; track p.value) { <option [value]="p.value">{{ p.label }}</option> }</select></label>
+          <label class="flex flex-col gap-1">Assigned to<select class="st-in" [ngModel]="t.assignedTo || ''" (ngModelChange)="assign($event)" [disabled]="busy()"><option value="">Unassigned</option>@for (a of assignees(); track a.username) { <option [value]="a.username">{{ a.name }}</option> }</select></label>
+        </div>
+        @if (t.status !== 'RESOLVED' && t.status !== 'CLOSED') {
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Resolution (shown to the client when you resolve)
+            <textarea rows="2" class="st-in" [(ngModel)]="resolution"></textarea></label>
+          <button type="button" class="self-start h-8 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold disabled:opacity-60" [disabled]="busy() || !resolution.trim()" (click)="setStatus('RESOLVED')">Mark resolved</button>
+        } @else if (t.resolution) {
+          <div class="rounded-lg border border-emerald-300 p-3 text-sm"><b class="text-xs">Resolution</b><div class="whitespace-pre-wrap">{{ t.resolution }}</div></div>
+        }
+
+        <p class="whitespace-pre-wrap text-sm rounded-lg border border-[var(--ff-border-default)] p-3">{{ t.description }}</p>
+        <ol class="flex flex-col gap-2">
+          @for (e of t.timeline; track $index) {
+            @if (e.kind === 'MESSAGE' || e.kind === 'NOTE') {
+              <li class="rounded-lg p-3 text-sm" [class.st-note]="e.internal" [class.st-support]="!e.internal && e.fromSupport" [class.st-mine]="!e.internal && !e.fromSupport">
+                <div class="text-[11px] font-semibold mb-1 flex items-center gap-1">
+                  @if (e.internal) { <span class="material-icons text-sm">lock</span>Internal note · }
+                  {{ e.fromSupport ? e.by + ' (support)' : e.by + ' (client)' }} · {{ e.at | date:'dd MMM, HH:mm' }}</div>
+                <div class="whitespace-pre-wrap">{{ e.message }}</div>
+              </li>
+            } @else {
+              <li class="text-[11px] text-[var(--ff-text-muted)] flex items-center gap-2"><span class="material-icons text-sm">{{ e.internal ? 'lock' : 'history' }}</span>{{ eventText(e) }} · {{ e.by }} · {{ e.at | date:'dd MMM, HH:mm' }}</li>
+            }
+          }
+        </ol>
+
+        <div class="flex flex-col gap-2 rounded-lg p-3" [class.st-note]="internal" [class.st-mine]="!internal">
+          <div class="flex gap-2 text-xs font-semibold">
+            <button type="button" class="px-3 h-8 rounded-lg" [class.bg-blue-600]="!internal" [class.text-white]="!internal" (click)="internal = false">Reply to client</button>
+            <button type="button" class="px-3 h-8 rounded-lg flex items-center gap-1" [class.bg-amber-500]="internal" [class.text-white]="internal" (click)="internal = true"><span class="material-icons text-sm">lock</span>Internal note</button>
+          </div>
+          @if (internal) { <p class="text-[11px] font-semibold text-amber-700">Not visible to the client.</p> }
+          <textarea rows="3" class="st-in" [placeholder]="internal ? 'Note for the support / development team…' : 'Message to the client…'" [(ngModel)]="message"></textarea>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            @if (!internal && t.status !== 'CLOSED') {
+              <select class="st-in text-xs" [(ngModel)]="replyStatus"><option value="">Keep status</option><option value="WAITING_FOR_CLIENT">…and wait for client</option><option value="IN_PROGRESS">…and set In progress</option></select>
+            }
+            <button type="button" class="h-9 px-4 rounded-lg text-white font-semibold disabled:opacity-60" [class.bg-amber-600]="internal" [class.bg-blue-600]="!internal"
+                    [disabled]="busy() || !message.trim() || (!internal && t.status === 'CLOSED')" (click)="send()">{{ internal ? 'Add note' : 'Send reply' }}</button>
+          </div>
+        </div>
+      } @else {
+        <div class="m-auto text-sm text-[var(--ff-text-muted)]">Select a ticket.</div>
+      }
+    </section>
+  </div>
+</div>

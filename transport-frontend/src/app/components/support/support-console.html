@@ -1,0 +1,103 @@
+<div class="flex flex-col gap-4 p-1">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h1 class="text-xl font-bold flex items-center gap-2"><span class="material-symbols-outlined">support_agent</span>Help &amp; Support</h1>
+      <p class="text-xs text-[var(--ff-text-secondary)]">{{ companyAdmin ? 'All issues reported by your company' : 'Issues you reported' }} — support replies appear here.</p>
+    </div>
+    <button type="button" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold inline-flex items-center gap-2" (click)="ctx.openReport()">
+      <span class="material-icons text-base">add</span>Report an issue</button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-4">
+    <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] flex flex-col min-h-0">
+      <div class="p-3 flex flex-wrap gap-2 border-b border-[var(--ff-border-divider)]">
+        <input class="st-in flex-1 min-w-[140px]" placeholder="Search ticket no. / title" [(ngModel)]="search" (keyup.enter)="page = 0; load()" />
+        <select class="st-in" [(ngModel)]="status" (ngModelChange)="page = 0; load()">
+          <option value="">All statuses</option>
+          @for (s of statuses; track s.value) { <option [value]="s.value">{{ s.label }}</option> }
+        </select>
+      </div>
+      <ul class="divide-y divide-[var(--ff-border-divider)]">
+        @for (t of rows(); track t.id) {
+          <li>
+            <button type="button" class="w-full text-left p-3 hover:bg-[var(--ff-surface-hover)] flex flex-col gap-1" [class.st-active]="selected()?.id === t.id" (click)="open(t.id)">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-mono text-xs font-bold">{{ t.ticketNumber }}</span>
+                <span class="st-badge" [attr.data-s]="t.status">{{ statusLabel(t.status) }}</span>
+              </div>
+              <span class="text-sm font-semibold text-[var(--ff-text-primary)]">{{ t.subject }}</span>
+              <span class="text-[11px] text-[var(--ff-text-muted)] flex flex-wrap gap-x-3">
+                <span class="st-pri" [attr.data-p]="t.priority">{{ priorityLabel(t.priority) }}</span>
+                @if (t.module) { <span>{{ t.module }}</span> }
+                <span>Updated {{ t.updatedDate | date:'dd MMM, HH:mm' }}</span>
+                @if (companyAdmin) { <span>by {{ t.reportedBy }}</span> }
+                @if (t.supportReplied && t.status !== 'CLOSED') { <span class="text-[var(--ff-color-primary-600)] font-semibold">● Support replied</span> }
+              </span>
+            </button>
+          </li>
+        } @empty {
+          <li class="p-6 text-center text-sm text-[var(--ff-text-muted)]">{{ loading() ? 'Loading…' : 'No tickets yet.' }}</li>
+        }
+      </ul>
+      @if (total() > 20) {
+        <div class="p-2 flex justify-end gap-2 text-xs">
+          <button type="button" class="px-3 h-8 rounded border" [disabled]="page === 0" (click)="page = page - 1; load()">Previous</button>
+          <button type="button" class="px-3 h-8 rounded border" [disabled]="(page + 1) * 20 >= total()" (click)="page = page + 1; load()">Next</button>
+        </div>
+      }
+    </section>
+
+    <section class="rounded-xl border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-4 flex flex-col gap-3 min-h-[300px]">
+      @if (selected(); as t) {
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <div class="font-mono text-xs font-bold text-[var(--ff-text-muted)]">{{ t.ticketNumber }}</div>
+            <h2 class="text-lg font-bold">{{ t.subject }}</h2>
+            <div class="text-[11px] text-[var(--ff-text-muted)] flex flex-wrap gap-x-3">
+              <span class="st-pri" [attr.data-p]="t.priority">{{ priorityLabel(t.priority) }}</span>
+              @if (t.module) { <span>{{ t.module }}{{ t.screen ? ' · ' + t.screen : '' }}</span> }
+              @if (t.recordLabel) { <span>Record: {{ t.recordLabel }}</span> }
+              <span>Reported {{ t.createdDate | date:'dd MMM yyyy, HH:mm' }} by {{ t.reportedBy }}</span>
+            </div>
+          </div>
+          <span class="st-badge" [attr.data-s]="t.status">{{ statusLabel(t.status) }}</span>
+        </div>
+        <p class="whitespace-pre-wrap text-sm rounded-lg bg-[var(--ff-surface-hover)] p-3">{{ t.description }}</p>
+
+        <ol class="flex flex-col gap-2">
+          @for (e of t.timeline; track $index) {
+            @if (e.kind === 'MESSAGE') {
+              <li class="rounded-lg p-3 text-sm" [class.st-support]="e.fromSupport" [class.st-mine]="!e.fromSupport">
+                <div class="text-[11px] font-semibold mb-1">{{ e.fromSupport ? 'TransaFlow Support' : e.by }} · {{ e.at | date:'dd MMM, HH:mm' }}</div>
+                <div class="whitespace-pre-wrap">{{ e.message }}</div>
+              </li>
+            } @else {
+              <li class="text-[11px] text-[var(--ff-text-muted)] flex items-center gap-2"><span class="material-icons text-sm">history</span>{{ eventText(e) }} · {{ e.at | date:'dd MMM, HH:mm' }}</li>
+            }
+          }
+        </ol>
+
+        @if (t.status === 'RESOLVED') {
+          <div class="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 p-3 flex flex-col gap-2 text-sm">
+            <div class="font-semibold">Support marked this as resolved</div>
+            @if (t.resolution) { <div class="whitespace-pre-wrap">{{ t.resolution }}</div> }
+            <div class="flex flex-wrap gap-2">
+              <button type="button" class="h-9 px-3 rounded-lg bg-emerald-600 text-white font-semibold" [disabled]="busy()" (click)="confirmFixed()">Issue fixed — close ticket</button>
+            </div>
+            <textarea rows="2" class="st-in" placeholder="Still not working? Tell support what still happens…" [(ngModel)]="reopenText"></textarea>
+            <button type="button" class="self-start h-9 px-3 rounded-lg border border-[var(--ff-border-default)] font-semibold" [disabled]="busy() || !reopenText.trim()" (click)="stillBroken()">Still not working — reopen</button>
+          </div>
+        } @else if (t.status !== 'CLOSED') {
+          <div class="flex flex-col gap-2">
+            <textarea rows="3" class="st-in" placeholder="Add information or answer support…" [(ngModel)]="reply"></textarea>
+            <button type="button" class="self-end h-9 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold disabled:opacity-60" [disabled]="busy() || !reply.trim()" (click)="send()">Send</button>
+          </div>
+        } @else {
+          <p class="text-xs text-[var(--ff-text-muted)]">This ticket is closed. If the problem comes back, report a new issue.</p>
+        }
+      } @else {
+        <div class="m-auto text-sm text-[var(--ff-text-muted)]">Select a ticket to see the conversation.</div>
+      }
+    </section>
+  </div>
+</div>

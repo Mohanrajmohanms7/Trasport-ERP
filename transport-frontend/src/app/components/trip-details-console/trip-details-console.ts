@@ -1,5 +1,5 @@
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,6 +20,7 @@ import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
@@ -404,6 +405,15 @@ export class TripDetailsConsoleComponent implements OnInit {
       this.loading.set(false);
     });
   }
+
+  /** "Report an issue" while a trip is open captures that trip (Module = Trips, Record = TRP-…). */
+  private supportCtx = inject(SupportContextService);
+  private readonly tripContext = effect(() => {
+    const t = this.editingTrip();
+    if (t?.id) this.supportCtx.setRecord('TRIP', t.id, (t as any).tripNumber || null);
+    else this.supportCtx.clearRecord();
+  });
+  private readonly clearContextOnLeave = inject(DestroyRef).onDestroy(() => this.supportCtx.clearRecord());
 
   openAddTrip() {
     this.editingTrip.set(null);

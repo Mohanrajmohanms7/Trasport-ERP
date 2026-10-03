@@ -48,8 +48,10 @@ public class DriverScopeAuthorizationManager implements AuthorizationManager<Req
         String method = ctx.getRequest().getMethod();
 
         if (isOnly(auth, "ROLE_VIEWER")) {
-            // Read-only role: may look at everything, change nothing (except own password / logout).
-            return new AuthorizationDecision("GET".equalsIgnoreCase(method) || MATCHER.match("/api/v1/auth/**", path));
+            // Read-only role: may look at everything, change nothing (except own password / logout, and reporting a
+            // problem to support, which changes no business data).
+            return new AuthorizationDecision("GET".equalsIgnoreCase(method) || MATCHER.match("/api/v1/auth/**", path)
+                    || MATCHER.match("/api/v1/support/**", path));
         }
         if (!isOnly(auth, "ROLE_DRIVER")) {
             return new AuthorizationDecision(true);

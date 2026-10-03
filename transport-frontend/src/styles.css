@@ -607,3 +607,23 @@ textarea.ops-input { height: auto; min-height: 5rem; padding: 0.5rem 0.75rem; }
 html.dark .ops-alert--error, .dark .ops-alert--error { background: #3a1414; border-color: #7f1d1d; color: #fecaca; }
 html.dark .ops-alert--ok, .dark .ops-alert--ok { background: #0f2e22; border-color: #065f46; color: #a7f3d0; }
 html.dark .ops-pill, .dark .ops-pill { background: #1e293b; color: #cbd5e1; }
+
+/* ---- Help & Support (tickets) — shared by client and platform admin screens ---- */
+.st-in { min-height: 36px; border: 1px solid var(--ff-border-default); border-radius: 8px; padding: 6px 10px; font-size: 13px; background: var(--ff-surface-card); color: var(--ff-text-primary); }
+.st-active { background: var(--ff-surface-hover); }
+.st-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; background: #e2e8f0; color: #334155; }
+.st-badge[data-s="OPEN"] { background: #dbeafe; color: #1d4ed8; }
+.st-badge[data-s="IN_PROGRESS"] { background: #fef3c7; color: #92400e; }
+.st-badge[data-s="WAITING_FOR_CLIENT"] { background: #ede9fe; color: #5b21b6; }
+.st-badge[data-s="RESOLVED"] { background: #d1fae5; color: #065f46; }
+.st-badge[data-s="CLOSED"] { background: #e5e7eb; color: #4b5563; }
+.st-pri { font-weight: 700; }
+.st-pri[data-p="LOW"] { color: #64748b; }
+.st-pri[data-p="MEDIUM"] { color: #2563eb; }
+.st-pri[data-p="HIGH"] { color: #d97706; }
+.st-pri[data-p="CRITICAL"] { color: #dc2626; }
+.st-support { background: #eff6ff; border: 1px solid #bfdbfe; }
+.st-mine { background: var(--ff-surface-hover); border: 1px solid var(--ff-border-default); }
+.st-note { background: #fffbeb; border: 1px dashed #f59e0b; }
+.dark .st-support, [data-theme="dark"] .st-support { background: #172554; border-color: #1e3a8a; }
+.dark .st-note, [data-theme="dark"] .st-note { background: #3b2f0b; border-color: #b45309; }
