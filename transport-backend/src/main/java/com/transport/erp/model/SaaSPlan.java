@@ -79,4 +79,14 @@ public class SaaSPlan {
             updatedBy = "SYSTEM";
         }
     }
+
+    @Column(name = "max_branches", nullable = false)
+    private Integer maxBranches = 1;
+
+    /** Order of plans for upgrade / downgrade (Trial 0, Starter 1 … Enterprise 4). */
+    @Column(name = "tier", nullable = false)
+    private Integer tier = 0;
+
+    @Column(name = "tagline", length = 255)
+    private String tagline;
 }

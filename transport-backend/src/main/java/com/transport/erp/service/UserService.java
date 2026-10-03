@@ -13,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private PlanLimitService planLimits;
+
     @Autowired
     private AppUserRepository userRepository;
 
@@ -116,6 +119,9 @@ public class UserService {
         user.setCreatedBy(createdByUsername);
         user.setUpdatedBy(createdByUsername);
 
+        if (!driverOnly(user) && (user.getStatus() == null || "ACTIVE".equalsIgnoreCase(user.getStatus()))) {
+            planLimits.assertCanAdd(user.getCompanyId(), PlanLimitService.Kind.USERS);
+        }
         AppUser savedUser = userRepository.save(user);
 
         // Audit log
@@ -134,6 +140,9 @@ public class UserService {
         existingUser.setPhone(userDetails.getPhone());
         if (userDetails.getStatus() != null && !"ACTIVE".equalsIgnoreCase(userDetails.getStatus())) {
             assertNotLockingOut(existingUser, "deactivate");
+        }
+        if ("ACTIVE".equalsIgnoreCase(userDetails.getStatus()) && !"ACTIVE".equalsIgnoreCase(existingUser.getStatus()) && !driverOnly(existingUser)) {
+            planLimits.assertCanAdd(existingUser.getCompanyId(), PlanLimitService.Kind.USERS);
         }
         existingUser.setStatus(userDetails.getStatus());
         if (userDetails.getRoles() != null) {
@@ -202,5 +211,10 @@ public class UserService {
                 .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()) && "ACTIVE".equalsIgnoreCase(u.getStatus()))
                 .filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode())))
                 .count();
+    }
+
+    /** Driver app logins are not counted against the plan's staff-login limit. */
+    private static boolean driverOnly(AppUser u) {
+        return u.getRoles() != null && !u.getRoles().isEmpty() && u.getRoles().stream().allMatch(r -> "DRIVER".equals(r.getCode()));
     }
 }

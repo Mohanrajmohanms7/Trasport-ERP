@@ -27,7 +27,11 @@
     @if (selectedId()) {
       <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="setAll(true)">Allow all</button>
       <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="setAll(false)">Block all (except core)</button>
-      @if (mode() === 'client') { <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="resetToPlan()">Reset to plan</button> }
+      @if (mode() === 'client') {
+        <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="resetToPlan()">Reset to plan</button>
+        <input class="border rounded-lg px-2 py-2 text-xs w-48 bg-white dark:bg-slate-900" placeholder="Reason (e.g. Add-on: GPS)" [ngModel]="reason()" (ngModelChange)="reason.set($event)" />
+        <label class="text-[11px] text-slate-500 flex items-center gap-1">Until <input type="date" class="border rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-900" [ngModel]="validUntil()" (ngModelChange)="validUntil.set($event)" /></label>
+      }
       <button type="button" class="px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:opacity-50" [disabled]="!dirty() || saving()" (click)="save()">
         {{ saving() ? 'Saving…' : 'Save changes' }}</button>
       <span class="text-xs text-slate-500">{{ offCount() }} item(s) switched off</span>

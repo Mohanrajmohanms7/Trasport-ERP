@@ -13,6 +13,9 @@ import java.util.Optional;
 public class BranchService {
 
     @org.springframework.beans.factory.annotation.Autowired
+    private PlanLimitService planLimits;
+
+    @org.springframework.beans.factory.annotation.Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -37,6 +40,9 @@ public class BranchService {
             throw new IllegalArgumentException("Branch code already exists in this company: " + branch.getCode());
         }
         branch.setIsDeleted(false);
+        if (branch.getStatus() == null || "ACTIVE".equals(branch.getStatus())) {
+            planLimits.assertCanAdd(branch.getCompanyId(), PlanLimitService.Kind.BRANCHES);
+        }
         return branchRepository.save(branch);
     }
 
@@ -97,6 +103,9 @@ public class BranchService {
         Branch branch = branchRepository.findById(id)
                 .filter(b -> !b.getIsDeleted())
                 .orElseThrow(() -> new IllegalArgumentException("Branch not found: " + id));
+        if (!"ACTIVE".equals(branch.getStatus())) {
+            planLimits.assertCanAdd(branch.getCompanyId(), PlanLimitService.Kind.BRANCHES);
+        }
         branch.setStatus("ACTIVE".equals(branch.getStatus()) ? "INACTIVE" : "ACTIVE");
         return branchRepository.save(branch);
     }

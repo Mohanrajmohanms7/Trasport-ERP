@@ -658,6 +658,8 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         savedCompany.setSubscriptionStatus("ACTIVE");
         savedCompany.setMaxUsers(maxUsers);
         savedCompany.setMaxVehicles(maxVehicles);
+        savedCompany.setMaxBranches(plan.getMaxBranches());
+        savedCompany.setPlanEnforced(true);      // new clients get exactly their plan
         companyRepository.save(savedCompany);
 
         String licenseKey = "LIC-" + companyCode + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();

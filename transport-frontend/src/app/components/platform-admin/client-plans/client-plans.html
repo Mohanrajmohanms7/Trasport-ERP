@@ -1,0 +1,106 @@
+<div class="space-y-4">
+  <!-- Plans -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+    @for (p of plans(); track p.id) {
+      <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900">
+        <div class="flex items-center justify-between"><span class="font-bold">{{ p.name }}</span><span class="text-[10px] text-slate-400">{{ p.code }}</span></div>
+        <div class="text-[11px] text-slate-500 min-h-[28px]">{{ p.tagline }}</div>
+        <div class="mt-2 text-[11px] grid grid-cols-3 gap-1">
+          <div><div class="text-slate-400">Trucks</div><b>{{ planLimit(p.maxVehicles) }}</b></div>
+          <div><div class="text-slate-400">Users</div><b>{{ planLimit(p.maxUsers) }}</b></div>
+          <div><div class="text-slate-400">Branches</div><b>{{ planLimit(p.maxBranches) }}</b></div>
+        </div>
+        <div class="mt-2 text-[10px] text-slate-500">{{ p.excludedModules.length ? 'Not included: ' + p.excludedModules.join(', ') : 'All modules included' }}</div>
+      </div>
+    }
+  </div>
+  <p class="text-[11px] text-slate-500">Edit what each plan includes in <b>Feature Access → Per plan</b>; limits and prices in <b>Subscriptions &amp; Plans</b>. Online payment comes later.</p>
+
+  <!-- Clients -->
+  <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+    <div class="p-3 flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800">
+      <span class="text-sm font-bold">Clients ({{ filtered().length }})</span>
+      <input class="border rounded-lg px-2 py-1.5 text-sm w-56 bg-white dark:bg-slate-900" placeholder="Search client or plan" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead><tr class="bg-slate-50 dark:bg-slate-800 text-slate-500 text-left">
+          <th class="p-2">Client</th><th class="p-2">Plan</th><th class="p-2">Status</th><th class="p-2">Start</th><th class="p-2">Expiry</th>
+          <th class="p-2">Trucks</th><th class="p-2">Users</th><th class="p-2">Branches</th><th class="p-2">Modules</th><th class="p-2">Overrides</th><th class="p-2"></th>
+        </tr></thead>
+        <tbody>
+          @for (r of filtered(); track r.companyId) {
+            <tr class="border-t border-slate-100 dark:border-slate-800">
+              <td class="p-2 font-semibold">{{ r.name }} <span class="text-slate-400">{{ r.shortName }}</span></td>
+              <td class="p-2">{{ r.planName || '—' }}
+                @if (!r.planEnforced) { <div class="text-[10px] text-amber-600">not applied — full access</div> }</td>
+              <td class="p-2">{{ r.status || '—' }}</td>
+              <td class="p-2">{{ r.startDate | date:'dd MMM yy' }}</td>
+              <td class="p-2">{{ r.endDate | date:'dd MMM yy' }}</td>
+              <td class="p-2" [class.text-rose-600]="over(r.usage?.vehicles)">{{ limitText(r.usage?.vehicles) }}</td>
+              <td class="p-2" [class.text-rose-600]="over(r.usage?.users)">{{ limitText(r.usage?.users) }}</td>
+              <td class="p-2" [class.text-rose-600]="over(r.usage?.branches)">{{ limitText(r.usage?.branches) }}</td>
+              <td class="p-2">{{ r.modulesEnabled }} / {{ r.modulesTotal }}</td>
+              <td class="p-2">{{ r.overrides || '—' }}</td>
+              <td class="p-2 text-right"><button type="button" class="text-blue-600 font-semibold" (click)="open(r)">Manage</button></td>
+            </tr>
+          } @empty { <tr><td colspan="11" class="p-8 text-center text-slate-500">No clients.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Manage drawer -->
+  @if (selected(); as s) {
+    <div class="fixed inset-0 z-[90] flex justify-end bg-slate-950/60">
+      <div class="w-full max-w-2xl h-full overflow-y-auto bg-white dark:bg-slate-900 p-5 space-y-4" role="dialog" aria-label="Client plan">
+        <div class="flex items-start justify-between">
+          <div><h2 class="text-lg font-bold">{{ s.name }}</h2>
+            <p class="text-xs text-slate-500">{{ s.planName || 'No plan' }} · {{ s.status }} · {{ s.startDate | date:'dd MMM yyyy' }} → {{ s.endDate | date:'dd MMM yyyy' }}</p></div>
+          <button type="button" class="w-9 h-9 rounded-lg hover:bg-slate-100" (click)="close()" aria-label="Close"><span class="material-icons">close</span></button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <div class="rounded-lg border p-2"><div class="text-slate-400">Trucks</div><b [class.text-rose-600]="over(s.usage.vehicles)">{{ limitText(s.usage.vehicles) }}</b></div>
+          <div class="rounded-lg border p-2"><div class="text-slate-400">Staff logins</div><b [class.text-rose-600]="over(s.usage.users)">{{ limitText(s.usage.users) }}</b></div>
+          <div class="rounded-lg border p-2"><div class="text-slate-400">Branches</div><b [class.text-rose-600]="over(s.usage.branches)">{{ limitText(s.usage.branches) }}</b></div>
+        </div>
+
+        <section class="rounded-lg border p-3 space-y-2">
+          <div class="text-sm font-bold">Change plan</div>
+          @if (!s.planEnforced) { <p class="text-[11px] text-amber-700">This client has full access today. Applying a plan switches on its modules and limits.</p> }
+          <div class="flex flex-wrap gap-2 items-end">
+            <select class="border rounded-lg px-2 py-2 text-sm bg-white dark:bg-slate-900" [ngModel]="targetPlanId()" (ngModelChange)="targetPlanId.set($event); preview.set(null)">
+              @for (p of plans(); track p.id) { <option [ngValue]="p.id">{{ p.name }}</option> }
+            </select>
+            <input class="border rounded-lg px-2 py-2 text-sm flex-1 min-w-[160px] bg-white dark:bg-slate-900" placeholder="Note (e.g. upgraded after demo)" [ngModel]="note()" (ngModelChange)="note.set($event)" />
+            <button type="button" class="px-3 py-2 rounded-lg border text-xs font-semibold" (click)="doPreview()">Preview</button>
+            <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold disabled:opacity-50" [disabled]="!preview() || busy()" (click)="apply()">{{ busy() ? 'Applying…' : 'Apply plan' }}</button>
+          </div>
+          @if (preview(); as pv) {
+            <div class="text-xs space-y-1">
+              <div><b>{{ pv.changeType }}</b>: {{ pv.currentPlan || '—' }} → {{ pv.targetPlan }}</div>
+              @if (pv.gained.length) { <div class="text-emerald-700">Gains: {{ pv.gained.join(', ') }}</div> }
+              @if (pv.lost.length) { <div class="text-rose-700">Loses: {{ pv.lost.join(', ') }}</div> }
+              @for (w of pv.warnings; track $index) { <div class="text-amber-700">⚠ {{ w }}</div> }
+              @if (!pv.gained.length && !pv.lost.length) { <div class="text-slate-500">No change in modules.</div> }
+            </div>
+          }
+        </section>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="rounded-lg border p-3"><div class="font-bold mb-1">Enabled modules ({{ s.enabledModules.length }})</div>{{ s.enabledModules.join(', ') }}</div>
+          <div class="rounded-lg border p-3"><div class="font-bold mb-1">Not included ({{ s.disabledModules.length }})</div>{{ s.disabledModules.join(', ') || '—' }}</div>
+        </section>
+        <p class="text-[11px] text-slate-500">Client-specific extras (add-ons, trials) are set in <b>Feature Access → Per client</b> with a reason and an end date.</p>
+
+        <section class="rounded-lg border p-3 text-xs">
+          <div class="font-bold mb-1">Plan history</div>
+          @for (h of s.history; track $index) {
+            <div class="border-t py-1">{{ h.changed_at | date:'dd MMM yyyy HH:mm' }} · <b>{{ h.change_type }}</b> · {{ h.from_plan || '—' }} → {{ h.to_plan }} · {{ h.changed_by }}{{ h.note ? ' · ' + h.note : '' }}</div>
+          } @empty { <div class="text-slate-500">No plan changes yet.</div> }
+        </section>
+      </div>
+    </div>
+  }
+</div>

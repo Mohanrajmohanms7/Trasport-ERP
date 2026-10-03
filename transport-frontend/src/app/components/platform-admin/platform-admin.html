@@ -1367,6 +1367,10 @@
       </div>
 
       <!-- 10. BACKUP & RESTORE -->
+      <div *ngIf="activeTab() === 'client-plans'">
+        <app-client-plans />
+      </div>
+
       <div *ngIf="activeTab() === 'features'">
         <app-feature-access />
       </div>

@@ -462,6 +462,7 @@ export class AppShellComponent implements OnDestroy {
           { label: 'Clients & Companies', route: '/platform-admin/companies', icon: 'business' },
           { label: 'Subscriptions & Plans', route: '/platform-admin/subscriptions', icon: 'card_membership' },
           { label: 'Licenses', route: '/platform-admin/licenses', icon: 'vpn_key' },
+          { label: 'Client Plans', route: '/platform-admin/client-plans', icon: 'workspace_premium' },
           { label: 'Feature Access', route: '/platform-admin/features', icon: 'toggle_on' },
           { label: 'Billing Invoices', route: '/platform-admin/billing', icon: 'receipt' }
         ]},
