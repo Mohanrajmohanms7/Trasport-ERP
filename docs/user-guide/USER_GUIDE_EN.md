@@ -36,6 +36,11 @@ from setting up the company to sending invoices, collecting money, paying driver
 > If it does not exist yet, click **+ Create "…"** at the bottom, fill the short form and **Save** — it is selected for you.
 > (Shown only if you are allowed to add that record.)
 
+
+> **Help & Support.** Something not working? Click the **support icon** (headset) at the top of any screen, write what
+> happened and **Send to support**. You get a ticket number like **PKC-TKT-00001**. Follow replies in **Help & Support**
+> (left menu); answer questions there, then click **Issue fixed** or **Still not working** when support marks it resolved.
+
 ## Before you begin
 
 - **Signing in:** open the TransaFlow link, enter the **username** and **password** given by your administrator.

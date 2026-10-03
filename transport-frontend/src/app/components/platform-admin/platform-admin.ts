@@ -1,4 +1,5 @@
 import { FeatureAccessComponent } from './feature-access/feature-access';
+import { SupportTicketsComponent } from './support-tickets/support-tickets';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -27,7 +28,7 @@ import {
 @Component({
   selector: 'app-platform-admin',
   standalone: true,
-  imports: [FeatureAccessComponent, 
+  imports: [FeatureAccessComponent, SupportTicketsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
