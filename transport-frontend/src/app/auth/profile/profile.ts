@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -39,7 +40,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatInputModule, MatIconModule, MatTabsModule],
+  imports: [FormValidationDirective, CommonModule, ReactiveFormsModule, MatButtonModule, MatCardModule, MatInputModule, MatIconModule, MatTabsModule],
   templateUrl: './profile.html',
   styles: [`
     @keyframes fadeIn {

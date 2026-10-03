@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -18,7 +19,7 @@ type Tab = 'expenses' | 'reports' | 'categories';
 @Component({
   selector: 'app-family-expenses',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent,
+  imports: [FormValidationDirective, CommonModule, ReactiveFormsModule, MatDialogModule, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent,
     FfTextboxComponent, AttachmentsPanelComponent],
   templateUrl: './family-expenses.html'
 })

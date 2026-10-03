@@ -9,11 +9,11 @@
   }
 
   <form class="ops-card ops-form max-w-3xl" (ngSubmit)="save()">
-    <label class="ops-field">Code
-      <input class="ops-input" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
+    <label class="ops-field">Code *
+      <input required class="ops-input" [ngModel]="code()" (ngModelChange)="code.set($event)" name="code" />
     </label>
-    <label class="ops-field">Name
-      <input class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+    <label class="ops-field">Name *
+      <input required class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
     </label>
     <label class="ops-field span-all">Description
       <input class="ops-input" [ngModel]="description()" (ngModelChange)="description.set($event)" name="description" />

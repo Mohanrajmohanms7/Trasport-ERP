@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -10,7 +11,7 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-warehouse-list',
   standalone: true,
-  imports: [ExportButtonsComponent, CommonModule, FormsModule],
+  imports: [FormValidationDirective, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './warehouse-list.html'
 })
 export class WarehouseListComponent implements OnInit {

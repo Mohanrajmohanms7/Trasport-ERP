@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { RouterLink } from '@angular/router';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -9,7 +10,7 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-inventory-transaction-list',
   standalone: true,
-  imports: [RouterLink, ExportButtonsComponent, CommonModule, FormsModule],
+  imports: [FormValidationDirective, RouterLink, ExportButtonsComponent, CommonModule, FormsModule],
   templateUrl: './inventory-transaction-list.html'
 })
 export class InventoryTransactionListComponent implements OnInit {

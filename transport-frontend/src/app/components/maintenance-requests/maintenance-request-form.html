@@ -9,15 +9,15 @@
 
   <form class="flex flex-col gap-3" (ngSubmit)="save()">
     <label class="ops-field">
-      Vehicle
-      <ff-dropdown [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' || $event == null ? null : +$event)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select a vehicle" searchPlaceholder="Type to search…" />
+      Vehicle *
+      <ff-dropdown [required]="true" [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' || $event == null ? null : +$event)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select a vehicle" searchPlaceholder="Type to search…" />
     </label>
     @if (driverOnly() && !vehicles().length) {
       <p class="ops-alert ops-alert--warn">No vehicle is on your active assignment.</p>
     }
     <label class="ops-field">
-      Title
-      <input class="ops-input" [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" maxlength="150" />
+      Title *
+      <input required class="ops-input" [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" maxlength="150" />
     </label>
     <label class="ops-field">
       Priority

@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
@@ -20,7 +21,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 @Component({
   selector: 'app-customer-details-console',
   standalone: true,
-  imports: [BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
+  imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

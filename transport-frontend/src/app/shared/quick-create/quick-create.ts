@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../form-validation.directive';
 import { Component, OnChanges, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -52,12 +53,12 @@ export class QuickCreateService {
 @Component({
   selector: 'app-quick-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, MasterFormDialogComponent],
+  imports: [FormValidationDirective, CommonModule, FormsModule, MasterFormDialogComponent],
   template: `
     @if (kind() === 'customer' || kind() === 'vehicle') {
       <app-master-form-dialog [kind]="$any(kind())" [record]="prefillRecord()" (saved)="saved.emit($event)" (closed)="closed.emit()" />
     } @else {
-      <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70" (click)="closed.emit()">
+      <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70">
         <form (ngSubmit)="save()" (click)="$event.stopPropagation()"
               class="w-full max-w-lg max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-4">
           <div class="flex items-center justify-between">

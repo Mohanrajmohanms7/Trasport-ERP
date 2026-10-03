@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -14,7 +15,7 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 @Component({
   selector: 'app-setup-wizard',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     MatStepperModule,

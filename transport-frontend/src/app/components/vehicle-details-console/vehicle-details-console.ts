@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
 import { HttpClient } from '@angular/common/http';
@@ -27,7 +28,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [QuickCreateComponent, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

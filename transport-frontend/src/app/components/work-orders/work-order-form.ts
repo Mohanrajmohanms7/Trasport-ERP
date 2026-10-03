@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +14,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-work-order-form',
   standalone: true,
-  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, QuickCreateComponent, FfDropdownComponent],
   templateUrl: './work-order-form.html'
 })
 export class WorkOrderFormComponent implements OnInit {

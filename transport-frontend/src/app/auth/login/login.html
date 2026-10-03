@@ -123,7 +123,7 @@
 
         <button
           type="submit"
-          [disabled]="loginForm.invalid || loading()"
+          [disabled]="loading()"
           class="w-full h-11 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/10 hover:shadow-blue-600/20 transition flex items-center justify-center gap-2 cursor-pointer border-none">
           @if (loading()) {
             <span class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"></span>

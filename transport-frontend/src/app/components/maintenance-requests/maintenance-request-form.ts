@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,7 +17,7 @@ import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-maintenance-request-form',
   standalone: true,
-  imports: [FfDropdownComponent, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, FfDropdownComponent],
   templateUrl: './maintenance-request-form.html'
 })
 export class MaintenanceRequestFormComponent implements OnInit {

@@ -15,8 +15,8 @@
       }
 
       <label class="ops-field">
-        Vehicle
-        <ff-dropdown [disabled]="lockedPreventive()" [options]="vehicleOpts" [createLabel]="lockedPreventive() ? null : qc.label('vehicle')" (ffCreate)="newVehicle($event)" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select vehicle" searchPlaceholder="Type to search…" />
+        Vehicle *
+        <ff-dropdown [required]="true" [disabled]="lockedPreventive()" [options]="vehicleOpts" [createLabel]="lockedPreventive() ? null : qc.label('vehicle')" (ffCreate)="newVehicle($event)" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ? +$event : null)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select vehicle" searchPlaceholder="Type to search…" />
       </label>
 
       <label class="ops-field">
@@ -42,8 +42,8 @@
         }
       } @else {
         <label class="ops-field">
-          Maintenance type
-          <select class="ops-input" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType">
+          Maintenance type *
+          <select required class="ops-input" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType">
             <option value="">Select type</option>
             @for (type of types(); track type.code) {
               <option [value]="type.code">{{ type.name || type.code }}</option>
@@ -53,8 +53,8 @@
       }
 
       <label class="ops-field">
-        Title
-        <input class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
+        Title *
+        <input required class="ops-input" [ngModel]="name()" (ngModelChange)="name.set($event)" name="name" />
       </label>
       <label class="ops-field">
         Description

@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-user-role-management',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,

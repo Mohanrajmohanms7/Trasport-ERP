@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { MasterService } from '../../services/master.service';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -13,7 +14,7 @@ import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-work-order-list',
   standalone: true,
-  imports: [FfDropdownComponent, ExportButtonsComponent, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, ExportButtonsComponent, CommonModule, FormsModule, RouterLink, FfDropdownComponent],
   templateUrl: './work-order-list.html'
 })
 export class WorkOrderListComponent implements OnInit {

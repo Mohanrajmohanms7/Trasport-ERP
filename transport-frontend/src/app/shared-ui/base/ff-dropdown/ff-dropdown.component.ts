@@ -33,6 +33,7 @@ import { FfSelectOption } from '../../infrastructure/models/ff-config.interface'
   }
 })
 export class FfDropdownComponent extends FfControlBase<unknown> {
+  protected override readonly requiredVerb = 'select' as const;
   private host = inject(ElementRef<HTMLElement>);
 
   readonly options = input<FfSelectOption[]>([]);

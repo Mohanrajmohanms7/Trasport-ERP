@@ -17,8 +17,9 @@ export class FfSidebarComponent {
 
   readonly closed = output<void>();
 
+  /** Popups close only through Cancel / Close / Save — clicking the background does nothing. */
   onBackdropClick(): void {
-    this.closed.emit();
+    /* intentionally empty */
   }
 
   onCloseClick(): void {

@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -20,7 +21,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-fuel-details-console',
   standalone: true,
-  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

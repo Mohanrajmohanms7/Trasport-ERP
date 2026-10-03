@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -24,7 +25,7 @@ import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-  imports: [QuickCreateComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

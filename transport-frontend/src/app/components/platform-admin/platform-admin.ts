@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureAccessComponent } from './feature-access/feature-access';
 import { SupportTicketsComponent } from './support-tickets/support-tickets';
 import { HttpClient } from '@angular/common/http';
@@ -28,7 +29,7 @@ import {
 @Component({
   selector: 'app-platform-admin',
   standalone: true,
-  imports: [FeatureAccessComponent, SupportTicketsComponent, 
+imports: [FormValidationDirective, FeatureAccessComponent, SupportTicketsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,

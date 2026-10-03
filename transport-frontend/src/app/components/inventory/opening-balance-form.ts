@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +13,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-opening-balance-form',
   standalone: true,
-  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule],
+imports: [FormValidationDirective, CommonModule, FormsModule, QuickCreateComponent, FfDropdownComponent],
   templateUrl: './opening-balance-form.html'
 })
 export class OpeningBalanceFormComponent implements OnInit {

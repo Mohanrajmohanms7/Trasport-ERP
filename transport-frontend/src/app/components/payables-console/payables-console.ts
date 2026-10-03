@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -20,7 +21,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-payables-console',
   standalone: true,
-  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent, QuickCreateComponent, FfDropdownComponent],
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {

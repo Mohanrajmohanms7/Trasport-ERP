@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-company-administration',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

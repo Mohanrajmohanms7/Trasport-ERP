@@ -16,6 +16,7 @@ import { FfControlBase } from '../_base/ff-control.base';
   ]
 })
 export class FfDatetimeComponent extends FfControlBase<string> {
+  protected override readonly requiredVerb = 'select' as const;
   readonly min = input<string>('');
   readonly max = input<string>('');
 

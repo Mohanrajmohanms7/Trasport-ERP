@@ -106,7 +106,7 @@
 
   <!-- Bill editor -->
   @if (showBill()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showBill.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form (ngSubmit)="saveBill()" (click)="$event.stopPropagation()" class="w-full max-w-2xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-bold">{{ bill.id ? 'Edit bill' : 'New supplier bill' }}</h2>
         <p class="text-xs text-[var(--ff-text-secondary)]">For workshop, tyre, fuel-pump or office bills received on credit. Parts bought into stock on credit are billed automatically from the stock receipt.</p>
@@ -115,8 +115,8 @@
           <label class="flex flex-col gap-1">Their bill no<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.supplierBillNo" name="sbn" /></label>
           <label class="flex flex-col gap-1">Bill date *<input type="date" required [max]="today" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.billDate" name="bd" (ngModelChange)="onSupplierForBill()" /></label>
           <label class="flex flex-col gap-1">Due date<input type="date" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.dueDate" name="dd" placeholder="From supplier credit days" /></label>
-          <label class="flex flex-col gap-1">Category *<select class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.category" name="cat">@for (c of categories; track c) {<option [value]="c">{{ c | titlecase }}</option>}</select></label>
-          <label class="flex flex-col gap-1">Vehicle (optional)<ff-dropdown [options]="vehicleOpts" [(ngModel)]="bill.vehicleId" name="veh" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="—" searchPlaceholder="Type to search…" /></label>
+          <label class="flex flex-col gap-1">Category *<select required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.category" name="cat">@for (c of categories; track c) {<option [value]="c">{{ c | titlecase }}</option>}</select></label>
+          <label class="flex flex-col gap-1">Vehicle (optional)<select class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.vehicleId" name="veh"><option value="">—</option>@for (v of vehicles(); track v.id) {<option [value]="v.id">{{ v.name }}</option>}</select></label>
           <label class="flex flex-col gap-1">Taxable amount (₹) *<input type="number" min="0.01" step="0.01" required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.taxableAmount" name="tx" /></label>
           <label class="flex flex-col gap-1">GST (₹) — input credit<input type="number" min="0" step="0.01" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.gstAmount" name="gst" /></label>
           <label class="flex flex-col gap-1 sm:col-span-2">Remarks<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="bill.remarks" name="rm" /></label>
@@ -124,7 +124,7 @@
         <div class="text-sm">Bill total: <strong class="tabular-nums">₹{{ billTotal() | number:'1.2-2' }}</strong></div>
         <div class="flex justify-end gap-2">
           <button type="button" class="h-10 px-4 rounded-lg border" (click)="showBill.set(false)">Close</button>
-          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold" [disabled]="!bill.supplierId || !bill.taxableAmount">Save draft</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold">Save draft</button>
         </div>
       </form>
     </div>
@@ -132,14 +132,14 @@
 
   <!-- Payment -->
   @if (showPay()) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="showPay.set(false)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <form (ngSubmit)="postPayment()" (click)="$event.stopPropagation()" class="w-full max-w-2xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-bold">Pay supplier</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-semibold text-[var(--ff-text-muted)]">
           <label class="flex flex-col gap-1">Supplier *<ff-dropdown [options]="supplierOpts" [(ngModel)]="pay.supplierId" name="ps" (ngModelChange)="loadOpenBills()" [required]="true" [remoteSearch]="supplierPick.search" [resolveMissing]="supplierPick.resolve" emptyLabel="Select…" searchPlaceholder="Type to search…" /></label>
           <label class="flex flex-col gap-1">Payment date *<input type="date" required [max]="today" class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="pay.paymentDate" name="pd" /></label>
           <label class="flex flex-col gap-1">Amount (₹) *<input type="number" min="0.01" step="0.01" required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="pay.amount" name="pa" /></label>
-          <label class="flex flex-col gap-1">Paid by *<select class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="pay.paymentMethod" name="pm">@for (m of methods; track m.v) {<option [value]="m.v">{{ m.l }}</option>}</select></label>
+          <label class="flex flex-col gap-1">Paid by *<select required class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="pay.paymentMethod" name="pm">@for (m of methods; track m.v) {<option [value]="m.v">{{ m.l }}</option>}</select></label>
           <label class="flex flex-col gap-1 sm:col-span-2">Reference (UTR / cheque no)<input class="h-10 rounded-lg border px-2 text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="pay.referenceNumber" name="pr" /></label>
         </div>
         @if (pay.supplierId) {
@@ -163,14 +163,14 @@
         }
         <div class="flex justify-end gap-2">
           <button type="button" class="h-10 px-4 rounded-lg border" (click)="showPay.set(false)">Close</button>
-          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold" [disabled]="!pay.supplierId || !pay.amount || allocated() > pay.amount + 0.001">Post payment</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold" [disabled]="allocated() > (pay.amount || 0) + 0.001">Post payment</button>
         </div>
       </form>
     </div>
   }
 
   @if (paymentDetail(); as pd) {
-    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70" (click)="paymentDetail.set(null)">
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
       <div (click)="$event.stopPropagation()" class="w-full max-w-lg rounded-xl bg-[var(--ff-surface-card)] border p-5 flex flex-col gap-3">
         <h2 class="text-lg font-bold">{{ pd.payment.paymentNumber }} · ₹{{ pd.payment.amount | number:'1.2-2' }}</h2>
         @for (a of pd.rows; track $index) {

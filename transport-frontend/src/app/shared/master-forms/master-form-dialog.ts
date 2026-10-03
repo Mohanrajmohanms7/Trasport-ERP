@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnChanges, WritableSignal, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,9 +15,9 @@ type Kind = 'vehicle' | 'customer';
 @Component({
   selector: 'app-master-form-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormValidationDirective, CommonModule, FormsModule],
   template: `
-    <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70" (click)="closed.emit()">
+    <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70">
       <form (ngSubmit)="save()" (click)="$event.stopPropagation()"
             class="w-full max-w-2xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-4">
         <div class="flex items-center justify-between">
@@ -61,7 +62,7 @@ type Kind = 'vehicle' | 'customer';
 
         <div class="flex justify-end gap-2">
           <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)]" (click)="closed.emit()">Cancel</button>
-          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold disabled:opacity-50" [disabled]="saving() || !f.code || !f.name">{{ saving() ? 'Saving…' : 'Save' }}</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold disabled:opacity-50" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save' }}</button>
         </div>
       </form>
     </div>

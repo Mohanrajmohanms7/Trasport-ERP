@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../form-validation.directive';
 import { Component, HostListener, OnInit, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,9 +12,9 @@ import { TICKET_FILE_TYPES, ticketFileProblem } from './ticket-files';
 @Component({
   selector: 'app-report-issue-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
   template: `
-  <div class="fixed inset-0 z-[96] flex items-center justify-center p-2 bg-slate-950/70" (click)="closed.emit()">
+  <div class="fixed inset-0 z-[96] flex items-center justify-center p-2 bg-slate-950/70">
     <div class="w-full max-w-xl max-h-full overflow-y-auto rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-4"
          (click)="$event.stopPropagation()" role="dialog" aria-label="Report an issue">
       @if (created(); as t) {
@@ -69,7 +70,7 @@ import { TICKET_FILE_TYPES, ticketFileProblem } from './ticket-files';
           </div>
           <div class="flex justify-end gap-2">
             <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-[var(--ff-text-primary)]" (click)="closed.emit()">Cancel</button>
-            <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold disabled:opacity-60" [disabled]="saving() || !subject.trim() || !description.trim()">{{ saving() ? 'Sending…' : 'Send to support' }}</button>
+            <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold disabled:opacity-60" [disabled]="saving()">{{ saving() ? 'Sending…' : 'Send to support' }}</button>
           </div>
         </form>
       }

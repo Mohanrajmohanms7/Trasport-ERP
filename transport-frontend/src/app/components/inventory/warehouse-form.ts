@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +11,7 @@ import { workOrderError } from '../../services/work-order.service';
 @Component({
   selector: 'app-warehouse-form',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormValidationDirective, CommonModule, FormsModule],
   templateUrl: './warehouse-form.html'
 })
 export class WarehouseFormComponent implements OnInit {

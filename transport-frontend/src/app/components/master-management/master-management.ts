@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -30,7 +31,7 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 @Component({
   selector: 'app-master-management',
   standalone: true,
-  imports: [
+  imports: [FormValidationDirective, 
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,

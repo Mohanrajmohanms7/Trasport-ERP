@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -14,7 +15,7 @@ import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-work-order-detail',
   standalone: true,
-  imports: [FfDropdownComponent, AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, AttachmentsPanelComponent, CommonModule, FormsModule, RouterLink, FfDropdownComponent],
   templateUrl: './work-order-detail.html'
 })
 export class WorkOrderDetailComponent implements OnInit {

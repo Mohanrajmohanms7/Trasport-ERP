@@ -1,3 +1,4 @@
+import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -23,7 +24,7 @@ import { PickerService, activeOrSelected, tripLabel } from '../../services/picke
 @Component({
   selector: 'app-driver-payroll-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
+  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
   templateUrl: './driver-payroll-console.html'
 })
 export class DriverPayrollConsoleComponent implements OnInit {
