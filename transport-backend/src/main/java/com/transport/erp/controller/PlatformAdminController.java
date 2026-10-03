@@ -443,6 +443,24 @@ public class PlatformAdminController {
                 "Support ticket status updated");
     }
 
+    @PostMapping(value = "/tickets/{id}/attachments", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, Object>> attachToTicket(@PathVariable Long id,
+                                                           @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+                                                           @RequestParam(defaultValue = "false") boolean internal) {
+        return ApiResponse.success(supportTickets.adminAttach(id, file, internal), "File attached");
+    }
+
+    @GetMapping("/tickets/{id}/attachments/{attachmentId}")
+    public org.springframework.http.ResponseEntity<byte[]> downloadTicketFile(@PathVariable Long id, @PathVariable Long attachmentId) {
+        return com.transport.erp.controller.SupportController.fileResponse(supportTickets.download(id, attachmentId, true));
+    }
+
+    /** Close resolved tickets the client has not answered for 7 days now (also runs hourly). */
+    @PostMapping("/tickets/auto-close")
+    public ApiResponse<Map<String, Object>> autoCloseTickets() {
+        return ApiResponse.success(Map.of("closed", supportTickets.runAutoCloseNow()), "Auto-close done");
+    }
+
     @PutMapping("/tickets/{id}/priority")
     public ApiResponse<Map<String, Object>> updateTicketPriority(@PathVariable Long id, @RequestParam String priority) {
         return ApiResponse.success(supportTickets.setPriority(id, priority), "Support ticket priority updated");

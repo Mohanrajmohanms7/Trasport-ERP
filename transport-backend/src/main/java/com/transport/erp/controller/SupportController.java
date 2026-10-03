@@ -43,6 +43,17 @@ public class SupportController {
         return ApiResponse.success(supportTickets.clientReply(id, body), "Reply sent");
     }
 
+    /** Attach a screenshot / image / PDF (multipart field "file"). */
+    @PostMapping(value = "/tickets/{id}/attachments", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, Object>> attach(@PathVariable Long id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        return ApiResponse.success(supportTickets.clientAttach(id, file), "File attached");
+    }
+
+    @GetMapping("/tickets/{id}/attachments/{attachmentId}")
+    public org.springframework.http.ResponseEntity<byte[]> download(@PathVariable Long id, @PathVariable Long attachmentId) {
+        return fileResponse(supportTickets.download(id, attachmentId, false));
+    }
+
     @PostMapping("/tickets/{id}/confirm")
     public ApiResponse<Map<String, Object>> confirm(@PathVariable Long id) {
         return ApiResponse.success(supportTickets.confirmFixed(id), "Ticket closed");
@@ -51,5 +62,16 @@ public class SupportController {
     @PostMapping("/tickets/{id}/reopen")
     public ApiResponse<Map<String, Object>> reopen(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> body) {
         return ApiResponse.success(supportTickets.reopen(id, body), "Ticket reopened");
+    }
+
+    /** File download with a safe filename; images / PDFs open in the browser. */
+    static org.springframework.http.ResponseEntity<byte[]> fileResponse(com.transport.erp.model.SaaSSupportAttachment a) {
+        return org.springframework.http.ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(a.getContentType()))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                        org.springframework.http.ContentDisposition.inline().filename(a.getFileName(), java.nio.charset.StandardCharsets.UTF_8).build().toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .header(org.springframework.http.HttpHeaders.CACHE_CONTROL, "private, no-store")
+                .body(a.getData());
     }
 }

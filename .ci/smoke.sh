@@ -859,5 +859,38 @@ R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/platform-admin/tickets?searc
 R=$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/dashboard); echo "$R" | j "'ok' if d['data']['open_total'] >= 2 and d['data']['closed'] >= 1 and d['data']['byClient'] else 'no'" | grep -q ok && pass "support dashboard counts" || fail "support dashboard" "$(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT COUNT(*) FROM audit_logs WHERE entity_name='saas_support_tickets' AND entity_id=$SK1")" -ge 6 ] && pass "ticket actions are in the audit log" || fail "ticket audit" "x"
 
+# ---------------- Help & Support phase 2: files in the database, upload limit, auto-close ----------------
+python3 - <<'PY'
+import zlib, struct, os
+def png(w, h, path, noise=False):
+    raw = b''.join(b'\x00' + (os.urandom(w * 3) if noise else b'\xff\x00\x00' * w) for _ in range(h))
+    def chunk(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+    open(path, 'wb').write(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw, 0)) + chunk(b'IEND', b''))
+png(4, 4, '/tmp/st-small.png')
+png(820, 820, '/tmp/st-2mb.png', noise=True)     # ~2 MB: over the old 1 MB default
+png(1300, 1400, '/tmp/st-6mb.png', noise=True)   # ~5.5 MB: over the 5 MB image limit
+open('/tmp/st-note.pdf', 'wb').write(b'%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n')
+open('/tmp/st-fake.png', 'wb').write(b'MZ this is not an image at all, just text pretending')
+PY
+up() { curl -s -X POST -H "Authorization: Bearer $1" -F "file=@$3" "$API$2"; }
+R=$(cu "$TO" POST /support/tickets '{"subject":"Invoice PDF blank","description":"Printing shows an empty page","priority":"MEDIUM"}'); SF=$(echo "$R" | j "d['data']['id']")
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-small.png); [ "$(echo "$R" | j "d['data']['attachments'][0]['contentType']")" = "image/png" ] && pass "client attaches a screenshot" || fail "client attach" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-2mb.png); echo "$R" | grep -q '"success":true' && pass "2 MB screenshot accepted (Spring 1 MB default raised)" || fail "2 MB upload" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-6mb.png); echo "$R" | grep -q "up to 5 MB" && pass "image over 5 MB refused" || fail "size limit" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-fake.png); echo "$R" | grep -q "PNG, JPG, WEBP" && pass "fake .png (real content checked) refused" || fail "type sniff" "$(echo $R | cut -c1-200)"
+R=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -F "file=@/tmp/st-note.pdf" "$API/platform-admin/tickets/$SF/attachments?internal=true"); SIA=$(echo "$R" | j "[a['id'] for a in d['data']['attachments'] if a['isInternal']][0]")
+[ -n "$SIA" ] && [ "$SIA" != "None" ] && pass "support attaches an internal file" || fail "internal file" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" GET /support/tickets/$SF); echo "$R" | j "'ok' if len(d['data']['attachments'])==2 and not any(a['isInternal'] for a in d['data']['attachments']) else 'no'" | grep -q ok && pass "client file list excludes the internal file" || fail "client file list" "$(echo $R | cut -c1-200)"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TO" $API/support/tickets/$SF/attachments/$SIA); [ "$C" = "403" ] && pass "client cannot download the internal file (403)" || fail "internal download" "$C"
+CA=$(cu "$TO" GET /support/tickets/$SF | j "d['data']['attachments'][0]['id']")
+C=$(curl -s -o /tmp/st-dl.bin -w "%{http_code} %{content_type}" -H "Authorization: Bearer $TO" $API/support/tickets/$SF/attachments/$CA); [ "$C" = "200 image/png" ] && cmp -s /tmp/st-dl.bin /tmp/st-small.png && pass "client downloads own file intact" || fail "client download" "$C"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/support/tickets/$SF/attachments/$CA); [ "$C" = "403" ] && pass "another company cannot download the file (403)" || fail "file tenant" "$C"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$SF/attachments/$SIA); [ "$C" = "200" ] && pass "platform admin opens the internal file" || fail "admin download" "$C"
+put "/platform-admin/tickets/$SF/status?status=RESOLVED" '{"resolution":"Printer driver setting"}' >/dev/null
+$PSQL "UPDATE saas_support_tickets SET resolved_at = now() - interval '8 days' WHERE id=$SF" >/dev/null
+R=$(post /platform-admin/tickets/auto-close '{}'); [ "$(echo "$R" | j "d['data']['closed'] >= 1")" = "True" ] && [ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SF")" = "CLOSED" ] && pass "resolved ticket auto-closes after 7 days" || fail "auto-close" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM saas_support_ticket_events WHERE ticket_id=$SF AND action='AUTO_CLOSED' AND username='SYSTEM'")" = "1" ] && pass "auto-close recorded in the ticket history" || fail "auto-close event" "x"
+C=$(as "$TC" POST /platform-admin/tickets/auto-close '{}'); [ "$C" = "403" ] && pass "only the platform admin can run auto-close" || fail "auto-close guard" "$C"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

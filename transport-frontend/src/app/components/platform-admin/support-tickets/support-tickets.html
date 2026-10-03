@@ -104,6 +104,7 @@
         }
 
         <p class="whitespace-pre-wrap text-sm rounded-lg border border-[var(--ff-border-default)] p-3">{{ t.description }}</p>
+        <app-ticket-files [ticketId]="t.id" [files]="t.attachments || []" [admin]="true" (updated)="selected.set($event)" />
         <ol class="flex flex-col gap-2">
           @for (e of t.timeline; track $index) {
             @if (e.kind === 'MESSAGE' || e.kind === 'NOTE') {

@@ -37,6 +37,16 @@ First reply / fix: Critical 1 h / 4 h, High 4 h / 1 day, Medium 8 h / 3 days, Lo
 `saas_support_ticket_events` (created, status, priority, assigned, reopened) + replies form the timeline; every action
 is also in `audit_logs` (entity `saas_support_tickets`).
 
+## Files (V79)
+Screenshots / images (PNG, JPG, WEBP, max 5 MB) and PDFs (max 10 MB), up to 20 per ticket, stored **in the database**
+(`saas_support_attachments`) so they survive redeploys and are in database backups. The real type is checked from the
+file content. Clients add files when reporting (pick or **Ctrl+V** a screenshot) or later; support can add **internal**
+files, which clients never see or download. Upload limit raised from Spring's 1 MB default to 10 MB (application.yml),
+which also fixes existing attachment uploads over 1 MB.
+
+## Auto-close
+Resolved tickets with no client answer for 7 days are closed by SYSTEM (hourly job `SupportTicketJobs`; platform admin
+can run it now: `POST /api/v1/platform-admin/tickets/auto-close`). Shown in the history as "Auto-closed".
+
 ## Next phases
-2. Attachments (screenshots / PDF) stored in the database (survive deploys), public vs internal; auto-close Resolved
-   after 7 days. 3. In-app notification bell for both sides, critical banner. 4. Record context on more screens.
+3. In-app notification bell for both sides. 4. Record context on more screens.

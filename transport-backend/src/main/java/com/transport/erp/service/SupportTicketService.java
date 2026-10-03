@@ -41,6 +41,10 @@ public class SupportTicketService {
     private final TenantAccessService tenantAccess;
     private final AuditService auditService;
     private final NamedParameterJdbcTemplate jdbc;
+    private final SaaSSupportAttachmentRepository attachmentRepository;
+
+    public static final int MAX_FILES_PER_TICKET = 20;
+    public static final int AUTO_CLOSE_DAYS = 7;
 
     // ================================================================ client side
 
@@ -107,6 +111,8 @@ public class SupportTicketService {
         m.put("description", t.getDescription());
         m.put("resolution", t.getResolution());
         m.put("timeline", timeline(t, false));
+        m.put("attachments", attachments(t.getId(), false));
+        m.put("autoCloseDays", AUTO_CLOSE_DAYS);
         return m;
     }
 
@@ -180,6 +186,7 @@ public class SupportTicketService {
         m.put("description", t.getDescription());
         m.put("resolution", t.getResolution());
         m.put("timeline", timeline(t, true));
+        m.put("attachments", attachments(t.getId(), true));
         return m;
     }
 
@@ -286,6 +293,120 @@ public class SupportTicketService {
                 SELECT COALESCE(NULLIF(module, ''), 'Other') AS module, COUNT(*) AS open_count
                   FROM saas_support_tickets WHERE status NOT IN ('RESOLVED','CLOSED') GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 12""", p));
         return m;
+    }
+
+    // ================================================================ attachments (stored in the database)
+
+    /** Client adds a file (screenshot / image / PDF) to their ticket; always visible to both sides. */
+    @Transactional
+    public Map<String, Object> clientAttach(Long id, org.springframework.web.multipart.MultipartFile file) {
+        SaaSSupportTicket t = ownTicket(id);
+        if ("CLOSED".equals(t.getStatus())) throw invalid("SUPPORT_CLOSED", "This ticket is closed. Please report a new issue.");
+        String user = tenantAccess.requireCurrentUser().getUsername();
+        storeFile(t, file, false, false, user);
+        t.setLastClientActivity(LocalDateTime.now());
+        touch(t);
+        return getForClient(id);
+    }
+
+    /** Support adds a file; internal=true keeps it from the client (e.g. logs, internal screenshots). */
+    @Transactional
+    public Map<String, Object> adminAttach(Long id, org.springframework.web.multipart.MultipartFile file, boolean internal) {
+        String admin = requirePlatformAdmin();
+        SaaSSupportTicket t = find(id);
+        storeFile(t, file, internal, true, admin);
+        if (!internal) t.setLastAdminActivity(LocalDateTime.now());
+        touch(t);
+        return getForAdmin(id);
+    }
+
+    /** A file of a ticket the user may open; clients never get internal files. */
+    @Transactional(readOnly = true)
+    public SaaSSupportAttachment download(Long ticketId, Long attachmentId, boolean asPlatformAdmin) {
+        if (asPlatformAdmin) requirePlatformAdmin(); else ownTicket(ticketId);
+        SaaSSupportAttachment a = attachmentRepository.findById(attachmentId)
+                .filter(x -> x.getTicketId().equals(ticketId))
+                .orElseThrow(() -> new IllegalArgumentException("File not found."));
+        if (!asPlatformAdmin && Boolean.TRUE.equals(a.getIsInternal())) throw new AccessDeniedException("File not available");
+        a.getData();   // load the bytes inside the transaction
+        return a;
+    }
+
+    private List<Map<String, Object>> attachments(Long ticketId, boolean admin) {
+        List<Map<String, Object>> rows = attachmentRepository.listMeta(ticketId);
+        if (admin) return rows;
+        return rows.stream().filter(r -> !Boolean.TRUE.equals(r.get("isInternal"))).toList();
+    }
+
+    private void storeFile(SaaSSupportTicket t, org.springframework.web.multipart.MultipartFile file, boolean internal,
+                           boolean fromSupport, String user) {
+        if (file == null || file.isEmpty()) throw invalid("SUPPORT_FILE_EMPTY", "Choose a file to attach.");
+        if (attachmentRepository.countByTicketId(t.getId()) >= MAX_FILES_PER_TICKET) {
+            throw invalid("SUPPORT_FILE_LIMIT", "A ticket can have at most " + MAX_FILES_PER_TICKET + " files.");
+        }
+        byte[] bytes;
+        try { bytes = file.getBytes(); } catch (java.io.IOException e) { throw invalid("SUPPORT_FILE_READ", "The file could not be read."); }
+        String type = detectType(bytes);
+        if (type == null) throw invalid("SUPPORT_FILE_TYPE", "Only screenshots / images (PNG, JPG, WEBP) and PDF files can be attached.");
+        long max = "application/pdf".equals(type) ? 10L * 1024 * 1024 : 5L * 1024 * 1024;
+        if (bytes.length > max) throw invalid("SUPPORT_FILE_SIZE", "Files can be up to " + (max / 1024 / 1024) + " MB (" + (bytes.length / 1024) + " KB given).");
+        String name = file.getOriginalFilename() == null ? "file" : file.getOriginalFilename().replaceAll("[\\\\/:*?\"<>|\\r\\n\\t]", "_").trim();
+        if (name.isBlank()) name = "file";
+        if (name.length() > 200) name = name.substring(name.length() - 200);
+        SaaSSupportAttachment a = new SaaSSupportAttachment();
+        a.setTicketId(t.getId());
+        a.setFileName(name);
+        a.setContentType(type);
+        a.setSizeBytes((long) bytes.length);
+        a.setData(bytes);
+        a.setIsInternal(internal);
+        a.setFromSupport(fromSupport);
+        a.setUploadedBy(user);
+        a.setCreatedDate(LocalDateTime.now());
+        attachmentRepository.save(a);
+        auditService.log(user, internal ? "SUPPORT_TICKET_FILE_INTERNAL" : "SUPPORT_TICKET_FILE", "saas_support_tickets", t.getId(), null,
+                t.getTicketNumber() + " " + name + " (" + bytes.length / 1024 + " KB)");
+    }
+
+    /** Real file type from the first bytes (the browser-sent type / extension can lie). */
+    static String detectType(byte[] b) {
+        if (b == null || b.length < 12) return null;
+        if ((b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G') return "image/png";
+        if ((b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) return "image/jpeg";
+        if (b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') return "image/webp";
+        if (b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F') return "application/pdf";
+        return null;
+    }
+
+    // ================================================================ auto-close
+
+    /**
+     * Resolved tickets the client has not answered for {@value #AUTO_CLOSE_DAYS} days are closed (by SYSTEM).
+     * Runs hourly (SupportTicketJobs); platform admins can also run it now.
+     */
+    @Transactional
+    public int autoCloseResolved() {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(AUTO_CLOSE_DAYS);
+        List<Long> ids = jdbc.queryForList("""
+                SELECT id FROM saas_support_tickets
+                 WHERE status = 'RESOLVED' AND resolved_at < :cutoff
+                   AND (last_client_activity IS NULL OR last_client_activity < resolved_at)""",
+                new MapSqlParameterSource("cutoff", cutoff), Long.class);
+        for (Long id : ids) {
+            SaaSSupportTicket t = find(id);
+            changeStatus(t, "CLOSED", "SYSTEM", false);
+            event(t.getId(), "SYSTEM", "AUTO_CLOSED", "RESOLVED", "CLOSED", false);
+            t.setClosedAt(LocalDateTime.now());
+            touch(t);
+            auditService.log("SYSTEM", "SUPPORT_TICKET_AUTO_CLOSED", "saas_support_tickets", t.getId(), null, t.getTicketNumber());
+        }
+        return ids.size();
+    }
+
+    @Transactional
+    public int runAutoCloseNow() {
+        requirePlatformAdmin();
+        return autoCloseResolved();
     }
 
     // ================================================================ rules

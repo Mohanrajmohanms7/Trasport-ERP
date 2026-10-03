@@ -63,6 +63,7 @@
           <span class="st-badge" [attr.data-s]="t.status">{{ statusLabel(t.status) }}</span>
         </div>
         <p class="whitespace-pre-wrap text-sm rounded-lg bg-[var(--ff-surface-hover)] p-3">{{ t.description }}</p>
+        <app-ticket-files [ticketId]="t.id" [files]="t.attachments || []" [canUpload]="t.status !== 'CLOSED'" (updated)="selected.set($event)" />
 
         <ol class="flex flex-col gap-2">
           @for (e of t.timeline; track $index) {
@@ -80,6 +81,7 @@
         @if (t.status === 'RESOLVED') {
           <div class="rounded-lg border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 p-3 flex flex-col gap-2 text-sm">
             <div class="font-semibold">Support marked this as resolved</div>
+            <div class="text-xs">If you do not answer, it closes automatically after {{ t.autoCloseDays || 7 }} days.</div>
             @if (t.resolution) { <div class="whitespace-pre-wrap">{{ t.resolution }}</div> }
             <div class="flex flex-wrap gap-2">
               <button type="button" class="h-9 px-3 rounded-lg bg-emerald-600 text-white font-semibold" [disabled]="busy()" (click)="confirmFixed()">Issue fixed — close ticket</button>
