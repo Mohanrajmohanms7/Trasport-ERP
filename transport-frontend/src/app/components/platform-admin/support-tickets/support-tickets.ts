@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { SupportService, TICKET_PRIORITIES, TICKET_STATUSES, priorityLabel, statusLabel } from '../../../services/support.service';
 import { FfNotificationService } from '../../../shared-ui/infrastructure/services/ff-notification.service';
+import { TicketFilesComponent } from '../../../shared/support/ticket-files';
 
 /** Platform Admin → Support Tickets: dashboard, all clients' tickets, detail with replies, internal notes, status, priority, assignee. */
 @Component({
   selector: 'app-support-tickets',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TicketFilesComponent],
   templateUrl: './support-tickets.html'
 })
 export class SupportTicketsComponent implements OnInit {
@@ -82,6 +83,7 @@ export class SupportTicketsComponent implements OnInit {
       case 'PRIORITY': return `Priority ${priorityLabel(e.from)} → ${priorityLabel(e.to)}`;
       case 'ASSIGNED': return `Assigned ${e.from || '—'} → ${e.to || 'nobody'}`;
       case 'REOPENED': return 'Reopened by client';
+      case 'AUTO_CLOSED': return 'Auto-closed (no client answer for 7 days)';
       default: return e.action;
     }
   }

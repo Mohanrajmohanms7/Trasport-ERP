@@ -31,7 +31,21 @@ export class SupportService {
   confirm(id: number): Observable<any> { return this.http.post(`/api/v1/support/tickets/${id}/confirm`, {}); }
   reopen(id: number, message: string): Observable<any> { return this.http.post(`/api/v1/support/tickets/${id}/reopen`, { message }); }
 
+  attach(id: number, file: File): Observable<any> {
+    const fd = new FormData(); fd.append('file', file);
+    return this.http.post(`/api/v1/support/tickets/${id}/attachments`, fd);
+  }
+  /** File bytes (the auth interceptor adds the token, so a plain link would not work). */
+  file(id: number, attachmentId: number, admin: boolean): Observable<Blob> {
+    const base = admin ? '/api/v1/platform-admin/tickets' : '/api/v1/support/tickets';
+    return this.http.get(`${base}/${id}/attachments/${attachmentId}`, { responseType: 'blob' });
+  }
+
   // platform admin
+  adminAttach(id: number, file: File, internal: boolean): Observable<any> {
+    const fd = new FormData(); fd.append('file', file);
+    return this.http.post(`/api/v1/platform-admin/tickets/${id}/attachments`, fd, { params: { internal: String(internal) } });
+  }
   adminList(f: any, page = 0, size = 20): Observable<any> {
     let p = new HttpParams().set('page', page).set('size', size);
     for (const k of ['status', 'priority', 'companyId', 'module', 'assignedTo', 'search']) if (f?.[k]) p = p.set(k, f[k]);

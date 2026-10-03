@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { SupportContextService, SupportService, TICKET_PRIORITIES } from '../../services/support.service';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 import { environment } from '../../../environments/environment';
+import { TICKET_FILE_TYPES, ticketFileProblem } from './ticket-files';
 
 /** "Report an issue" popup, opened from the header on any screen. Context is captured automatically. */
 @Component({
@@ -21,6 +22,7 @@ import { environment } from '../../../environments/environment';
           <h2 class="text-lg font-bold">Issue reported</h2>
           <p class="text-sm text-[var(--ff-text-secondary)]">Your ticket number is</p>
           <p class="text-2xl font-mono font-bold tracking-wide" data-testid="ticket-number">{{ t.ticketNumber }}</p>
+          @if (uploaded() || failed()) { <p class="text-xs">{{ uploaded() }} file(s) attached{{ failed() ? ', ' + failed() + ' failed' : '' }}.</p> }
           <p class="text-xs text-[var(--ff-text-muted)]">Support will reply here. You can follow it in Help &amp; Support → My tickets.</p>
           <div class="flex gap-2 mt-2">
             <a routerLink="/support" [queryParams]="{ t: t.id }" (click)="closed.emit()" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white font-semibold inline-flex items-center">Open ticket</a>
@@ -45,6 +47,18 @@ import { environment } from '../../../environments/environment';
           @if (priority === 'CRITICAL') {
             <p class="text-[var(--ff-color-danger-500)] font-normal">Critical = work has stopped (e.g. nobody can log in, invoices cannot be saved). Support is alerted straight away.</p>
           }
+          <div class="flex flex-col gap-1">
+            <span>Screenshots / files (optional) — PNG, JPG, WEBP up to 5 MB, PDF up to 10 MB. Tip: press Ctrl+V to paste a screenshot.</span>
+            <div class="flex flex-wrap items-center gap-2 font-normal">
+              <label class="h-8 px-3 rounded-lg border border-[var(--ff-border-default)] inline-flex items-center gap-1 cursor-pointer text-[var(--ff-text-primary)]">
+                <span class="material-icons text-sm">attach_file</span>Add files
+                <input type="file" class="hidden" multiple [accept]="fileTypes" (change)="pick($event)" data-testid="report-file-input" /></label>
+              @for (f of files(); track $index) {
+                <span class="text-xs rounded-lg border px-2 py-1 inline-flex items-center gap-1">{{ f.name }}
+                  <button type="button" (click)="remove($index)" aria-label="Remove"><span class="material-icons text-sm">close</span></button></span>
+              }
+            </div>
+          </div>
           <div class="rounded-lg bg-[var(--ff-surface-hover)] p-3 font-normal text-[var(--ff-text-secondary)] grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
             <span class="font-semibold">Module</span><span>{{ module() || '—' }}</span>
             <span class="font-semibold">Screen</span><span>{{ screen() || '—' }}</span>
@@ -81,6 +95,39 @@ export class ReportIssueDialogComponent implements OnInit {
   version = environment.version;
   saving = signal(false);
   created = signal<any | null>(null);
+  readonly fileTypes = TICKET_FILE_TYPES;
+  files = signal<File[]>([]);
+  uploaded = signal(0);
+  failed = signal(0);
+
+  private addFiles(list: File[]): void {
+    const bad = list.map(ticketFileProblem).filter(Boolean);
+    if (bad.length) this.notify.error(bad.join('; '));
+    const ok = list.filter(f => !ticketFileProblem(f));
+    this.files.set([...this.files(), ...ok].slice(0, 10));
+  }
+  pick(ev: Event): void { const el = ev.target as HTMLInputElement; this.addFiles(Array.from(el.files || [])); el.value = ''; }
+  remove(i: number): void { this.files.set(this.files().filter((_, k) => k !== i)); }
+  /** Ctrl+V a screenshot straight into the report. */
+  @HostListener('document:paste', ['$event'])
+  onPaste(e: ClipboardEvent): void {
+    if (this.created()) return;
+    const items = Array.from(e.clipboardData?.files || []).filter(f => f.type.startsWith('image/'));
+    if (!items.length) return;
+    const stamped = items.map((f, i) => new File([f], `screenshot-${new Date().toISOString().replace(/[:.]/g, '-')}${i ? '-' + i : ''}.png`, { type: f.type }));
+    this.addFiles(stamped);
+  }
+  private uploadAll(ticketId: number): void {
+    const list = this.files();
+    const next = (i: number) => {
+      if (i >= list.length) return;
+      this.api.attach(ticketId, list[i]).subscribe({
+        next: r => { r?.success === false ? this.failed.update(n => n + 1) : this.uploaded.update(n => n + 1); next(i + 1); },
+        error: () => { this.failed.update(n => n + 1); next(i + 1); }
+      });
+    };
+    next(0);
+  }
 
   ngOnInit(): void { this.pageUrl = location.pathname + location.search; }
 
@@ -98,6 +145,7 @@ export class ReportIssueDialogComponent implements OnInit {
         this.saving.set(false);
         if (res?.success === false) { this.notify.error(res?.errors?.[0] || res?.message || 'Could not send'); return; }
         this.created.set(res?.data);
+        if (res?.data?.id && this.files().length) this.uploadAll(res.data.id);
       },
       error: e => { this.saving.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not send'); }
     });

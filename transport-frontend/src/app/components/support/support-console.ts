@@ -5,12 +5,13 @@ import { ActivatedRoute } from '@angular/router';
 import { SupportContextService, SupportService, TICKET_STATUSES, priorityLabel, statusLabel } from '../../services/support.service';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 import { AuthService } from '../../services/auth.service';
+import { TicketFilesComponent } from '../../shared/support/ticket-files';
 
 /** Help & Support for client users: My tickets (company admins: all company tickets), detail, reply, confirm / reopen. */
 @Component({
   selector: 'app-support-console',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TicketFilesComponent],
   templateUrl: './support-console.html'
 })
 export class SupportConsoleComponent implements OnInit {
@@ -75,6 +76,7 @@ export class SupportConsoleComponent implements OnInit {
       case 'STATUS': return `Status: ${statusLabel(e.from)} → ${statusLabel(e.to)}`;
       case 'PRIORITY': return `Priority: ${priorityLabel(e.from)} → ${priorityLabel(e.to)}`;
       case 'REOPENED': return 'Reopened';
+      case 'AUTO_CLOSED': return 'Closed automatically (no answer after resolution)';
       default: return e.action;
     }
   }
