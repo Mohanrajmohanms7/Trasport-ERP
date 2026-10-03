@@ -8,10 +8,11 @@ import { workOrderError } from '../../services/work-order.service';
 
 import { PickerService, activeOrSelected } from '../../services/picker.service';
 import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-opening-balance-form',
   standalone: true,
-  imports: [FfDropdownComponent, CommonModule, FormsModule],
+  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule],
   templateUrl: './opening-balance-form.html'
 })
 export class OpeningBalanceFormComponent implements OnInit {
@@ -23,6 +24,11 @@ export class OpeningBalanceFormComponent implements OnInit {
 
   warehouses = signal<Warehouse[]>([]);
   parts = signal<SparePart[]>([]);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newPart(text: string): void {
+    this.quick.start('sparePart', text, rec => { PickerService.merge(this.parts as any, [rec]); this.sparePartId.set(String(rec.id)); this.refreshCurrent(); });
+  }
   readonly partPick = { search: (q: string) => this.picker.spareParts(q).subscribe(r => PickerService.merge(this.parts as any, r)), resolve: (_: unknown) => {} };
   warehouseId = signal('');
   sparePartId = signal('');

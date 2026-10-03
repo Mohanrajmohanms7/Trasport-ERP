@@ -15,10 +15,11 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-expense-details-console',
   standalone: true,
-  imports: [AttachmentsPanelComponent, ExportButtonsComponent, 
+  imports: [QuickCreateComponent, AttachmentsPanelComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -60,6 +61,11 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   readonly tripPick = this.picker.bindTrips(this.trips, false);
   categories = signal<any[]>([]);
   paymentMethods = signal<any[]>([]);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCategory(text: string): void {
+    this.quick.start('expenseCategory', text, rec => { this.categories.set([...this.categories(), rec]); this.expenseForm.get('category')?.setValue(rec.code); });
+  }
 
   get categoryOptions(): FfSelectOption[] {
     return this.categories().length > 0

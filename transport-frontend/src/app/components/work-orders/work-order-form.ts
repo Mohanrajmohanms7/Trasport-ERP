@@ -9,10 +9,11 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 
 import { PickerService, activeOrSelected } from '../../services/picker.service';
 import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-work-order-form',
   standalone: true,
-  imports: [FfDropdownComponent, CommonModule, FormsModule, RouterLink],
+  imports: [QuickCreateComponent, FfDropdownComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './work-order-form.html'
 })
 export class WorkOrderFormComponent implements OnInit {
@@ -37,6 +38,14 @@ export class WorkOrderFormComponent implements OnInit {
   types = signal<any[]>([]);
   suppliers = signal<any[]>([]);
   readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newVehicle(text: string): void {
+    this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.vehicleId.set(+rec.id); });
+  }
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers, [rec]); this.supplierId.set(+rec.id); });
+  }
   users = signal<any[]>([]);
 
   vehicleId = signal<number | null>(null);

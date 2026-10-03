@@ -269,6 +269,19 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     const picked = (await pg.locator('ff-dropdown .ff-dd__trigger').first().textContent().catch(() => '')) || '';
     console.log('QC selected after save: ' + picked.trim().slice(0, 80));
     await pg.screenshot({ path: 'shots/qc-customer-selected.png' });
+    const quickIn = async (field, text, fill) => {
+      const dd = pg.locator('ff-dropdown', { hasText: field }).first();
+      await dd.locator('.ff-dd__trigger').click(); await pg.waitForTimeout(600);
+      await pg.locator('.ff-dd__search-input').first().fill(text); await pg.waitForTimeout(1000);
+      await pg.locator('.ff-dd__create').first().click(); await pg.waitForTimeout(800);
+      for (const [name, value] of Object.entries(fill)) await pg.locator(`app-quick-create input[name="${name}"]`).fill(value);
+      await pg.locator('app-quick-create button[type="submit"]').click(); await pg.waitForTimeout(2000);
+      const picked = ((await dd.locator('.ff-dd__trigger').textContent().catch(() => '')) || '').trim().slice(0, 60);
+      console.log(`QC ${field}: ${picked}`);
+    };
+    await quickIn('Delivery Site Location', 'Quick Site Perambalur', { code: 'QS01', saddr: 'Main Road, Perambalur' });
+    await quickIn('Material Master', 'Quick Sand', { code: 'QSAND' });
+    await pg.screenshot({ path: 'shots/qc-booking-site-material.png' });
     await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/work-orders/new', { waitUntil: 'networkidle' }); await typeIn('workorder-vehicle', 'TN');
     await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');

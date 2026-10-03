@@ -65,6 +65,9 @@ export class TripDetailsConsoleComponent implements OnInit {
   readonly quarryPick = this.picker.bind('quarries', this.quarries);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  newQuarry(text: string): void {
+    this.quick.start('quarry', text, rec => { PickerService.merge(this.quarries, [rec]); this.tripForm.get('quarry.id')?.setValue(rec.id); });
+  }
   newVehicle(text: string): void {
     this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.tripForm.get('vehicle.id')?.setValue(rec.id); });
   }
