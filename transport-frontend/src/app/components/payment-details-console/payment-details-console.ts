@@ -17,10 +17,12 @@ import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberCompon
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-payment-details-console',
   standalone: true,
-  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -40,6 +42,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   readonly features = inject(FeatureService);
   private paymentMgmtService = inject(PaymentMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -102,7 +105,19 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   receipts = signal<any[]>([]);
   ledgerEntries = signal<CustomerLedger[]>([]);
   customers = signal<any[]>([]);
+  readonly customerPick = this.picker.bind('customers', this.customers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCustomer(text: string): void {
+    this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.receiptForm.get('customer.id')?.setValue(rec.id); });
+  }
+
   bookings = signal<any[]>([]);
+  /** Booking link: only the chosen customer's bookings (server search), never another customer's. */
+  readonly bookingPick = {
+    search: (q: string) => this.picker.bookings(q, Number(this.receiptForm?.getRawValue()?.customer?.id) || null).subscribe(r => PickerService.merge(this.bookings, r)),
+    resolve: (id: unknown) => this.picker.byId('bookings', id).subscribe(x => x && PickerService.merge(this.bookings, [x]))
+  };
   paymentMethods = signal<any[]>([]);
 
   // Selected customer ID for ledger lookup (set after customers load)
@@ -110,13 +125,20 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   selectedCustomerControl = new FormControl<number | ''>('');
   
   get customerOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Customer --', value: '' }, ...this.customers().map(customer => ({ label: customer.name, value: customer.id }))];
+    return [{ label: '-- Choose Customer --', value: '' }, ...activeOrSelected(this.customers(), this.receiptForm?.getRawValue()?.customer?.id).map(customer => ({ label: customer.name, value: customer.id }))];
   }
   get ledgerCustomerOptions(): FfSelectOption[] {
     return this.customers().map(customer => ({ label: customer.name, value: customer.id }));
   }
   get bookingOptions(): FfSelectOption[] {
-    return [{ label: '-- Optional / General --', value: '' }, ...this.bookings().map(booking => ({ label: booking.bookingNumber || booking.code, value: booking.id }))];
+    return [{ label: '-- Optional / General --', value: '' }, ...this.bookings()
+      .filter(b => {
+        const raw = this.receiptForm?.getRawValue();
+        if (String(b.id) === String(raw?.booking?.id)) return true;   // keep the saved link visible
+        const cid = raw?.customer?.id;
+        return !!cid && String(b.customer?.id) === String(cid) && !['REJECTED', 'CANCELLED'].includes(b.status);
+      })
+      .map(booking => ({ label: booking.bookingNumber || booking.code, value: booking.id }))];
   }
   get paymentMethodOptions(): FfSelectOption[] {
     return this.paymentMethods().length > 0
@@ -611,6 +633,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
 
       const payload = {
         customerId: val.customer.id,
+        bookingId: val.booking?.id || null,
         receiptDate: val.receiptDate || new Date().toISOString().substring(0, 10),
         amountReceived: val.amountReceived,
         advanceAmount: this.remainingUnallocated,

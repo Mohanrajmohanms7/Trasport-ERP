@@ -178,6 +178,30 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await shot('trip-list');
     await pg.locator('button[title*="Edit"], button:has-text("Edit")').first().click(); await shot('trip-edit');
+    // Help & Support: report an issue while a trip is open — module, screen and the trip are captured
+    await pg.keyboard.press('Escape'); await pg.waitForTimeout(500);
+    await pg.locator('button:has-text("Cancel")').first().click({ timeout: 3000 }).catch(() => {}); await pg.waitForTimeout(500);
+    await pg.locator('[data-testid="report-issue"]').click({ timeout: 10000 }); await pg.waitForTimeout(800);
+    const ctxText = ((await pg.locator('app-report-issue-dialog').textContent().catch(() => '')) || '').replace(/\s+/g, ' ');
+    console.log('ST context: ' + (ctxText.match(/Module.*?Version\s*\S+/)?.[0] || ctxText.slice(0, 200)));
+    await pg.locator('app-report-issue-dialog input[name="subject"]').fill('Unable to complete trip');
+    await pg.locator('app-report-issue-dialog textarea[name="description"]').fill('Complete button does nothing after delivery is entered.');
+    await pg.locator('app-report-issue-dialog select[name="priority"]').selectOption('HIGH');
+    await pg.screenshot({ path: 'shots/st-report-form.png' });
+    await pg.locator('app-report-issue-dialog button[type="submit"]').click(); await pg.waitForTimeout(1500);
+    console.log('ST ticket: ' + (((await pg.locator('[data-testid="ticket-number"]').textContent().catch(() => '')) || 'NONE').trim()));
+    await pg.screenshot({ path: 'shots/st-report-done.png' });
+    await pg.locator('app-report-issue-dialog a:has-text("Open ticket")').click(); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/st-my-tickets.png' });
+    await pg.keyboard.press('Escape');
+    // Booking -> trip auto-fill: new trip, pick the first approved booking
+    await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' });
+    await pg.locator('button:has-text("Plan Dispatch Trip")').first().click(); await pg.waitForTimeout(800);
+    await pg.locator('ff-dropdown').first().click(); await pg.waitForTimeout(500);
+    await pg.locator('[role="option"]:has-text("BKG")').first().click(); await pg.waitForTimeout(2000);
+    await shot('trip-autofill');
+    await pg.locator('button:has-text("Use ")').first().click().catch(() => {}); await shot('trip-autofill-use');
+    await pg.keyboard.press('Escape');
     await pg.goto('http://localhost:4200/billing-invoices', { waitUntil: 'networkidle' }); await shot('invoice-list');
     await pg.locator('text=Ready for billing').first().click().catch(() => {}); await shot('invoice-ready');
     await pg.goto('http://localhost:4200/materials-quarries', { waitUntil: 'networkidle' });
@@ -195,8 +219,99 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     const sel = pp.locator('select').first(); const opts = await sel.locator('option').allTextContents();
     const i = opts.findIndex(o => o.includes('PKC')); await sel.selectOption({ index: i > 0 ? i : 1 });
     await pp.waitForTimeout(2000); await pp.screenshot({ path: 'shots/uom-platform-client.png' });
+    await pp.goto('http://localhost:4200/platform-admin/tickets', { waitUntil: 'networkidle' }); await pp.waitForTimeout(1500);
+    await pp.locator('app-support-tickets ul li button').first().click(); await pp.waitForTimeout(1500);
+    await pp.screenshot({ path: 'shots/st-admin.png', fullPage: true });
+    console.log('BELL admin count: ' + (((await pp.locator('[data-testid="bell-count"]').textContent().catch(() => '')) || '0').trim())
+      + ' | critical banner: ' + ((await pp.locator('[data-testid="critical-banner"]').count()) > 0 ? 'shown' : 'none'));
+    await pp.locator('[data-testid="bell"]').click(); await pp.waitForTimeout(800);
+    await pp.screenshot({ path: 'shots/st-bell.png' });
+    await pp.keyboard.press('Escape');
   } catch (e) { console.log('UOM platform shot', e.message.slice(0, 160)); }
   await pc.close();
+}
+{ // FX_SHOTS: Family Expenses add-on (company admin of company 1; smoke switched it on)
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+  }, tenant);
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
+  try {
+    await pg.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/fx-list.png' });
+    await pg.locator('button:has-text("Add Expense")').first().click(); await pg.waitForTimeout(1000);
+    await pg.screenshot({ path: 'shots/fx-add.png' }); await pg.keyboard.press('Escape');
+    await pg.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+    await pg.locator('button:has-text("Reports")').first().click(); await pg.waitForTimeout(1500);
+    await pg.screenshot({ path: 'shots/fx-reports.png' });
+    await pg.locator('button:has-text("Categories")').first().click(); await pg.waitForTimeout(1200);
+    await pg.screenshot({ path: 'shots/fx-categories.png' });
+  } catch (e) { console.log('FX shot', e.message.slice(0, 160)); }
+  await ctx.close();
+  const mc = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await mc.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+  }, tenant);
+  const mp = await mc.newPage();
+  await mp.goto('http://localhost:4200/family-expenses', { waitUntil: 'networkidle' }); await mp.waitForTimeout(1500);
+  await mp.screenshot({ path: 'shots/fx-mobile.png' });
+  await mc.close();
+}
+{ // DD_SHOTS: searchable dropdowns in a real browser (PKC admin): type a search, capture the result
+  const pk = (await (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'pkc.admin', password: 'Pkc@2026' }) })).json()).data || tenant;
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken); localStorage.setItem('username', s.username);
+    localStorage.setItem('roles', JSON.stringify(s.roles || ['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false');
+    localStorage.setItem('companyId', String(s.companyId)); if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+  }, pk);
+  const pg = await ctx.newPage();
+  pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
+  const typeIn = async (name, text) => {
+    await pg.waitForTimeout(1200);
+    const box = pg.locator('ff-dropdown .ff-dd__trigger').first(); await box.click();
+    await pg.locator('.ff-dd__search-input').first().fill(text); await pg.waitForTimeout(1200);
+    await pg.screenshot({ path: `shots/dd-${name}.png` });
+    const opts = await pg.locator('.ff-dd__panel [role="option"], .ff-dd__option').allTextContents().catch(() => []);
+    console.log(`DD ${name}: ${opts.length} option(s) for "${text}": ${opts.slice(0, 4).map(o => o.trim()).join(' | ')}`);
+  };
+  try {
+    await pg.goto('http://localhost:4200/bookings', { waitUntil: 'networkidle' });
+    await pg.locator('button:has-text("Register Booking")').first().click(); await typeIn('booking-customer', 'Sakthi');
+    // Quick Create: type a new name, Create, save, and the new customer is selected in the booking form
+    await pg.locator('.ff-dd__search-input').first().fill('Quick Test Builders'); await pg.waitForTimeout(1200);
+    const createBtn = pg.locator('.ff-dd__create').first();
+    console.log('QC button: ' + ((await createBtn.textContent().catch(() => '')) || 'NOT SHOWN').trim());
+    await createBtn.click(); await pg.waitForTimeout(800);
+    await pg.locator('app-master-form-dialog input[name="code"]').fill('QTB01');
+    await pg.screenshot({ path: 'shots/qc-customer-form.png' });
+    await pg.locator('app-master-form-dialog button[type="submit"]').click(); await pg.waitForTimeout(2000);
+    const picked = (await pg.locator('ff-dropdown .ff-dd__trigger').first().textContent().catch(() => '')) || '';
+    console.log('QC selected after save: ' + picked.trim().slice(0, 80));
+    await pg.screenshot({ path: 'shots/qc-customer-selected.png' });
+    const quickIn = async (field, text, fill) => {
+      const dd = pg.locator('ff-dropdown', { hasText: field }).first();
+      await dd.locator('.ff-dd__trigger').click(); await pg.waitForTimeout(600);
+      await pg.locator('.ff-dd__search-input').first().fill(text); await pg.waitForTimeout(1000);
+      await pg.locator('.ff-dd__create').first().click(); await pg.waitForTimeout(800);
+      for (const [name, value] of Object.entries(fill)) await pg.locator(`app-quick-create input[name="${name}"]`).fill(value);
+      await pg.locator('app-quick-create button[type="submit"]').click(); await pg.waitForTimeout(2000);
+      const picked = ((await dd.locator('.ff-dd__trigger').textContent().catch(() => '')) || '').trim().slice(0, 60);
+      console.log(`QC ${field}: ${picked}`);
+    };
+    await quickIn('Delivery Site Location', 'Quick Site Perambalur', { code: 'QS01', saddr: 'Main Road, Perambalur' });
+    await quickIn('Material Master', 'Quick Sand', { code: 'QSAND' });
+    await pg.screenshot({ path: 'shots/qc-booking-site-material.png' });
+    await pg.keyboard.press('Escape');
+    await pg.goto('http://localhost:4200/work-orders/new', { waitUntil: 'networkidle' }); await typeIn('workorder-vehicle', 'TN');
+    await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');
+    await pg.goto('http://localhost:4200/reports?r=vehicle-performance', { waitUntil: 'networkidle' }); await typeIn('report-vehicle', 'TN46');
+    await pg.goto('http://localhost:4200/reports?r=booking-register', { waitUntil: 'networkidle' }); await typeIn('report-customer', 'Builders');
+  } catch (e) { console.log('DD shot', e.message.slice(0, 160)); await pg.screenshot({ path: 'shots/dd-error.png' }); }
+  await ctx.close();
 }
 const lg = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const lp = await lg.newPage();

@@ -156,7 +156,7 @@
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
           <div class="flex items-center gap-4">
             <div class="w-64">
-              <ff-dropdown [formControl]="selectedCustomerControl" label="Choose Customer Profile" [options]="ledgerCustomerOptions" searchPlaceholder="Search options..." />
+              <ff-dropdown [formControl]="selectedCustomerControl" label="Choose Customer Profile" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="ledgerCustomerOptions" searchPlaceholder="Search options..." />
             </div>
 
             @if (selectedCustomerId()) {
@@ -383,10 +383,10 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div formGroupName="customer">
-                    <ff-dropdown formControlName="id" label="Select Customer Profile" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+                    <ff-dropdown formControlName="id" label="Select Customer Profile" [createLabel]="qc.label('customer')" (ffCreate)="newCustomer($event)" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
                   </div>
                   <div formGroupName="booking">
-                    <ff-dropdown formControlName="id" label="Link Active Booking Request" [options]="bookingOptions" searchPlaceholder="Search options..." />
+                    <ff-dropdown formControlName="id" label="Link Active Booking Request" [remoteSearch]="bookingPick.search" [resolveMissing]="bookingPick.resolve" [options]="bookingOptions" searchPlaceholder="Search options..." />
                   </div>
                 </div>
 
@@ -495,3 +495,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

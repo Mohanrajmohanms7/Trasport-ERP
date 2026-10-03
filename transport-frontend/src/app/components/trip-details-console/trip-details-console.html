@@ -169,14 +169,14 @@
                 <ff-dropdown formControlName="id" label="Select Approved Booking" [options]="bookingOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="vehicle">
-                <ff-dropdown formControlName="id" label="Allocate Vehicle" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Vehicle" [createLabel]="qc.label('vehicle')" (ffCreate)="newVehicle($event)" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="driver">
-                <ff-dropdown formControlName="id" label="Allocate Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Allocate Driver" [createLabel]="qc.label('driver')" (ffCreate)="newDriver($event)" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-datepicker formControlName="tripDate" label="Trip Date" [max]="today" [required]="true" />
               <div formGroupName="quarry">
-                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
+                <ff-dropdown formControlName="id" label="Quarry (Loading Source)" [createLabel]="qc.label('quarry')" (ffCreate)="newQuarry($event)" [remoteSearch]="quarryPick.search" [resolveMissing]="quarryPick.resolve" [options]="quarryOptions" searchPlaceholder="Search quarries..." />
               </div>
               <div formGroupName="loadingLocation">
                 <ff-dropdown formControlName="id" label="Loading Point" [options]="loadingLocationOptions" searchPlaceholder="Search loading points..." />
@@ -185,6 +185,38 @@
                 <ff-textbox formControlName="remarks" label="Transit Instructions" placeholder="Unloading route tips, safety instructions" prefixIcon="notes" />
               </div>
             </div>
+
+            @if (balanceLoading()) {
+              <div class="text-xs text-[var(--ff-text-muted)]">Loading booking details…</div>
+            }
+            @if (balance(); as b) {
+              <!-- Booking summary (read-only, from the booking) -->
+              <div class="rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-hover)] px-4 py-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 text-xs">
+                <div>
+                  <div class="text-[10px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Booking</div>
+                  <div class="font-mono font-semibold text-[var(--ff-text-primary)]">{{ b.bookingNumber }}</div>
+                  <div class="text-[var(--ff-text-muted)]">{{ b.bookingDate || '' }}@if (b.priority) { · {{ b.priority }} }</div>
+                </div>
+                <div>
+                  <div class="text-[10px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Customer</div>
+                  <div class="font-semibold text-[var(--ff-text-primary)]">{{ b.customer?.name || '—' }}</div>
+                </div>
+                <div class="xl:col-span-2">
+                  <div class="text-[10px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Delivery site</div>
+                  <div class="font-semibold text-[var(--ff-text-primary)]">{{ b.deliverySite?.siteName || '—' }}</div>
+                  @if (b.deliverySite?.address) { <div class="text-[var(--ff-text-muted)]">{{ b.deliverySite?.address }}</div> }
+                </div>
+                <div>
+                  <div class="text-[10px] font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Remarks</div>
+                  <div class="text-[var(--ff-text-secondary)]">{{ b.remarks || '—' }}</div>
+                </div>
+              </div>
+              @if (!b.anythingLeft && !editingTrip()) {
+                <div class="text-xs rounded-[8px] border border-[var(--ff-color-warning-500)] px-3 py-2 text-[var(--ff-text-primary)]">
+                  Nothing is left to plan on {{ b.bookingNumber }} — every material is already on other trips. Pick another booking, or increase the booking quantity.
+                </div>
+              }
+            }
 
             @if (isCompletedEdit) {
               <div class="text-xs rounded-[8px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-hover)] px-3 py-2 text-[var(--ff-text-secondary)]">
@@ -221,6 +253,25 @@
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
+                    @if (balanceLine(row); as line) {
+                      <div class="sm:col-span-2 lg:col-span-7 -mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--ff-text-secondary)]">
+                        <span>Booked <b class="tabular-nums">{{ line.booked | number:'1.0-3' }}</b></span>
+                        <span>· On other trips <b class="tabular-nums">{{ line.moved | number:'1.0-3' }}</b></span>
+                        <span>· Remaining <b class="tabular-nums text-[var(--ff-text-primary)]">{{ rowRemaining(row) | number:'1.0-3' }} {{ rowUnit(row) }}</b></span>
+                        <span>· Rate ₹{{ line.rate | number:'1.0-2' }} / {{ rowUnit(row) || 'unit' }}</span>
+                        @if (canUseRemaining(row)) {
+                          <button type="button" (click)="useRemaining(row)"
+                                  class="px-2 py-0.5 rounded-full border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] font-semibold hover:bg-[var(--ff-color-primary-50)]">
+                            Use {{ rowRemaining(row) | number:'1.0-3' }} {{ rowUnit(row) }}
+                          </button>
+                        }
+                        @if (overBy(row) > 0) {
+                          <span class="font-semibold text-[var(--ff-color-danger-500)]">
+                            {{ overBy(row) | number:'1.0-3' }} {{ rowUnit(row) }} more than is left on the booking — the trip will not save.
+                          </span>
+                        }
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -237,3 +288,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

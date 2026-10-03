@@ -15,10 +15,12 @@ import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberCompon
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-expense-details-console',
   standalone: true,
-  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -37,6 +39,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 export class ExpenseDetailsConsoleComponent implements OnInit {
   private expenseMgmtService = inject(ExpenseMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -52,10 +55,18 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   // Lists
   expenses = signal<Expense[]>([]);
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   drivers = signal<any[]>([]);
+  readonly driverPick = this.picker.bind('drivers', this.drivers);
   trips = signal<any[]>([]);
+  readonly tripPick = this.picker.bindTrips(this.trips, false);
   categories = signal<any[]>([]);
   paymentMethods = signal<any[]>([]);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newCategory(text: string): void {
+    this.quick.start('expenseCategory', text, rec => { this.categories.set([...this.categories(), rec]); this.expenseForm.get('category')?.setValue(rec.code); });
+  }
 
   get categoryOptions(): FfSelectOption[] {
     return this.categories().length > 0
@@ -63,16 +74,16 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
       : [{ label: 'TOLL', value: 'TOLL' }, { label: 'DRIVER BATA', value: 'DRIVER_BATA' }, { label: 'PARKING', value: 'PARKING' }, { label: 'VEHICLE REPAIR', value: 'VEHICLE_REPAIR' }, { label: 'INSURANCE', value: 'INSURANCE' }, { label: 'OFFICE', value: 'OFFICE' }, { label: 'MISCELLANEOUS', value: 'MISCELLANEOUS' }];
   }
   get vehicleOptions(): FfSelectOption[] {
-    return [{ label: '-- General / Optional --', value: '' }, ...this.vehicles().map(v => ({
+    return [{ label: '-- General / Optional --', value: '' }, ...activeOrSelected(this.vehicles(), this.expenseForm?.getRawValue()?.vehicle?.id).map(v => ({
       label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
       value: v.id
     }))];
   }
   get driverOptions(): FfSelectOption[] {
-    return [{ label: '-- General / Optional --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
+    return [{ label: '-- General / Optional --', value: '' }, ...activeOrSelected(this.drivers(), this.expenseForm?.getRawValue()?.driver?.id).map(driver => ({ label: driver.name, value: driver.id }))];
   }
   get tripOptions(): FfSelectOption[] {
-    return [{ label: '-- General / Optional --', value: '' }, ...this.trips().map(trip => ({ label: trip.tripNumber, value: trip.id }))];
+    return [{ label: '-- General / Optional --', value: '' }, ...this.trips().filter(t => t.status !== 'CANCELLED' || String(t.id) === String(this.expenseForm?.getRawValue()?.trip?.id)).map(trip => ({ label: tripLabel(trip), value: trip.id }))];
   }
   get paymentMethodOptions(): FfSelectOption[] {
     return this.paymentMethods().length > 0

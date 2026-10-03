@@ -225,10 +225,7 @@
       @if (canEditLines(order)) {
         <form class="ops-form" (ngSubmit)="savePart()">
           <label class="ops-field">Spare part
-            <select class="ops-input" [ngModel]="partSparePartId()" (ngModelChange)="partSparePartId.set($event)" name="sparePartId">
-              <option value="">Select part…</option>
-              @for (part of spareParts(); track part.id) { <option [value]="part.id">{{ part.code }} — {{ part.name }}</option> }
-            </select>
+            <ff-dropdown [options]="partOpts" [ngModel]="partSparePartId()" (ngModelChange)="partSparePartId.set($event ?? '')" name="sparePartId" [remoteSearch]="partPick.search" emptyLabel="Select part…" searchPlaceholder="Type to search…" />
           </label>
           <label class="ops-field">Quantity<input type="number" min="0" step="0.001" class="ops-input" [ngModel]="partQuantity()" (ngModelChange)="partQuantity.set($event)" name="partQuantity" /></label>
           <label class="ops-field">Rate (₹)<input type="number" min="0" step="0.01" class="ops-input" [ngModel]="partRate()" (ngModelChange)="partRate.set($event)" name="partRate" placeholder="Default rate" /></label>

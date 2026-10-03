@@ -787,9 +787,11 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
         SecureRandom random = new SecureRandom();
         StringBuilder sb = new StringBuilder("Tmp@");
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 7; i++) {
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
+        // Always end with a digit so the generated password meets the password policy (upper, lower, digit, special).
+        sb.append("23456789".charAt(random.nextInt(8)));
         return sb.toString();
     }
 

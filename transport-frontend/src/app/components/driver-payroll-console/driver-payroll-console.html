@@ -44,7 +44,7 @@
       @if (tab() === 'payrolls' || isDriverOnly()) {
         @if (!isDriverOnly()) {
           <form [formGroup]="filterForm" class="grid grid-cols-2 lg:grid-cols-5 gap-3 items-end">
-            <ff-dropdown formControlName="driverId" label="Driver" [options]="driverOptions" emptyLabel="All drivers" searchPlaceholder="Search drivers..." />
+            <ff-dropdown formControlName="driverId" label="Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" emptyLabel="All drivers" searchPlaceholder="Search drivers..." />
             <ff-number formControlName="payYear" label="Year" [allowDecimal]="false" placeholder="Any year" />
             <ff-dropdown formControlName="payMonth" label="Month" [options]="monthOptions" emptyLabel="All months" />
             <ff-dropdown formControlName="status" label="Status" [options]="statusOptions.slice(1)" emptyLabel="All statuses" />
@@ -286,7 +286,7 @@
         <h2 class="text-lg font-extrabold">{{ editingId() ? 'Edit Draft Payroll' : 'Generate Payroll' }}</h2>
         <p class="text-xs text-[var(--ff-text-secondary)]">Trips, daily pay and gross are calculated from the driver's COMPLETED trips when you save.</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <ff-dropdown formControlName="driverId" label="Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search drivers..." />
+          <ff-dropdown formControlName="driverId" label="Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search drivers..." />
           <ff-dropdown formControlName="payMonth" label="Month" [options]="monthOptions" [required]="true" />
           <ff-number formControlName="payYear" label="Year" [allowDecimal]="false" [required]="true" />
           <ff-number formControlName="allowanceAmount" label="Other Allowance (₹)" [min]="0" />
@@ -345,7 +345,7 @@
       <form [formGroup]="advanceForm" (ngSubmit)="submitAdvance()" (click)="$event.stopPropagation()"
             class="w-full max-w-md rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] p-5 flex flex-col gap-3">
         <h2 class="text-lg font-extrabold">Give Advance to Driver</h2>
-        <ff-dropdown formControlName="driverId" label="Driver" [options]="driverOptions" [required]="true" searchPlaceholder="Search drivers..." />
+        <ff-dropdown formControlName="driverId" label="Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" [required]="true" searchPlaceholder="Search drivers..." />
         <ff-number formControlName="amount" label="Amount (₹)" [min]="1" [required]="true" />
         <ff-datepicker formControlName="advanceDate" label="Date" [max]="today" [required]="true" />
         <ff-dropdown formControlName="paymentMethod" label="Paid From" [options]="methodOptions" [required]="true" />

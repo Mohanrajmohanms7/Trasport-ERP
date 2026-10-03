@@ -32,4 +32,17 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT b FROM Booking b WHERE b.id = :id AND b.isDeleted = false")
     Optional<Booking> findAndLockById(@Param("id") Long id);
+
+    /** Booking dropdowns (receipt link): not rejected / cancelled, optionally one customer, text matches booking no. */
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT b FROM Booking b
+            WHERE b.companyId = :companyId AND b.isDeleted = false AND b.status NOT IN ('REJECTED', 'CANCELLED')
+              AND (:customerId IS NULL OR b.customer.id = :customerId)
+              AND LOWER(COALESCE(b.bookingNumber, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+            """)
+    org.springframework.data.domain.Page<com.transport.erp.model.Booking> searchForPicker(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("customerId") Long customerId,
+            @org.springframework.data.repository.query.Param("q") String q,
+            org.springframework.data.domain.Pageable pageable);
 }

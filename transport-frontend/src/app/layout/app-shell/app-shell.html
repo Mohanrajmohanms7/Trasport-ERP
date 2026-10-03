@@ -140,6 +140,40 @@
       <!-- Right Toolbar Controls -->
       <div class="flex items-center gap-1 lg:gap-3 shrink-0">
 
+        <!-- Help & Support: report an issue from any screen (company users; not the platform admin or driver logins) -->
+        @if (!isSuperAdmin() && !isDriverOnly()) {
+          <button type="button" (click)="supportCtx.openReport()" title="Report an issue to TransaFlow support" aria-label="Report an issue"
+             class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" data-testid="report-issue">
+            <span class="material-symbols-outlined text-xl">support_agent</span>
+          </button>
+        }
+
+        <!-- Notification bell: support replies / new tickets (refreshed every minute) -->
+        @if (showBell()) {
+          <button type="button" [matMenuTriggerFor]="bellMenu" (menuOpened)="refreshBell()" data-testid="bell" aria-label="Notifications"
+             class="relative w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">
+            <span class="material-symbols-outlined text-xl">notifications</span>
+            @if (bell().unread > 0) {
+              <span class="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center" data-testid="bell-count">{{ bell().unread > 9 ? '9+' : bell().unread }}</span>
+            }
+          </button>
+          <mat-menu #bellMenu="matMenu" xPosition="before" class="w-80">
+            <div class="px-4 py-2 text-xs font-bold border-b border-slate-100">Support notifications</div>
+            @for (n of bell().items; track n.id) {
+              <button mat-menu-item (click)="openBellItem(n)" class="!h-auto !py-2">
+                <div class="flex flex-col text-left leading-tight">
+                  <span class="text-[11px] font-semibold" [class.text-red-600]="n.priority === 'CRITICAL'">{{ bellReason(n.reason) }} · {{ n.ticketNumber }}</span>
+                  <span class="text-xs truncate max-w-[16rem]">{{ n.subject }}</span>
+                  @if (n.client) { <span class="text-[10px] text-slate-400">{{ n.client }}</span> }
+                </div>
+              </button>
+            } @empty {
+              <div class="px-4 py-4 text-xs text-slate-400">Nothing new.</div>
+            }
+            <button mat-menu-item [routerLink]="isSuperAdmin() ? '/platform-admin/tickets' : '/support'" class="!text-xs !text-blue-600">Open all tickets</button>
+          </mat-menu>
+        }
+
         <!-- User guide (English / Tamil) -->
         <a href="help/user-guide-en.html" target="_blank" rel="noopener" title="User guide — where to start"
            class="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800" aria-label="User guide">
@@ -228,6 +262,13 @@
 
     <main class="flex-1 min-h-0 overflow-hidden bg-[var(--ff-surface-page)] p-2 sm:p-3 lg:p-4 transition-colors duration-200 flex flex-col">
       <div class="app-outlet-host flex-1 min-h-0 flex flex-col">
+        @if (isSuperAdmin() && (bell().criticalOpen || 0) > 0 && !criticalBannerHidden()) {
+        <div class="mb-2 rounded-lg bg-red-600 text-white px-3 py-2 text-xs font-semibold flex items-center gap-2" data-testid="critical-banner">
+          <span class="material-icons text-base">warning</span>
+          <a routerLink="/platform-admin/tickets" [queryParams]="{ priority: 'CRITICAL' }" class="underline flex-1">{{ bell().criticalOpen }} critical support ticket(s) open</a>
+          <button type="button" (click)="criticalBannerHidden.set(true)" aria-label="Hide" class="opacity-80 hover:opacity-100"><span class="material-icons text-base">close</span></button>
+        </div>
+      }
         <router-outlet></router-outlet>
       </div>
     </main>
@@ -289,3 +330,7 @@
   
   <ff-toast />
 </div>
+
+@if (supportCtx.reportOpen()) {
+  <app-report-issue-dialog [module]="currentModule()" [screen]="currentScreen()" (closed)="supportCtx.reportOpen.set(false)" />
+}

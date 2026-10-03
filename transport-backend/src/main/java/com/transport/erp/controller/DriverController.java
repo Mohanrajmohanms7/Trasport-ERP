@@ -28,10 +28,11 @@ public class DriverController {
     public ApiResponse<Page<Driver>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Driver> drivers = driverService.getAll(scopedCompanyId, search, pageable);
+            Page<Driver> drivers = driverService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(drivers, "Drivers fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

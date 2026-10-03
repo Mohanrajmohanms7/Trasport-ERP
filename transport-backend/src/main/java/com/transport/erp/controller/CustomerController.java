@@ -25,10 +25,11 @@ public class CustomerController {
     public ApiResponse<Page<Customer>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Customer> customers = customerService.getAll(scopedCompanyId, search, pageable);
+            Page<Customer> customers = customerService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(customers, "Customers fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

@@ -1,8 +1,9 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, WritableSignal, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
@@ -42,7 +43,7 @@ const EXPENSE_CATEGORIES = ['TOLL', 'DRIVER_BATA', 'PARKING', 'VEHICLE_REPAIR', 
 @Component({
   selector: 'app-reports-hub',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [FfDropdownComponent, CommonModule, FormsModule, RouterLink],
   templateUrl: './reports-hub.html',
   styles: [`
     .rh-grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 12px; height: 100%; min-height: 0; }
@@ -88,6 +89,37 @@ export class ReportsHubComponent implements OnInit {
   customers = signal<Option[]>([]);
   warehouses = signal<Option[]>([]);
   parts = signal<Option[]>([]);
+
+  /**
+   * Report filters search the server as you type (any status: reports cover sold vehicles, ex-drivers …), so the
+   * lists are not cut off at the first 500. A filter value set before (e.g. a drill-down link) is loaded by id.
+   */
+  readonly vehiclePick = this.searchInto('vehicles', this.vehicles, (x: any) => x.name || x.code, true);
+  readonly driverPick = this.searchInto('drivers', this.drivers, (x: any) => [x.code, x.name].filter(Boolean).join(' — '), true);
+  readonly customerPick = this.searchInto('customers', this.customers, (x: any) => x.name, true);
+  readonly partPick = this.searchInto('spare-parts', this.parts, (x: any) => [x.code, x.name].filter(Boolean).join(' — '), false);
+
+  opts(list: Option[], allLabel: string): FfSelectOption[] {
+    return [{ label: allLabel, value: '' }, ...list.map(o => ({ label: o.label, value: String(o.id) }))];
+  }
+
+  private searchInto(path: string, target: WritableSignal<Option[]>, label: (x: any) => string, hasById: boolean) {
+    const merge = (rows: any[]) => {
+      if (!rows?.length) return;
+      const m = new Map<string, Option>(target().map(o => [String(o.id), o]));
+      for (const x of rows) if (x?.id != null) m.set(String(x.id), { id: x.id, label: label(x) });
+      target.set([...m.values()]);
+    };
+    return {
+      search: (q: string) => this.http.get<any>(`/api/v1/${path}`, {
+        params: new HttpParams().set('companyId', String(this.companyId)).set('search', q).set('size', '20').set('page', '0')
+      }).subscribe({ next: r => merge(r?.data?.content ?? r?.data ?? []), error: () => {} }),
+      resolve: (id: unknown) => {
+        if (!hasById || id === null || id === undefined || id === '') return;
+        this.http.get<any>(`/api/v1/${path}/${id}`).subscribe({ next: r => r?.data && merge([r.data]), error: () => {} });
+      }
+    };
+  }
   readonly accounts = ACCOUNTS;
   readonly expenseCategories = EXPENSE_CATEGORIES;
 

@@ -14,10 +14,7 @@
 
   <form class="ops-filters" (ngSubmit)="load()">
     <label class="ops-field">Vehicle
-      <select class="ops-input" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event)" name="vehicleId">
-        <option value="">All vehicles</option>
-        @for (v of vehicles(); track v.id) { <option [value]="v.id">{{ v.code }}{{ v.name && v.name !== v.code ? ' — ' + v.name : '' }}</option> }
-      </select>
+      <ff-dropdown [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event ?? '')" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="All vehicles" searchPlaceholder="Type to search…" />
     </label>
     <label class="ops-field">Status
       <select class="ops-input" [ngModel]="status()" (ngModelChange)="status.set($event)" name="status">

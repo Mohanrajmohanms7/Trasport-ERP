@@ -12,13 +12,17 @@ import {
   maintenanceRequestError
 } from '../../services/maintenance-request.service';
 
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 @Component({
   selector: 'app-maintenance-request-form',
   standalone: true,
-  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, FfDropdownComponent],
   templateUrl: './maintenance-request-form.html'
 })
 export class MaintenanceRequestFormComponent implements OnInit {
+  private picker = inject(PickerService);
+  get vehicleOpts(): FfSelectOption[] { return (this.vehicles() as any[]).map((v: any) => ({ label: (v.name && v.code && String(v.name).includes(v.code)) ? v.name : [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: v.id })); }
   private requests = inject(MaintenanceRequestService);
   private masters = inject(MasterService);
   private auth = inject(AuthService);
@@ -28,6 +32,10 @@ export class MaintenanceRequestFormComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   vehicles = signal<AuthorizedVehicle[]>([]);
+  readonly vehiclePick = {
+    search: (q: string) => { if (!this.driverOnly()) this.picker.search('vehicles', q).subscribe(r => PickerService.merge(this.vehicles as any, r.map((row: any) => ({ id: row.id, code: row.code, name: row.name, companyId: row.companyId, branchId: row.branchId })))); },
+    resolve: (_: unknown) => {}
+  };
   driverOnly = signal(false);
   requestId = signal<number | null>(null);
   vehicleId = signal<number | null>(null);

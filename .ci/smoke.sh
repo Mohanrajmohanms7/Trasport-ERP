@@ -709,5 +709,213 @@ R2=$(curl -s -H "Authorization: Bearer $NT" $API/uoms/order-units); [ "$(UC "$R2
 R=$(curl -s -H "Authorization: Bearer $PT" "$API/report-hub/run/booking-register?from=$(date -d '-90 day' +%F)&to=$(date +%F)")
 echo "$R" | j "'ok' if d['data']['rows'] and all(r.get('uom') for r in d['data']['rows']) else 'no'" | grep -q ok && pass "booking register: every line has a unit" || fail "booking register unit" "$(echo $R | cut -c1-200)"
 
+# ---------------- Family Expenses add-on (V77, docs/FAMILY_EXPENSES.md) ----------------
+C1=$($PSQL "SELECT company_id FROM app_users WHERE username='ca1'")
+# Switch one client feature on/off without touching its other settings (the save replaces the whole client map).
+setfx() { # $1 company  $2 feature code  $3 true|false
+  curl -s "${H[@]}" $API/platform-admin/companies/$1/features | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']; m={f['code']: (f['override'] if f['override'] is not None else f['plan']) for f in d['features']}; m['$2']=('$3'=='true'); print(json.dumps({'features': m}))" > /tmp/fx.json
+  curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$1/features -d @/tmp/fx.json > /dev/null; }
+FX() { curl -s -X $1 -H "Authorization: Bearer $TC" -H 'Content-Type: application/json' "$API/family-expenses$2" ${3:+-d "$3"}; }
+C=$(as $TC GET /family-expenses); grep -q FEATURE_DISABLED /tmp/r.json && [ "$C" = "403" ] && pass "family expenses are OFF by default (add-on)" || fail "fx default off" "$C $(head -c 150 /tmp/r.json)"
+curl -s -H "Authorization: Bearer $TC" $API/auth/features | j "'family-expenses' in d['data']['disabled']" | grep -q True && pass "menu hides Family Expenses until enabled" || fail "fx menu hidden" "x"
+JV0=$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE company_id=$C1"); EX0=$($PSQL "SELECT COUNT(*) FROM expenses WHERE company_id=$C1")
+DB0=$(curl -s -H "Authorization: Bearer $TC" $API/dashboard/admin | j "str(d['data'].get('expense'))+'/'+str(d['data'].get('todayExpenses'))")
+setfx $C1 family-expenses true
+R=$(FX GET /options); NC=$(echo "$R" | j "len(d['data']['categories'])"); NCR=$(echo "$R" | j "any(m['code']=='CREDIT' for m in d['data']['paymentModes'])")
+[ "$NC" = "10" ] && [ "$NCR" = "False" ] && pass "enabled: 10 starting categories, payment modes without Credit" || fail "fx options" "$NC $NCR"
+TD=$(date +%F)
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":4500,"paymentMode":"CASH","description":"Monthly groceries"}'); FX1=$(echo "$R" | j "d['data']['id']"); FXN=$(echo "$R" | j "d['data']['expenseNumber']")
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"EDUCATION","amount":8000,"paymentMode":"BANK_TRANSFER","description":"School fees","memberName":"Son"}'); FX2=$(echo "$R" | j "d['data']['id']")
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"MEDICAL","amount":2500,"paymentMode":"CASH","description":"Family medical expense"}'); FX3=$(echo "$R" | j "d['data']['id']")
+[[ "$FXN" == FX-* ]] && [ -n "$FX3" ] && pass "3 family expenses saved ($FXN …)" || fail "fx create" "$(echo $R | cut -c1-200)"
+R=$(FX GET /summary); S=$(echo "$R" | j "'%s/%s/%s/%s' % (float(d['data']['total']), float(d['data']['cash']), float(d['data']['bank']), d['data']['topCategory']['code'])")
+[ "$S" = "15000.0/7000.0/8000.0/EDUCATION" ] && pass "this month: total 15000, cash 7000, bank 8000, top Education" || fail "fx summary" "$S"
+R=$(FX POST "" '{"expenseDate":"'$(date -d '+1 day' +%F)'","category":"GROCERIES","amount":10,"paymentMode":"CASH"}'); echo "$R" | grep -q "future" && pass "future date refused" || fail "fx future" "$(echo $R | cut -c1-160)"
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":0,"paymentMode":"CASH"}'); echo "$R" | grep -q "more than" && pass "zero amount refused" || fail "fx zero" "$(echo $R | cut -c1-160)"
+R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":10,"paymentMode":"CREDIT"}'); echo "$R" | grep -q "payment mode" && pass "credit is not a family payment mode" || fail "fx credit" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /$FX3 '{"expenseDate":"'$TD'","category":"MEDICAL","amount":3000,"paymentMode":"UPI","description":"Medicines"}'); [ "$(echo "$R" | j "float(d['data']['amount'])")" = "3000.0" ] && pass "edit family expense" || fail "fx edit" "$(echo $R | cut -c1-160)"
+FX DELETE /$FX3 >/dev/null; R=$(FX GET "?from=$TD&to=$TD"); [ "$(echo "$R" | j "float(d['data']['totalAmount'])")" = "12500.0" ] && pass "delete family expense (list total 12500)" || fail "fx delete" "$(echo $R | cut -c1-160)"
+OK=1; for k in register daily monthly category mode yearly comparison; do R=$(FX GET "/reports/$k?from=$(date -d '-30 day' +%F)&to=$TD"); [ "$(echo "$R" | j "d['success'] and len(d['data']['rows'])>0")" = "True" ] || { OK=0; fail "fx report $k" "$(echo $R | cut -c1-160)"; }; done
+[ "$OK" = "1" ] && pass "7 family reports return data"
+R=$(FX GET "/reports/comparison"); [ "$(echo "$R" | j "len(d['data']['columns'])")" = "14" ] && pass "category comparison has 12 months + total" || fail "fx comparison" "$(echo $R | cut -c1-160)"
+CT=$(curl -s -o /tmp/fx.xlsx -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/family-expenses/export/category?format=xlsx"); [ "$CT" = "200" ] && [ "$(head -c 2 /tmp/fx.xlsx)" = "PK" ] && pass "family report Excel" || fail "fx xlsx" "$CT"
+CT=$(curl -s -o /tmp/fx.pdf -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/family-expenses/export/register?format=pdf"); [ "$CT" = "200" ] && [ "$(head -c 4 /tmp/fx.pdf)" = "%PDF" ] && pass "family list PDF" || fail "fx pdf" "$CT"
+# completely separate from the business
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE company_id=$C1")" = "$JV0" ] && [ "$($PSQL "SELECT COUNT(*) FROM expenses WHERE company_id=$C1")" = "$EX0" ] && pass "no journal entry and no business expense created" || fail "fx separation" "jv/expenses changed"
+DB1=$(curl -s -H "Authorization: Bearer $TC" $API/dashboard/admin | j "str(d['data'].get('expense'))+'/'+str(d['data'].get('todayExpenses'))"); [ "$DB1" = "$DB0" ] && pass "business dashboard expense figures unchanged" || fail "fx dashboard" "$DB0 -> $DB1"
+R=$(curl -s -H "Authorization: Bearer $TC" "$API/report-hub/run/expense-register?from=$TD&to=$TD"); echo "$R" | grep -q "Monthly groceries" && fail "fx in business report" "found" || pass "family expenses not in business expense report"
+# privacy: admins of this company only
+C=$(as $TO GET /family-expenses); [ "$C" = "403" ] && pass "operator cannot open family expenses (403)" || fail "fx operator" "$C"
+C=$(as $TOKEN GET /family-expenses); [ "$C" = "403" ] && pass "platform admin cannot read a client's family expenses (403)" || fail "fx platform" "$C"
+setfx $NCID family-expenses true
+C=$(as $NT GET /family-expenses/$FX1); [ "$C" = "403" ] && pass "another company cannot open this family expense (403)" || fail "fx cross tenant" "$C $(head -c 120 /tmp/r.json)"
+[ "$(curl -s -H "Authorization: Bearer $NT" $API/family-expenses | j "d['data']['totalElements']")" = "0" ] && pass "another company sees only its own (none)" || fail "fx other list" "x"
+setfx $NCID family-expenses false
+printf '%%PDF-1.4 bill' > /tmp/bill.pdf
+C=$(curl -s -o /tmp/r.json -w "%{http_code}" -H "Authorization: Bearer $TC" -F entityType=FAMILY_EXPENSE -F entityId=$FX1 -F category=BILL -F "file=@/tmp/bill.pdf;type=application/pdf" $API/attachments); [ "$C" = "200" ] && pass "bill attached to family expense" || fail "fx attach" "$C $(head -c 150 /tmp/r.json)"
+C=$(as $TO GET "/attachments?entityType=FAMILY_EXPENSE&entityId=$FX1"); [ "$C" = "403" ] && pass "operator cannot see family bills (403)" || fail "fx attach privacy" "$C"
+# categories
+R=$(FX POST /categories '{"name":"Festival"}'); FC=$(echo "$R" | j "[c['id'] for c in d['data'] if c['name']=='Festival'][0]"); [ -n "$FC" ] && pass "category added (Festival)" || fail "fx add cat" "$(echo $R | cut -c1-160)"
+GC=$(FX GET /categories | j "[c['id'] for c in d['data'] if c['code']=='GROCERIES'][0]")
+R=$(FX DELETE /categories/$GC); echo "$R" | grep -q "Category In Use" && pass "used category cannot be deleted" || fail "fx del used cat" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /categories/$GC '{"status":"INACTIVE"}'); R=$(FX POST "" '{"expenseDate":"'$TD'","category":"GROCERIES","amount":10,"paymentMode":"CASH"}'); echo "$R" | grep -q "active category" && pass "inactive category not offered for new entries" || fail "fx inactive cat" "$(echo $R | cut -c1-160)"
+R=$(FX PUT /$FX1 '{"expenseDate":"'$TD'","category":"GROCERIES","amount":4600,"paymentMode":"CASH"}'); [ "$(echo "$R" | j "d['data']['categoryName']")" = "Food / Groceries" ] && pass "old entry keeps its inactive category on edit" || fail "fx keep cat" "$(echo $R | cut -c1-160)"
+FX PUT /categories/$GC '{"status":"ACTIVE"}' >/dev/null
+R=$(FX DELETE /categories/$FC); echo "$R" | j "d['success']" | grep -q True && pass "unused category deleted" || fail "fx del cat" "$(echo $R | cut -c1-160)"
+# per-client actions, then module off: data kept, API blocked
+setfx $C1 family-expenses.delete false
+C=$(as $TC DELETE /family-expenses/$FX2); grep -q FEATURE_DISABLED /tmp/r.json && [ "$C" = "403" ] && pass "Delete action switched off for the client" || fail "fx delete off" "$C"
+setfx $C1 family-expenses.delete true
+setfx $C1 family-expenses false
+C=$(as $TC GET /family-expenses); [ "$C" = "403" ] && [ "$($PSQL "SELECT COUNT(*) FROM family_expenses WHERE company_id=$C1 AND is_deleted=false")" = "2" ] && pass "module off again: API blocked, entries kept" || fail "fx off" "$C"
+setfx $C1 family-expenses true
+
+# ---------------- Booking -> trip auto-fill: booking balance for the trip form ----------------
+BAL() { curl -s -H "Authorization: Bearer $TC" "$API/trips/booking-balance/$1${2:+?excludeTripId=$2}"; }
+R=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":10,"rate":4300,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+ABK=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); [ "$(echo "$R" | j "d['data']['canPlanTrips']")" = "False" ] && pass "pending booking: balance says trips cannot be planned yet" || fail "balance pending" "$(echo $R | cut -c1-200)"
+api POST /bookings/$ABK/approve >/dev/null
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s|%s|%s|%s' % (float(l['booked']), float(l['moved']), float(l['remaining']), l['uom']['label'], bool(d['data']['customer']['name'])))(d['data']['lines'][0])")
+[ "$V" = "10.0|0.0|10.0|Unit|True" ] && pass "balance auto-fill data: customer, material, 10 Unit booked, 10 remaining" || fail "balance fresh" "$V $(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":4}]}'); AT1=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); V=$(echo "$R" | j "(lambda l: '%s|%s' % (float(l['moved']), float(l['remaining'])))(d['data']['lines'][0])")
+[ "$V" = "4.0|6.0" ] && pass "after a 4 Unit trip: 4 on other trips, 6 remaining" || fail "balance after trip" "$V"
+R=$(BAL $ABK $AT1); [ "$(echo "$R" | j "float(d['data']['lines'][0]['remaining'])")" = "10.0" ] && pass "editing that trip does not count its own quantity" || fail "balance exclude" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":7}]}')
+echo "$R" | grep -q "Only 6.00 Unit left" && pass "save check agrees with the balance (7 > 6 refused)" || fail "balance vs save" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips '{"booking":{"id":'$ABK'},"details":[{"material":{"id":'$MAT'},"quantity":6}]}'); AT2=$(echo "$R" | j "d['data']['id']")
+R=$(BAL $ABK); [ "$(echo "$R" | j "'%s|%s' % (float(d['data']['lines'][0]['remaining']), d['data']['anythingLeft'])")" = "0.0|False" ] && pass "remaining 6 accepted; booking fully planned (nothing left)" || fail "balance full" "$(echo $R | cut -c1-200)"
+api DELETE /trips/$AT2 >/dev/null; R=$(BAL $ABK); [ "$(echo "$R" | j "float(d['data']['lines'][0]['remaining'])")" = "6.0" ] && pass "deleted trip frees its quantity again" || fail "balance after delete" "$(echo $R | cut -c1-200)"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" "$API/trips/booking-balance/$ABK"); [ "$C" = "403" ] && pass "another company cannot read the booking balance (403)" || fail "balance tenant" "$C"
+R=$(curl -s -H "Authorization: Bearer $TC" "$API/bookings?companyId=1&status=APPROVED&size=1000"); echo "$R" | j "'ok' if d['data']['content'] and all(b['status']=='APPROVED' for b in d['data']['content']) else 'no'" | grep -q ok && pass "trip form booking list: approved bookings only" || fail "approved list" "$(echo $R | cut -c1-150)"
+
+# ---------------- Dropdowns: server search, active only, trip / booking pickers, receipt booking link ----------------
+CI2=$($PSQL "SELECT company_id FROM app_users WHERE username='ca1'")
+R=$(api POST /customers '{"code":"DDINACT","name":"Dropdown Inactive Co","status":"ACTIVE"}'); DDC=$(echo "$R" | j "d['data']['id']")
+R=$(api POST /customers '{"code":"DDOTHER","name":"Dropdown Other Co","status":"ACTIVE"}'); DDO=$(echo "$R" | j "d['data']['id']")
+$PSQL "UPDATE customers SET status='INACTIVE' WHERE id=$DDC" >/dev/null
+R=$(api GET "/customers?search=Dropdown&status=ACTIVE&size=20"); N=$(echo "$R" | j "','.join(c['code'] for c in d['data']['content'])")
+[ "$N" = "DDOTHER" ] && pass "customer search: active only, by name" || fail "customer active search" "$N"
+R=$(api GET "/customers?search=Dropdown&size=20"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "2" ] && pass "customer list without status unchanged (all statuses)" || fail "customer list compat" "$(echo $R | cut -c1-160)"
+R=$(api GET "/customers?search=ddother&status=ACTIVE"); [ "$(echo "$R" | j "d['data']['content'][0]['id']")" = "$DDO" ] && pass "customer search by code, any case" || fail "customer code search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/customers/$DDC"); [ "$(echo "$R" | j "d['data']['code']")" = "DDINACT" ] && pass "saved inactive customer still loads by id (edit forms)" || fail "customer by id" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $NT" "$API/customers?search=Dropdown&status=ACTIVE"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "another company's search never sees these customers" || fail "search tenant" "$(echo $R | cut -c1-160)"
+for M in vehicles drivers materials quarries suppliers; do C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TC" "$API/$M?status=ACTIVE&search=a&size=5"); [ "$C" = "200" ] || fail "$M status search" "$C"; done; pass "vehicles / drivers / materials / quarries / suppliers accept status + search"
+R=$(api GET "/spare-parts?search=zzzznomatch"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "spare part search filters by text" || fail "spare search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/trips/picker?billable=true&search=&size=50"); echo "$R" | j "'ok' if all(t['status']=='COMPLETED' for t in d['data']['content']) and $UTR not in [t['id'] for t in d['data']['content']] else 'no'" | grep -q ok && pass "billable trip picker: completed and not invoiced only" || fail "billable trips" "$(echo $R | cut -c1-200)"
+CT=$($PSQL "SELECT id FROM trips WHERE company_id=$CI2 AND status='CANCELLED' AND is_deleted=false LIMIT 1")
+R=$(api GET "/trips/picker?billable=false&size=50"); echo "$R" | j "'ok' if all(t['status']!='CANCELLED' for t in d['data']['content']) else 'no'" | grep -q ok && pass "trip link picker hides cancelled trips" || fail "open trips" "$(echo $R | cut -c1-200)"
+TN=$($PSQL "SELECT trip_number FROM trips WHERE id=$UTR"); R=$(api GET "/trips/picker?search=${TN: -5}"); echo "$R" | grep -q "\"id\":$UTR" && pass "trip picker search by trip number" || fail "trip search" "$(echo $R | cut -c1-160)"
+R=$(api GET "/bookings/picker?customerId=$DDO"); [ "$(echo "$R" | j "len(d['data']['content'])")" = "0" ] && pass "booking picker filtered by customer" || fail "booking picker customer" "$(echo $R | cut -c1-160)"
+R=$(api GET "/bookings/picker?customerId=$CUST&size=50"); echo "$R" | grep -q "\"id\":$UBK" && pass "booking picker lists the customer's bookings" || fail "booking picker" "$(echo $R | cut -c1-160)"
+R=$(post /receipts '{"customerId":'$DDO',"bookingId":'$UBK',"receiptDate":"'$(date +%F)'","amountReceived":100,"advanceAmount":100,"paymentMethod":"CASH","allocations":[]}')
+echo "$R" | grep -q "Booking Of Another Customer" && pass "receipt refuses another customer's booking" || fail "receipt booking mismatch" "$(echo $R | cut -c1-200)"
+R=$(post /receipts '{"customerId":'$CUST',"bookingId":'$UBK',"receiptDate":"'$(date +%F)'","amountReceived":100,"advanceAmount":100,"paymentMethod":"CASH","allocations":[]}'); RB=$(echo "$R" | j "d['data'].get('receiptId') or d['data'].get('id')")
+[ "$($PSQL "SELECT booking_id FROM customer_receipts WHERE id=${RB:-0}")" = "$UBK" ] && pass "receipt booking link is saved (was dropped before)" || fail "receipt booking saved" "$(echo $R | cut -c1-200)"
+NB=$(curl -s -H "Authorization: Bearer $NT" "$API/customers?size=1" | j "d['data']['content'][0]['id']")
+R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/receipts -d '{"customerId":'$NB',"bookingId":'$UBK',"amountReceived":10,"advanceAmount":10,"paymentMethod":"CASH","allocations":[]}')
+echo "$R" | grep -q '"success":true' && fail "cross-company booking on receipt" "$(echo $R | cut -c1-200)" || pass "receipt cannot link another company's booking"
+
+# ---------------- Help & Support tickets (V78, docs/SUPPORT_TICKETS.md) ----------------
+cu() { local T=$1; shift; local M=$1; shift; curl -s -X $M -H "Authorization: Bearer $T" -H 'Content-Type: application/json' "$API$1" ${2:+-d "$2"}; }
+CC1=$($PSQL "SELECT code FROM companies WHERE id=(SELECT company_id FROM app_users WHERE username='ca1')")
+R=$(cu "$TO" POST /support/tickets '{"subject":"Trip will not complete","description":"Complete button does nothing","priority":"HIGH","module":"Trips & Dispatch","screen":"Trips & Dispatch","pageUrl":"/trips-planning","recordType":"TRIP","recordId":'$TRIP',"recordLabel":"'$TNO'","appVersion":"1.0.0"}')
+SK1=$(echo "$R" | j "d['data']['id']"); SN1=$(echo "$R" | j "d['data']['ticketNumber']")
+echo "$SN1" | grep -Eq "^[A-Z0-9]+-TKT-[0-9]{5}$" && pass "ticket number carries the client prefix ($SN1, client $CC1)" || fail "ticket number" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets '{"subject":"Second","description":"x"}'); SN2=$(echo "$R" | j "d['data']['ticketNumber']")
+P1=${SN1%-TKT-*}; [ "${SN2%-TKT-*}" = "$P1" ] && [ "${SN2##*-}" != "${SN1##*-}" ] && pass "next ticket same prefix, next number ($SN2)" || fail "ticket sequence" "$SN1 $SN2"
+R=$(cu "$PT" POST /support/tickets '{"subject":"PKC login slow","description":"Takes 20s","priority":"LOW"}'); PK1=$(echo "$R" | j "d['data']['id']"); PN1=$(echo "$R" | j "d['data']['ticketNumber']")
+echo "$PN1" | grep -q "^PKC-TKT-" && pass "PKC tickets read PKC-TKT-… ($PN1)" || fail "PKC prefix" "$PN1"
+R=$(cu "$TO" POST /support/tickets '{"subject":" ","description":"x"}'); echo "$R" | grep -q "short title" && pass "title required" || fail "ticket validation" "$(echo $R | cut -c1-160)"
+C=$(as "$TD" POST /support/tickets '{"subject":"d","description":"d"}'); case "$C" in 401|403) pass "driver login cannot raise tickets (reports via manager) ($C)";; *) fail "driver ticket" "$C";; esac
+R=$(cu "$TV" POST /support/tickets '{"subject":"Viewer issue","description":"Report shows wrong total"}'); SKV=$(echo "$R" | j "d['data']['id']")
+[ -n "$SKV" ] && [ "$SKV" != "None" ] && pass "viewer can report an issue (no business data changed)" || fail "viewer ticket" "$(echo $R | cut -c1-160)"
+C=$(as "$NT" GET /support/tickets/$SK1); [ "$C" = "403" ] && pass "another company cannot open the ticket (403)" || fail "ticket tenant" "$C"
+C=$(as "$TV" GET /support/tickets/$SK1); [ "$C" = "403" ] && pass "a non-admin user cannot open a colleague's ticket" || fail "ticket own only" "$C"
+R=$(cu "$TC" GET "/support/tickets?size=100"); echo "$R" | j "'ok' if {$SK1,$SKV} <= {t['id'] for t in d['data']['content']} and $PK1 not in {t['id'] for t in d['data']['content']} else 'no'" | grep -q ok && pass "company admin sees all own-company tickets, no other company's" || fail "company admin list" "$(echo $R | cut -c1-160)"
+R=$(cu "$TO" GET "/support/tickets?size=100"); echo "$R" | j "'ok' if $SKV not in {t['id'] for t in d['data']['content']} else 'no'" | grep -q ok && pass "user list shows only own tickets" || fail "user list" "$(echo $R | cut -c1-160)"
+C=$(as "$TC" GET /platform-admin/tickets); [ "$C" = "403" ] && pass "client cannot use the platform ticket API (403)" || fail "admin api guard" "$C"
+R=$(put "/platform-admin/tickets/$SK1/assign?username=admin" '{}'); [ "$(echo "$R" | j "d['data']['assignedTo']")" = "admin" ] && pass "platform admin assigns the ticket" || fail "assign" "$(echo $R | cut -c1-200)"
+R=$(post /platform-admin/tickets/$SK1/replies '{"message":"SECRET-INTERNAL-NOTE db row locked","internal":true}'); echo "$R" | grep -q "SECRET-INTERNAL-NOTE" && pass "internal note saved (admin sees it)" || fail "internal note" "$(echo $R | cut -c1-200)"
+R=$(post /platform-admin/tickets/$SK1/replies '{"message":"Which vehicle was it?","internal":false,"status":"WAITING_FOR_CLIENT"}'); [ "$(echo "$R" | j "d['data']['status']")" = "WAITING_FOR_CLIENT" ] && pass "admin reply + waiting for client" || fail "admin reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" GET /support/tickets/$SK1)
+echo "$R" | grep -q "SECRET-INTERNAL-NOTE" && fail "INTERNAL NOTE LEAKED TO CLIENT" "$(echo $R | cut -c1-200)" || pass "internal note never in the client response"
+echo "$R" | grep -q '"ASSIGNED"\|assignedTo' && fail "assignment leaked to client" "$(echo $R | cut -c1-200)" || pass "assignment is internal (not in client response)"
+echo "$R" | grep -q "Which vehicle was it" && [ "$(echo "$R" | j "d['data']['supportReplied']")" = "True" ] && pass "client sees the support reply (marked as replied)" || fail "client sees reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/replies '{"message":"Vehicle TN46AB1234"}'); [ "$(echo "$R" | j "d['data']['status']")" = "IN_PROGRESS" ] && pass "client reply moves Waiting → In progress" || fail "client reply" "$(echo $R | cut -c1-200)"
+R=$(put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{}'); echo "$R" | grep -q "resolved" && pass "resolve needs a resolution" || fail "resolution required" "$(echo $R | cut -c1-200)"
+R=$(put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{"resolution":"Fixed the lock; please retry"}'); [ "$(echo "$R" | j "d['data']['status']")" = "RESOLVED" ] && pass "admin resolves with a resolution" || fail "resolve" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/reopen '{"message":"Still fails for TRP 2"}'); [ "$(echo "$R" | j "d['data']['status'] + str(d['data']['reopenCount'])")" = "IN_PROGRESS1" ] && pass "client reopens a resolved ticket" || fail "reopen" "$(echo $R | cut -c1-200)"
+put "/platform-admin/tickets/$SK1/status?status=RESOLVED" '{"resolution":"Second fix"}' >/dev/null
+R=$(cu "$TO" POST /support/tickets/$SK1/confirm); [ "$(echo "$R" | j "d['data']['status']")" = "CLOSED" ] && pass "client confirms the fix → closed" || fail "confirm" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" POST /support/tickets/$SK1/replies '{"message":"again"}'); echo "$R" | grep -q "closed" && pass "closed ticket takes no more replies" || fail "closed reply" "$(echo $R | cut -c1-200)"
+R=$(api GET /platform-admin/tickets/$SK1 2>/dev/null); R=$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$SK1)
+echo "$R" | j "'ok' if [e['action'] for e in d['data']['timeline'] if e['kind']=='EVENT'][:1]==['CREATED'] and any(e.get('action')=='REOPENED' for e in d['data']['timeline']) and d['data']['recordLabel']=='$TNO' else 'no'" | grep -q ok && pass "admin timeline: created … reopened … closed, trip context kept" || fail "timeline" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/platform-admin/tickets?companyId=$($PSQL "SELECT company_id FROM app_users WHERE username='pkc.admin'")&size=50")
+echo "$R" | j "'ok' if d['data']['content'] and all(t['ticketNumber'].startswith('PKC-') for t in d['data']['content']) else 'no'" | grep -q ok && pass "admin filter by client" || fail "admin client filter" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/platform-admin/tickets?search=$PN1"); [ "$(echo "$R" | j "d['data']['totalElements']")" = "1" ] && pass "admin search by ticket number" || fail "admin search" "$(echo $R | cut -c1-160)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/dashboard); echo "$R" | j "'ok' if d['data']['open_total'] >= 2 and d['data']['closed'] >= 1 and d['data']['byClient'] else 'no'" | grep -q ok && pass "support dashboard counts" || fail "support dashboard" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM audit_logs WHERE entity_name='saas_support_tickets' AND entity_id=$SK1")" -ge 6 ] && pass "ticket actions are in the audit log" || fail "ticket audit" "x"
+
+# ---------------- Help & Support phase 2: files in the database, upload limit, auto-close ----------------
+python3 - <<'PY'
+import zlib, struct, os
+def png(w, h, path, noise=False):
+    raw = b''.join(b'\x00' + (os.urandom(w * 3) if noise else b'\xff\x00\x00' * w) for _ in range(h))
+    def chunk(t, d): return struct.pack('>I', len(d)) + t + d + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
+    open(path, 'wb').write(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(raw, 0)) + chunk(b'IEND', b''))
+png(4, 4, '/tmp/st-small.png')
+png(820, 820, '/tmp/st-2mb.png', noise=True)     # ~2 MB: over the old 1 MB default
+png(1300, 1400, '/tmp/st-6mb.png', noise=True)   # ~5.5 MB: over the 5 MB image limit
+open('/tmp/st-note.pdf', 'wb').write(b'%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n')
+open('/tmp/st-fake.png', 'wb').write(b'MZ this is not an image at all, just text pretending')
+PY
+up() { curl -s -X POST -H "Authorization: Bearer $1" -F "file=@$3" "$API$2"; }
+R=$(cu "$TO" POST /support/tickets '{"subject":"Invoice PDF blank","description":"Printing shows an empty page","priority":"MEDIUM"}'); SF=$(echo "$R" | j "d['data']['id']")
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-small.png); [ "$(echo "$R" | j "d['data']['attachments'][0]['contentType']")" = "image/png" ] && pass "client attaches a screenshot" || fail "client attach" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-2mb.png); echo "$R" | grep -q '"success":true' && pass "2 MB screenshot accepted (Spring 1 MB default raised)" || fail "2 MB upload" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-6mb.png); echo "$R" | grep -q "up to 5 MB" && pass "image over 5 MB refused" || fail "size limit" "$(echo $R | cut -c1-200)"
+R=$(up "$TO" /support/tickets/$SF/attachments /tmp/st-fake.png); echo "$R" | grep -q "PNG, JPG, WEBP" && pass "fake .png (real content checked) refused" || fail "type sniff" "$(echo $R | cut -c1-200)"
+R=$(curl -s -X POST -H "Authorization: Bearer $TOKEN" -F "file=@/tmp/st-note.pdf" "$API/platform-admin/tickets/$SF/attachments?internal=true"); SIA=$(echo "$R" | j "[a['id'] for a in d['data']['attachments'] if a['isInternal']][0]")
+[ -n "$SIA" ] && [ "$SIA" != "None" ] && pass "support attaches an internal file" || fail "internal file" "$(echo $R | cut -c1-200)"
+R=$(cu "$TO" GET /support/tickets/$SF); echo "$R" | j "'ok' if len(d['data']['attachments'])==2 and not any(a['isInternal'] for a in d['data']['attachments']) else 'no'" | grep -q ok && pass "client file list excludes the internal file" || fail "client file list" "$(echo $R | cut -c1-200)"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TO" $API/support/tickets/$SF/attachments/$SIA); [ "$C" = "403" ] && pass "client cannot download the internal file (403)" || fail "internal download" "$C"
+CA=$(cu "$TO" GET /support/tickets/$SF | j "d['data']['attachments'][0]['id']")
+C=$(curl -s -o /tmp/st-dl.bin -w "%{http_code} %{content_type}" -H "Authorization: Bearer $TO" $API/support/tickets/$SF/attachments/$CA); [ "$C" = "200 image/png" ] && cmp -s /tmp/st-dl.bin /tmp/st-small.png && pass "client downloads own file intact" || fail "client download" "$C"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/support/tickets/$SF/attachments/$CA); [ "$C" = "403" ] && pass "another company cannot download the file (403)" || fail "file tenant" "$C"
+C=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$SF/attachments/$SIA); [ "$C" = "200" ] && pass "platform admin opens the internal file" || fail "admin download" "$C"
+put "/platform-admin/tickets/$SF/status?status=RESOLVED" '{"resolution":"Printer driver setting"}' >/dev/null
+# Simulate the whole history 8+ days ago: client activity before the resolution, resolution 8 days old.
+$PSQL "UPDATE saas_support_tickets SET last_client_activity = now() - interval '9 days', resolved_at = now() - interval '8 days' WHERE id=$SF" >/dev/null
+# A resolved ticket the client answered after resolution must NOT auto-close.
+$PSQL "UPDATE saas_support_tickets SET status='RESOLVED', resolved_at = now() - interval '8 days', last_client_activity = now() - interval '1 day' WHERE id=$SK1" >/dev/null
+R=$(post /platform-admin/tickets/auto-close '{}'); [ "$(echo "$R" | j "d['data']['closed'] >= 1")" = "True" ] && [ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SF")" = "CLOSED" ] && pass "resolved ticket auto-closes after 7 days" || fail "auto-close" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM saas_support_ticket_events WHERE ticket_id=$SF AND action='AUTO_CLOSED' AND username='SYSTEM'")" = "1" ] && pass "auto-close recorded in the ticket history" || fail "auto-close event" "x"
+[ "$($PSQL "SELECT status FROM saas_support_tickets WHERE id=$SK1")" = "RESOLVED" ] && pass "client activity after resolution keeps the ticket open" || fail "auto-close respects client activity" "x"
+C=$(as "$TC" POST /platform-admin/tickets/auto-close '{}'); [ "$C" = "403" ] && pass "only the platform admin can run auto-close" || fail "auto-close guard" "$C"
+
+# ---------------- Help & Support phase 3: notification bell (V80) ----------------
+R=$(cu "$TO" POST /support/tickets '{"subject":"Bell test","description":"Invoice PDF blank","priority":"CRITICAL"}'); NB1=$(echo "$R" | j "d['data']['id']")
+ADMN() { curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/notifications; }
+R=$(ADMN); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='NEW_TICKET' for i in d['data']['items']) and d['data']['criticalOpen']>=1 else 'no'" | grep -q ok && pass "admin bell: new critical ticket + critical count" || fail "admin bell new" "$(echo $R | cut -c1-220)"
+curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/tickets/$NB1 >/dev/null
+R=$(ADMN); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "admin bell clears when the ticket is opened" || fail "admin bell read" "$(echo $R | cut -c1-200)"
+post /platform-admin/tickets/$NB1/replies '{"message":"internal only","internal":true}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "internal note does not notify the client" || fail "internal note notified" "$(echo $R | cut -c1-200)"
+post /platform-admin/tickets/$NB1/replies '{"message":"Looking now","internal":false}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if d['data']['unread']>=1 and any(i['id']==$NB1 and i['reason']=='SUPPORT_REPLIED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell: support replied" || fail "client bell reply" "$(echo $R | cut -c1-200)"
+R=$(cu "$TC" GET /support/notifications); echo "$R" | j "'ok' if any(i['id']==$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "company admin bell includes colleagues' tickets" || fail "company admin bell" "$(echo $R | cut -c1-200)"
+R=$(cu "$TV" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "other user's bell excludes the ticket" || fail "user bell scope" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $NT" $API/support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "another company's bell never shows it" || fail "bell tenant" "$(echo $R | cut -c1-200)"
+cu "$TO" GET /support/tickets/$NB1 >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if all(i['id']!=$NB1 for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell clears when the ticket is opened" || fail "client bell read" "$(echo $R | cut -c1-200)"
+cu "$TO" POST /support/tickets/$NB1/replies '{"message":"Still blank on Chrome"}' >/dev/null
+R=$(ADMN); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='CLIENT_REPLIED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "admin bell: client replied" || fail "admin bell client reply" "$(echo $R | cut -c1-200)"
+C=$(as "$TC" GET /platform-admin/tickets/notifications); [ "$C" = "403" ] && pass "client cannot read the platform bell (403)" || fail "admin bell guard" "$C"
+put "/platform-admin/tickets/$NB1/status?status=RESOLVED" '{"resolution":"Font fixed"}' >/dev/null
+R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='RESOLVED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell: resolved — please confirm" || fail "client bell resolved" "$(echo $R | cut -c1-200)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

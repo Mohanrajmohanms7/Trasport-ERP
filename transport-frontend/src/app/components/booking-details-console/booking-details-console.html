@@ -145,10 +145,10 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <div formGroupName="customer">
-                <ff-dropdown formControlName="id" label="Select Customer" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Select Customer" [createLabel]="qc.label('customer')" (ffCreate)="newCustomer($event)" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="deliverySite">
-                <ff-dropdown formControlName="id" label="Delivery Site Location" [options]="siteOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Delivery Site Location" [createLabel]="bookingForm.getRawValue()?.customer?.id ? qc.label('deliverySite') : null" (ffCreate)="newSite($event)" [options]="siteOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-dropdown formControlName="priority" label="Priority Classification" [options]="priorityOptions" [required]="true" searchPlaceholder="Search options..." />
               <div class="pt-[9px]">
@@ -168,7 +168,7 @@
                 @for (row of detailsArray.controls; track row; let idx = $index) {
                   <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
-                      <ff-dropdown formControlName="id" label="Material Master" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
+                      <ff-dropdown formControlName="id" label="Material Master" [createLabel]="qc.label('material')" (ffCreate)="newMaterial($event, row)" [remoteSearch]="materialPick.search" [resolveMissing]="materialPick.resolve" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
                     <div formGroupName="uom">
@@ -225,3 +225,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

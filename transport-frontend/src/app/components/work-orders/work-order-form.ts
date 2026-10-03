@@ -8,13 +8,19 @@ import { MasterService } from '../../services/master.service';
 import { WorkOrderService, workOrderError } from '../../services/work-order.service';
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-work-order-form',
   standalone: true,
-  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, QuickCreateComponent, FfDropdownComponent],
   templateUrl: './work-order-form.html'
 })
 export class WorkOrderFormComponent implements OnInit {
+  private picker = inject(PickerService);
+  get vehicleOpts(): FfSelectOption[] { return activeOrSelected(this.vehicles(), this.vehicleId()).map((v: any) => ({ label: (v.name && v.code && String(v.name).includes(v.code)) ? v.name : [v.code, v.name && v.name !== v.code ? v.name : ''].filter(Boolean).join(' — '), value: v.id })); }
+  get supplierOpts(): FfSelectOption[] { return activeOrSelected(this.suppliers(), this.supplierId()).map((x: any) => ({ label: x.code && x.name ? x.code + ' — ' + x.name : (x.name || x.code), value: x.id })); }
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private http = inject(HttpClient);
@@ -28,9 +34,19 @@ export class WorkOrderFormComponent implements OnInit {
   lockedPreventive = signal(false);
 
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   rules = signal<any[]>([]);
   types = signal<any[]>([]);
   suppliers = signal<any[]>([]);
+  readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newVehicle(text: string): void {
+    this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.vehicleId.set(+rec.id); });
+  }
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers, [rec]); this.supplierId.set(+rec.id); });
+  }
   users = signal<any[]>([]);
 
   vehicleId = signal<number | null>(null);

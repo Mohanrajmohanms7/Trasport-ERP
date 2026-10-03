@@ -312,3 +312,12 @@
 .ff-dd--open {
   z-index: 30;
 }
+
+.ff-dd__create {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 10px 12px; border: 0; border-top: 1px solid var(--ff-border-divider, #e5e7eb);
+  background: transparent; color: var(--ff-color-primary-600, #2563eb);
+  font-size: 13px; font-weight: 600; text-align: left; cursor: pointer;
+}
+.ff-dd__create:hover { background: var(--ff-surface-hover, #f3f4f6); }
+.ff-dd__create .material-symbols-outlined { font-size: 18px; }

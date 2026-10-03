@@ -23,10 +23,12 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 import { ServiceHistoryRow, WorkOrder, WorkOrderService, workOrderError } from '../../services/work-order.service';
 import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-  imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -51,6 +53,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   private http = inject(HttpClient);
   private vehicleMgmtService = inject(VehicleMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -63,6 +66,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   activeTab = signal<string>('documents');
   vehicleId = signal<number | null>(null);
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   loading = signal<boolean>(false);
   private requestedVehicleId: number | null = null;
 
@@ -91,6 +95,12 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   assignments = signal<VehicleDriverAssignment[]>([]);
   drivers = signal<any[]>([]);
   suppliers = signal<any[]>([]);
+  readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers, [rec]); this.maintenanceForm.get('supplierId')?.setValue(rec.id); });
+  }
   documentTypes = signal<any[]>([]);
   serviceTypes = signal<any[]>([]);
 
@@ -135,7 +145,7 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   get supplierOptions(): FfSelectOption[] {
     return [
       { label: '-- Select Supplier / Workshop --', value: '' },
-      ...this.suppliers().map(s => ({
+      ...activeOrSelected(this.suppliers(), this.maintenanceForm?.getRawValue()?.supplierId).map(s => ({
         label: [s.code, s.name].filter(Boolean).join(' — '),
         value: s.id
       }))

@@ -65,4 +65,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     long countExpiringFitness(@Param("companyId") Long companyId,
                               @Param("from") LocalDate from,
                               @Param("to") LocalDate to);
+
+    /** Dropdown search: one status (e.g. ACTIVE) and an optional name/code text; empty text = all. */
+    @Query("SELECT e FROM Vehicle e WHERE e.companyId = :companyId AND e.isDeleted = false AND COALESCE(e.status, 'ACTIVE') = :status "
+            + "AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(e.code) LIKE LOWER(CONCAT('%', :q, '%')))")
+    Page<Vehicle> searchByStatus(@Param("companyId") Long companyId, @Param("q") String q, @Param("status") String status, Pageable pageable);
 }

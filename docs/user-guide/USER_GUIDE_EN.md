@@ -31,6 +31,16 @@ from setting up the company to sending invoices, collecting money, paying driver
 
 ---
 
+
+> **Tip — dropdowns.** Type in any customer, vehicle, driver, supplier or spare-part dropdown to search all records.
+> If it does not exist yet, click **+ Create "…"** at the bottom, fill the short form and **Save** — it is selected for you.
+> (Shown only if you are allowed to add that record.)
+
+
+> **Help & Support.** Something not working? Click the **support icon** (headset) at the top of any screen, write what
+> happened and **Send to support**. You get a ticket number like **PKC-TKT-00001**. Follow replies in **Help & Support**
+> (left menu); answer questions there, then click **Issue fixed** or **Still not working** when support marks it resolved.
+
 ## Before you begin
 
 - **Signing in:** open the TransaFlow link, enter the **username** and **password** given by your administrator.
@@ -203,6 +213,9 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 Click **Plan Dispatch Trip** and enter:
 - **Booking\*** (only approved bookings are listed), **Trip date\*** (not future, not before the booking date),
 - **Vehicle** and **Driver** (needed before dispatch), **Quarry** and **Loading point**,
+- Selecting the **booking** fills the form from it: customer, delivery site, booking remarks and one line per booking
+  material that still has quantity left. Each line shows *Booked · On other trips · Remaining* and the rate; tap
+  **Use 6 Unit** to plan the whole remaining quantity, or type the lorry's quantity. Only the booking's materials can be chosen.
 - Material line(s): **Material\*** (must be on the booking) and **Quantity\*** (e.g. 2). The unit is always the
   booking's unit (e.g. *Planned Qty (Unit)*) — it cannot be changed on the trip.
 
@@ -377,6 +390,18 @@ Every list screen also has **Excel** and **PDF** buttons.
 8. Download **Sales register** and **GST summary** for GST filing; review **Monthly business summary**.
 
 ---
+
+## Family Expenses (optional) — *Personal → Family Expenses*
+**Purpose:** record the owner's family spending (groceries, school fees, medical …) **separately from the business**.
+It does not change cash, bank, accounts, profit, the dashboard or any business report.
+- Shown only if TransaFlow has switched it on for your company, and only to **Company Admin / Admin** logins.
+- **Add Expense** → **Date\*** (not future), **Category\***, **Amount\***, **Payment mode\*** (Cash, UPI, Bank …),
+  description, family member and reference (optional) → **Save**. Then attach the bill if you like.
+  Example: 02-10-2026 — Groceries — Monthly groceries — ₹4,500 — Cash.
+- The top cards show **this month**: total, cash, bank / UPI and the highest category. Filter by month, category or mode.
+- **Reports** tab: Daily, Monthly, Category-wise, Payment mode, Yearly (financial year), Category comparison by month,
+  All entries — each with **Excel** and **PDF**.
+- **Categories** tab: rename, add or make a category inactive. A category already used cannot be deleted — make it inactive.
 
 ## Common questions
 

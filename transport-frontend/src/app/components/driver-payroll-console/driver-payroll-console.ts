@@ -20,6 +20,7 @@ type Tab = 'payrolls' | 'advances' | 'slabs';
  * Driver Daily Slab Payroll.
  * Every trip count, daily amount, gross and net shown here comes from the backend.
  */
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 @Component({
   selector: 'app-driver-payroll-console',
   standalone: true,
@@ -32,6 +33,7 @@ export class DriverPayrollConsoleComponent implements OnInit {
   private api = inject(DriverPayrollService);
   private auth = inject(AuthService);
   private masters = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -52,6 +54,7 @@ export class DriverPayrollConsoleComponent implements OnInit {
   payrolls = signal<SlabPayroll[]>([]);
   selected = signal<SlabPayroll | null>(null);
   drivers = signal<any[]>([]);
+  readonly driverPick = this.picker.bind('drivers', this.drivers);
   advances = signal<DriverAdvance[]>([]);
   slabs = signal<PaySlab[]>([]);
   outstanding = signal<number | null>(null);

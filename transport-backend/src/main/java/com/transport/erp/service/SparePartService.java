@@ -43,9 +43,18 @@ public class SparePartService {
 
     @Transactional(readOnly = true)
     public Page<SparePartResponse> list(Long requestedCompanyId, Pageable pageable) {
+        return list(requestedCompanyId, null, pageable);
+    }
+
+    /** List with optional code / name search (dropdowns). */
+    @Transactional(readOnly = true)
+    public Page<SparePartResponse> list(Long requestedCompanyId, String search, Pageable pageable) {
         Long companyId = tenantAccess.resolveCompanyId(requestedCompanyId);
         if (companyId == null) {
             return Page.empty(pageable);
+        }
+        if (search != null && !search.isBlank()) {
+            return sparePartRepository.searchActiveByCompany(companyId, search.trim(), pageable).map(this::toResponse);
         }
         return sparePartRepository.findActiveByCompany(companyId, pageable).map(this::toResponse);
     }

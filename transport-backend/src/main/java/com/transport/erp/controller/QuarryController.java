@@ -25,10 +25,11 @@ public class QuarryController {
     public ApiResponse<Page<Quarry>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Quarry> quarries = quarryService.getAll(scopedCompanyId, search, pageable);
+            Page<Quarry> quarries = quarryService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(quarries, "Quarries fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

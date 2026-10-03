@@ -16,10 +16,12 @@ import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfNumberCompon
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-fuel-details-console',
   standalone: true,
-  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -39,6 +41,7 @@ export class FuelDetailsConsoleComponent implements OnInit {
   readonly features = inject(FeatureService);
   private fuelMgmtService = inject(FuelMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
   private notify = inject(FfNotificationService);
@@ -56,24 +59,36 @@ export class FuelDetailsConsoleComponent implements OnInit {
   fuelEntries = signal<FuelEntry[]>([]);
   fuelRequests = signal<FuelRequest[]>([]);
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   drivers = signal<any[]>([]);
+  readonly driverPick = this.picker.bind('drivers', this.drivers);
   trips = signal<any[]>([]);
+  readonly tripPick = this.picker.bindTrips(this.trips, false);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newVehicle(text: string): void {
+    this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.entryForm.get('vehicle.id')?.setValue(rec.id); });
+  }
+  newDriver(text: string): void {
+    this.quick.start('driver', text, rec => { PickerService.merge(this.drivers, [rec]); this.entryForm.get('driver.id')?.setValue(rec.id); });
+  }
+
   paymentMethods = signal<any[]>([]);
 
   get vehicleOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Vehicle --', value: '' }, ...this.vehicles().map(v => ({
+    return [{ label: '-- Choose Vehicle --', value: '' }, ...activeOrSelected(this.vehicles(), [this.entryForm?.getRawValue()?.vehicle?.id, this.requestForm?.getRawValue()?.vehicle?.id]).map(v => ({
       label: [v.code || v.registrationNumber, v.name || [v.brand, v.model].filter(Boolean).join(' ')].filter(Boolean).join(' — ') || 'Unknown Vehicle',
       value: v.id
     }))];
   }
   get driverOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Driver --', value: '' }, ...this.drivers().map(driver => ({ label: driver.name, value: driver.id }))];
+    return [{ label: '-- Choose Driver --', value: '' }, ...activeOrSelected(this.drivers(), [this.entryForm?.getRawValue()?.driver?.id, this.requestForm?.getRawValue()?.driver?.id]).map(driver => ({ label: driver.name, value: driver.id }))];
   }
   get tripOptions(): FfSelectOption[] {
-    return [{ label: '-- Optional Trip Link --', value: '' }, ...this.trips().map(trip => ({ label: trip.tripNumber, value: trip.id }))];
+    return [{ label: '-- Optional Trip Link --', value: '' }, ...this.trips().filter(t => t.status !== 'CANCELLED' || [this.entryForm?.getRawValue()?.trip?.id, this.requestForm?.getRawValue()?.trip?.id].some(v => String(v) === String(t.id))).map(trip => ({ label: tripLabel(trip), value: trip.id }))];
   }
   get requestTripOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Transit Trip --', value: '' }, ...this.trips().map(trip => ({ label: trip.tripNumber, value: trip.id }))];
+    return [{ label: '-- Choose Transit Trip --', value: '' }, ...this.trips().filter(t => t.status !== 'CANCELLED' || [this.entryForm?.getRawValue()?.trip?.id, this.requestForm?.getRawValue()?.trip?.id].some(v => String(v) === String(t.id))).map(trip => ({ label: tripLabel(trip), value: trip.id }))];
   }
   get paymentMethodOptions(): FfSelectOption[] {
     return this.paymentMethods().length > 0

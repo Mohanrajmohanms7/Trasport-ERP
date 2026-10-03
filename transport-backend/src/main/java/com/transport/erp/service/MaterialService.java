@@ -26,6 +26,12 @@ public class MaterialService {
     @Autowired
     private com.transport.erp.repository.UomMasterRepository uomMasterRepository;
 
+    /** List with an optional status filter (dropdowns ask for ACTIVE only); no status = material list as before. */
+    public Page<Material> getAll(Long companyId, String search, String status, Pageable pageable) {
+        if (status == null || status.isBlank()) return getAll(companyId, search, pageable);
+        return materialRepository.searchByStatus(companyId, search == null ? "" : search.trim(), status.trim().toUpperCase(), pageable);
+    }
+
     public Page<Material> getAll(Long companyId, String search, Pageable pageable) {
         if (search != null && !search.trim().isEmpty()) {
             return materialRepository.findByCompanyIdAndIsDeletedFalseAndNameContainingIgnoreCaseOrCodeContainingIgnoreCase(

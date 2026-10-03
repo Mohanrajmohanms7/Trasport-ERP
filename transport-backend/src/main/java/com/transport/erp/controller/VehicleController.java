@@ -25,10 +25,11 @@ public class VehicleController {
     public ApiResponse<Page<Vehicle>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Vehicle> vehicles = vehicleService.getAll(scopedCompanyId, search, pageable);
+            Page<Vehicle> vehicles = vehicleService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(vehicles, "Vehicles fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

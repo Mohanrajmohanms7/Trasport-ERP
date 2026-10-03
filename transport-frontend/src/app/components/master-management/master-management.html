@@ -217,7 +217,7 @@
 
         <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
           <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
-          <ff-button type="button" [label]="saveButtonLabel()" icon="save" variant="primary" [disabled]="editorForm.invalid" (ffClick)="save()" />
+          <ff-button type="button" [label]="saveButtonLabel()" icon="save" variant="primary" (ffClick)="save()" />
         </div>
       </div>
     </div>

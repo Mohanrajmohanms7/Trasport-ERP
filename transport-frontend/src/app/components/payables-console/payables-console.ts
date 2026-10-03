@@ -15,13 +15,19 @@ type Tab = 'bills' | 'payments';
  * Accounts payable: supplier bills (manual, or created automatically by credit stock receipts and workshop jobs)
  * and supplier payments allocated to those bills. Amounts owed come from the server.
  */
+import { PickerService, activeOrSelected } from '../../services/picker.service';
+import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-payables-console',
   standalone: true,
-  imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, AttachmentsPanelComponent, QuickCreateComponent, FfDropdownComponent],
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {
+  private picker = inject(PickerService);
+  get supplierOpts(): FfSelectOption[] { return activeOrSelected(this.suppliers(), [this.bill?.supplierId, this.pay?.supplierId]).map((x: any) => ({ label: x.name || x.code, value: String(x.id) })); }
+  get vehicleOpts(): FfSelectOption[] { return activeOrSelected(this.vehicles(), this.bill?.vehicleId).map((v: any) => ({ label: v.name || v.code, value: String(v.id) })); }
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private http = inject(HttpClient);
@@ -33,7 +39,14 @@ export class PayablesConsoleComponent implements OnInit {
 
   tab = signal<Tab>('bills');
   suppliers = signal<any[]>([]);
+  readonly supplierPick = this.picker.bind('suppliers', this.suppliers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newSupplier(text: string): void {
+    this.quick.start('supplier', text, rec => { PickerService.merge(this.suppliers as any, [rec]); this.bill.supplierId = String(rec.id); this.onSupplierForBill(); });
+  }
   vehicles = signal<any[]>([]);
+  readonly vehiclePick = this.picker.bind('vehicles', this.vehicles);
   bills = signal<any[]>([]);
   payments = signal<any[]>([]);
   loading = signal(false);

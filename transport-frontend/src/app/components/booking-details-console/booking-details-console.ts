@@ -18,10 +18,12 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 import { UomMgmtService, OrderUnit } from '../../services/uom-mgmt.service';
 import { uomLabel, orderLineText } from '../../shared/uom-label';
 
+import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
+import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
 @Component({
   selector: 'app-booking-details-console',
   standalone: true,
-  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -106,6 +108,7 @@ import { uomLabel, orderLineText } from '../../shared/uom-label';
 export class BookingDetailsConsoleComponent implements OnInit {
   private bookingMgmtService = inject(BookingMgmtService);
   private masterService = inject(MasterService);
+  private picker = inject(PickerService);
   private customerMgmtService = inject(CustomerMgmtService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
@@ -121,12 +124,28 @@ export class BookingDetailsConsoleComponent implements OnInit {
   /** Units of lines being edited that are no longer switched on (kept so old bookings still save). */
   private legacyUnits = signal<OrderUnit[]>([]);
   customers = signal<any[]>([]);
+  readonly customerPick = this.picker.bind('customers', this.customers);
+  readonly qc = inject(QuickCreateService);
+  readonly quick = new QuickCreateHost();
+  newMaterial(text: string, row: any): void {
+    this.quick.start('material', text, rec => { PickerService.merge(this.materials, [rec]); row.get('material.id')?.setValue(rec.id); });
+  }
+  newSite(text: string): void {
+    const customerId = this.bookingForm.getRawValue()?.customer?.id;
+    if (!customerId) return;
+    this.quick.start('deliverySite', text, rec => { this.sites.set([...this.sites(), rec]); this.bookingForm.get('deliverySite.id')?.setValue(rec.id); }, { customerId });
+  }
+  newCustomer(text: string): void {
+    this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.bookingForm.get('customer.id')?.setValue(rec.id); });
+  }
+
   materials = signal<any[]>([]);
+  readonly materialPick = this.picker.bind('materials', this.materials);
   sites = signal<any[]>([]);
   priorities = signal<any[]>([]);
 
   get customerOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Customer --', value: '' }, ...this.customers().map(customer => ({ label: customer.name, value: customer.id }))];
+    return [{ label: '-- Choose Customer --', value: '' }, ...activeOrSelected(this.customers(), this.bookingForm?.getRawValue()?.customer?.id).map(customer => ({ label: customer.name, value: customer.id }))];
   }
   get siteOptions(): FfSelectOption[] {
     return [{ label: '-- Choose Unloading Site --', value: '' }, ...this.sites().map(site => ({ label: site.siteName, value: site.id }))];
@@ -137,7 +156,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
       : [{ label: 'HIGH', value: 'HIGH' }, { label: 'MEDIUM', value: 'MEDIUM' }, { label: 'LOW', value: 'LOW' }];
   }
   get materialOptions(): FfSelectOption[] {
-    return [{ label: '-- Choose Material --', value: '' }, ...this.materials().map(material => ({ label: material.name, value: material.id }))];
+    return [{ label: '-- Choose Material --', value: '' }, ...activeOrSelected(this.materials(), (this.bookingForm?.getRawValue()?.details || []).map((d: any) => d?.material?.id)).map(material => ({ label: material.name, value: material.id }))];
   }
 
   get defaultUnitId(): number | null {

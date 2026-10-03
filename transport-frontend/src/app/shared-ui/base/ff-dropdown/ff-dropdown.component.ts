@@ -8,7 +8,9 @@ import {
   inject,
   input,
   output,
-  signal
+  signal,
+  effect,
+  untracked
 } from '@angular/core';
 import { NG_VALIDATORS, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -44,6 +46,51 @@ export class FfDropdownComponent extends FfControlBase<unknown> {
 
   /** Emitted when user clicks the refresh icon in the panel */
   readonly ffRefresh = output<void>();
+
+  /**
+   * Server search for large lists (customers, vehicles, spare parts …). Called with the typed text when the panel
+   * opens and (debounced) while typing; the caller loads matches and adds them to `options`. Optional.
+   */
+  readonly remoteSearch = input<((query: string) => void) | null>(null);
+  /**
+   * Called once for a selected value that is not in `options` (e.g. editing a record whose customer is not in the
+   * first page) so the caller can load it and the field shows its name instead of blank. Optional.
+   */
+  readonly resolveMissing = input<((value: unknown) => void) | null>(null);
+  /**
+   * Quick Create: when set (e.g. "+ Create new customer"), the panel shows a create button; clicking it closes the
+   * panel and emits the typed text so the screen can open its create popup pre-filled. Only set it for users who may
+   * create that record.
+   */
+  readonly createLabel = input<string | null>(null);
+  readonly ffCreate = output<string>();
+
+  requestCreate(event: Event): void {
+    event.stopPropagation();
+    const text = this.query().trim();
+    this.closePanel();
+    this.ffCreate.emit(text);
+  }
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly askedFor = new Set<unknown>();
+  private readonly missingValueWatch = effect(() => {
+    const fn = this.resolveMissing();
+    const v = this.value();
+    if (!fn || v === null || v === undefined || v === '') return;
+    if (this.options().some(o => this.compareWith()(o.value, v))) return;
+    if (this.askedFor.has(v)) return;
+    this.askedFor.add(v);
+    untracked(() => fn(v));
+  });
+
+  private runRemoteSearch(query: string, immediate: boolean): void {
+    const fn = this.remoteSearch();
+    if (!fn) return;
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    if (immediate) { fn(query.trim()); return; }
+    this.searchTimer = setTimeout(() => fn(query.trim()), 250);
+  }
 
   readonly panelOpen = signal(false);
   readonly query = signal('');
@@ -95,6 +142,7 @@ export class FfDropdownComponent extends FfControlBase<unknown> {
     if (this.isDisabled() || this.isReadonly()) return;
     this.panelOpen.set(true);
     this.query.set('');
+    this.runRemoteSearch('', true);
     const idx = this.filteredOptions().findIndex(o =>
       this.compareWith()(o.value, this.value())
     );
@@ -156,6 +204,7 @@ export class FfDropdownComponent extends FfControlBase<unknown> {
   onSearchInput(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
     this.activeIndex.set(0);
+    this.runRemoteSearch(this.query(), false);
   }
 
   selectOption(opt: FfSelectOption): void {

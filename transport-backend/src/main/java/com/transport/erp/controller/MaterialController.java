@@ -25,10 +25,11 @@ public class MaterialController {
     public ApiResponse<Page<Material>> getAll(
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
         try {
             Long scopedCompanyId = tenantAccess.resolveCompanyId(companyId);
-            Page<Material> materials = materialService.getAll(scopedCompanyId, search, pageable);
+            Page<Material> materials = materialService.getAll(scopedCompanyId, search, status, pageable);
             return ApiResponse.success(materials, "Materials fetched successfully");
         } catch (org.springframework.security.access.AccessDeniedException e) {
             throw e; // → 403 via GlobalExceptionHandler

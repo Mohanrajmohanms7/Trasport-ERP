@@ -135,7 +135,7 @@
         <form [formGroup]="expenseForm" (ngSubmit)="saveExpense()" class="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div class="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-4">
             <ff-datepicker formControlName="expenseDate" label="Expense Date" [max]="today" [required]="true" />
-            <ff-dropdown formControlName="category" label="Voucher Category" [options]="categoryOptions" [required]="true" searchPlaceholder="Search options..." />
+            <ff-dropdown formControlName="category" label="Voucher Category" [createLabel]="qc.label('expenseCategory')" (ffCreate)="newCategory($event)" [options]="categoryOptions" [required]="true" searchPlaceholder="Search options..." />
 
             <ff-textbox formControlName="description" label="Description details" placeholder="Voucher purpose description details" prefixIcon="notes" [required]="true" />
 
@@ -146,16 +146,16 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div formGroupName="vehicle">
-                <ff-dropdown formControlName="id" label="Link Vehicle" [options]="vehicleOptions" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Link Vehicle" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" [options]="vehicleOptions" searchPlaceholder="Search options..." />
               </div>
               <div formGroupName="driver">
-                <ff-dropdown formControlName="id" label="Link Driver" [options]="driverOptions" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Link Driver" [remoteSearch]="driverPick.search" [resolveMissing]="driverPick.resolve" [options]="driverOptions" searchPlaceholder="Search options..." />
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div formGroupName="trip">
-                <ff-dropdown formControlName="id" label="Link Trip" [options]="tripOptions" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Link Trip" [remoteSearch]="tripPick.search" [resolveMissing]="tripPick.resolve" [options]="tripOptions" searchPlaceholder="Search options..." />
               </div>
               <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
             </div>
@@ -179,3 +179,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

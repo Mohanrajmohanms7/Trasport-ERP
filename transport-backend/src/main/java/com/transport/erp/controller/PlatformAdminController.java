@@ -395,37 +395,85 @@ public class PlatformAdminController {
         return ApiResponse.success(backup, "Manual database snapshot backup triggered successfully");
     }
 
-    // 11. Support Tickets
+    // 11. Support Tickets (Help & Support; see docs/SUPPORT_TICKETS.md)
+    @Autowired
+    private com.transport.erp.service.SupportTicketService supportTickets;
+
     @GetMapping("/tickets")
-    public ApiResponse<Page<SaaSSupportTicket>> getSupportTickets(
+    public ApiResponse<Page<Map<String, Object>>> getSupportTickets(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String assignedTo,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "false") boolean overdue,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<SaaSSupportTicket> data = platformAdminService.getSupportTickets(status, pageable);
-        return ApiResponse.success(data, "SaaS support tickets query completed successfully");
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.success(supportTickets.listForAdmin(status, priority, companyId, module, assignedTo, search, overdue, page, size),
+                "Support tickets fetched");
+    }
+
+    @GetMapping("/tickets/dashboard")
+    public ApiResponse<Map<String, Object>> getSupportDashboard() {
+        return ApiResponse.success(supportTickets.dashboard(), "Support dashboard fetched");
+    }
+
+    @GetMapping("/tickets/notifications")
+    public ApiResponse<Map<String, Object>> getSupportNotifications() {
+        return ApiResponse.success(supportTickets.adminNotifications(), "Notifications fetched");
+    }
+
+    @GetMapping("/tickets/assignees")
+    public ApiResponse<java.util.List<Map<String, Object>>> getSupportAssignees() {
+        return ApiResponse.success(supportTickets.assignees(), "Assignees fetched");
     }
 
     @GetMapping("/tickets/{id}")
-    public ApiResponse<SaaSSupportTicket> getSupportTicket(@PathVariable Long id) {
-        SaaSSupportTicket ticket = platformAdminService.getSupportTicket(id);
-        return ApiResponse.success(ticket, "Support ticket thread details fetched successfully");
+    public ApiResponse<Map<String, Object>> getSupportTicket(@PathVariable Long id) {
+        return ApiResponse.success(supportTickets.getForAdmin(id), "Support ticket fetched");
     }
 
+    /** Reply to the client, or an internal note with {"internal": true}; optional {"status": "..."}. */
     @PostMapping("/tickets/{id}/replies")
-    public ApiResponse<SaaSSupportReply> createSupportReply(
-            @PathVariable Long id,
-            @RequestBody SaaSSupportReply reply) {
-        SaaSSupportReply created = platformAdminService.createSupportReply(id, reply, getActiveUser());
-        return ApiResponse.success(created, "Support reply registered and status updated successfully");
+    public ApiResponse<Map<String, Object>> createSupportReply(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        return ApiResponse.success(supportTickets.adminReply(id, body), "Reply saved");
     }
 
     @PutMapping("/tickets/{id}/status")
-    public ApiResponse<SaaSSupportTicket> updateTicketStatus(
-            @PathVariable Long id,
-            @RequestParam String status) {
-        SaaSSupportTicket updated = platformAdminService.updateTicketStatus(id, status, getActiveUser());
-        return ApiResponse.success(updated, "Support ticket status updated successfully");
+    public ApiResponse<Map<String, Object>> updateTicketStatus(@PathVariable Long id, @RequestParam String status,
+                                                               @RequestBody(required = false) Map<String, Object> body) {
+        Object resolution = body == null ? null : body.get("resolution");
+        return ApiResponse.success(supportTickets.setStatus(id, status, resolution == null ? null : String.valueOf(resolution)),
+                "Support ticket status updated");
+    }
+
+    @PostMapping(value = "/tickets/{id}/attachments", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Map<String, Object>> attachToTicket(@PathVariable Long id,
+                                                           @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+                                                           @RequestParam(defaultValue = "false") boolean internal) {
+        return ApiResponse.success(supportTickets.adminAttach(id, file, internal), "File attached");
+    }
+
+    @GetMapping("/tickets/{id}/attachments/{attachmentId}")
+    public org.springframework.http.ResponseEntity<byte[]> downloadTicketFile(@PathVariable Long id, @PathVariable Long attachmentId) {
+        return com.transport.erp.controller.SupportController.fileResponse(supportTickets.download(id, attachmentId, true));
+    }
+
+    /** Close resolved tickets the client has not answered for 7 days now (also runs hourly). */
+    @PostMapping("/tickets/auto-close")
+    public ApiResponse<Map<String, Object>> autoCloseTickets() {
+        return ApiResponse.success(Map.of("closed", supportTickets.runAutoCloseNow()), "Auto-close done");
+    }
+
+    @PutMapping("/tickets/{id}/priority")
+    public ApiResponse<Map<String, Object>> updateTicketPriority(@PathVariable Long id, @RequestParam String priority) {
+        return ApiResponse.success(supportTickets.setPriority(id, priority), "Support ticket priority updated");
+    }
+
+    @PutMapping("/tickets/{id}/assign")
+    public ApiResponse<Map<String, Object>> assignTicket(@PathVariable Long id, @RequestParam(required = false) String username) {
+        return ApiResponse.success(supportTickets.assign(id, username), "Support ticket assigned");
     }
 
     // 12. Announcements

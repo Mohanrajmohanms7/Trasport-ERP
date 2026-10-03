@@ -217,7 +217,7 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               <div formGroupName="customer">
-                <ff-dropdown formControlName="id" label="Select Corporate Customer" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
+                <ff-dropdown formControlName="id" label="Select Corporate Customer" [createLabel]="qc.label('customer')" (ffCreate)="newCustomer($event)" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
               <ff-dropdown formControlName="paymentTerms" label="Payment Terms" [options]="paymentTermsOptions" [required]="true" searchPlaceholder="Search options..." />
               <ff-number formControlName="discount" label="Discount (before GST)" placeholder="0.00" [min]="0" />
@@ -240,10 +240,10 @@
                 @for (row of detailsArray.controls; track row; let idx = $index) {
                   <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-2 lg:grid-cols-6 xl:grid-cols-11 gap-3 items-end">
                     <div formGroupName="trip">
-                      <ff-dropdown formControlName="id" label="Trip reference" [options]="tripOptions" searchPlaceholder="Search options..." />
+                      <ff-dropdown formControlName="id" label="Trip reference" [remoteSearch]="tripPick.search" [resolveMissing]="tripPick.resolve" [options]="tripOptions" searchPlaceholder="Search options..." />
                     </div>
                     <div formGroupName="material">
-                      <ff-dropdown formControlName="id" label="Material Master" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
+                      <ff-dropdown formControlName="id" label="Material Master" [remoteSearch]="materialPick.search" [resolveMissing]="materialPick.resolve" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
                     <div formGroupName="uom">
@@ -322,3 +322,7 @@
   }
 
 </div>
+
+@if (quick.open(); as q) {
+  <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}

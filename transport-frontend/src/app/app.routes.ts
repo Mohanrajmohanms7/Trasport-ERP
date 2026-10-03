@@ -1,3 +1,5 @@
+import { FamilyExpensesComponent } from './components/family-expenses/family-expenses';
+import { SupportConsoleComponent } from './components/support/support-console';
 import { featureGuard } from './guards/feature.guard';
 import { BranchMasterComponent } from './components/branch-master/branch-master';
 import { SupplierMasterComponent } from './components/supplier-master/supplier-master';
@@ -96,6 +98,8 @@ export const routes: Routes = [
       { path: 'trips-planning', component: TripDetailsConsoleComponent },
       { path: 'fuel-logs', component: FuelDetailsConsoleComponent },
       { path: 'expense-logs', component: ExpenseDetailsConsoleComponent },
+      { path: 'family-expenses', component: FamilyExpensesComponent },
+      { path: 'support', component: SupportConsoleComponent },
       { path: 'payment-logs', component: PaymentDetailsConsoleComponent },
       { path: 'billing-invoices', component: InvoiceDetailsConsoleComponent },
       { path: 'accounts-ledger', component: AccountsDetailsConsoleComponent },

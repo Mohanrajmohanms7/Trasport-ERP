@@ -39,6 +39,7 @@ public class AttachmentService {
     @Autowired private SupplierRepository supplierRepository;
     @Autowired private JournalVoucherRepository journalVoucherRepository;
     @Autowired private SupplierBillRepository supplierBillRepository;
+    @Autowired private FamilyExpenseRepository familyExpenseRepository;
 
     public static final int MAX_PER_RECORD = 20;
 
@@ -56,6 +57,7 @@ public class AttachmentService {
             case "SUPPLIER" -> supplierRepository;
             case "JOURNAL_VOUCHER" -> journalVoucherRepository;
             case "SUPPLIER_BILL" -> supplierBillRepository;
+            case "FAMILY_EXPENSE" -> familyExpenseRepository;
             default -> throw new BusinessValidationException("Unsupported Record Type", "ATTACHMENT_TYPE_UNSUPPORTED",
                     "Attachments are not available for " + type + ".", "Use one of the supported record types.");
         };
@@ -68,6 +70,7 @@ public class AttachmentService {
                 .filter(r -> !Boolean.TRUE.equals(r.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Record not found: " + type + " " + id));
         AppUser user = tenantAccess.requireCurrentUser();
+        if ("FAMILY_EXPENSE".equals(type)) assertFamilyAccess(user, record.getCompanyId());
         if (!tenantAccess.isSuperAdmin(user)) {
             tenantAccess.assertCompanyAccess(record.getCompanyId());
         }
@@ -77,6 +80,15 @@ public class AttachmentService {
             if (!own) throw new AccessDeniedException("Drivers can only attach files to their own maintenance requests.");
         }
         return record;
+    }
+
+    /** Family expense bills are the owner's personal data: company admins of that company only (not the platform admin). */
+    private static void assertFamilyAccess(AppUser user, Long companyId) {
+        boolean companyAdmin = user.getRoles() != null && user.getRoles().stream()
+                .anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()) || "ADMIN".equals(r.getCode()));
+        if (!companyAdmin || companyId == null || !companyId.equals(user.getCompanyId())) {
+            throw new AccessDeniedException("Family expense attachments are only for the company admin.");
+        }
     }
 
     private static boolean isDriverOnly(AppUser user) {
@@ -135,6 +147,7 @@ public class AttachmentService {
         Attachment a = attachmentRepository.findById(id).filter(x -> !Boolean.TRUE.equals(x.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Attachment not found: " + id));
         AppUser user = tenantAccess.requireCurrentUser();
+        if ("FAMILY_EXPENSE".equals(a.getEntityType())) assertFamilyAccess(user, a.getCompanyId());
         if (!tenantAccess.isSuperAdmin(user)) tenantAccess.assertCompanyAccess(a.getCompanyId());
         boolean admin = tenantAccess.isSuperAdmin(user) || (user.getRoles() != null && user.getRoles().stream()
                 .anyMatch(r -> "COMPANY_ADMIN".equals(r.getCode()) || "ADMIN".equals(r.getCode())));

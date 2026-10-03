@@ -37,10 +37,12 @@ interface SearchHit {
 
 import { FfToastComponent } from '@ff/ui';
 
+import { ReportIssueDialogComponent } from '../../shared/support/report-issue-dialog';
+import { SupportContextService, SupportService } from '../../services/support.service';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule, FfToastComponent],
+  imports: [CommonModule, RouterModule, MatMenuModule, MatDialogModule, FfToastComponent, ReportIssueDialogComponent],
   templateUrl: './app-shell.html',
   styles: [`
     :host { display: block; height: 100%; }
@@ -310,6 +312,55 @@ export class AppShellComponent implements OnDestroy {
     };
   });
 
+  /** Help & Support: "Report an issue" popup + what the user is looking at (module / screen from the menu). */
+  readonly supportCtx = inject(SupportContextService);
+  readonly currentMenuItem = computed(() => {
+    const url = (this.activeRoute() || '').split('?')[0];
+    let best: { group: string; item: MenuItem } | null = null;
+    for (const g of this.menuGroups()) for (const it of g.items) {
+      if (url === it.route || url.startsWith(it.route + '/')) {
+        if (!best || it.route.length > best.item.route.length) best = { group: g.groupName, item: it };
+      }
+    }
+    return best;
+  });
+  readonly currentModule = computed(() => this.currentMenuItem()?.item.label || '');
+  readonly currentScreen = computed(() => {
+    const hit = this.currentMenuItem();
+    const url = (this.activeRoute() || '').split('?')[0];
+    if (!hit) return url;
+    const rest = url.slice(hit.item.route.length).replace(/^\//, '');
+    return rest ? `${hit.item.label} › ${rest}` : hit.item.label;
+  });
+
+  // ---- Notification bell (support activity), refreshed every 60 s while the tab is visible ----
+  private supportApi = inject(SupportService);
+  readonly bell = signal<{ unread: number; items: any[]; criticalOpen?: number }>({ unread: 0, items: [] });
+  readonly criticalBannerHidden = signal(false);
+  private bellTimer: ReturnType<typeof setInterval> | null = null;
+  readonly showBell = computed(() => this.isSuperAdmin() || !this.isDriverOnly());
+
+  refreshBell(): void {
+    if (!this.showBell() || !localStorage.getItem('token')) return;
+    this.supportApi.notifications(this.isSuperAdmin()).subscribe({
+      next: r => { if (r?.data) this.bell.set({ unread: Number(r.data.unread || 0), items: r.data.items || [], criticalOpen: Number(r.data.criticalOpen || 0) }); },
+      error: () => {}
+    });
+  }
+  private startBell(): void {
+    this.refreshBell();
+    if (this.bellTimer) clearInterval(this.bellTimer);
+    this.bellTimer = setInterval(() => { if (document.visibilityState === 'visible') this.refreshBell(); }, 60000);
+  }
+  openBellItem(item: any): void {
+    const url = this.isSuperAdmin() ? '/platform-admin/tickets' : '/support';
+    this.router.navigate([url], { queryParams: { t: item.id } }).then(() => setTimeout(() => this.refreshBell(), 1500));
+  }
+  bellReason(r: string): string {
+    return ({ SUPPORT_REPLIED: 'Support replied', WAITING_FOR_YOU: 'Support needs your reply', RESOLVED: 'Marked resolved — please confirm',
+      NEW_TICKET: 'New ticket', CLIENT_REPLIED: 'Client replied', ASSIGNED_TO_YOU: 'Assigned to you' } as any)[r] || r;
+  }
+
   readonly isSuperAdmin = computed(() => {
     const user = this.auth.currentUser();
     const roles = user?.roles || [];
@@ -356,6 +407,19 @@ export class AppShellComponent implements OnDestroy {
         { label: 'Supplier Bills & Payments', route: '/payables', icon: 'request_quote' },
         { label: 'Driver Payroll', route: '/driver-payroll', icon: 'badge' },
         { label: 'Accounts', route: '/accounts-ledger', icon: 'account_balance' }
+      ]
+    },
+    {
+      groupName: 'HELP',
+      items: [
+        { label: 'Help & Support', route: '/support', icon: 'support_agent' }
+      ]
+    },
+    {
+      // Optional add-on (Platform Admin → Feature Access); admins only. Kept apart from business screens.
+      groupName: 'PERSONAL',
+      items: [
+        { label: 'Family Expenses', route: '/family-expenses', icon: 'family_restroom' }
       ]
     },
     {
@@ -430,7 +494,7 @@ export class AppShellComponent implements OnDestroy {
     const isAdmin = roles.some(r => r === 'COMPANY_ADMIN' || r === 'ADMIN');
     if (!isAdmin) {
       return groups
-        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin', '/lookup-values'].includes(i.route)) }))
+        .map(g => ({ ...g, items: g.items.filter(i => !['/users-roles', '/company-admin', '/lookup-values', '/family-expenses'].includes(i.route)) }))
         .filter(g => g.items.length > 0);
     }
     return groups;
@@ -471,6 +535,7 @@ export class AppShellComponent implements OnDestroy {
       if (segment === 'opening-balance') return 'Opening Stock';
       if (segment === 'receipt') return 'Receive Stock';
       if (segment === 'expense-logs') return 'Expenses';
+      if (segment === 'family-expenses') return 'Family Expenses';
       if (segment === 'billing-invoices') return 'Invoices';
       if (segment === 'payment-logs') return 'Customer Receipts';
       if (segment === 'accounts-ledger') return 'Accounts';
@@ -490,6 +555,7 @@ export class AppShellComponent implements OnDestroy {
     this.refreshProfile();
     this.auth.refreshTenantBrand();
     this.features.load(true);
+    this.startBell();
 
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
@@ -515,6 +581,7 @@ export class AppShellComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.bellTimer) clearInterval(this.bellTimer);
     this.destroy$.next();
     this.destroy$.complete();
   }

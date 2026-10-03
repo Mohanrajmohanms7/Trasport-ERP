@@ -105,9 +105,15 @@
                 {{ opt.label }}
               </li>
             } @empty {
-              <li class="ff-dd__empty">No options found</li>
+              <li class="ff-dd__empty">{{ createLabel() && query().trim() ? 'No match for "' + query().trim() + '"' : 'No options found' }}</li>
             }
           </ul>
+          @if (createLabel()) {
+            <button type="button" class="ff-dd__create" (mousedown)="$event.preventDefault()" (click)="requestCreate($event)">
+              <span class="material-symbols-outlined" aria-hidden="true">add</span>
+              {{ query().trim() ? 'Create "' + query().trim() + '"' : createLabel() }}
+            </button>
+          }
         </div>
       }
     }

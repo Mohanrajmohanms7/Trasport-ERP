@@ -1,0 +1,258 @@
+<div class="console-page h-full min-h-0 flex flex-col gap-3 font-sans text-[var(--ff-text-primary)] relative overflow-hidden">
+
+  <header class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-[var(--ff-border-divider)] pb-3 shrink-0">
+    <div class="flex flex-col gap-1">
+      <h1 class="text-3xl font-extrabold tracking-tight flex items-center gap-2">
+        <span class="material-icons text-[var(--ff-color-primary-600)] text-3xl">family_restroom</span>
+        Family Expenses
+      </h1>
+      <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Personal / family spending, kept separate from the business — it does not change cash, bank, accounts or any business report.</p>
+    </div>
+    @if (tab() === 'expenses' && canAdd()) {
+      <button type="button" (click)="openAdd()"
+        class="self-start md:self-auto flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold h-10 px-4 rounded-[8px] text-xs">
+        <span class="material-icons text-sm">add_circle</span> Add Expense
+      </button>
+    }
+  </header>
+
+  <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
+    <div class="flex border-b border-[var(--ff-border-divider)] px-4 pt-3 select-none overflow-x-auto">
+      @for (t of [{k:'expenses',l:'Expenses'},{k:'reports',l:'Reports'},{k:'categories',l:'Categories'}]; track t.k) {
+        @if (t.k === 'expenses' || (t.k === 'reports' && canReports()) || (t.k === 'categories' && canCategories())) {
+          <button type="button" (click)="setTab($any(t.k))"
+            class="pb-3 px-4 font-bold text-xs uppercase tracking-wider transition whitespace-nowrap"
+            [ngClass]="tab() === t.k ? 'border-b-2 border-[var(--ff-color-primary-600)] text-[var(--ff-text-primary)]' : 'text-[var(--ff-text-muted)] hover:text-[var(--ff-text-primary)]'">{{ t.l }}</button>
+        }
+      }
+    </div>
+
+    <div class="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+
+      <!-- ===================== EXPENSES ===================== -->
+      @if (tab() === 'expenses') {
+        @if (summary(); as s) {
+          <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0" aria-label="This month">
+            <div class="rounded-[10px] border border-[var(--ff-border-default)] p-3">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">Total · {{ s.label }}</div>
+              <div class="text-xl font-extrabold tabular-nums mt-1">{{ inr(s.total) }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)]">{{ s.entries }} entr{{ s.entries === 1 ? 'y' : 'ies' }} · last month {{ inr(s.previousMonthTotal) }}</div>
+            </div>
+            <div class="rounded-[10px] border border-[var(--ff-border-default)] p-3">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">Cash</div>
+              <div class="text-xl font-extrabold tabular-nums mt-1">{{ inr(s.cash) }}</div>
+            </div>
+            <div class="rounded-[10px] border border-[var(--ff-border-default)] p-3">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">Bank / UPI</div>
+              <div class="text-xl font-extrabold tabular-nums mt-1">{{ inr(s.bank) }}</div>
+            </div>
+            <div class="rounded-[10px] border border-[var(--ff-border-default)] p-3">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">Highest category</div>
+              <div class="text-base font-extrabold mt-1 truncate">{{ s.topCategory?.name || '—' }}</div>
+              <div class="text-[11px] text-[var(--ff-text-muted)] tabular-nums">{{ s.topCategory ? inr(s.topCategory.amount) : '' }}</div>
+            </div>
+          </section>
+        }
+
+        <div class="flex flex-wrap items-end gap-2 shrink-0">
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Month
+            <input type="month" class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
+              [value]="month()" (change)="month.set($any($event.target).value || today.slice(0,7)); load()" />
+          </label>
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Category
+            <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[160px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
+              [value]="filterCategory()" (change)="filterCategory.set($any($event.target).value); load()">
+              <option value="" [selected]="!filterCategory()">All categories</option>
+              @for (c of categories(); track c.code) { <option [value]="c.code" [selected]="c.code === filterCategory()">{{ c.name }}</option> }
+            </select>
+          </label>
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Payment mode
+            <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[140px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
+              [value]="filterMode()" (change)="filterMode.set($any($event.target).value); load()">
+              <option value="" [selected]="!filterMode()">All modes</option>
+              @for (m of modes(); track m.code) { <option [value]="m.code" [selected]="m.code === filterMode()">{{ m.name }}</option> }
+            </select>
+          </label>
+          <span class="flex-1"></span>
+          @if (canExport()) {
+            <div class="inline-flex rounded-lg border border-[var(--ff-border-default)] overflow-hidden" role="group" aria-label="Export">
+              <button type="button" (click)="exportList('xlsx')" [disabled]="exporting() !== null" class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50">
+                <span class="material-icons text-base text-emerald-600">table_view</span>Excel</button>
+              <button type="button" (click)="exportList('pdf')" [disabled]="exporting() !== null" class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] border-l border-[var(--ff-border-default)] disabled:opacity-50">
+                <span class="material-icons text-base text-rose-600">picture_as_pdf</span>PDF</button>
+            </div>
+          }
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto rounded-[10px] border border-[var(--ff-border-divider)]">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
+                <th class="p-3">Date</th><th class="p-3">Category</th><th class="p-3">Description</th>
+                <th class="p-3 text-right">Amount</th><th class="p-3">Payment mode</th><th class="p-3 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of rows(); track e.id) {
+                <tr class="border-b border-[var(--ff-border-divider)] hover:bg-[var(--ff-surface-hover)]">
+                  <td class="p-3 whitespace-nowrap tabular-nums">{{ dmy(e.expenseDate) }}<div class="text-[10px] font-mono text-[var(--ff-text-muted)]">{{ e.expenseNumber }}</div></td>
+                  <td class="p-3 font-semibold">{{ e.categoryName }}</td>
+                  <td class="p-3 text-[var(--ff-text-secondary)]">{{ e.description || '—' }}@if (e.memberName) { <span class="text-[10px] text-[var(--ff-text-muted)]"> · {{ e.memberName }}</span> }</td>
+                  <td class="p-3 text-right font-bold tabular-nums whitespace-nowrap">{{ inr(e.amount) }}</td>
+                  <td class="p-3">{{ e.paymentModeName }}</td>
+                  <td class="p-3">
+                    <div class="flex items-center justify-center gap-2">
+                      @if (canEdit()) {
+                        <button type="button" (click)="openEdit(e)" title="Edit" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)]"><span class="material-icons text-sm">edit</span></button>
+                      }
+                      @if (canDelete()) {
+                        <button type="button" (click)="remove(e)" title="Delete" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)]"><span class="material-icons text-sm">delete</span></button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">{{ loading() ? 'Loading…' : 'No family expenses for this month.' }}</td></tr>
+              }
+            </tbody>
+            @if (rows().length) {
+              <tfoot><tr class="bg-[var(--ff-surface-hover)] font-bold"><td class="p-3" colspan="3">Total ({{ rows().length }})</td><td class="p-3 text-right tabular-nums">{{ inr(totalAmount()) }}</td><td colspan="2"></td></tr></tfoot>
+            }
+          </table>
+        </div>
+      }
+
+      <!-- ===================== REPORTS ===================== -->
+      @if (tab() === 'reports' && canReports()) {
+        <div class="flex flex-wrap items-end gap-2 shrink-0">
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Report
+            <select class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm min-w-[180px] bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]"
+              [value]="reportKey()" (change)="reportKey.set($any($event.target).value); runReport()">
+              @for (r of reportList; track r.key) { <option [value]="r.key" [selected]="r.key === reportKey()">{{ r.label }}</option> }
+            </select>
+          </label>
+          @if (reportKey() !== 'yearly') {
+            <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">{{ reportKey() === 'comparison' ? 'Any date in the financial year' : 'From' }}
+              <input type="date" class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]" [max]="today" [value]="reportFrom()" (change)="reportFrom.set($any($event.target).value)" />
+            </label>
+            @if (reportKey() !== 'comparison') {
+              <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">To
+                <input type="date" class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]" [max]="today" [value]="reportTo()" (change)="reportTo.set($any($event.target).value)" />
+              </label>
+            }
+          }
+          <button type="button" (click)="runReport()" class="h-10 px-4 rounded-[8px] bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold">Run</button>
+          <span class="flex-1"></span>
+          @if (canExport()) {
+            <div class="inline-flex rounded-lg border border-[var(--ff-border-default)] overflow-hidden" role="group" aria-label="Export report">
+              <button type="button" (click)="exportReport('xlsx')" [disabled]="exporting() !== null" class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50">
+                <span class="material-icons text-base text-emerald-600">table_view</span>Excel</button>
+              <button type="button" (click)="exportReport('pdf')" [disabled]="exporting() !== null" class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] border-l border-[var(--ff-border-default)] disabled:opacity-50">
+                <span class="material-icons text-base text-rose-600">picture_as_pdf</span>PDF</button>
+            </div>
+          }
+        </div>
+        @if (report(); as r) {
+          <div class="text-xs text-[var(--ff-text-secondary)] shrink-0"><span class="font-bold text-[var(--ff-text-primary)]">{{ r.title }}</span> · {{ r.period }}</div>
+          <div class="flex-1 min-h-0 overflow-auto rounded-[10px] border border-[var(--ff-border-divider)]">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead><tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
+                @for (c of r.columns; track c.key) { <th class="p-3 whitespace-nowrap" [class.text-right]="isNum(c)">{{ c.label }}</th> }
+              </tr></thead>
+              <tbody>
+                @for (row of r.rows; track $index) {
+                  <tr class="border-b border-[var(--ff-border-divider)]">
+                    @for (c of r.columns; track c.key) { <td class="p-3 whitespace-nowrap tabular-nums" [class.text-right]="isNum(c)">{{ cell(row, c) }}</td> }
+                  </tr>
+                } @empty {
+                  <tr><td [attr.colspan]="r.columns.length" class="p-8 text-center text-[var(--ff-text-muted)] font-semibold">No family expenses in this period.</td></tr>
+                }
+              </tbody>
+              @if (r.rows.length) {
+                <tfoot><tr class="bg-[var(--ff-surface-hover)] font-bold">
+                  @for (c of r.columns; track c.key; let i = $index) {
+                    <td class="p-3 whitespace-nowrap tabular-nums" [class.text-right]="isNum(c)">{{ i === 0 ? 'Total' : (r.totals[c.key] !== undefined ? cell(r.totals, c) : '') }}</td>
+                  }
+                </tr></tfoot>
+              }
+            </table>
+          </div>
+        }
+      }
+
+      <!-- ===================== CATEGORIES ===================== -->
+      @if (tab() === 'categories' && canCategories()) {
+        <div class="flex flex-wrap items-end gap-2 shrink-0">
+          <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">New category
+            <input class="h-10 border border-[var(--ff-border-default)] rounded-[8px] px-2 text-sm w-64 bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]" maxlength="60"
+              placeholder="e.g. Festival, Gifts" [value]="newCategory()" (input)="newCategory.set($any($event.target).value)" (keyup.enter)="addCategory()" />
+          </label>
+          <button type="button" (click)="addCategory()" [disabled]="!newCategory().trim()" class="h-10 px-4 rounded-[8px] bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold disabled:opacity-50">Add</button>
+          <span class="text-[11px] text-[var(--ff-text-muted)]">A category used by expenses cannot be deleted — make it Inactive instead.</span>
+        </div>
+        <div class="overflow-auto rounded-[10px] border border-[var(--ff-border-divider)]">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
+              <th class="p-3">Name (click to rename)</th><th class="p-3 text-right">Expenses</th><th class="p-3">Status</th><th class="p-3 text-center">Actions</th>
+            </tr></thead>
+            <tbody>
+              @for (c of allCategories(); track c.id) {
+                <tr class="border-b border-[var(--ff-border-divider)]">
+                  <td class="p-2"><input class="h-9 w-full max-w-xs border border-transparent hover:border-[var(--ff-border-default)] focus:border-[var(--ff-color-primary-600)] rounded-[8px] px-2 text-sm font-semibold bg-transparent text-[var(--ff-text-primary)]"
+                    maxlength="60" [value]="c.name" (change)="renameCategory(c, $any($event.target).value)" [attr.aria-label]="'Rename ' + c.name" /></td>
+                  <td class="p-3 text-right tabular-nums">{{ c.used || 0 }}</td>
+                  <td class="p-3">
+                    <button type="button" (click)="toggleCategory(c)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                      [ngClass]="c.status === 'ACTIVE' ? 'bg-[var(--ff-color-success-50)] text-[var(--ff-color-success-500)]' : 'bg-[var(--ff-surface-hover)] text-[var(--ff-text-secondary)]'">{{ c.status === 'ACTIVE' ? 'Active' : 'Inactive' }}</button>
+                  </td>
+                  <td class="p-3 text-center">
+                    @if (!c.used) {
+                      <button type="button" (click)="deleteCategory(c)" title="Delete" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)]"><span class="material-icons text-sm">delete</span></button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </main>
+
+  <!-- ===================== ADD / EDIT ===================== -->
+  @if (showEditor()) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-[2px]">
+      <div class="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] shadow-2xl flex flex-col" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[var(--ff-border-divider)] shrink-0">
+          <h2 class="text-lg font-extrabold flex items-center gap-2">
+            <span class="material-icons text-[var(--ff-color-primary-600)]">family_restroom</span>
+            {{ editing()?.id ? 'Edit family expense ' + (editing()?.expenseNumber || '') : 'Add family expense' }}
+          </h2>
+          <button type="button" (click)="showEditor.set(false)" aria-label="Close" class="p-1.5 rounded-lg text-[var(--ff-text-muted)] hover:bg-[var(--ff-surface-hover)]"><span class="material-icons">close</span></button>
+        </div>
+        <form [formGroup]="form" (ngSubmit)="save()" class="flex-1 min-h-0 overflow-y-auto">
+          <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ff-datepicker formControlName="expenseDate" label="Date" [max]="today" [required]="true" />
+            <ff-dropdown formControlName="category" label="Category" [options]="categoryOptions" [required]="true" searchPlaceholder="Search categories..." />
+            <ff-number formControlName="amount" label="Amount (₹)" [min]="0" [required]="true" />
+            <ff-dropdown formControlName="paymentMode" label="Payment mode" [options]="modeOptions" [required]="true" />
+            <div class="sm:col-span-2"><ff-textbox formControlName="description" label="Description" placeholder="e.g. Monthly groceries" /></div>
+            <ff-textbox formControlName="memberName" label="Family member (optional)" placeholder="e.g. Son, Mother" />
+            <ff-textbox formControlName="referenceNo" label="Reference (optional)" placeholder="Bill / UPI ref" />
+          </div>
+          @if (editing()?.id) {
+            <div class="px-5 pb-2"><app-attachments-panel entityType="FAMILY_EXPENSE" [entityId]="editing()?.id" [categories]="['BILL', 'RECEIPT', 'OTHER']" /></div>
+          } @else {
+            <p class="px-5 pb-2 text-[11px] text-[var(--ff-text-muted)]">Save first, then you can attach the bill.</p>
+          }
+          <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)]">
+            <button type="button" (click)="showEditor.set(false)" class="h-10 px-4 rounded-[8px] border border-[var(--ff-border-default)] text-xs font-semibold">{{ editing()?.id ? 'Close' : 'Cancel' }}</button>
+            @if (!editing()?.id || canEdit()) {
+              <button type="submit" [disabled]="saving()" class="h-10 px-5 rounded-[8px] bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold disabled:opacity-50">{{ saving() ? 'Saving…' : 'Save' }}</button>
+            }
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

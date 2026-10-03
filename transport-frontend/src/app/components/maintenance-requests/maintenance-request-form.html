@@ -10,12 +10,7 @@
   <form class="flex flex-col gap-3" (ngSubmit)="save()">
     <label class="ops-field">
       Vehicle *
-      <select required class="ops-input" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' ? null : +$event)" name="vehicleId">
-        <option value="">Select a vehicle</option>
-        @for (vehicle of vehicles(); track vehicle.id) {
-          <option [value]="vehicle.id">{{ vehicle.code }} — {{ vehicle.name }}</option>
-        }
-      </select>
+      <ff-dropdown [required]="true" [options]="vehicleOpts" [ngModel]="vehicleId()" (ngModelChange)="vehicleId.set($event === '' || $event == null ? null : +$event)" name="vehicleId" [remoteSearch]="vehiclePick.search" [resolveMissing]="vehiclePick.resolve" emptyLabel="Select a vehicle" searchPlaceholder="Type to search…" />
     </label>
     @if (driverOnly() && !vehicles().length) {
       <p class="ops-alert ops-alert--warn">No vehicle is on your active assignment.</p>
