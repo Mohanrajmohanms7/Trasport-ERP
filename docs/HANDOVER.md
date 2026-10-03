@@ -84,6 +84,13 @@ the new record is selected.
 client prefix (PKC-TKT-00001). Client API `/api/v1/support/**` (own company; non-admins own tickets; internal notes
 stripped on the server); platform API `/api/v1/platform-admin/tickets/**`. Header bell for support activity (V80). See `docs/SUPPORT_TICKETS.md`.
 
+**Popups & required fields (UI rule).** Popups close only via Cancel / Close (X) / Save — never by clicking the
+background (`MAT_DIALOG_DEFAULT_OPTIONS.disableClose` for Material dialogs; custom overlays have no backdrop click).
+Every `<form>` uses `shared/form-validation.directive` (import `FormValidationDirective`): an invalid form is never submitted,
+fields are highlighted with "Please enter / select <Label>", the first one is focused. Mark required fields with
+`Validators.required` / `[required]="true"` (ff-* fields show * automatically) or `required` + "Label *" on plain inputs.
+Don't disable Save just because fields are empty — let the user click and see the messages.
+
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
 
