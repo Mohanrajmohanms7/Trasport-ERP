@@ -45,19 +45,49 @@ public class FeatureAccessService {
     }
 
     private boolean isOn(FeatureCatalog.Feature f, Map<String, Boolean> settings) {
+        return isOn(f, settings, new HashSet<>());
+    }
+
+    /** On only if it, its parents and everything it requires are on. */
+    private boolean isOn(FeatureCatalog.Feature f, Map<String, Boolean> settings, Set<String> seen) {
+        if (f == null || !seen.add(f.code())) return true;
         for (FeatureCatalog.Feature x = f; x != null; x = x.parent() == null ? null : FeatureCatalog.get(x.parent())) {
-            if (x.core()) continue;
-            Boolean v = settings.get(x.code());
-            if (!(v != null ? v : FeatureCatalog.defaultOn(x.code()))) return false;
+            if (!x.core()) {
+                Boolean v = settings.get(x.code());
+                if (!(v != null ? v : FeatureCatalog.defaultOn(x.code()))) return false;
+            }
+            for (String r : FeatureCatalog.requires(x.code())) {
+                if (!isOn(FeatureCatalog.get(r), settings, seen)) return false;
+            }
         }
         return true;
     }
 
     /** Plan settings overlaid with client overrides. */
     private Map<String, Boolean> effectiveSettings(Long companyId) {
-        Map<String, Boolean> m = new HashMap<>(planSettings(planOf(companyId)));
+        // Legacy clients (no plan applied yet) keep full access; their own overrides still apply.
+        Map<String, Boolean> m = new HashMap<>(planEnforced(companyId) ? planSettings(planOf(companyId)) : Map.of());
         m.putAll(companyOverrides(companyId));
         return m;
+    }
+
+    /** Whether a feature would be on with these settings (dependencies and parents included). */
+    public boolean isOnWith(String code, Map<String, Boolean> settings) {
+        return isOn(FeatureCatalog.get(code), settings);
+    }
+
+    /** Features that would be off if the client moved to this plan (client overrides kept). */
+    public Set<String> disabledWithPlan(Long companyId, Long planId) {
+        Map<String, Boolean> m = new HashMap<>(planSettings(planId));
+        m.putAll(companyOverrides(companyId));
+        Set<String> off = new HashSet<>();
+        for (FeatureCatalog.Feature f : FeatureCatalog.all()) if (!isOn(f, m)) off.add(f.code());
+        return off;
+    }
+
+    public boolean planEnforced(Long companyId) {
+        List<Boolean> v = jdbc.queryForList("SELECT plan_enforced FROM companies WHERE id = ?", Boolean.class, companyId);
+        return !v.isEmpty() && Boolean.TRUE.equals(v.get(0));
     }
 
     private Long planOf(Long companyId) {
@@ -73,7 +103,9 @@ public class FeatureAccessService {
 
     public Map<String, Boolean> companyOverrides(Long companyId) {
         Map<String, Boolean> m = new HashMap<>();
-        jdbc.query("SELECT feature_code, enabled FROM company_features WHERE company_id = ?", rs -> { m.put(rs.getString(1), rs.getBoolean(2)); }, companyId);
+        // Overrides past their "valid until" date no longer count.
+        jdbc.query("SELECT feature_code, enabled FROM company_features WHERE company_id = ? AND (valid_until IS NULL OR valid_until >= CURRENT_DATE)",
+                rs -> { m.put(rs.getString(1), rs.getBoolean(2)); }, companyId);
         return m;
     }
 
@@ -117,8 +149,18 @@ public class FeatureAccessService {
     public Map<String, Object> companyView(Long companyId) {
         companyRepository.findById(companyId).orElseThrow(() -> new IllegalArgumentException("Company not found: " + companyId));
         Long planId = planOf(companyId);
-        Map<String, Boolean> plan = planSettings(planId);
+        boolean enforced = planEnforced(companyId);
+        Map<String, Boolean> plan = enforced ? planSettings(planId) : Map.of();
         Map<String, Boolean> overrides = companyOverrides(companyId);
+        Map<String, Map<String, Object>> details = new HashMap<>();
+        jdbc.query("SELECT feature_code, reason, valid_until, updated_by, updated_date FROM company_features WHERE company_id = ?", rs -> {
+            Map<String, Object> d = new HashMap<>();
+            d.put("reason", rs.getString(2));
+            d.put("validUntil", rs.getDate(3) == null ? null : rs.getDate(3).toLocalDate().toString());
+            d.put("by", rs.getString(4));
+            d.put("at", rs.getTimestamp(5) == null ? null : rs.getTimestamp(5).toLocalDateTime().toString());
+            details.put(rs.getString(1), d);
+        }, companyId);
         Set<String> disabled = disabledFor(companyId);
         List<Map<String, Object>> rows = new ArrayList<>();
         for (FeatureCatalog.Feature f : FeatureCatalog.all()) {
@@ -126,12 +168,14 @@ public class FeatureAccessService {
             r.put("code", f.code());
             r.put("plan", plan.getOrDefault(f.code(), FeatureCatalog.defaultOn(f.code())));
             r.put("override", overrides.get(f.code()));
+            if (details.containsKey(f.code())) r.put("overrideInfo", details.get(f.code()));
             r.put("effective", !disabled.contains(f.code()));
             rows.add(r);
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("companyId", companyId);
         out.put("planId", planId);
+        out.put("planEnforced", enforced);
         out.put("features", rows);
         return out;
     }
@@ -151,16 +195,29 @@ public class FeatureAccessService {
      */
     @Transactional
     public Map<String, Object> saveCompany(Long companyId, Map<String, Boolean> requested, String username) {
+        return saveCompany(companyId, requested, null, null, username);
+    }
+
+    /** reason / validUntil are recorded on overrides created or changed by this save (add-on, module trial, goodwill…). */
+    @Transactional
+    public Map<String, Object> saveCompany(Long companyId, Map<String, Boolean> requested, String reason, java.time.LocalDate validUntil, String username) {
         validateCodes(requested);
-        Map<String, Boolean> plan = planSettings(planOf(companyId));
+        Map<String, Object[]> previous = new HashMap<>();
+        jdbc.query("SELECT feature_code, enabled, reason, valid_until FROM company_features WHERE company_id = ?",
+                rs -> { previous.put(rs.getString(1), new Object[]{rs.getBoolean(2), rs.getString(3), rs.getDate(4)}); }, companyId);
+        Map<String, Boolean> plan = planEnforced(companyId) ? planSettings(planOf(companyId)) : Map.of();
         jdbc.update("DELETE FROM company_features WHERE company_id = ?", companyId);
         for (Map.Entry<String, Boolean> e : requested.entrySet()) {
             FeatureCatalog.Feature f = FeatureCatalog.get(e.getKey());
             if (f.core() || e.getValue() == null) continue;
             boolean planValue = plan.getOrDefault(e.getKey(), FeatureCatalog.defaultOn(e.getKey()));
             if (e.getValue() == planValue) continue;
-            jdbc.update("INSERT INTO company_features (company_id, feature_code, enabled, updated_by, updated_date) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
-                    companyId, e.getKey(), e.getValue(), username);
+            Object[] prev = previous.get(e.getKey());
+            boolean unchanged = prev != null && e.getValue().equals(prev[0]);
+            String r = unchanged && (reason == null || reason.isBlank()) ? (String) prev[1] : reason;
+            Object until = unchanged && validUntil == null ? prev[2] : (validUntil == null ? null : java.sql.Date.valueOf(validUntil));
+            jdbc.update("INSERT INTO company_features (company_id, feature_code, enabled, reason, valid_until, updated_by, updated_date) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                    companyId, e.getKey(), e.getValue(), r, until, username);
         }
         cache.remove(companyId);
         return companyView(companyId);

@@ -92,6 +92,14 @@ public class Company extends BaseEntity {
     @Column(name = "max_vehicles")
     private Integer maxVehicles = 5;
 
+    /** Active branches allowed (0/null = unlimited). */
+    @Column(name = "max_branches")
+    private Integer maxBranches;
+
+    /** True once Platform Admin applied a plan: plan features and limits then apply (legacy clients: full access). */
+    @Column(name = "plan_enforced", nullable = false)
+    private Boolean planEnforced = false;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "subscription_plan_id")
     private SaaSPlan subscriptionPlan;

@@ -1,3 +1,4 @@
+import { ClientPlansComponent } from './client-plans/client-plans';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureAccessComponent } from './feature-access/feature-access';
 import { SupportTicketsComponent } from './support-tickets/support-tickets';
@@ -29,7 +30,7 @@ import {
 @Component({
   selector: 'app-platform-admin',
   standalone: true,
-imports: [FormValidationDirective, FeatureAccessComponent, SupportTicketsComponent, 
+imports: [ClientPlansComponent, FormValidationDirective, FeatureAccessComponent, SupportTicketsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
@@ -442,7 +443,8 @@ export class PlatformAdminComponent implements OnInit {
     dashboard: 'Dashboard & Analytics', companies: 'Clients & Companies', subscriptions: 'Subscriptions & Plans',
     licenses: 'Licenses', billing: 'Billing Invoices', users: 'Users & Sessions', audit: 'Audit Logs',
     tickets: 'Support Tickets', announcements: 'Announcements', settings: 'System Settings', backups: 'Backup & Data Export',
-    features: 'Feature Access'
+    features: 'Feature Access',
+    'client-plans': 'Client Plans'
   };
   readonly sectionTitle = computed(() => PlatformAdminComponent.SECTIONS[this.activeTab()] ?? 'Platform Administration');
 

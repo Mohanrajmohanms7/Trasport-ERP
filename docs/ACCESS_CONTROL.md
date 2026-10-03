@@ -79,3 +79,17 @@ Platform Admin → **Feature Access** decides, per **plan** and per **client**, 
 - Screens: `FeatureService` (`/api/v1/auth/features`) hides menu items and tabs; `featureGuard` blocks direct URLs;
   shared components (export buttons, attachments, photos, bulk upload) follow their features.
 - Roles still apply on top (feature access decides what the client bought; roles decide what each user may do).
+
+## Subscription plans & limits (V81)
+Plans (codes kept from before): TRIAL (Growth features), BASIC = **Starter**, STANDARD = **Growth**, PROFESSIONAL = **Professional**,
+PREMIUM = **Enterprise**. Their excluded modules are stored in `plan_features` (seeded by V81; edit in Feature Access → Per plan).
+- Limits per plan: active trucks, staff logins (driver logins not counted), active branches; 0 = unlimited. Copied to the client
+  when a plan is applied (Platform Admin → **Client Plans** → Preview → Apply) and enforced by `PlanLimitService`
+  (create / re-activate vehicle, user, branch). Inactive records don't count.
+- `companies.plan_enforced`: existing clients stay on full access and no limits until a plan is applied; newly onboarded clients get
+  their plan immediately. Every change is recorded in `plan_change_history` (APPLIED / UPGRADE / DOWNGRADE).
+- Dependencies (`FeatureCatalog.REQUIRES`): e.g. Payables needs Supplier Master, Stock needs Spare Parts + Warehouses — switching one
+  off switches the dependent off.
+- Client overrides carry a **reason** and optional **valid until** date (add-ons, trials); expired overrides stop applying.
+- Downgrade preview warns about trucks/users/branches over the new limit and open work (open work orders keep trucks blocked).
+- Not built yet: online subscription payment; add-on price catalogue; downgrade grace mode.

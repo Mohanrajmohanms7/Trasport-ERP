@@ -198,6 +198,21 @@ public final class FeatureCatalog {
                 all("/api/v1/settings/**"), all("/api/v1/financial-years/**"));
     }
 
+    /** Feature → features it cannot work without (a plan can never be half-configured). */
+    private static final Map<String, List<String>> REQUIRES = Map.ofEntries(
+            Map.entry("payables", List.of("suppliers")),
+            Map.entry("stock", List.of("spare-parts", "warehouses")),
+            Map.entry("inventory-transactions", List.of("stock")),
+            Map.entry("financial-statements", List.of("accounts")),
+            Map.entry("maintenance-requests", List.of("work-orders")),
+            Map.entry("reports.stock", List.of("stock")),
+            Map.entry("reports.accounting", List.of("accounts")),
+            Map.entry("reports.maintenance", List.of("work-orders")),
+            Map.entry("reports.drivers", List.of("payroll")),
+            Map.entry("drivers.salary", List.of("payroll")));
+
+    public static List<String> requires(String code) { return REQUIRES.getOrDefault(code, List.of()); }
+
     private FeatureCatalog() { }
 
     public static List<Feature> all() { return Collections.unmodifiableList(FEATURES); }

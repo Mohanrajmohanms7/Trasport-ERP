@@ -344,6 +344,37 @@ public class PlatformAdminController {
     @org.springframework.beans.factory.annotation.Autowired
     private com.transport.erp.features.FeatureAccessService featureAccessService;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.service.SubscriptionPlanService subscriptionPlanService;
+
+    @GetMapping("/subscription-plans")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> subscriptionPlans() {
+        return ApiResponse.success(subscriptionPlanService.plans(), "Plans");
+    }
+
+    @GetMapping("/client-plans")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> clientPlans() {
+        return ApiResponse.success(subscriptionPlanService.overview(), "Client plans");
+    }
+
+    @GetMapping("/client-plans/{companyId}")
+    public ApiResponse<java.util.Map<String, Object>> clientPlan(@PathVariable Long companyId) {
+        return ApiResponse.success(subscriptionPlanService.detail(companyId), "Client plan");
+    }
+
+    @GetMapping("/client-plans/{companyId}/preview")
+    public ApiResponse<java.util.Map<String, Object>> previewPlanChange(@PathVariable Long companyId, @RequestParam Long planId) {
+        return ApiResponse.success(subscriptionPlanService.preview(companyId, planId), "Plan change preview");
+    }
+
+    /** Body: {"planId":3,"note":"Upgraded after demo"} */
+    @PutMapping("/client-plans/{companyId}")
+    public ApiResponse<java.util.Map<String, Object>> applyPlan(@PathVariable Long companyId, @RequestBody java.util.Map<String, Object> body) {
+        Long planId = Long.valueOf(String.valueOf(body.get("planId")));
+        String note = body.get("note") == null ? null : String.valueOf(body.get("note"));
+        return ApiResponse.success(subscriptionPlanService.apply(companyId, planId, note, getActiveUser()), "Plan applied");
+    }
+
     @GetMapping("/features/catalog")
     public ApiResponse<java.util.List<java.util.Map<String, Object>>> featureCatalog() {
         return ApiResponse.success(featureAccessService.catalog(), "Feature catalog");
@@ -354,10 +385,14 @@ public class PlatformAdminController {
         return ApiResponse.success(featureAccessService.companyView(id), "Client features");
     }
 
-    /** Body: {"features":{"code":true|false,...}} — values equal to the plan follow the plan. */
+    /** Body: {"features":{"code":true|false,...}, "reason":"Add-on: GPS", "validUntil":"2027-03-31"} — values equal to the plan follow the plan. */
     @PutMapping("/companies/{id}/features")
-    public ApiResponse<java.util.Map<String, Object>> saveCompanyFeatures(@PathVariable Long id, @RequestBody java.util.Map<String, java.util.Map<String, Boolean>> body) {
-        java.util.Map<String, Object> r = featureAccessService.saveCompany(id, body.get("features"), getActiveUser());
+    @SuppressWarnings("unchecked")
+    public ApiResponse<java.util.Map<String, Object>> saveCompanyFeatures(@PathVariable Long id, @RequestBody java.util.Map<String, Object> body) {
+        String reason = body.get("reason") == null ? null : String.valueOf(body.get("reason"));
+        String until = body.get("validUntil") == null ? null : String.valueOf(body.get("validUntil"));
+        java.util.Map<String, Object> r = featureAccessService.saveCompany(id, (java.util.Map<String, Boolean>) body.get("features"), reason,
+                until == null || until.isBlank() ? null : java.time.LocalDate.parse(until), getActiveUser());
         auditService.log(getActiveUser(), "CLIENT_FEATURES_UPDATED", "companies", id, null, "Client feature access updated");
         return ApiResponse.success(r, "Client feature access saved");
     }

@@ -396,6 +396,7 @@ public class AuthService {
         company.setSubscriptionStatus("ACTIVE");
         company.setMaxUsers(plan.getMaxUsers());
         company.setMaxVehicles(plan.getMaxVehicles());
+        company.setMaxBranches(plan.getMaxBranches());
         company.setStatus("ACTIVE");
         Company savedCompany = companyRepository.save(company);
         

@@ -31,6 +31,9 @@ export class FeatureAccessComponent implements OnInit {
   draft = signal<Record<string, boolean>>({});
   saving = signal(false);
   filter = signal('');
+  /** Recorded on client-specific settings saved now (e.g. "Add-on: GPS", "Free trial of Stores"). */
+  reason = signal('');
+  validUntil = signal('');
 
   readonly groups = computed(() => {
     const q = this.filter().trim().toLowerCase();
@@ -116,7 +119,9 @@ export class FeatureAccessComponent implements OnInit {
     if (this.mode() !== 'client') return '';
     const r = this.rows()[code];
     if (!r) return '';
-    return r.override !== null && r.override !== undefined ? 'client setting' : 'from plan';
+    if (r.override === null || r.override === undefined) return 'from plan';
+    const i: any = (r as any).overrideInfo;
+    return 'client setting' + (i?.reason ? ' · ' + i.reason : '') + (i?.validUntil ? ' · until ' + i.validUntil : '');
   }
 
   save(): void {
@@ -124,7 +129,9 @@ export class FeatureAccessComponent implements OnInit {
     if (!id) return;
     const url = this.mode() === 'client' ? `/api/v1/platform-admin/companies/${id}/features` : `/api/v1/platform-admin/plans/${id}/features`;
     this.saving.set(true);
-    this.http.put<any>(url, { features: this.draft() }).subscribe({
+    const body: any = { features: this.draft() };
+    if (this.mode() === 'client') { body.reason = this.reason() || null; body.validUntil = this.validUntil() || null; }
+    this.http.put<any>(url, body).subscribe({
       next: r => { this.saving.set(false); this.apply(r?.data); this.notify.success(r?.message || 'Saved'); },
       error: e => { this.saving.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not save'); }
     });

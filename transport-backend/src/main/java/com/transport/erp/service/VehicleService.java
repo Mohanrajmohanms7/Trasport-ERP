@@ -15,6 +15,9 @@ import java.util.Optional;
 public class VehicleService {
 
     @org.springframework.beans.factory.annotation.Autowired
+    private PlanLimitService planLimits;
+
+    @org.springframework.beans.factory.annotation.Autowired
     private BranchDefaults branchDefaults;
 
     @Autowired
@@ -56,6 +59,9 @@ public class VehicleService {
         // Vehicles and drivers are based at a branch: the one chosen (same company), else the user's branch,
         // else the head office — so branch lists, filters and the Branch Master counts include them.
         vehicle.setBranchId(branchDefaults.resolve(companyId, vehicle.getBranchId()));
+        if (vehicle.getStatus() == null || "ACTIVE".equals(vehicle.getStatus())) {
+            planLimits.assertCanAdd(companyId, PlanLimitService.Kind.VEHICLES);
+        }
         if (vehicleRepository.findByCompanyIdAndCodeAndIsDeletedFalse(companyId, vehicle.getCode()).isPresent()) {
             throw new IllegalArgumentException("Vehicle plate/reg code already exists: " + vehicle.getCode());
         }
@@ -82,6 +88,9 @@ public class VehicleService {
         vehicle.setCode(vehicleDetails.getCode());
         vehicle.setName(vehicleDetails.getName());
         vehicle.setDescription(vehicleDetails.getDescription());
+        if ("ACTIVE".equals(vehicleDetails.getStatus()) && !"ACTIVE".equals(vehicle.getStatus())) {
+            planLimits.assertCanAdd(vehicle.getCompanyId(), PlanLimitService.Kind.VEHICLES);
+        }
         vehicle.setStatus(vehicleDetails.getStatus());
         vehicle.setChassisNumber(vehicleDetails.getChassisNumber());
         vehicle.setEngineNumber(vehicleDetails.getEngineNumber());
@@ -122,6 +131,9 @@ public class VehicleService {
                 .filter(v -> !Boolean.TRUE.equals(v.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Vehicle not found: " + id));
         tenantAccess.assertOwned(vehicle.getCompanyId());
+        if (!"ACTIVE".equals(vehicle.getStatus())) {
+            planLimits.assertCanAdd(vehicle.getCompanyId(), PlanLimitService.Kind.VEHICLES);
+        }
         vehicle.setStatus("ACTIVE".equals(vehicle.getStatus()) ? "INACTIVE" : "ACTIVE");
         return vehicleRepository.save(vehicle);
     }
