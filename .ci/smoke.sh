@@ -402,7 +402,7 @@ $PSQL "UPDATE companies SET subscription_end_date = CURRENT_DATE + 2 WHERE id=1"
 
 
 # ---------------- New client onboarding -> first login ----------------
-PLAN=$(curl -s $API/auth/plans -H "Authorization: Bearer $TOKEN" | j "d['data'][0]['id']")
+PLAN=$(curl -s $API/auth/plans -H "Authorization: Bearer $TOKEN" | j "[p['id'] for p in d['data'] if p['code']=='PREMIUM'][0]")
 R=$(post /platform-admin/onboard '{"name":"Velan Earth Movers","shortName":"VEM","ownerName":"Velan","phone":"9000011111","email":"velan@example.com","state":"Tamil Nadu","subscriptionPlanId":'$PLAN',"adminUsername":"velan.admin","adminPassword":"Velan@2026","sendWelcomeEmail":false}')
 echo "onboard: $R" | cut -c1-250; NCID=$(echo "$R" | j "d['data']['companyId']")
 LR=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"velan.admin","password":"Velan@2026"}'); NT=$(echo "$LR" | j "d['data']['token']")
@@ -518,7 +518,7 @@ $PSQL "UPDATE app_settings SET value_data='false' WHERE key_name='REQUIRE_SEPARA
 
 
 # ================= PKC demo dataset =================
-PLAN=$(curl -s "${H[@]}" $API/auth/plans | j "d['data'][0]['id']")
+PLAN=$(curl -s "${H[@]}" $API/auth/plans | j "[p['id'] for p in d['data'] if p['code']=='PREMIUM'][0]")
 R=$(curl -s -X POST "${H[@]}" $API/platform-admin/onboard -d '{"name":"PKC Transport","shortName":"PKC","ownerName":"P. Kannan","phone":"9443012345","email":"office@pkctransport.in","state":"Tamil Nadu","gstNumber":"33AAKFP4521M1Z6","subscriptionPlanId":'$PLAN',"adminUsername":"pkc.admin","adminPassword":"Pkc@2026","sendWelcomeEmail":false}')
 echo "onboard: $(echo $R | cut -c1-200)"
 python3 ../.ci/seed_pkc_demo.py --url $API --username pkc.admin --password 'Pkc@2026' 2>&1 | tee /tmp/seed.log | tail -80
@@ -632,7 +632,7 @@ done
 
 
 # ---------------- Temporary password, 403s, receipt PDF ----------------
-PLAN2=$(curl -s "${H[@]}" $API/auth/plans | j "d['data'][0]['id']")
+PLAN2=$(curl -s "${H[@]}" $API/auth/plans | j "[p['id'] for p in d['data'] if p['code']=='PREMIUM'][0]")
 R=$(curl -s -X POST "${H[@]}" $API/platform-admin/onboard -d '{"name":"Temp Pwd Movers","shortName":"TPM","ownerName":"T","phone":"9000022222","email":"tpm@example.com","state":"Tamil Nadu","subscriptionPlanId":'$PLAN2',"adminUsername":"tpm.admin","sendWelcomeEmail":false}')
 TMP=$(echo "$R" | j "d['data'].get('temporaryPassword') or d['data'].get('adminPassword') or ''"); echo "tmp pwd present: $([ -n "$TMP" ] && echo yes || echo no) $(echo $R | cut -c1-160)"
 LR=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d "{\"username\":\"tpm.admin\",\"password\":\"$TMP\"}"); FT=$(echo "$LR" | j "d['data']['token']"); FF=$(echo "$LR" | j "d['data'].get('forcePasswordChange')")
@@ -916,6 +916,34 @@ R=$(ADMN); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='CLIENT_REP
 C=$(as "$TC" GET /platform-admin/tickets/notifications); [ "$C" = "403" ] && pass "client cannot read the platform bell (403)" || fail "admin bell guard" "$C"
 put "/platform-admin/tickets/$NB1/status?status=RESOLVED" '{"resolution":"Font fixed"}' >/dev/null
 R=$(cu "$TO" GET /support/notifications); echo "$R" | j "'ok' if any(i['id']==$NB1 and i['reason']=='RESOLVED' for i in d['data']['items']) else 'no'" | grep -q ok && pass "client bell: resolved — please confirm" || fail "client bell resolved" "$(echo $R | cut -c1-200)"
+
+
+# ---------------- Subscription plans & limits ----------------
+code_of() { curl -s -o /dev/null -w "%{http_code}" -X ${2:-GET} -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' "$API/$1" ${3:+-d "$3"}; }
+pa() { curl -s -X $1 "${H[@]}" "$API/platform-admin/$2" ${3:+-d "$3"}; }
+PL=$(pa GET subscription-plans); echo "plans: $(echo $PL | j "[(p['code'],p['name'],p['tier'],p['maxVehicles'],p['maxUsers'],p['maxBranches']) for p in d['data']]")"
+STARTER=$(echo "$PL" | j "[p['id'] for p in d['data'] if p['code']=='BASIC'][0]"); PRO=$(echo "$PL" | j "[p['id'] for p in d['data'] if p['code']=='PROFESSIONAL'][0]"); ENT=$(echo "$PL" | j "d['data'][0]['id']")
+X=$(echo "$PL" | j "'Driver Payroll' in [p for p in d['data'] if p['code']=='BASIC'][0]['excludedModules']"); [ "$X" = "True" ] && pass "Starter plan excludes Driver Payroll" || fail "starter modules" "$X"
+L1=$(pa GET client-plans | j "[r['planEnforced'] for r in d['data'] if r['companyId']==1][0]"); [ "$L1" = "False" ] && pass "existing client keeps full access until a plan is applied" || fail "legacy" "$L1"
+PV=$(pa GET "client-plans/$NCID/preview?planId=$STARTER"); echo "preview: $(echo $PV | cut -c1-300)"
+echo "$PV" | j "'Driver Payroll' in d['data']['lost'] and d['data']['changeType']=='DOWNGRADE'" | grep -q True && pass "preview shows downgrade and lost modules" || fail "preview" "$(echo $PV | cut -c1-200)"
+R=$(pa PUT client-plans/$NCID '{"planId":'$STARTER',"note":"ci downgrade"}'); [ "$(echo "$R" | j "d['data']['planName']")" = "Starter" ] && pass "plan applied" || fail "apply" "$(echo $R | cut -c1-200)"
+[ "$(code_of driver-payrolls)" = "403" ] && [ "$(code_of bookings)" = "200" ] && pass "Starter: payroll blocked, bookings allowed" || fail "starter access" "$(code_of driver-payrolls) $(code_of bookings)"
+R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/branches -d '{"code":"B2","name":"Second yard","status":"ACTIVE"}'); echo "$R" | grep -q "subscription allows" && pass "branch limit (1) enforced" || fail "branch limit" "$(echo $R | cut -c1-200)"
+USED=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$NCID AND is_deleted=false AND status='ACTIVE'"); N=0
+for i in $(seq $((USED+1)) 11); do R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"LIM'$i'","name":"Limit test '$i'","status":"ACTIVE"}'); echo "$R" | grep -q "subscription allows" && { N=$i; break; }; done
+[ "$N" = "11" ] && pass "truck limit (10) enforced on the 11th truck" || fail "truck limit" "stopped at $N (started $USED)"
+R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"LIMX","name":"Inactive spare","status":"INACTIVE"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "inactive trucks do not count" || fail "inactive truck" "$(echo $R | cut -c1-160)"
+R=$(pa PUT client-plans/$NCID '{"planId":'$PRO'}'); [ "$(code_of payables/bills)" = "200" ] && pass "upgrade to Professional opens payables" || fail "upgrade" "$(code_of payables/bills)"
+curl -s -X PUT "${H[@]}" "$API/platform-admin/companies/$NCID/features" -d '{"features":{"suppliers":false},"reason":"ci dependency test"}' >/dev/null
+[ "$(code_of payables/bills)" = "403" ] && pass "dependency: no suppliers => no payables" || fail "dependency" "$(code_of payables/bills)"
+curl -s -X PUT "${H[@]}" "$API/platform-admin/companies/$NCID/features" -d '{"features":{"ai":true},"reason":"Add-on: AI","validUntil":"'$(date -d '-1 day' +%F)'"}' >/dev/null
+I=$(curl -s "${H[@]}" $API/platform-admin/companies/$NCID/features | j "[f.get('overrideInfo',{}).get('reason') for f in d['data']['features'] if f['code']=='ai'][0]")
+[ "$I" = "Add-on: AI" ] && [ "$(code_of ai/predictions)" != "200" ] && pass "override reason recorded; expired override ignored" || fail "override expiry" "$I $(code_of ai/predictions)"
+curl -s -X POST "${H[@]}" "$API/platform-admin/companies/$NCID/features/reset" >/dev/null
+H2=$(pa GET client-plans/$NCID | j "len(d['data']['history'])"); [ "$H2" -ge 2 ] && pass "plan history recorded ($H2)" || fail "history" "$H2"
+pa PUT client-plans/$NCID '{"planId":'$ENT',"note":"back to enterprise"}' >/dev/null
+[ "$(code_of driver-payrolls)" = "200" ] && pass "Enterprise: everything open, unlimited" || fail "enterprise" "$(code_of driver-payrolls)"
 
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
