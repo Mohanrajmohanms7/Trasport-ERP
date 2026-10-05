@@ -23,6 +23,7 @@ export class ClientPlansComponent implements OnInit {
   note = signal('');
   preview = signal<any | null>(null);
   busy = signal(false);
+  extras: any = { extraVehicles: 0, extraUsers: 0, extraBranches: 0, billingCycle: 'MONTHLY' };
 
   readonly filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
@@ -42,7 +43,11 @@ export class ClientPlansComponent implements OnInit {
     this.preview.set(null);
     this.note.set('');
     this.targetPlanId.set(row.planId);
-    this.http.get<any>(`/api/v1/platform-admin/client-plans/${row.companyId}`).subscribe(r => this.selected.set(r?.data ?? null));
+    this.http.get<any>(`/api/v1/platform-admin/client-plans/${row.companyId}`).subscribe(r => {
+      const d = r?.data ?? null;
+      this.selected.set(d);
+      this.extras = { extraVehicles: d?.extras?.vehicles ?? 0, extraUsers: d?.extras?.users ?? 0, extraBranches: d?.extras?.branches ?? 0, billingCycle: d?.billingCycle || 'MONTHLY' };
+    });
   }
 
   close(): void { this.selected.set(null); this.preview.set(null); }
@@ -63,6 +68,17 @@ export class ClientPlansComponent implements OnInit {
       error: e => { this.busy.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not apply the plan'); }
     });
   }
+
+  saveExtras(): void {
+    const s = this.selected();
+    if (!s) return;
+    this.http.put<any>(`/api/v1/platform-admin/client-plans/${s.companyId}/extras`, this.extras).subscribe({
+      next: r => { this.selected.set(r?.data ?? null); this.notify.success('Extras and billing saved'); this.load(); },
+      error: e => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not save')
+    });
+  }
+
+  money(v: any): string { return v === null || v === undefined ? '—' : '₹' + Number(v).toLocaleString('en-IN', { maximumFractionDigits: 0 }); }
 
   limitText(u: any): string {
     if (!u) return '—';

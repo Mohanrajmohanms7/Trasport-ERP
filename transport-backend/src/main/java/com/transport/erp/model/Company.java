@@ -96,6 +96,20 @@ public class Company extends BaseEntity {
     @Column(name = "max_branches")
     private Integer maxBranches;
 
+    /** Extras bought on top of the plan (added to the plan limits). */
+    @Column(name = "extra_vehicles", nullable = false)
+    private Integer extraVehicles = 0;
+
+    @Column(name = "extra_users", nullable = false)
+    private Integer extraUsers = 0;
+
+    @Column(name = "extra_branches", nullable = false)
+    private Integer extraBranches = 0;
+
+    /** MONTHLY or YEARLY. */
+    @Column(name = "billing_cycle", nullable = false, length = 10)
+    private String billingCycle = "MONTHLY";
+
     /** True once Platform Admin applied a plan: plan features and limits then apply (legacy clients: full access). */
     @Column(name = "plan_enforced", nullable = false)
     private Boolean planEnforced = false;

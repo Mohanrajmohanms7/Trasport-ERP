@@ -28,6 +28,10 @@ import java.util.*;
 @Transactional
 public class PlatformAdminServiceImpl implements PlatformAdminService {
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.context.annotation.Lazy
+    private SubscriptionPlanService subscriptionPlanService;
+
     @Autowired
     private CompanyRepository companyRepository;
 
@@ -1006,8 +1010,18 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         plan.setMaxVehicles(planDetails.getMaxVehicles());
         plan.setMaxInvoices(planDetails.getMaxInvoices());
         plan.setStatus(planDetails.getStatus());
-        
+        if (planDetails.getMaxBranches() != null) plan.setMaxBranches(planDetails.getMaxBranches());
+        if (planDetails.getTagline() != null) plan.setTagline(planDetails.getTagline());
+        plan.setPriceYearly(planDetails.getPriceYearly());
+        if (planDetails.getExtraVehiclePrice() != null) plan.setExtraVehiclePrice(planDetails.getExtraVehiclePrice());
+        if (planDetails.getExtraUserPrice() != null) plan.setExtraUserPrice(planDetails.getExtraUserPrice());
+        if (planDetails.getExtraBranchPrice() != null) plan.setExtraBranchPrice(planDetails.getExtraBranchPrice());
+        if (planDetails.getSetupFee() != null) plan.setSetupFee(planDetails.getSetupFee());
+
         SaaSPlan updated = planRepository.save(plan);
+        // New limits reach every client already on this plan (plan limit + the client's purchased extras).
+        int synced = subscriptionPlanService.syncLimitsForPlan(updated.getId(), activeUser);
+        if (synced > 0) auditService.log(activeUser, "PLAN_LIMITS_SYNCED", "saas_plans", id, null, synced + " client(s) updated to the new limits");
         auditService.log(activeUser, "UPDATE_SAAS_PLAN", "saas_plans", id, null,
                 "Updated SaaS plan: " + updated.getName());
         return updated;

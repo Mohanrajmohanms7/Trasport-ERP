@@ -367,6 +367,15 @@ public class PlatformAdminController {
         return ApiResponse.success(subscriptionPlanService.preview(companyId, planId), "Plan change preview");
     }
 
+    /** Body: {"extraVehicles":5,"extraUsers":2,"extraBranches":0,"billingCycle":"YEARLY"} */
+    @PutMapping("/client-plans/{companyId}/extras")
+    public ApiResponse<java.util.Map<String, Object>> setPlanExtras(@PathVariable Long companyId, @RequestBody java.util.Map<String, Object> body) {
+        java.util.function.Function<String, Integer> num = k -> body.get(k) == null || String.valueOf(body.get(k)).isBlank() ? null
+                : Integer.valueOf(String.valueOf(body.get(k)).replaceAll("\\.0+$", ""));
+        return ApiResponse.success(subscriptionPlanService.setExtras(companyId, num.apply("extraVehicles"), num.apply("extraUsers"),
+                num.apply("extraBranches"), body.get("billingCycle") == null ? null : String.valueOf(body.get("billingCycle")), getActiveUser()), "Extras saved");
+    }
+
     /** Body: {"planId":3,"note":"Upgraded after demo"} */
     @PutMapping("/client-plans/{companyId}")
     public ApiResponse<java.util.Map<String, Object>> applyPlan(@PathVariable Long companyId, @RequestBody java.util.Map<String, Object> body) {

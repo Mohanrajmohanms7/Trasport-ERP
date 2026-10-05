@@ -10,6 +10,9 @@
           <div><div class="text-slate-400">Users</div><b>{{ planLimit(p.maxUsers) }}</b></div>
           <div><div class="text-slate-400">Branches</div><b>{{ planLimit(p.maxBranches) }}</b></div>
         </div>
+        <div class="mt-2 text-sm"><b>{{ money(p.price) }}</b><span class="text-[11px] text-slate-500"> / month</span>
+          @if (p.priceYearly) { <span class="text-[11px] text-slate-500"> · {{ money(p.priceYearly) }} / year</span> }</div>
+        @if (p.extraVehiclePrice > 0) { <div class="text-[10px] text-slate-500">+ {{ money(p.extraVehiclePrice) }} per extra truck · {{ money(p.extraUserPrice) }} per extra login</div> }
         <div class="mt-2 text-[10px] text-slate-500">{{ p.excludedModules.length ? 'Not included: ' + p.excludedModules.join(', ') : 'All modules included' }}</div>
       </div>
     }
@@ -86,6 +89,24 @@
               @if (!pv.gained.length && !pv.lost.length) { <div class="text-slate-500">No change in modules.</div> }
             </div>
           }
+        </section>
+
+        <section class="rounded-lg border p-3 space-y-2 text-xs">
+          <div class="text-sm font-bold">Extras &amp; billing</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 items-end">
+            <label class="flex flex-col gap-1">Extra trucks<input type="number" min="0" class="border rounded-lg px-2 py-1.5" [(ngModel)]="extras.extraVehicles" /></label>
+            <label class="flex flex-col gap-1">Extra logins<input type="number" min="0" class="border rounded-lg px-2 py-1.5" [(ngModel)]="extras.extraUsers" /></label>
+            <label class="flex flex-col gap-1">Extra branches<input type="number" min="0" class="border rounded-lg px-2 py-1.5" [(ngModel)]="extras.extraBranches" /></label>
+            <label class="flex flex-col gap-1">Billing<select class="border rounded-lg px-2 py-1.5 bg-white dark:bg-slate-900" [(ngModel)]="extras.billingCycle"><option value="MONTHLY">Monthly</option><option value="YEARLY">Yearly</option></select></label>
+          </div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            @if (s.billing?.amountPerCycle !== undefined) {
+              <div>Client pays <b>{{ money(s.billing.amountPerCycle) }}</b> per {{ s.billing.cycle === 'YEARLY' ? 'year' : 'month' }}
+                <span class="text-slate-500">(plan {{ money(s.billing.planPrice) }} + extras {{ money(s.billing.extrasPerMonth) }}/month{{ s.billing.cycle === 'YEARLY' ? ' × 12' : '' }}; one-time setup {{ money(s.billing.setupFee) }})</span></div>
+            }
+            <button type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-semibold" (click)="saveExtras()">Save extras</button>
+          </div>
+          <p class="text-[11px] text-slate-500">Extras are added to the plan limits. Payment is collected manually for now.</p>
         </section>
 
         <section class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

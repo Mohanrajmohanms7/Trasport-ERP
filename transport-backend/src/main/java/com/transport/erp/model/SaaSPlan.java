@@ -89,4 +89,20 @@ public class SaaSPlan {
 
     @Column(name = "tagline", length = 255)
     private String tagline;
+
+    /** price = monthly price; yearly price is usually 10 × monthly (2 months free). */
+    @Column(name = "price_yearly", precision = 12, scale = 2)
+    private java.math.BigDecimal priceYearly;
+
+    @Column(name = "extra_vehicle_price", nullable = false, precision = 10, scale = 2)
+    private java.math.BigDecimal extraVehiclePrice = java.math.BigDecimal.ZERO;
+
+    @Column(name = "extra_user_price", nullable = false, precision = 10, scale = 2)
+    private java.math.BigDecimal extraUserPrice = java.math.BigDecimal.ZERO;
+
+    @Column(name = "extra_branch_price", nullable = false, precision = 10, scale = 2)
+    private java.math.BigDecimal extraBranchPrice = java.math.BigDecimal.ZERO;
+
+    @Column(name = "setup_fee", nullable = false, precision = 10, scale = 2)
+    private java.math.BigDecimal setupFee = java.math.BigDecimal.ZERO;
 }
