@@ -1134,6 +1134,17 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
             throw new IllegalArgumentException("Role not found with code: " + roleCode);
         }
 
+        // The Platform Admin user form has no employee-code field and the column is required:
+        // give the login a unique code (USR-0001…) within its company instead of failing with a database error.
+        if (user.getCode() == null || user.getCode().isBlank()) {
+            int n = 1;
+            String code;
+            do {
+                code = String.format("USR-%04d", n++);
+            } while (userRepository.findByCompanyIdAndCodeAndIsDeletedFalse(user.getCompanyId(), code).isPresent());
+            user.setCode(code);
+        }
+        if (user.getName() == null || user.getName().isBlank()) user.setName(user.getUsername());
         AppUser saved = userRepository.save(user);
         auditService.log(activeUser, "CREATE_USER", "app_users", saved.getId(), null,
                 "Created login user: " + saved.getUsername() + " with role: " + roleCode);
@@ -1389,6 +1400,17 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     @Override
     public SaaSAnnouncement createAnnouncement(SaaSAnnouncement announcement, String activeUser) {
         announcement.setStatus("ACTIVE");
+        if (announcement.getTitle() == null || announcement.getTitle().isBlank()
+                || announcement.getMessage() == null || announcement.getMessage().isBlank()) {
+            throw new com.transport.erp.exception.BusinessValidationException("Announcement Incomplete", "ANNOUNCEMENT_REQUIRED",
+                    "Title and message are required.", "Fill both and try again.");
+        }
+        if (announcement.getStartDate() == null) announcement.setStartDate(LocalDate.now());   // was a database error
+        if (announcement.getEndDate() == null) announcement.setEndDate(announcement.getStartDate().plusDays(30));
+        if (announcement.getEndDate() != null && announcement.getEndDate().isBefore(announcement.getStartDate())) {
+            throw new com.transport.erp.exception.BusinessValidationException("Wrong Dates", "ANNOUNCEMENT_DATES",
+                    "End date is before start date.", "Correct the dates.");
+        }
         SaaSAnnouncement saved = announcementRepository.save(announcement);
         auditService.log(activeUser, "CREATE_ANNOUNCEMENT", "saas_announcements", saved.getId(), null,
                 "Broadcasted system announcement: " + saved.getTitle());
