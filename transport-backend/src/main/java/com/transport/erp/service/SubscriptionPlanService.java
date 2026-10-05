@@ -167,7 +167,7 @@ public class SubscriptionPlanService {
         c.setPlanEnforced(true);
         applyLimits(c, target);
         c.setUpdatedBy(username);
-        companyRepository.save(c);
+        companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
         jdbc.update("INSERT INTO plan_change_history (company_id, from_plan_id, to_plan_id, change_type, note, changed_by) VALUES (?, ?, ?, ?, ?, ?)",
                 companyId, fromPlan, target.getId(), type, note, username);
         features.evict(companyId);
@@ -238,7 +238,7 @@ public class SubscriptionPlanService {
                     || c.getSubscriptionPlan() == null || !planId.equals(c.getSubscriptionPlan().getId())) continue;
             applyLimits(c, c.getSubscriptionPlan());
             c.setUpdatedBy(username);
-            companyRepository.save(c);
+            companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
             n++;
         }
         return n;
@@ -265,7 +265,7 @@ public class SubscriptionPlanService {
         }
         if (Boolean.TRUE.equals(c.getPlanEnforced()) && c.getSubscriptionPlan() != null) applyLimits(c, c.getSubscriptionPlan());
         c.setUpdatedBy(username);
-        companyRepository.save(c);
+        companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
         auditService.log(username, "PLAN_EXTRAS_UPDATED", "companies", companyId, null,
                 "Extras: trucks " + nz(c.getExtraVehicles()) + ", users " + nz(c.getExtraUsers()) + ", branches " + nz(c.getExtraBranches())
                         + ", billing " + c.getBillingCycle());
