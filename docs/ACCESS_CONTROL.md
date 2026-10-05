@@ -93,3 +93,10 @@ PREMIUM = **Enterprise**. Their excluded modules are stored in `plan_features` (
 - Client overrides carry a **reason** and optional **valid until** date (add-ons, trials); expired overrides stop applying.
 - Downgrade preview warns about trucks/users/branches over the new limit and open work (open work orders keep trucks blocked).
 - Not built yet: online subscription payment; add-on price catalogue; downgrade grace mode.
+
+## Plan pricing (V82)
+Each plan: monthly price (`price`), yearly price (default 10 × monthly), one-time setup fee, price per extra truck / login / branch
+per month, included trucks / logins / branches (0 = unlimited). Edit in Platform Admin → Subscriptions & Plans; changing included
+limits updates every client on that plan. Per client (Client Plans → Manage): extra trucks / logins / branches and billing cycle
+(monthly / yearly); limits = plan + extras; the screen shows what the client pays per cycle. Payment collection is manual for now.
+Seeded starting prices (INR/month): Starter 1,499 · Growth 3,499 · Professional 7,999 · Enterprise from 14,999 · Trial free.
