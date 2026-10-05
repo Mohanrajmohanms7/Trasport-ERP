@@ -127,6 +127,24 @@ public class TenantAccessService {
     }
 
     @Transactional(readOnly = true)
+    /**
+     * Branch a list should be limited to: null = every branch of the company (platform admin, company-wide admins),
+     * else the user's own branch. A branch-level user without a branch keeps company-wide lists (as before).
+     */
+    public Long listBranchScope() {
+        AppUser user = requireCurrentUser();
+        if (isSuperAdmin(user) || isCompanyWideAdmin(user)) return null;
+        return user.getBranchId();
+    }
+
+    /** A single record is visible under the same rule as {@link #listBranchScope()} (records without a branch: visible). */
+    public void assertBranchVisible(Long resourceBranchId) {
+        Long scope = listBranchScope();
+        if (scope != null && resourceBranchId != null && !sameBranch(resourceBranchId, scope)) {
+            throw new AccessDeniedException("Access denied: this record belongs to another branch.");
+        }
+    }
+
     public void assertBranchAccess(Long resourceBranchId) {
         AppUser user = requireCurrentUser();
         if (isSuperAdmin(user)) return;

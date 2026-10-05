@@ -45,4 +45,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @org.springframework.data.repository.query.Param("customerId") Long customerId,
             @org.springframework.data.repository.query.Param("q") String q,
             org.springframework.data.domain.Pageable pageable);
+
+    /** Lists: one company, optional branch (null = all branches) and optional status. */
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM Booking e WHERE e.companyId = :companyId AND e.isDeleted = false "
+            + "AND (:branchId IS NULL OR e.branchId = :branchId) AND (:status IS NULL OR e.status = :status)")
+    org.springframework.data.domain.Page<com.transport.erp.model.Booking> findForList(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            org.springframework.data.domain.Pageable pageable);
 }

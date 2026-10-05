@@ -61,10 +61,7 @@ public class BookingService {
 
 
     public Page<Booking> getBookings(Long companyId, String status, Pageable pageable) {
-        if (status != null && !status.trim().isEmpty()) {
-            return bookingRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
-        }
-        return bookingRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        return bookingRepository.findForList(companyId, tenantAccess.listBranchScope(), (status == null || status.trim().isEmpty() ? null : status.trim()), pageable);
     }
 
     public Page<Booking> searchForPicker(Long companyId, Long customerId, String search, Pageable pageable) {
@@ -76,11 +73,16 @@ public class BookingService {
                 .filter(b -> !Boolean.TRUE.equals(b.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + id));
         tenantAccess.assertOwned(booking.getCompanyId());
+        tenantAccess.assertBranchVisible(booking.getBranchId());
         return booking;
     }
 
     @Transactional
     public Booking createBooking(Booking booking, String createdByUsername) {
+        if (booking.getCustomer() == null || booking.getCustomer().getId() == null) {
+            throw new com.transport.erp.exception.BusinessValidationException("Customer Required", "BOOKING_CUSTOMER_REQUIRED",
+                    "Select the customer for this booking.", "Choose a customer, then add the materials.");
+        }
         String prefix = settingService.getByKey("PREFIX_BOOKING").map(s -> s.getValueData()).orElse("BKG-");
         String defaultStatus = settingService.getByKey("DEFAULT_BOOKING_STATUS").map(s -> s.getValueData()).orElse("PENDING");
         

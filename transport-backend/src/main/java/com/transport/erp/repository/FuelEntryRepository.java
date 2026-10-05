@@ -41,4 +41,13 @@ public interface FuelEntryRepository extends JpaRepository<FuelEntry, Long> {
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT f FROM FuelEntry f WHERE f.id = :id AND f.isDeleted = false")
     Optional<FuelEntry> findAndLockById(@Param("id") Long id);
+
+    /** Lists: one company, optional branch (null = all branches) and optional status. */
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM FuelEntry e WHERE e.companyId = :companyId AND e.isDeleted = false "
+            + "AND (:branchId IS NULL OR e.branchId = :branchId) AND (:status IS NULL OR e.status = :status)")
+    org.springframework.data.domain.Page<com.transport.erp.model.FuelEntry> findForList(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            org.springframework.data.domain.Pageable pageable);
 }

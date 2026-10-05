@@ -62,7 +62,7 @@ public class FuelEntryService {
 
     public Page<FuelEntry> getFuelEntries(Long companyId, Pageable pageable) {
         Long resolvedCompanyId = tenantAccess.resolveCompanyId(companyId);
-        return fuelEntryRepository.findByCompanyIdAndIsDeletedFalse(resolvedCompanyId, pageable);
+        return fuelEntryRepository.findForList(resolvedCompanyId, tenantAccess.listBranchScope(), null, pageable);
     }
 
     public FuelEntry getFuelEntryById(Long id) {
@@ -75,6 +75,7 @@ public class FuelEntryService {
                         "Verify the fuel entry ID."
                 ));
         tenantAccess.assertOwned(entry.getCompanyId());
+        tenantAccess.assertBranchVisible(entry.getBranchId());
         return entry;
     }
 

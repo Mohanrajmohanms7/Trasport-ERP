@@ -975,5 +975,54 @@ if [ -n "$BT" ] && [ -n "$BB2" ] && [ "$BB2" != "None" ]; then
   $PSQL "UPDATE trips SET branch_id=${BTB:-NULL} WHERE id=$BT" >/dev/null; $PSQL "UPDATE app_users SET branch_id=${OPB:-NULL} WHERE username='op1'" >/dev/null
 else fail "billing branch setup" "trip=$BT branch=$BB2"; fi
 
+# ================= FLOW REVIEW: roles x modules, branch isolation, company isolation =================
+R_ACC=$(RID ACCOUNTANT); R_BM=$(RID BRANCH_MANAGER); mkuser acc1 $R_ACC >/dev/null; mkuser bm1 $R_BM >/dev/null
+TA=$(tok acc1 Secret@123); TB=$(tok bm1 Secret@123)
+code() { curl -s -o /tmp/fr.json -w "%{http_code}" -X "$2" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' "$API$3" ${4:+-d "$4"}; }
+expect() { local want=$1 got=$2 msg=$3; case " $want " in *" $got "*) pass "FR $msg ($got)";; *) fail "FR $msg" "got $got want $want :: $(head -c 160 /tmp/fr.json)";; esac; }
+# --- role matrix ---
+expect "200" "$(code "$TV" GET /bookings)" "viewer reads bookings"
+expect "403" "$(code "$TV" POST /bookings '{}')" "viewer cannot create a booking"
+expect "403" "$(code "$TV" POST /expenses '{}')" "viewer cannot create an expense"
+expect "403" "$(code "$TV" DELETE /customers/$CUST)" "viewer cannot delete a customer"
+expect "401 403" "$(code "$TD" GET /bookings)" "driver cannot read bookings"
+expect "401 403" "$(code "$TD" GET /invoices)" "driver cannot read invoices"
+expect "401 403" "$(code "$TD" GET /accounts)" "driver cannot read accounts"
+for P in /users /branches /journal /accounts; do expect "403" "$(code "$TO" POST $P '{}')" "operator cannot write $P"; done
+expect "403" "$(code "$TB" POST /users '{}')" "branch manager cannot create users"
+expect "200 400 422" "$(code "$TB" POST /bookings '{}')" "branch manager may create bookings (validation only)"
+expect "200 400 422" "$(code "$TA" POST /journal '{}')" "accountant may post journals (validation only)"
+expect "403" "$(code "$TA" POST /users '{}')" "accountant cannot create users"
+expect "200 400 422" "$(code "$TC" POST /journal '{}')" "company admin may post journals (validation only)"
+# --- branch isolation: move one record of each kind to a second branch ---
+FRB=$(api POST /branches '{"code":"FR-'$RANDOM'","name":"Flow Review Branch","gstNumber":"33ABCDE1234F1Z5","status":"ACTIVE"}' | j "d['data']['id']")
+MAINB=$($PSQL "SELECT id FROM branches WHERE company_id=$CI2 AND id<>$FRB AND is_deleted=false ORDER BY id LIMIT 1")
+declare -A FRUB; for U in op1 bm1 vw1; do FRUB[$U]=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM app_users WHERE username='$U'"); $PSQL "UPDATE app_users SET branch_id=$MAINB WHERE username='$U'" >/dev/null; done
+declare -A FRT=( [bookings]=bookings [trips]=trips [invoices]=sales_invoices [receipts]=customer_receipts [expenses]=expenses [fuel]=fuel_entries [driver-payrolls]=driver_payrolls )
+declare -A FRID FRORIG
+for P in "${!FRT[@]}"; do
+  TBL=${FRT[$P]}; ID=$($PSQL "SELECT id FROM $TBL WHERE company_id=$CI2 AND is_deleted=false ORDER BY id DESC LIMIT 1")
+  [ -z "$ID" ] && { echo "SKIP FR $P (no $TBL rows in the test company)"; continue; }
+  FRID[$P]=$ID; FRORIG[$P]=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM $TBL WHERE id=$ID")
+  $PSQL "UPDATE $TBL SET branch_id=$FRB WHERE id=$ID" >/dev/null
+done
+ids() { python3 -c "import sys,json; d=json.load(sys.stdin); c=d.get('data') or {}; c=c.get('content', c) if isinstance(c, dict) else c; print(' '.join(str(x.get('id')) for x in (c or []) if isinstance(x, dict)))" 2>/dev/null; }
+for P in "${!FRID[@]}"; do
+  ID=${FRID[$P]}
+  L=$(curl -s -H "Authorization: Bearer $TO" "$API/$P?size=1000" | ids); case " $L " in *" $ID "*) fail "FR branch user list $P" "sees other-branch id $ID";; *) pass "FR branch user list hides other branch: $P";; esac
+  L=$(curl -s -H "Authorization: Bearer $TC" "$API/$P?size=1000" | ids); case " $L " in *" $ID "*) pass "FR company admin list includes other branch: $P";; *) fail "FR company admin list $P" "missing id $ID";; esac
+  expect "403 404" "$(code "$TO" GET /$P/$ID)" "branch user cannot open other-branch $P by id"
+  expect "403 404" "$(code "$TV" GET /$P/$ID)" "branch viewer cannot open other-branch $P by id"
+  expect "200" "$(code "$TC" GET /$P/$ID)" "company admin opens other-branch $P"
+  expect "403 404" "$(code "$NT" GET /$P/$ID)" "another company cannot open $P"
+done
+if [ -n "${FRID[trips]:-}" ]; then
+  FTI=${FRID[trips]:-0}; FTN=$($PSQL "SELECT trip_number FROM trips WHERE id=$FTI"); FD=$($PSQL "SELECT trip_date FROM trips WHERE id=$FTI")
+  R=$(curl -s -H "Authorization: Bearer $TO" "$API/report-hub/run/trip-register?from=$FD&to=$FD"); echo "$R" | grep -q "\"$FTN\"" && fail "FR report branch scope" "branch user sees $FTN in trip register" || pass "FR trip register hides other branch for branch user"
+  R=$(curl -s -H "Authorization: Bearer $TC" "$API/report-hub/run/trip-register?from=$FD&to=$FD"); echo "$R" | grep -q "\"$FTN\"" && pass "FR trip register shows all branches to company admin" || fail "FR report company admin" "missing $FTN"
+fi
+for P in "${!FRID[@]}"; do $PSQL "UPDATE ${FRT[$P]} SET branch_id=${FRORIG[$P]} WHERE id=${FRID[$P]}" >/dev/null; done
+for U in op1 bm1 vw1; do $PSQL "UPDATE app_users SET branch_id=${FRUB[$U]:-NULL} WHERE username='$U'" >/dev/null; done
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

@@ -726,7 +726,7 @@ public class CustomerReceiptService {
     public Page<CustomerReceiptListDTO> getReceipts(String search, String status, String paymentMethod, Long customerId, LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         AppUser currentUser = tenantAccess.requireCurrentUser();
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
+        Long branchId = tenantAccess.listBranchScope();   // company admins: every branch; branch users: own branch
 
         String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim().toLowerCase() + "%" : null;
 
@@ -879,7 +879,7 @@ public class CustomerReceiptService {
                 .orElseThrow(() -> new IllegalArgumentException("Receipt not found: " + receiptId));
 
         tenantAccess.assertOwned(receipt.getCompanyId());
-        Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
+        Long branchId = tenantAccess.listBranchScope();   // company admins: every branch; branch users: own branch
 
         List<CustomerReceiptAllocation> allocs = allocationRepository.findByReceiptIdAndCompanyIdAndBranchId(receiptId, receipt.getCompanyId(), branchId);
         return allocs.stream().map(a -> {
@@ -906,7 +906,7 @@ public class CustomerReceiptService {
                 .orElseThrow(() -> new IllegalArgumentException("Customer not found: " + customerId));
 
         tenantAccess.assertOwned(customer.getCompanyId());
-        Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
+        Long branchId = tenantAccess.listBranchScope();   // company admins: every branch; branch users: own branch
 
         List<CustomerReceipt> receipts = receiptRepository.findCustomerHistory(customerId, customer.getCompanyId(), branchId);
 
@@ -1160,7 +1160,7 @@ public class CustomerReceiptService {
         tenantAccess.assertOwned(receipt.getCompanyId());
         
         Long companyId = tenantAccess.resolveCompanyId(null);
-        Long branchId = tenantAccess.isSuperAdmin(currentUser) ? null : currentUser.getBranchId();
+        Long branchId = tenantAccess.listBranchScope();   // company admins: every branch; branch users: own branch
 
         if (!tenantAccess.isSuperAdmin(currentUser) && currentUser.getBranchId() != null && !tenantAccess.isCompanyWideAdmin(currentUser) 
             && receipt.getBranchId() != null && !currentUser.getBranchId().equals(receipt.getBranchId())) {

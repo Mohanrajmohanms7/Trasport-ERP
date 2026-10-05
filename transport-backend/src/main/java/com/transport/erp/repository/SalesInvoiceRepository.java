@@ -196,6 +196,15 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
 
     @Query("SELECT COUNT(i) FROM SalesInvoice i JOIN i.details d WHERE d.trip.booking.id = :bookingId AND i.isDeleted = false AND i.status != 'CANCELLED'")
     long countByBookingIdAndIsDeletedFalse(@Param("bookingId") Long bookingId);
+
+    /** Lists: one company, optional branch (null = all branches) and optional status. */
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM SalesInvoice e WHERE e.companyId = :companyId AND e.isDeleted = false "
+            + "AND (:branchId IS NULL OR e.branchId = :branchId) AND (:status IS NULL OR e.status = :status)")
+    org.springframework.data.domain.Page<com.transport.erp.model.SalesInvoice> findForList(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            org.springframework.data.domain.Pageable pageable);
 }
 
 

@@ -55,10 +55,7 @@ public class ExpenseService {
 
 
     public Page<Expense> getExpenses(Long companyId, String status, Pageable pageable) {
-        if (status != null && !status.trim().isEmpty()) {
-            return expenseRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
-        }
-        return expenseRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        return expenseRepository.findForList(companyId, tenantAccess.listBranchScope(), (status == null || status.trim().isEmpty() ? null : status.trim()), pageable);
     }
 
     public Expense getExpenseById(Long id) {
@@ -66,6 +63,7 @@ public class ExpenseService {
                 .filter(e -> !Boolean.TRUE.equals(e.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Expense not found: " + id));
         tenantAccess.assertOwned(expense.getCompanyId());
+        tenantAccess.assertBranchVisible(expense.getBranchId());
         return expense;
     }
 

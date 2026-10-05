@@ -85,12 +85,7 @@ public class TripService {
 
 
     public Page<Trip> getTrips(Long companyId, String status, Pageable pageable) {
-        Page<Trip> trips;
-        if (status != null && !status.trim().isEmpty()) {
-            trips = tripRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
-        } else {
-            trips = tripRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
-        }
+        Page<Trip> trips = tripRepository.findForList(companyId, tenantAccess.listBranchScope(), (status == null || status.trim().isEmpty() ? null : status.trim()), pageable);
         trips.forEach(this::populateBillingStatus);
         return trips;
     }
@@ -107,6 +102,7 @@ public class TripService {
                 .filter(t -> !Boolean.TRUE.equals(t.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + id));
         tenantAccess.assertOwned(trip.getCompanyId());
+        tenantAccess.assertBranchVisible(trip.getBranchId());
         populateBillingStatus(trip);
         return trip;
     }
