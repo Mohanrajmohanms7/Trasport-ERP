@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V81__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V84__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -90,6 +90,10 @@ Every `<form>` uses `shared/form-validation.directive` (import `FormValidationDi
 fields are highlighted with "Please enter / select <Label>", the first one is focused. Mark required fields with
 `Validators.required` / `[required]="true"` (ff-* fields show * automatically) or `required` + "Label *" on plain inputs.
 Don't disable Save just because fields are empty — let the user click and see the messages.
+
+**Speed.** Hibernate loads linked records in batches (`default_batch_fetch_size: 50`), API responses are gzip-compressed,
+screens are lazy-loaded (`loadComponent` in `app.routes.ts`; only login + shell load up front), V83 adds list indexes.
+The Render test backend (free plan) is kept awake by `.github/workflows/keep-alive.yml`; drop it on a paid plan.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").

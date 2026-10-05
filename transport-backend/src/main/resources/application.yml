@@ -8,6 +8,12 @@ spring:
     name: transport-backend
   profiles:
     active: dev
+  # Speed: linked records (customer, vehicle, material …) of a list are loaded in groups of up to 50 with one
+  # IN (...) query each, instead of one query per row (48 eager links made a 20-row list run 100+ queries).
+  jpa:
+    properties:
+      hibernate:
+        default_batch_fetch_size: 50
   jackson:
     time-zone: UTC
     date-format: yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
@@ -26,3 +32,10 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: alpha
     tagsSorter: alpha
+
+# Speed: gzip API responses (JSON lists shrink ~70-85 %); tiny responses are sent as they are.
+server:
+  compression:
+    enabled: true
+    mime-types: application/json,application/problem+json,text/html,text/css,text/plain,application/javascript
+    min-response-size: 1024
