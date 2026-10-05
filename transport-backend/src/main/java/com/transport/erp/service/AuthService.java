@@ -394,9 +394,13 @@ public class AuthService {
         company.setSubscriptionEndDate(endDate);
         company.setSubscriptionRenewalDate(endDate);
         company.setSubscriptionStatus("ACTIVE");
-        company.setMaxUsers(plan.getMaxUsers());
-        company.setMaxVehicles(plan.getMaxVehicles());
-        company.setMaxBranches(plan.getMaxBranches());
+        // Plan limits + extras the client bought (0 = unlimited)
+        int xu = company.getExtraUsers() == null ? 0 : company.getExtraUsers();
+        int xv = company.getExtraVehicles() == null ? 0 : company.getExtraVehicles();
+        int xb = company.getExtraBranches() == null ? 0 : company.getExtraBranches();
+        company.setMaxUsers(plan.getMaxUsers() == null || plan.getMaxUsers() <= 0 ? 0 : plan.getMaxUsers() + xu);
+        company.setMaxVehicles(plan.getMaxVehicles() == null || plan.getMaxVehicles() <= 0 ? 0 : plan.getMaxVehicles() + xv);
+        company.setMaxBranches(plan.getMaxBranches() == null || plan.getMaxBranches() <= 0 ? 0 : plan.getMaxBranches() + xb);
         company.setStatus("ACTIVE");
         Company savedCompany = companyRepository.save(company);
         

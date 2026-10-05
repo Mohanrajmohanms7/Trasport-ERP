@@ -956,11 +956,19 @@
           <form [formGroup]="planForm" (ngSubmit)="savePlan()" class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <ff-textbox label="Plan Code" formControlName="code" placeholder="Enter Plan Code"></ff-textbox>
             <ff-textbox label="Plan Name" formControlName="name" placeholder="Enter Plan Name"></ff-textbox>
-            <ff-number label="Billing Price (INR)" formControlName="price"></ff-number>
-            <ff-dropdown label="Billing Frequency" formControlName="billingPeriod" [options]="billingPeriodOptions"></ff-dropdown>
-            <ff-number label="Max Allowed Users" formControlName="maxUsers"></ff-number>
-            <ff-number label="Max Fleet Vehicles" formControlName="maxVehicles"></ff-number>
-            <ff-number label="Max Monthly Invoices" formControlName="maxInvoices"></ff-number>
+            <ff-number label="Monthly price (₹)" formControlName="price"></ff-number>
+            <ff-number label="Yearly price (₹) — usually 10 × monthly" formControlName="priceYearly"></ff-number>
+            <ff-number label="One-time setup / onboarding fee (₹)" formControlName="setupFee"></ff-number>
+            <ff-number label="Trucks included (0 = unlimited)" formControlName="maxVehicles"></ff-number>
+            <ff-number label="Staff logins included (0 = unlimited)" formControlName="maxUsers"></ff-number>
+            <ff-number label="Branches included (0 = unlimited)" formControlName="maxBranches"></ff-number>
+            <ff-number label="Price per extra truck / month (₹)" formControlName="extraVehiclePrice"></ff-number>
+            <ff-number label="Price per extra login / month (₹)" formControlName="extraUserPrice"></ff-number>
+            <ff-number label="Price per extra branch / month (₹)" formControlName="extraBranchPrice"></ff-number>
+            <ff-textbox label="One-line promise (shown on plan cards)" formControlName="tagline" class="md:col-span-2"></ff-textbox>
+            <ff-dropdown label="Default billing" formControlName="billingPeriod" [options]="billingPeriodOptions"></ff-dropdown>
+            <ff-number label="Max Monthly Invoices (not enforced)" formControlName="maxInvoices"></ff-number>
+            <p class="md:col-span-3 text-[11px] text-slate-500">Changing included trucks / logins / branches updates every client already on this plan (plus the extras each client bought).</p>
             <ff-textarea label="Plan Description" formControlName="description" class="md:col-span-3"></ff-textarea>
 
             <div class="md:col-span-3 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">

@@ -945,5 +945,21 @@ H2=$(pa GET client-plans/$NCID | j "len(d['data']['history'])"); [ "$H2" -ge 2 ]
 pa PUT client-plans/$NCID '{"planId":'$ENT',"note":"back to enterprise"}' >/dev/null
 [ "$(code_of driver-payrolls)" = "200" ] && pass "Enterprise: everything open, unlimited" || fail "enterprise" "$(code_of driver-payrolls)"
 
+
+# ---------------- Plan pricing & extras ----------------
+PL=$(pa GET subscription-plans); SP=$(echo "$PL" | j "[(p['price'],p['priceYearly'],p['extraVehiclePrice']) for p in d['data'] if p['code']=='BASIC'][0]")
+[ "$SP" = "(1499.0, 14990.0, 100.0)" ] && pass "Starter priced ₹1,499/month, ₹14,990/year, ₹100 per extra truck" || fail "starter price" "$SP"
+pa PUT client-plans/$NCID '{"planId":'$STARTER'}' >/dev/null
+R=$(pa PUT client-plans/$NCID/extras '{"extraVehicles":5,"extraUsers":0,"extraBranches":0,"billingCycle":"MONTHLY"}')
+LIM=$(echo "$R" | j "d['data']['usage']['vehicles']['limit']"); AMT=$(echo "$R" | j "d['data']['billing']['amountPerCycle']")
+[ "$LIM" = "15" ] && [ "$(python3 -c "print(float('$AMT'))")" = "1999.0" ] && pass "5 extra trucks: limit 15, bill ₹1,999/month" || fail "extras" "$LIM $AMT"
+R=$(pa PUT client-plans/$NCID/extras '{"billingCycle":"YEARLY"}'); AMT=$(echo "$R" | j "d['data']['billing']['amountPerCycle']")
+[ "$(python3 -c "print(float('$AMT'))")" = "20990.0" ] && pass "yearly: ₹14,990 + 5 trucks × ₹100 × 12 = ₹20,990" || fail "yearly" "$AMT"
+BODY=$(curl -s "${H[@]}" "$API/platform-admin/plans?size=50" | python3 -c "import sys,json;d=json.load(sys.stdin)['data'];d=d.get('content',d);p=[x for x in d if x['code']=='BASIC'][0];p['maxVehicles']=12;print(json.dumps(p))")
+R=$(pa PUT plans/$STARTER "$BODY"); LIM=$(pa GET client-plans/$NCID | j "d['data']['usage']['vehicles']['limit']")
+[ "$LIM" = "17" ] && pass "plan limit change reaches clients on the plan (12 + 5 extras = 17)" || fail "limit sync" "$LIM $(echo $R | cut -c1-120)"
+BODY=$(echo "$BODY" | python3 -c "import sys,json;p=json.load(sys.stdin);p['maxVehicles']=10;print(json.dumps(p))"); pa PUT plans/$STARTER "$BODY" >/dev/null
+pa PUT client-plans/$NCID/extras '{"extraVehicles":0,"billingCycle":"MONTHLY"}' >/dev/null; pa PUT client-plans/$NCID '{"planId":'$ENT'}' >/dev/null
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

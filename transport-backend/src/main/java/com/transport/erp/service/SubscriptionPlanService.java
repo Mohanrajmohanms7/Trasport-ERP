@@ -44,6 +44,11 @@ public class SubscriptionPlanService {
             m.put("maxUsers", p.getMaxUsers());
             m.put("maxVehicles", p.getMaxVehicles());
             m.put("maxBranches", p.getMaxBranches());
+            m.put("priceYearly", p.getPriceYearly());
+            m.put("extraVehiclePrice", p.getExtraVehiclePrice());
+            m.put("extraUserPrice", p.getExtraUserPrice());
+            m.put("extraBranchPrice", p.getExtraBranchPrice());
+            m.put("setupFee", p.getSetupFee());
             Map<String, Boolean> settings = features.planSettings(p.getId());
             List<String> excluded = new ArrayList<>();
             for (FeatureCatalog.Feature f : FeatureCatalog.all()) {
@@ -86,6 +91,9 @@ public class SubscriptionPlanService {
         m.put("modulesEnabled", modules - offModules);
         m.put("modulesTotal", modules);
         m.put("overrides", features.companyOverrides(c.getId()).size());
+        m.put("extras", Map.of("vehicles", nz(c.getExtraVehicles()), "users", nz(c.getExtraUsers()), "branches", nz(c.getExtraBranches())));
+        m.put("billingCycle", c.getBillingCycle());
+        m.put("billing", billing(c));
         return m;
     }
 
@@ -156,12 +164,10 @@ public class SubscriptionPlanService {
         String type = changeType(c, target);
         Long fromPlan = c.getSubscriptionPlan() == null ? null : c.getSubscriptionPlan().getId();
         c.setSubscriptionPlan(target);
-        c.setMaxUsers(target.getMaxUsers());
-        c.setMaxVehicles(target.getMaxVehicles());
-        c.setMaxBranches(target.getMaxBranches());
         c.setPlanEnforced(true);
+        applyLimits(c, target);
         c.setUpdatedBy(username);
-        companyRepository.save(c);
+        companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
         jdbc.update("INSERT INTO plan_change_history (company_id, from_plan_id, to_plan_id, change_type, note, changed_by) VALUES (?, ?, ?, ?, ?, ?)",
                 companyId, fromPlan, target.getId(), type, note, username);
         features.evict(companyId);
@@ -208,4 +214,84 @@ public class SubscriptionPlanService {
         }
         return p;
     }
+
+    private static int nz(Integer v) { return v == null ? 0 : v; }
+
+    /** Client limit = plan limit + purchased extras (a plan limit of 0 means unlimited and stays unlimited). */
+    private void applyLimits(Company c, SaaSPlan p) {
+        c.setMaxVehicles(plus(p.getMaxVehicles(), c.getExtraVehicles()));
+        c.setMaxUsers(plus(p.getMaxUsers(), c.getExtraUsers()));
+        c.setMaxBranches(plus(p.getMaxBranches(), c.getExtraBranches()));
+    }
+
+    private static Integer plus(Integer planLimit, Integer extra) {
+        if (planLimit == null || planLimit <= 0) return 0;
+        return planLimit + nz(extra);
+    }
+
+    /** After a plan's limits change: every client on it (with a plan applied) gets the new limits. */
+    @Transactional
+    public int syncLimitsForPlan(Long planId, String username) {
+        int n = 0;
+        for (Company c : companyRepository.findAll()) {
+            if (Boolean.TRUE.equals(c.getIsDeleted()) || !Boolean.TRUE.equals(c.getPlanEnforced())
+                    || c.getSubscriptionPlan() == null || !planId.equals(c.getSubscriptionPlan().getId())) continue;
+            applyLimits(c, c.getSubscriptionPlan());
+            c.setUpdatedBy(username);
+            companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
+            n++;
+        }
+        return n;
+    }
+
+    /** Extra trucks / users / branches bought by the client and its billing cycle. */
+    @Transactional
+    public Map<String, Object> setExtras(Long companyId, Integer vehicles, Integer users, Integer branches, String cycle, String username) {
+        Company c = company(companyId);
+        for (Integer v : new Integer[]{vehicles, users, branches}) {
+            if (v != null && (v < 0 || v > 100000)) {
+                throw new BusinessValidationException("Invalid Extras", "PLAN_EXTRAS_INVALID", "Extras must be 0 or more.", "Correct the numbers.");
+            }
+        }
+        if (vehicles != null) c.setExtraVehicles(vehicles);
+        if (users != null) c.setExtraUsers(users);
+        if (branches != null) c.setExtraBranches(branches);
+        if (cycle != null && !cycle.isBlank()) {
+            String cy = cycle.trim().toUpperCase(Locale.ROOT);
+            if (!cy.equals("MONTHLY") && !cy.equals("YEARLY")) {
+                throw new BusinessValidationException("Invalid Billing Cycle", "PLAN_CYCLE_INVALID", "Billing cycle must be MONTHLY or YEARLY.", "Pick one.");
+            }
+            c.setBillingCycle(cy);
+        }
+        if (Boolean.TRUE.equals(c.getPlanEnforced()) && c.getSubscriptionPlan() != null) applyLimits(c, c.getSubscriptionPlan());
+        c.setUpdatedBy(username);
+        companyRepository.saveAndFlush(c);   // flush so the usage/limit read below (JDBC) sees it
+        auditService.log(username, "PLAN_EXTRAS_UPDATED", "companies", companyId, null,
+                "Extras: trucks " + nz(c.getExtraVehicles()) + ", users " + nz(c.getExtraUsers()) + ", branches " + nz(c.getExtraBranches())
+                        + ", billing " + c.getBillingCycle());
+        return detail(companyId);
+    }
+
+    /** What the client pays (estimate; collection is manual for now). */
+    public Map<String, Object> billing(Company c) {
+        Map<String, Object> b = new LinkedHashMap<>();
+        SaaSPlan p = c.getSubscriptionPlan();
+        if (p == null) return b;
+        java.math.BigDecimal monthlyPlan = nzd(p.getPrice());
+        java.math.BigDecimal yearlyPlan = p.getPriceYearly() != null ? p.getPriceYearly() : monthlyPlan.multiply(java.math.BigDecimal.valueOf(12));
+        java.math.BigDecimal extrasMonthly = nzd(p.getExtraVehiclePrice()).multiply(java.math.BigDecimal.valueOf(nz(c.getExtraVehicles())))
+                .add(nzd(p.getExtraUserPrice()).multiply(java.math.BigDecimal.valueOf(nz(c.getExtraUsers()))))
+                .add(nzd(p.getExtraBranchPrice()).multiply(java.math.BigDecimal.valueOf(nz(c.getExtraBranches()))));
+        boolean yearly = "YEARLY".equals(c.getBillingCycle());
+        java.math.BigDecimal perCycle = yearly ? yearlyPlan.add(extrasMonthly.multiply(java.math.BigDecimal.valueOf(12))) : monthlyPlan.add(extrasMonthly);
+        b.put("cycle", yearly ? "YEARLY" : "MONTHLY");
+        b.put("planPrice", yearly ? yearlyPlan : monthlyPlan);
+        b.put("extrasPerMonth", extrasMonthly);
+        b.put("amountPerCycle", perCycle);
+        b.put("perMonthEquivalent", yearly ? perCycle.divide(java.math.BigDecimal.valueOf(12), 2, java.math.RoundingMode.HALF_UP) : perCycle);
+        b.put("setupFee", nzd(p.getSetupFee()));
+        return b;
+    }
+
+    private static java.math.BigDecimal nzd(java.math.BigDecimal v) { return v == null ? java.math.BigDecimal.ZERO : v; }
 }

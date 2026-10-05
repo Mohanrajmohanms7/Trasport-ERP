@@ -540,7 +540,14 @@ export class PlatformAdminComponent implements OnInit {
       billingPeriod: ['MONTHLY', Validators.required],
       maxUsers: [5, Validators.required],
       maxVehicles: [5, Validators.required],
-      maxInvoices: [50, Validators.required]
+      maxInvoices: [50, Validators.required],
+      maxBranches: [1],
+      priceYearly: [null],
+      extraVehiclePrice: [0],
+      extraUserPrice: [0],
+      extraBranchPrice: [0],
+      setupFee: [0],
+      tagline: ['']
     });
 
     this.passwordForm = this.fb.group({
