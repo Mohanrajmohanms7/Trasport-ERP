@@ -961,5 +961,37 @@ R=$(pa PUT plans/$STARTER "$BODY"); LIM=$(pa GET client-plans/$NCID | j "d['data
 BODY=$(echo "$BODY" | python3 -c "import sys,json;p=json.load(sys.stdin);p['maxVehicles']=10;print(json.dumps(p))"); pa PUT plans/$STARTER "$BODY" >/dev/null
 pa PUT client-plans/$NCID/extras '{"extraVehicles":0,"billingCycle":"MONTHLY"}' >/dev/null; pa PUT client-plans/$NCID '{"planId":'$ENT'}' >/dev/null
 
+
+# ---------------- Platform Admin review: security & consistency ----------------
+R=$(curl -s -X POST $API/auth/reset-password -H 'Content-Type: application/json' -d '{"username":"admin","token":"anything","newPassword":"Hack@12345Ab"}')
+C=$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"Admin@123"}')
+[ "$(echo "$R" | j "d['success']")" = "False" ] && [ "$C" = "200" ] && pass "public reset-password can no longer take over accounts" || fail "reset hole" "$(echo $R | cut -c1-160) login=$C"
+R=$(curl -s -X POST $API/auth/forgot-password -H 'Content-Type: application/json' -d '{"email":"nobody-xyz@example.com"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "forgot-password does not reveal unknown emails" || fail "forgot enum" "$(echo $R | cut -c1-160)"
+for i in 1 2 3 4 5; do curl -s -o /dev/null -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"tpm.admin","password":"Wrong@'$i'xx"}'; done
+R=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"tpm.admin","password":"Tpm@Secure2026"}')
+echo "$R" | grep -q "Too many wrong passwords" && pass "5 wrong passwords lock the account (correct password refused)" || fail "lockout" "$(echo $R | cut -c1-200)"
+TPMID=$($PSQL "SELECT id FROM app_users WHERE username='tpm.admin'")
+curl -s -X PUT "${H[@]}" $API/platform-admin/users/$TPMID/reset-password -d '{"newPassword":"Tpm@Reset2026"}' >/dev/null
+R=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"tpm.admin","password":"Tpm@Reset2026"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "admin password reset unlocks the account" || fail "unlock" "$(echo $R | cut -c1-160)"
+LH=$($PSQL "SELECT MAX(id) FROM login_history WHERE username='velan.admin'")
+C1=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/customers)
+curl -s -X POST "${H[@]}" $API/platform-admin/auth/sessions/$LH/logout >/dev/null
+C2=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/customers)
+[ "$C1" = "200" ] && [ "$C2" = "401" ] && pass "force logout ends the session immediately" || fail "force logout" "$C1 -> $C2"
+NT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"velan.admin","password":"Velan@2026"}' | j "d['data']['token']")
+[ "$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/customers)" = "200" ] && pass "user can sign in again after force logout" || fail "relogin" "x"
+curl -s -X PUT "${H[@]}" "$API/platform-admin/companies/$NCID/status?status=SUSPENDED" >/dev/null
+R=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"velan.admin","password":"Velan@2026"}'); B=$(curl -s -H "Authorization: Bearer $NT" $API/customers | j "d.get('message')")
+echo "$R" | grep -q "not active" && [ "$B" = "COMPANY_SUSPENDED" ] && pass "suspended client: login refused and open sessions blocked" || fail "suspend" "$(echo $R | cut -c1-160) / $B"
+curl -s -X PUT "${H[@]}" "$API/platform-admin/companies/$NCID/status?status=ACTIVE" >/dev/null
+[ "$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/customers)" = "200" ] && pass "re-activated client works again" || fail "reactivate" "x"
+ADMID=$($PSQL "SELECT id FROM app_users WHERE username='admin'"); PCO=$($PSQL "SELECT company_id FROM app_users WHERE username='admin'")
+R=$(curl -s -X PUT "${H[@]}" "$API/platform-admin/users/$ADMID/status?status=INACTIVE"); echo "$R" | grep -qi "own login\|only active platform admin" && pass "platform admin cannot deactivate themselves" || fail "self deactivate" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X DELETE "${H[@]}" "$API/platform-admin/companies/$PCO"); echo "$R" | grep -qi "platform admin login" && pass "platform's own company cannot be deleted" || fail "platform company" "$(echo $R | cut -c1-160)"
+[ "$(curl -s -o /dev/null -w "%{http_code}" -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"Admin@123"}')" = "200" ] && pass "platform admin still signs in" || fail "admin login" "x"
+R=$(curl -s -X POST "${H[@]}" $API/platform-admin/tenant-subscriptions -d '{"companyId":'$NCID',"plan":{"id":'$PRO'},"startDate":"'$(date +%F)'","endDate":"'$(date -d '+1 year' +%F)'","amountPaid":79990,"paymentMethod":"BANK_TRANSFER"}')
+PN=$(pa GET client-plans/$NCID | j "d['data']['planName']"); [ "$PN" = "Professional" ] && pass "recording a subscription updates the client's plan" || fail "tenant subscription" "$PN $(echo $R | cut -c1-160)"
+pa PUT client-plans/$NCID '{"planId":'$ENT'}' >/dev/null
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

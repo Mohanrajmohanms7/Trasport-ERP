@@ -62,7 +62,7 @@ export class ResetPasswordComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'Invalid username, token, or password policy.');
+        this.errorMessage.set(err.error?.errors?.[0] || err.error?.message || 'Invalid username, token, or password policy.');
       }
     });
   }

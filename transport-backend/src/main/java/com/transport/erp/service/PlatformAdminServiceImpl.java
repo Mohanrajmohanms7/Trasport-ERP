@@ -28,6 +28,9 @@ import java.util.*;
 @Transactional
 public class PlatformAdminServiceImpl implements PlatformAdminService {
 
+    @Autowired
+    private com.transport.erp.security.LoginAttemptService loginAttempts;
+
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.context.annotation.Lazy
     private SubscriptionPlanService subscriptionPlanService;
@@ -918,6 +921,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     public Company updateCompanyStatus(Long id, String status, String activeUser) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id " + id));
+        if (!"ACTIVE".equalsIgnoreCase(status)) guardPlatformCompany(id);
         company.setStatus(status);
         Company updated = companyRepository.save(company);
         
@@ -952,17 +956,22 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         company.setSubscriptionEndDate(companyDetails.getSubscriptionEndDate());
         company.setSubscriptionRenewalDate(companyDetails.getSubscriptionRenewalDate());
         company.setSubscriptionStatus(companyDetails.getSubscriptionStatus());
-        company.setMaxUsers(companyDetails.getMaxUsers());
-        company.setMaxVehicles(companyDetails.getMaxVehicles());
-        
-        if (companyDetails.getSubscriptionPlan() != null && companyDetails.getSubscriptionPlan().getId() != null) {
-            SaaSPlan plan = planRepository.findById(companyDetails.getSubscriptionPlan().getId()).orElse(null);
-            company.setSubscriptionPlan(plan);
-        } else {
-            company.setSubscriptionPlan(null);
+        Long newPlanId = companyDetails.getSubscriptionPlan() != null ? companyDetails.getSubscriptionPlan().getId() : null;
+        Long oldPlanId = company.getSubscriptionPlan() != null ? company.getSubscriptionPlan().getId() : null;
+        boolean planApplied = Boolean.TRUE.equals(company.getPlanEnforced());
+        if (!planApplied) {
+            // Legacy client: limits and plan as edited here.
+            company.setMaxUsers(companyDetails.getMaxUsers());
+            company.setMaxVehicles(companyDetails.getMaxVehicles());
+            if (newPlanId != null) company.setSubscriptionPlan(planRepository.findById(newPlanId).orElse(null));
         }
+        // With a plan applied, limits come from the plan + extras; a plan change goes through Client Plans (history, limits).
         
         Company updated = companyRepository.save(company);
+        if (planApplied && newPlanId != null && !newPlanId.equals(oldPlanId)) {
+            subscriptionPlanService.apply(id, newPlanId, "Changed from client edit", activeUser);
+            updated = companyRepository.findById(id).orElse(updated);
+        }
         auditService.log(activeUser, "UPDATE_COMPANY", "companies", id, null,
                 "Updated SaaS client details: " + updated.getName());
         return updated;
@@ -972,6 +981,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     public void deleteCompany(Long id, String activeUser) {
         Company company = companyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id " + id));
+        guardPlatformCompany(id);
         company.setIsDeleted(true);
         company.setStatus("INACTIVE");
         companyRepository.save(company);
@@ -1056,6 +1066,17 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         inv.setBillingPeriodEnd(sub.getEndDate());
         billingInvoiceRepository.save(inv);
 
+        // Keep the client in step with the subscription just recorded (plan, dates, status, limits, history).
+        companyRepository.findById(sub.getCompanyId()).ifPresent(co -> {
+            co.setSubscriptionStartDate(sub.getStartDate());
+            co.setSubscriptionEndDate(sub.getEndDate());
+            co.setSubscriptionRenewalDate(sub.getEndDate());
+            co.setSubscriptionStatus("ACTIVE");
+            companyRepository.saveAndFlush(co);
+            if (sub.getPlan() != null && sub.getPlan().getId() != null) {
+                subscriptionPlanService.apply(co.getId(), sub.getPlan().getId(), "Subscription recorded", activeUser);
+            }
+        });
         auditService.log(activeUser, "CREATE_TENANT_SUBSCRIPTION", "saas_tenant_subscriptions", saved.getId(), null,
                 "Provisioned subscription on plan: " + sub.getPlan().getName() + " for company: " + sub.getCompanyId());
         return saved;
@@ -1155,6 +1176,10 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     public AppUser updateUser(Long id, AppUser userDetails, String roleCode, String activeUser) {
         AppUser user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+        boolean deactivating = userDetails.getStatus() != null && !"ACTIVE".equalsIgnoreCase(userDetails.getStatus()) && "ACTIVE".equalsIgnoreCase(user.getStatus());
+        boolean losingPlatformRole = isPlatformAdmin(user) && roleCode != null && !roleCode.isBlank() && !"SUPER_ADMIN".equalsIgnoreCase(roleCode.trim());
+        guardPlatformAdminChange(user, deactivating, losingPlatformRole, activeUser);
+        boolean passwordChanged = userDetails.getPassword() != null && !userDetails.getPassword().trim().isEmpty();
 
         user.setName(userDetails.getName());
         user.setEmail(userDetails.getEmail());
@@ -1178,6 +1203,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         AppUser updated = userRepository.save(user);
         auditService.log(activeUser, "UPDATE_USER", "app_users", id, null,
                 "Updated details for user: " + updated.getUsername());
+        if (deactivating || losingPlatformRole || passwordChanged) loginAttempts.revokeSessions(user.getId());
         return updated;
     }
 
@@ -1185,11 +1211,14 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     public AppUser updateUserLockStatus(Long id, String status, String activeUser) {
         AppUser user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id " + id));
+        guardPlatformAdminChange(user, !"ACTIVE".equalsIgnoreCase(status) && "ACTIVE".equalsIgnoreCase(user.getStatus()), false, activeUser);
         user.setStatus(status);
         if ("ACTIVE".equals(status)) {
             user.setFailedLoginAttempts(0);
+            user.setLockedUntil(null);
         }
         AppUser updated = userRepository.save(user);
+        if (!"ACTIVE".equalsIgnoreCase(status)) loginAttempts.revokeSessions(user.getId());
         auditService.log(activeUser, "UPDATE_USER_STATUS", "app_users", id, null,
                 "Updated user lock status to: " + status + " for username: " + user.getUsername());
         return updated;
@@ -1201,7 +1230,10 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id " + id));
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setForcePasswordChange(true); // Password reset forces change on next login
+        user.setLockedUntil(null);
+        user.setFailedLoginAttempts(0);
         userRepository.save(user);
+        loginAttempts.revokeSessions(user.getId());   // old logins stop working
         auditService.log(activeUser, "RESET_USER_PASSWORD", "app_users", id, null,
                 "Reset password & forced change on next login for username: " + user.getUsername());
     }
@@ -1262,6 +1294,8 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Session not found with id: " + loginHistoryId));
         history.setLogoutTime(LocalDateTime.now());
         loginHistoryRepository.save(history);
+        // Really end the session: the user's tokens carry the old version and their refresh tokens are removed.
+        userRepository.findByUsernameAndIsDeletedFalse(history.getUsername()).ifPresent(u -> loginAttempts.revokeSessions(u.getId()));
 
         auditService.log(activeUser, "FORCE_LOGOUT_SESSION", "login_history", loginHistoryId, null,
                 "Forced logout active session for user: " + history.getUsername());
@@ -1462,5 +1496,39 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     @Transactional(readOnly = true)
     public Page<Trip> getTrips(Pageable pageable) {
         return tripRepository.findAll(pageable);
+    }
+
+    // ---------------------------------------------------------------- safety helpers (platform review)
+
+    private boolean isPlatformAdmin(AppUser u) {
+        return u.getRoles() != null && u.getRoles().stream().anyMatch(r -> "SUPER_ADMIN".equals(r.getCode()));
+    }
+
+    private long activePlatformAdminsExcept(Long userId) {
+        return userRepository.findAll().stream()
+                .filter(u -> !u.getId().equals(userId) && !Boolean.TRUE.equals(u.getIsDeleted()) && "ACTIVE".equalsIgnoreCase(u.getStatus()))
+                .filter(this::isPlatformAdmin).count();
+    }
+
+    /** The platform always keeps one active platform admin, and nobody can lock themselves out. */
+    private void guardPlatformAdminChange(AppUser target, boolean deactivating, boolean losingPlatformRole, String activeUser) {
+        if ((deactivating || losingPlatformRole) && target.getUsername().equalsIgnoreCase(activeUser)) {
+            throw new com.transport.erp.exception.BusinessValidationException("Own Account", "PLATFORM_SELF_LOCKOUT",
+                    "You cannot deactivate your own login or remove your own platform admin role.", "Ask another platform admin.");
+        }
+        if ((deactivating || losingPlatformRole) && isPlatformAdmin(target) && activePlatformAdminsExcept(target.getId()) == 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Last Platform Admin", "PLATFORM_LAST_ADMIN",
+                    target.getUsername() + " is the only active platform admin.", "Create another platform admin first.");
+        }
+    }
+
+    /** The company holding the platform admin logins cannot be suspended or deleted. */
+    private void guardPlatformCompany(Long companyId) {
+        boolean hosts = userRepository.findAll().stream()
+                .anyMatch(u -> companyId.equals(u.getCompanyId()) && !Boolean.TRUE.equals(u.getIsDeleted()) && isPlatformAdmin(u));
+        if (hosts) {
+            throw new com.transport.erp.exception.BusinessValidationException("Platform Company", "PLATFORM_COMPANY_PROTECTED",
+                    "This company holds the platform admin login(s) and cannot be suspended or deleted.", "Choose a client company.");
+        }
     }
 }
