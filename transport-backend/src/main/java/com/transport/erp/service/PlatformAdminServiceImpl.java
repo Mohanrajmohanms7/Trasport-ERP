@@ -1103,11 +1103,14 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     // 6. User Management
     @Override
     @Transactional(readOnly = true)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<AppUser> getAllUsers(String search, Pageable pageable) {
-        if (search != null && !search.isEmpty()) {
-            return userRepository.findByIsDeletedFalseAndUsernameContainingIgnoreCaseOrIsDeletedFalseAndEmailContainingIgnoreCase(search, search, pageable);
-        }
-        return userRepository.findByIsDeletedFalse(pageable);
+        Page<AppUser> page = (search != null && !search.isEmpty())
+                ? userRepository.findByIsDeletedFalseAndUsernameContainingIgnoreCaseOrIsDeletedFalseAndEmailContainingIgnoreCase(search, search, pageable)
+                : userRepository.findByIsDeletedFalse(pageable);
+        // Roles are lazy; load them here so the Users screen shows each login's role (was always empty).
+        page.getContent().forEach(u -> org.hibernate.Hibernate.initialize(u.getRoles()));
+        return page;
     }
 
     @Override

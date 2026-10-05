@@ -834,7 +834,7 @@ export class PlatformAdminComponent implements OnInit {
     if (!rows.length) {
       return false;
     }
-    this.plans.set(rows);
+    this.plans.set([...rows].sort((a: any, b: any) => (a.tier ?? 0) - (b.tier ?? 0)));
     return true;
   }
 
@@ -1209,6 +1209,16 @@ export class PlatformAdminComponent implements OnInit {
     });
   }
 
+  /** Client name for an id (lists show names, not database ids). */
+  coName(id: any): string {
+    if (id === null || id === undefined) return '—';
+    const c = this.companiesList().find((x: any) => x.id == id) || this.companies().find((x: any) => x.id == id);
+    return c ? (c.name + (c.shortName ? ' (' + c.shortName + ')' : '')) : 'Client #' + id;
+  }
+
+  /** 0 / empty limit = unlimited. */
+  lim(v: any): string { return v === null || v === undefined || Number(v) <= 0 ? 'Unlimited' : String(v); }
+
   savePlan(): void {
     if (this.planForm.invalid) return;
     this.loading.set(true);
@@ -1331,7 +1341,7 @@ export class PlatformAdminComponent implements OnInit {
     });
 
     // Load Companies for user selection form
-    this.platformService.getCompanies('', 'ACTIVE', 0, 1000).subscribe({
+    this.platformService.getCompanies('', '', 0, 1000).subscribe({
       next: (res) => {
         if (res.success) this.companiesList.set(res.data.content || []);
       }
