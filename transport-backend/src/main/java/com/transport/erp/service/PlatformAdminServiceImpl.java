@@ -1103,7 +1103,6 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
     // 6. User Management
     @Override
     @Transactional(readOnly = true)
-    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<AppUser> getAllUsers(String search, Pageable pageable) {
         Page<AppUser> page = (search != null && !search.isEmpty())
                 ? userRepository.findByIsDeletedFalseAndUsernameContainingIgnoreCaseOrIsDeletedFalseAndEmailContainingIgnoreCase(search, search, pageable)
