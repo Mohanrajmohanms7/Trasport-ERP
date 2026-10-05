@@ -113,8 +113,10 @@ public class TripService {
 
     public Page<Trip> getTripsReadyForBilling(Long companyId, Pageable pageable) {
         AppUser currentUser = tenantAccess.requireCurrentUser();
+        // Company admins work across every branch of their company (as on every other screen); only branch-level
+        // users are limited to their own branch. Before, company admins never saw other branches' trips to bill.
         Long targetBranchId = null;
-        if (!tenantAccess.isSuperAdmin(currentUser)) {
+        if (!tenantAccess.isSuperAdmin(currentUser) && !tenantAccess.isCompanyWideAdmin(currentUser)) {
             targetBranchId = currentUser.getBranchId();
         }
         Page<Trip> trips = tripRepository.findCompletedTripsReadyForBilling(companyId, targetBranchId, pageable);

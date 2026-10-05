@@ -961,5 +961,19 @@ R=$(pa PUT plans/$STARTER "$BODY"); LIM=$(pa GET client-plans/$NCID | j "d['data
 BODY=$(echo "$BODY" | python3 -c "import sys,json;p=json.load(sys.stdin);p['maxVehicles']=10;print(json.dumps(p))"); pa PUT plans/$STARTER "$BODY" >/dev/null
 pa PUT client-plans/$NCID/extras '{"extraVehicles":0,"billingCycle":"MONTHLY"}' >/dev/null; pa PUT client-plans/$NCID '{"planId":'$ENT'}' >/dev/null
 
+# ---------------- Speed + multi-branch billing ----------------
+H2=$(curl -s -o /dev/null -D - -H "Authorization: Bearer $TC" -H "Accept-Encoding: gzip" "$API/trips?size=50" | tr -d '\r' | grep -i "^content-encoding:" | awk '{print tolower($2)}')
+[ "$H2" = "gzip" ] && pass "API responses are gzip-compressed" || fail "gzip" "content-encoding=$H2"
+R=$(api POST /branches '{"code":"BB-'$RANDOM'","name":"Billing Branch Two","gstNumber":"33ABCDE1234F1Z5","status":"ACTIVE"}'); BB2=$(echo "$R" | j "d['data']['id']")
+BT=$($PSQL "SELECT t.id FROM trips t WHERE t.company_id=$CI2 AND t.status='COMPLETED' AND t.is_deleted=false AND NOT EXISTS (SELECT 1 FROM sales_invoice_details d JOIN sales_invoices i ON i.id=d.invoice_id WHERE d.trip_id=t.id AND i.is_deleted=false AND i.status<>'CANCELLED') ORDER BY t.id LIMIT 1")
+if [ -n "$BT" ] && [ -n "$BB2" ] && [ "$BB2" != "None" ]; then
+  BTB=$($PSQL "SELECT branch_id FROM trips WHERE id=$BT"); $PSQL "UPDATE trips SET branch_id=$BB2 WHERE id=$BT" >/dev/null
+  MAINB=$($PSQL "SELECT id FROM branches WHERE company_id=$CI2 AND id<>$BB2 AND is_deleted=false ORDER BY id LIMIT 1")
+  OPB=$($PSQL "SELECT branch_id FROM app_users WHERE username='op1'"); $PSQL "UPDATE app_users SET branch_id=$MAINB WHERE username='op1'" >/dev/null
+  R=$(api GET "/trips/ready-for-billing?size=500"); echo "$R" | j "'ok' if $BT in [t['id'] for t in d['data']['content']] else 'no'" | grep -q ok && pass "company admin sees other branches' trips ready for billing" || fail "billing all branches" "trip $BT"
+  R=$(curl -s -H "Authorization: Bearer $TO" "$API/trips/ready-for-billing?size=500"); echo "$R" | j "'ok' if $BT not in [t['id'] for t in d['data']['content']] else 'no'" | grep -q ok && pass "branch user does not see another branch's trips" || fail "billing branch scope" "trip $BT"
+  $PSQL "UPDATE trips SET branch_id=${BTB:-NULL} WHERE id=$BT" >/dev/null; $PSQL "UPDATE app_users SET branch_id=${OPB:-NULL} WHERE username='op1'" >/dev/null
+else fail "billing branch setup" "trip=$BT branch=$BB2"; fi
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
