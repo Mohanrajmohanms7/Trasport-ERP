@@ -130,5 +130,14 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     Page<Trip> searchForPicker(@Param("companyId") Long companyId, @Param("q") String q,
                                @Param("billable") boolean billable, Pageable pageable);
+
+    /** Lists: one company, optional branch (null = all branches) and optional status. */
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM Trip e WHERE e.companyId = :companyId AND e.isDeleted = false "
+            + "AND (:branchId IS NULL OR e.branchId = :branchId) AND (:status IS NULL OR e.status = :status)")
+    org.springframework.data.domain.Page<com.transport.erp.model.Trip> findForList(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            org.springframework.data.domain.Pageable pageable);
 }
 

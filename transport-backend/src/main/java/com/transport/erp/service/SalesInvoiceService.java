@@ -100,10 +100,7 @@ public class SalesInvoiceService {
 
 
     public Page<SalesInvoice> getInvoices(Long companyId, String status, Pageable pageable) {
-        if (status != null && !status.trim().isEmpty()) {
-            return invoiceRepository.findByCompanyIdAndIsDeletedFalseAndStatus(companyId, status, pageable);
-        }
-        return invoiceRepository.findByCompanyIdAndIsDeletedFalse(companyId, pageable);
+        return invoiceRepository.findForList(companyId, tenantAccess.listBranchScope(), (status == null || status.trim().isEmpty() ? null : status.trim()), pageable);
     }
 
     public SalesInvoice getInvoiceById(Long id) {
@@ -111,6 +108,7 @@ public class SalesInvoiceService {
                 .filter(i -> !Boolean.TRUE.equals(i.getIsDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Invoice not found: " + id));
         tenantAccess.assertOwned(invoice.getCompanyId());
+        tenantAccess.assertBranchVisible(invoice.getBranchId());
         return invoice;
     }
 

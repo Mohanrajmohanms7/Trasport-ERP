@@ -48,4 +48,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
               AND e.status IN ('APPROVED', 'PAID') AND e.expenseDate BETWEEN :fromDate AND :toDate
             """)
     BigDecimal sumDriverBata(@Param("driverId") Long driverId, @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
+
+    /** Lists: one company, optional branch (null = all branches) and optional status. */
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM Expense e WHERE e.companyId = :companyId AND e.isDeleted = false "
+            + "AND (:branchId IS NULL OR e.branchId = :branchId) AND (:status IS NULL OR e.status = :status)")
+    org.springframework.data.domain.Page<com.transport.erp.model.Expense> findForList(
+            @org.springframework.data.repository.query.Param("companyId") Long companyId,
+            @org.springframework.data.repository.query.Param("branchId") Long branchId,
+            @org.springframework.data.repository.query.Param("status") String status,
+            org.springframework.data.domain.Pageable pageable);
 }
