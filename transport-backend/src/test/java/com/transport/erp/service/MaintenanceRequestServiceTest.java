@@ -361,7 +361,8 @@ class MaintenanceRequestServiceTest {
         stubUser(admin, false);
         when(driverAuthorization.isDriverRole(admin)).thenReturn(false);
         when(tenantAccess.resolveCompanyId(null)).thenReturn(1L);
-        when(requestRepository.searchIds(eq(1L), isNull(), isNull(), isNull(), isNull(), any(), any(), eq(1L), any()))
+        // Company-wide admin: every branch (no branch filter).
+        when(requestRepository.searchIds(eq(1L), isNull(), isNull(), isNull(), isNull(), any(), any(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(12L)));
         MaintenanceRequest row = openRow();
         when(requestRepository.findDetailsByIds(List.of(12L))).thenReturn(List.of(row));

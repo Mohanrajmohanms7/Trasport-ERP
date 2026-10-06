@@ -406,7 +406,8 @@ class WorkOrderServiceTest {
         when(workOrderRepository.searchIds(eq(COMPANY), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
         service.list(null, null, null, null, null, OTHER_COMPANY, PageRequest.of(0, 20));
-        verify(workOrderRepository).searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(1L), any());
+        // Company admins are company-wide: no branch filter (branch users are limited; covered by the smoke flow review).
+        verify(workOrderRepository).searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), isNull(), any());
     }
 
     @Test
@@ -557,7 +558,7 @@ class WorkOrderServiceTest {
         second.setId(11L);
         second.setName("Second");
         Pageable request = PageRequest.of(0, 20);
-        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(1L), any()))
+        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
                 .thenReturn(new PageImpl<>(List.of(10L, 11L), request, 2));
         when(workOrderRepository.findDetailsByIds(List.of(10L, 11L))).thenReturn(List.of(second, first));
 
