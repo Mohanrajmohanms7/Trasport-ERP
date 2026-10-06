@@ -4,6 +4,7 @@
     class="ff-sidebar"
     [class.ff-sidebar--left]="position() === 'left'"
     [style.width]="width()"
+    [style.max-width]="'100vw'"
     role="dialog"
     [attr.aria-label]="title() || 'Sidebar'">
     <header class="ff-sidebar__header">
