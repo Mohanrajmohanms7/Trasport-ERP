@@ -104,3 +104,14 @@ per month, included trucks / logins / branches (0 = unlimited). Edit in Platform
 limits updates every client on that plan. Per client (Client Plans → Manage): extra trucks / logins / branches and billing cycle
 (monthly / yearly); limits = plan + extras; the screen shows what the client pays per cycle. Payment collection is manual for now.
 Seeded starting prices (INR/month): Starter 1,499 · Growth 3,499 · Professional 7,999 · Enterprise from 14,999 · Trial free.
+
+
+## Login & session protection (V83)
+- 5 wrong passwords in a row lock the login for 15 minutes (`LoginAttemptService`); an admin password reset unlocks it.
+- Sessions carry a version (`app_users.token_version`, JWT claim `tv`). Force logout, admin password reset, deactivation or
+  role loss bump it, so existing logins stop at once; refresh tokens are removed too.
+- Suspended / deleted clients: login refused and every request answers 403 `COMPANY_SUSPENDED` (platform admins excluded).
+- `/auth/reset-password` refuses resets without an emailed token (none exist yet) — admins reset passwords instead.
+  `/auth/forgot-password` never reveals whether an email is registered.
+- Platform Admin cannot deactivate or demote themselves, the last active platform admin is protected, and the company that
+  holds platform admin logins cannot be suspended or deleted.

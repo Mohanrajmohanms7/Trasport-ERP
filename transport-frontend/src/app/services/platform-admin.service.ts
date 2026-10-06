@@ -15,6 +15,14 @@ export interface PlatformStats {
 }
 
 export interface SaaSPlan {
+  priceYearly?: number | null;
+  maxBranches?: number | null;
+  tier?: number;
+  tagline?: string | null;
+  extraVehiclePrice?: number;
+  extraUserPrice?: number;
+  extraBranchPrice?: number;
+  setupFee?: number;
   id?: number;
   code: string;
   name: string;

@@ -37,6 +37,9 @@ import java.util.Optional;
 public class AuthService {
 
     @Autowired
+    private com.transport.erp.security.LoginAttemptService loginAttempts;
+
+    @Autowired
     private AuthenticationManager authenticationManager;
 
     @Autowired
@@ -73,6 +76,7 @@ public class AuthService {
     public Map<String, Object> login(String username, String password, String ipAddress, String userAgent) {
         Map<String, Object> response = new HashMap<>();
         final String cleanUsername = (username != null) ? username.trim() : null;
+        if (cleanUsername != null) loginAttempts.assertNotLocked(cleanUsername);
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(cleanUsername, password));
@@ -86,6 +90,16 @@ public class AuthService {
             if (!"ACTIVE".equals(user.getStatus())) {
                 throw new IllegalArgumentException("User account is inactive.");
             }
+            // A suspended or removed client cannot log in (platform admins are not tied to a client).
+            boolean platformAdmin = user.getRoles() != null && user.getRoles().stream().anyMatch(r -> "SUPER_ADMIN".equals(r.getCode()));
+            if (!platformAdmin && user.getCompanyId() != null) {
+                Company co = companyRepository.findById(user.getCompanyId()).orElse(null);
+                if (co == null || Boolean.TRUE.equals(co.getIsDeleted()) || !"ACTIVE".equalsIgnoreCase(String.valueOf(co.getStatus()))) {
+                    throw new com.transport.erp.exception.BusinessValidationException("Company Suspended", "COMPANY_SUSPENDED",
+                            "Your company account is not active.", "Contact TransaFlow support.");
+                }
+            }
+            loginAttempts.recordSuccess(cleanUsername);
 
             boolean subscriptionExpired = false;
             if (user.getCompanyId() != null) {
@@ -116,6 +130,7 @@ public class AuthService {
             if (user.getBranchId() != null) {
                 tokenClaims.put("branchId", user.getBranchId());
             }
+            tokenClaims.put("tv", loginAttempts.tokenVersion(user.getId()));
             String jwtToken = jwtUtil.generateToken(tokenClaims, userDetails.getUsername());
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
@@ -137,12 +152,15 @@ public class AuthService {
 
             return response;
         } catch (BadCredentialsException e) {
+            if (cleanUsername != null) loginAttempts.recordFailure(cleanUsername);
             Optional<AppUser> userOpt = userRepository.findByUsernameAndIsDeletedFalse(cleanUsername);
             userOpt.ifPresent(appUser -> logLoginHistory(appUser, cleanUsername, ipAddress, userAgent, "FAILED"));
             throw e;
         } catch (IllegalArgumentException e) {
             Optional<AppUser> userOpt = userRepository.findByUsernameAndIsDeletedFalse(cleanUsername);
             userOpt.ifPresent(appUser -> logLoginHistory(appUser, cleanUsername, ipAddress, userAgent, "FAILED"));
+            throw e;
+        } catch (com.transport.erp.exception.BusinessValidationException e) {
             throw e;
         } catch (Exception e) {
             Optional<AppUser> userOpt = userRepository.findByUsernameAndIsDeletedFalse(cleanUsername);
@@ -172,6 +190,7 @@ public class AuthService {
                     if (user.getBranchId() != null) {
                         tokenClaims.put("branchId", user.getBranchId());
                     }
+                    tokenClaims.put("tv", loginAttempts.tokenVersion(user.getId()));
                     String token = jwtUtil.generateToken(tokenClaims, user.getUsername());
                     Map<String, String> tokens = new HashMap<>();
                     tokens.put("token", token);
@@ -184,10 +203,11 @@ public class AuthService {
     @Transactional
     public void forgotPassword(String email) {
         // Find user by email
+        // Never reveal whether an email is registered.
         AppUser user = userRepository.findAll().stream()
-                .filter(u -> email.equalsIgnoreCase(u.getEmail()) && !u.getIsDeleted())
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No active user associated with email: " + email));
+                .filter(u -> email != null && email.equalsIgnoreCase(u.getEmail()) && !u.getIsDeleted())
+                .findFirst().orElse(null);
+        if (user == null) return;
 
         // In real system, send email with token. Here we create a log entry and placeholder.
         auditService.log(user.getUsername(), "FORGOT_PASSWORD_REQUEST", "app_users", user.getId(), null,
@@ -196,6 +216,12 @@ public class AuthService {
 
     @Transactional
     public void resetPassword(String username, String token, String newPassword) {
+        // There is no emailed reset token yet, so a reset without one would let anyone take over any account.
+        // Passwords are reset by an administrator (Users & Roles / Platform Admin) until email reset is built.
+        if (true) {
+            throw new com.transport.erp.exception.BusinessValidationException("Reset Not Available", "PASSWORD_RESET_DISABLED",
+                    "Password reset by link is not available yet.", "Ask your company admin (or TransaFlow support) to reset your password.");
+        }
         // Find user
         AppUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));

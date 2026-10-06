@@ -37,6 +37,14 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(err => {
+      // Session ended (force logout, password reset by admin, deactivated) or client suspended: back to login.
+      const isAuthCall = req.url.includes('/api/v1/auth/login') || req.url.includes('/api/v1/auth/refresh');
+      if (!isAuthCall && (err.status === 401 || (err.status === 403 && err.error?.message === 'COMPANY_SUSPENDED')) && localStorage.getItem('token')) {
+        const msg = err.status === 401 ? 'Your session has ended. Please sign in again.' : (err.error?.errors?.[0] || 'Your company account is not active.');
+        ['token', 'refreshToken', 'forcePasswordChange'].forEach(k => localStorage.removeItem(k));
+        notify.error(msg);
+        router.navigate(['/login']);
+      }
       if (err.status === 403 && err.error?.message === 'FEATURE_DISABLED') {
         notify.error(err.error?.errors?.[0] || 'This feature is not included in your subscription.');
       }

@@ -51,6 +51,7 @@ class AuthServiceLoginTest {
     @Mock private SaaSLicenseRepository licenseRepository;
     @Mock private AuditService auditService;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private com.transport.erp.security.LoginAttemptService loginAttempts;
 
     @InjectMocks
     private AuthService authService;
