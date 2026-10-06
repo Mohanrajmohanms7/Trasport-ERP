@@ -665,7 +665,7 @@ form.ff-submitted textarea:invalid { border-color: #dc2626 !important; box-shado
 /* ---- Responsive (phones < 640 px): pinned row actions stay compact so the row data stays visible ----
    Labelled buttons (Approve / Reject / Close …) show their icon only; the accessible name is unchanged. */
 @media (max-width: 639.98px) {
-  table.ff-sticky-actions > tbody > tr > td:last-child { width: 1%; max-width: 52vw; white-space: normal; }
+  table.ff-sticky-actions > tbody > tr > td:last-child { width: 1%; min-width: 96px; max-width: 52vw; white-space: normal; }  /* two icons per line, not one: rows stay short */
   table.ff-sticky-actions > tbody > tr > td:last-child > * { flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
   table.ff-sticky-actions > tbody > tr > td:last-child button { font-size: 0; gap: 0; padding-left: 8px; padding-right: 8px; }
   table.ff-sticky-actions > tbody > tr > td:last-child button .material-icons,
