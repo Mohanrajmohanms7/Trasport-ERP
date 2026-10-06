@@ -81,6 +81,8 @@ class MaintenanceRequestServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Mockito would answer 0 for an unstubbed Long; null = company-wide (the admins these tests use).
+        org.mockito.Mockito.lenient().when(tenantAccess.listBranchScope()).thenReturn(null);
         admin = user(1L, "admin", 1L, 1L, "COMPANY_ADMIN");
         driverUser = user(4L, "ram", 1L, 1L, "DRIVER");
         vehicle = vehicle(5L, 1L, 1L, new BigDecimal("42500"));

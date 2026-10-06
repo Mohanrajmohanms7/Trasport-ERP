@@ -112,6 +112,8 @@ class WorkOrderServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Mockito would answer 0 for an unstubbed Long; null = company-wide (the admins these tests use).
+        org.mockito.Mockito.lenient().when(tenantAccess.listBranchScope()).thenReturn(null);
         companyAdmin = user("admin", COMPANY, 1L, "COMPANY_ADMIN");
         stubTenant(companyAdmin, false);
         when(workOrderRepository.saveAndFlush(any())).thenAnswer(inv -> {
