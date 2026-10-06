@@ -20,7 +20,7 @@ const VIEWPORTS = [
   ['phone', { width: 360, height: 780 }], ['phone-land', { width: 780, height: 360 }],
   ['tablet', { width: 768, height: 1024 }], ['tablet-land', { width: 1024, height: 768 }], ['desktop', { width: 1440, height: 900 }]
 ];
-const SHOT = new Set(['phone', 'tablet']);
+const SHOT = new Set(['phone', 'phone-land', 'tablet']);
 fs.mkdirSync('shots/responsive', { recursive: true });
 
 const browser = await chromium.launch();
@@ -86,31 +86,65 @@ async function audit(session, route, vpName, vp, idx) {
     await pg.waitForTimeout(700);
     rec.page = await pg.evaluate(measure, null);
     if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/\//g, '_')}.png` });
-    // Main add / new popup (phone + tablet portrait only)
-    if (vpName === 'phone' || vpName === 'tablet') {
-      const btn = pg.locator('button:visible').filter({ hasText: /^\s*(\+\s*)?(add|new|register|create|plan|record|report an issue|upload)\b/i }).first();
-      if (await btn.count()) {
-        rec.dialogButton = ((await btn.textContent()) || '').trim().slice(0, 40);
-        await btn.click({ timeout: 4000 }).catch(() => {});
-        await pg.waitForTimeout(800);
-        const sel = await pg.evaluate(() => {
-          const c = [...document.querySelectorAll('[role=dialog], .cdk-overlay-pane, app-master-form-dialog > div, app-quick-create > div, .fixed.inset-0')]
-            .filter(e => e.getBoundingClientRect().width > 0);
-          const el = c[c.length - 1];
-          if (!el) return null;
-          el.setAttribute('data-ra-dialog', '1');
-          const box = (el.matches('.fixed.inset-0') && el.firstElementChild) ? el.firstElementChild : el;
-          const r = box.getBoundingClientRect();
-          const scroller = [box, ...box.querySelectorAll('*')].find(x => { const s = getComputedStyle(x); return (s.overflowY === 'auto' || s.overflowY === 'scroll') && x.scrollHeight > x.clientHeight; });
-          return { left: Math.round(r.left), right: Math.round(r.right), top: Math.round(r.top), bottom: Math.round(r.bottom),
-            fitsWidth: r.left >= -1 && r.right <= innerWidth + 1, fitsHeight: r.top >= -1 && (r.bottom <= innerHeight + 1 || !!scroller),
-            scrolls: !!scroller };
-        });
-        if (sel) {
-          rec.dialog = { ...sel, inner: await pg.evaluate(measure, '[data-ra-dialog]') };
-          if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/\//g, '_')}-dialog.png` });
+    // Row actions reachable: the actions cell of the first row of every list table must be on-screen (phone / tablet).
+    if (vpName !== 'desktop') {
+      rec.actions = await pg.evaluate(() => {
+        const t = [...document.querySelectorAll('table.ff-sticky-actions')].filter(x => x.getBoundingClientRect().width > 0);
+        let hidden = 0, total = 0;
+        for (const tb of t) {
+          const cell = tb.querySelector('tbody tr td:last-child');
+          if (!cell || !cell.querySelector('button, a')) continue;
+          total++;
+          const r = cell.getBoundingClientRect();
+          if (r.right > innerWidth + 1 || r.left < -1) hidden++;
         }
+        return { total, hidden };
+      });
+    }
+    // Popups: main add / new popup and the first row's edit popup, portrait and landscape; first dropdown inside.
+    const dialogProbe = async (kind, opener) => {
+      const btn = opener();
+      if (!(await btn.count())) return;
+      const label = ((await btn.textContent()) || (await btn.getAttribute('title')) || '').trim().slice(0, 40);
+      await btn.click({ timeout: 4000 }).catch(() => {});
+      await pg.waitForTimeout(900);
+      const sel = await pg.evaluate(() => {
+        document.querySelectorAll('[data-ra-dialog]').forEach(e => e.removeAttribute('data-ra-dialog'));
+        const c = [...document.querySelectorAll('[role=dialog], .cdk-overlay-pane, app-master-form-dialog > div, app-quick-create > div, .fixed.inset-0')]
+          .filter(e => e.getBoundingClientRect().width > 0);
+        const el = c[c.length - 1];
+        if (!el) return null;
+        el.setAttribute('data-ra-dialog', '1');
+        const box = (el.matches('.fixed.inset-0') && el.firstElementChild) ? el.firstElementChild : el;
+        const r = box.getBoundingClientRect();
+        const scroller = [el, box, ...box.querySelectorAll('*')].find(x => { const s = getComputedStyle(x); return (s.overflowY === 'auto' || s.overflowY === 'scroll') && x.scrollHeight > x.clientHeight; });
+        return { left: Math.round(r.left), right: Math.round(r.right), top: Math.round(r.top), bottom: Math.round(r.bottom),
+          fitsWidth: r.left >= -1 && r.right <= innerWidth + 1, fitsHeight: r.top >= -1 && (r.bottom <= innerHeight + 1 || !!scroller), scrolls: !!scroller };
+      });
+      if (!sel) return;
+      const out = { kind, button: label, ...sel, inner: await pg.evaluate(measure, '[data-ra-dialog]') };
+      // first dropdown inside the popup: its option panel must fit on screen
+      const dd = pg.locator('[data-ra-dialog] ff-dropdown .ff-dd__trigger').first();
+      if (await dd.count()) {
+        await dd.click({ timeout: 3000 }).catch(() => {}); await pg.waitForTimeout(400);
+        out.dropdown = await pg.evaluate(() => {
+          const p = [...document.querySelectorAll('.ff-dd__panel, .ff-dd__list')].find(e => e.getBoundingClientRect().height > 0);
+          if (!p) return null;
+          const r = p.getBoundingClientRect();
+          return { fits: r.left >= -1 && r.right <= innerWidth + 1 && r.top >= -1 && r.bottom <= innerHeight + 1, top: Math.round(r.top), bottom: Math.round(r.bottom) };
+        });
+        await pg.keyboard.press('Escape').catch(() => {});
       }
+      (rec.dialogs = rec.dialogs || []).push(out);
+      if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/\//g, '_')}-${kind}.png` });
+      await pg.keyboard.press('Escape').catch(() => {});
+      await pg.locator('button:visible').filter({ hasText: /^\s*(close|cancel)\s*$/i }).first().click({ timeout: 1500 }).catch(() => {});
+      await pg.goto(`${APP}/${route}`, { waitUntil: 'networkidle', timeout: 25000 }).catch(() => {}); await pg.waitForTimeout(500);
+    };
+    if (vpName !== 'desktop') {
+      await dialogProbe('add', () => pg.locator('button:visible:not(table *)').filter({ hasText: /(add|new|register|create|plan dispatch|record|upload)/i })
+        .filter({ hasNotText: /excel|pdf|export|filter|report an issue/i }).first());
+      await dialogProbe('edit', () => pg.locator('table tbody tr:first-child td:last-child button:visible').filter({ hasText: /edit/i }).first());
     }
   } catch (e) { rec.error = e.message.slice(0, 160); }
   if (errors.length) rec.pageErrors = errors.slice(0, 3);
@@ -125,5 +159,5 @@ await browser.close();
 fs.writeFileSync('shots/responsive/audit.json', JSON.stringify(results, null, 1));
 
 // Short summary for the CI log
-const bad = results.filter(r => r.page && (r.page.offscreenCount || r.page.clippedCount || r.page.pageOverflowX) || r.dialog && (!r.dialog.fitsWidth || !r.dialog.fitsHeight || r.dialog.inner?.offscreenCount));
+const bad = results.filter(r => r.page && (r.page.offscreenCount || r.page.clippedCount || r.page.pageOverflowX) || (r.actions && r.actions.hidden) || (r.dialogs || []).some(d => !d.fitsWidth || !d.fitsHeight || d.inner?.offscreenCount || (d.dropdown && !d.dropdown.fits)));
 console.log(`RESPONSIVE audited ${results.length} screen×size, ${bad.length} with problems; ${results.filter(r => r.error).length} errors`);

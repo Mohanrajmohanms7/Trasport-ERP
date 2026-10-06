@@ -47,7 +47,7 @@
         </div>
 
         <div class="flex-1 min-h-0 overflow-auto rounded-[10px] bg-[var(--ff-surface-card)]">
-          <table class="w-full text-left text-xs border-collapse">
+          <table class="ff-sticky-actions w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-wider font-bold">
                 <th class="p-4">Receipt Number</th>
@@ -278,7 +278,7 @@
                 <input class="h-8 w-48 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-xs" placeholder="Search customer" [value]="dashCustomerSearch()" (input)="dashCustomerSearch.set($any($event.target).value)" />
               </div>
               <div class="overflow-auto">
-                <table class="w-full text-xs">
+                <table class="ff-sticky-actions w-full text-xs">
                   <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] text-left">
                     <th class="p-2">Customer</th><th class="p-2 text-right">Billed</th><th class="p-2 text-right">Paid</th><th class="p-2 text-right">Due</th><th class="p-2 text-right">Advance</th><th class="p-2">Last paid</th><th class="p-2"></th>
                   </tr></thead>

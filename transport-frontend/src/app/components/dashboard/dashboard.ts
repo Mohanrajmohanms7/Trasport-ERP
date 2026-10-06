@@ -68,6 +68,10 @@ import { FfStatusBadgeComponent, FfStatusColor } from '@ff/ui';
         font-variant-numeric: tabular-nums;
         color: var(--ff-text-primary);
       }
+      /* Responsive: long amounts (₹12,34,56,789) wrap and scale instead of being cut off on phones / tablets. */
+      .dash-kpi { min-width: 0; }
+      .dash-kpi-value { overflow-wrap: anywhere; min-width: 0; }
+      @media (max-width: 1023.98px) { .dash-kpi-value { font-size: clamp(1.15rem, 5.2vw, 1.6rem); } }
       .dash-kpi-sub {
         font-size: 10px;
         font-weight: 600;
