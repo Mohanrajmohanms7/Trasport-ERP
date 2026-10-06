@@ -1071,11 +1071,11 @@ if [ -n "$DI" ]; then
   C=$(code "$NT" GET "/dashboard/admin?branchId=$F3B"); if [ "$C" = "200" ]; then V=$(j "d['data']['pendingPayments']" < /tmp/fr.json); python3 -c "import sys; sys.exit(0 if abs(float('$V')-float('$DX'))>0.001 or float('$DX')==0 else 1)" && pass "dashboard: another company cannot use this company's branch" || fail "dashboard other company" "$V"; else pass "dashboard: another company refused ($C)"; fi
   $PSQL "UPDATE sales_invoices SET branch_id=$DIB WHERE id=$DI" >/dev/null
 else echo "SKIP dashboard branch (no pending invoice)"; fi
-# fuel: copy one PKC demo fuel entry into this company so fuel gets the branch checks too
-PKCC=$($PSQL "SELECT company_id FROM app_users WHERE username='pkc.admin'"); V1=$($PSQL "SELECT id FROM vehicles WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")
-$PSQL "CREATE TEMP TABLE fx AS SELECT * FROM fuel_entries WHERE company_id=$PKCC ORDER BY id LIMIT 1;
-UPDATE fx SET id=nextval(pg_get_serial_sequence('fuel_entries','id')), company_id=$CI2, branch_id=$F3B, vehicle_id=$V1, driver_id=NULL, trip_id=NULL, fuel_request_id=NULL;
-INSERT INTO fuel_entries SELECT * FROM fx;" >/dev/null 2>&1
+# fuel: create one entry through the API (as the demo loader does), then move it to the other branch
+V1=$($PSQL "SELECT id FROM vehicles WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")
+ODO=$((100000 + RANDOM))
+R=$(api POST /fuel '{"vehicle":{"id":'$V1'},"fuelDate":"'$(date +%F)'","fuelStation":"Flow Review Fuels","fuelQuantity":10,"ratePerLitre":92.4,"totalAmount":924,"paymentMethod":"CASH","invoiceNumber":"FR-'$RANDOM'","previousOdometer":'$ODO',"currentOdometer":'$((ODO+50))'}')
+FEN=$(echo "$R" | j "d['data']['id']" 2>/dev/null); [ -n "$FEN" ] && [ "$FEN" != "None" ] && $PSQL "UPDATE fuel_entries SET branch_id=$F3B WHERE id=$FEN" >/dev/null || echo "fuel create: $(echo $R | cut -c1-200)"
 FE=$($PSQL "SELECT id FROM fuel_entries WHERE company_id=$CI2 AND branch_id=$F3B ORDER BY id DESC LIMIT 1")
 if [ -n "$FE" ]; then
   L=$(curl -s -H "Authorization: Bearer $TO" "$API/fuel?size=1000" | ids); case " $L " in *" $FE "*) fail "F3 branch user list fuel" "sees $FE";; *) pass "F3 branch user list hides other branch: fuel";; esac
