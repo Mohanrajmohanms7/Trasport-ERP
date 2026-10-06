@@ -83,6 +83,8 @@ jobs:
           for i in $(seq 1 120); do curl -s localhost:4200 >/dev/null && break; sleep 3; done
           cd .. && mkdir -p shots /tmp/pw && cp .ci/shots.mjs /tmp/pw/ && cd /tmp/pw && npm init -y >/dev/null && npm i playwright@1 2>&1 | tail -3 && npx playwright install --with-deps chromium 2>&1 | tail -3
           ROUTES="$(cat $GITHUB_WORKSPACE/.ci/routes.txt 2>/dev/null || echo driver-payroll)" node shots.mjs 2>&1 | grep -v '^+' | head -60 | tee -a /tmp/boot.log
+          # Responsive audit: every screen at phone / tablet / desktop sizes -> shots/responsive/audit.json
+          cp $GITHUB_WORKSPACE/.ci/responsive.mjs /tmp/pw/ && ROUTES_TS=$GITHUB_WORKSPACE/transport-frontend/src/app/app.routes.ts node responsive.mjs 2>&1 | grep -v '^+' | tail -5 | tee -a /tmp/boot.log
           cd $GITHUB_WORKSPACE && mv /tmp/pw/shots/* shots/ 2>/dev/null; ls -la shots
           git config user.name ci && git config user.email ci@example.com
           git checkout --orphan ci/screens-out && git rm -rqf --cached . && git add shots && git commit -qm shots && git push -f origin HEAD:${GITHUB_REF_NAME}-out
