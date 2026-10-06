@@ -54,7 +54,7 @@
     <div class="h-full min-h-0 bg-[var(--ff-surface-card)] rounded-[10px] border border-[var(--ff-border-default)] overflow-hidden shadow-sm flex flex-col">
       <!-- AG Grid/Table emulation -->
       <div class="flex-1 min-h-0 overflow-auto">
-        <table mat-table [dataSource]="activeData()" class="w-full text-left border-collapse bg-[var(--ff-surface-card)]">
+        <table mat-table [dataSource]="activeData()" class="ff-sticky-actions w-full text-left border-collapse bg-[var(--ff-surface-card)]">
           
           <!-- Code Column -->
           <ng-container matColumnDef="code">

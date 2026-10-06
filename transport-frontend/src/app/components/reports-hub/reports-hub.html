@@ -92,7 +92,7 @@
             @if (has('days')) {
               <label class="rh-field">Due within (days)<input type="number" min="0" class="rh-input" placeholder="30" [(ngModel)]="f['days']" /></label>
             }
-            <div class="flex gap-2 col-span-2 md:col-span-1">
+            <div class="flex gap-2 col-span-2 xl:col-span-1">
               <button type="button" class="rh-btn rh-btn-primary flex-1 justify-center" (click)="run()"><span class="material-icons text-base">play_arrow</span>Run</button>
               <button type="button" class="rh-btn rh-btn-ghost" (click)="clearFilters()" title="Clear filters"><span class="material-icons text-base">filter_alt_off</span></button>
             </div>
@@ -114,7 +114,7 @@
                 }
               </div>
             } @else {
-              <table class="rh-table">
+              <table class="ff-sticky-actions rh-table">
                 <thead><tr>@for (c of res.columns; track c.key) { <th [class.num]="isNum(c)">{{ c.label }}</th> }</tr></thead>
                 <tbody>
                   @for (row of res.rows; track $index) {

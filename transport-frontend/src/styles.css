@@ -635,3 +635,47 @@ form.ff-submitted textarea:invalid { border-color: #dc2626 !important; box-shado
 .st-note { background: #fffbeb; border: 1px dashed #f59e0b; }
 .dark .st-support, [data-theme="dark"] .st-support { background: #172554; border-color: #1e3a8a; }
 .dark .st-note, [data-theme="dark"] .st-note { background: #3b2f0b; border-color: #b45309; }
+
+
+/* ---- Responsive: row actions stay reachable on phones / tablets / small laptops (desktop >= 1280 px unchanged) ----
+   List tables scroll sideways inside their card on small screens; the last (actions) column is pinned to the right
+   edge so Approve / Edit / Delete never sit off-screen. Tables opt in with class "ff-sticky-actions". */
+@media (max-width: 1279.98px) {
+  table.ff-sticky-actions > thead > tr > th:last-child,
+  table.ff-sticky-actions > tbody > tr > td:last-child,
+  table.ff-sticky-actions > tr > td:last-child {
+    position: sticky; right: 0; z-index: 2;
+    background: var(--ff-surface-card, #ffffff);
+    box-shadow: -8px 0 8px -8px rgba(15, 23, 42, 0.28);
+  }
+  table.ff-sticky-actions > thead > tr > th:last-child { background: var(--ff-surface-hover, #f8fafc); z-index: 3; }
+}
+
+
+/* ---- Responsive: touch-friendly controls on phones / tablets (desktop unchanged) ---- */
+@media (max-width: 1023.98px) {
+  .ff-tabs-scroll > * { flex-shrink: 0; }
+  /* Row actions inside tables: at least 36 px to tap (were 14-28 px). */
+  table td button, table td [role="button"], .ff-grid__action { min-height: 36px; min-width: 36px; }
+  table td a.ops-link, table td button.ops-link { display: inline-flex; align-items: center; min-height: 36px; padding: 0 4px; }
+  /* Text-only buttons in cards / lists get a comfortable tap height without changing their look. */
+  button.text-xs:not(table *), a.text-xs[routerLink]:not(table *) { min-height: 32px; }
+}
+
+/* ---- Responsive (phones < 640 px): pinned row actions stay compact so the row data stays visible ----
+   Labelled buttons (Approve / Reject / Close …) show their icon only; the accessible name is unchanged. */
+@media (max-width: 639.98px) {
+  table.ff-sticky-actions > tbody > tr > td:last-child { width: 1%; min-width: 96px; max-width: 52vw; white-space: normal; }  /* two icons per line, not one: rows stay short */
+  table.ff-sticky-actions > tbody > tr > td:last-child > * { flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+  table.ff-sticky-actions > tbody > tr > td:last-child button { font-size: 0; gap: 0; padding-left: 8px; padding-right: 8px; }
+  table.ff-sticky-actions > tbody > tr > td:last-child button .material-icons,
+  table.ff-sticky-actions > tbody > tr > td:last-child button .material-symbols-outlined { font-size: 20px; }
+  table.ff-sticky-actions > thead > tr > th:last-child { font-size: 0; width: 1%; }
+  table.ff-sticky-actions > thead > tr > th:last-child::after { content: 'Actions'; font-size: 10px; letter-spacing: .05em; }
+}
+
+/* ---- Responsive (small phones): header icons fit next to the company badge without overlapping ---- */
+@media (max-width: 479.98px) {
+  app-shell header .app-tenant-pill { flex-shrink: 0; }
+  app-shell header button.w-10, app-shell header a.w-10 { width: 2.125rem; }
+}

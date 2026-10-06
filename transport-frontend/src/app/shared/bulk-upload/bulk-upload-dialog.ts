@@ -41,7 +41,7 @@ interface RowResult { rowNumber: number; values: Record<string, string>; errors:
 
         <div class="flex-1 min-h-0 overflow-auto">
           @if (rows().length) {
-            <table class="w-full text-xs border-collapse">
+            <table class="ff-sticky-actions w-full text-xs border-collapse">
               <thead>
                 <tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-semibold text-left">
                   <th class="p-2 sticky top-0 bg-[var(--ff-surface-hover)]">Row</th>

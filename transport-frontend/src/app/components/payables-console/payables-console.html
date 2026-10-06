@@ -41,7 +41,7 @@
 
     <div class="flex-1 min-h-0 overflow-auto">
       @if (tab() === 'bills') {
-        <table class="w-full text-left text-xs border-collapse min-w-[980px]">
+        <table class="ff-sticky-actions w-full text-left text-xs border-collapse min-w-[980px]">
           <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-semibold">
             <th class="p-3">Bill</th><th class="p-3">Supplier</th><th class="p-3">Their bill no</th><th class="p-3">Date</th><th class="p-3">Due</th><th class="p-3">Category</th><th class="p-3">From</th>
             <th class="p-3 text-right">Total (₹)</th><th class="p-3 text-right">Paid (₹)</th><th class="p-3 text-right">Balance (₹)</th><th class="p-3">Status</th><th class="p-3"></th>
@@ -83,7 +83,7 @@
           </tbody>
         </table>
       } @else {
-        <table class="w-full text-left text-xs border-collapse min-w-[760px]">
+        <table class="ff-sticky-actions w-full text-left text-xs border-collapse min-w-[760px]">
           <thead><tr class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-semibold">
             <th class="p-3">Payment</th><th class="p-3">Date</th><th class="p-3">Supplier</th><th class="p-3">Method</th><th class="p-3">Reference</th><th class="p-3 text-right">Amount (₹)</th><th class="p-3">Status</th><th class="p-3"></th>
           </tr></thead>

@@ -228,6 +228,8 @@ imports: [ClientPlansComponent, FormValidationDirective, FeatureAccessComponent,
       border: 1px solid #e2e8f0;
       background: #ffffff;
     }
+    /* Wrappers marked overflow-x-auto must scroll sideways on phones / tablets (overflow: hidden above cut columns off). */
+    .pa-table-wrap.overflow-x-auto { overflow-x: auto; overflow-y: hidden; }
     .pa-table-wrap table thead th {
       background: #f1f5f9 !important;
       color: #334155 !important;

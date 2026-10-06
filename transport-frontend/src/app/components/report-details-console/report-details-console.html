@@ -16,7 +16,7 @@
   <main class="flex-1 min-h-0 bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] rounded-[10px] shadow-sm flex flex-col overflow-hidden">
     
     <!-- Tab Controls selector -->
-    <div class="flex border-b border-[var(--ff-border-divider)] px-6 pt-3 select-none">
+    <div class="ff-tabs-scroll flex overflow-x-auto whitespace-nowrap border-b border-[var(--ff-border-divider)] px-3 sm:px-6 pt-3 select-none">
       <button (click)="onTabChange('bi')" [class.border-b-2]="activeTab() === 'bi'" [class.border-blue-600]="activeTab() === 'bi'" [class.text-slate-900]="activeTab() === 'bi'" [class.dark:text-white]="activeTab() === 'bi'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-[var(--ff-text-muted)] transition hover:text-[var(--ff-text-primary)]">
         Executive BI Viewport
       </button>
@@ -403,7 +403,7 @@
           </form>
         }
         <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
-          <table class="w-full text-left text-xs">
+          <table class="ff-sticky-actions w-full text-left text-xs">
             <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
               <tr>
                 <th class="p-3">Template Name</th>
@@ -450,7 +450,7 @@
           </form>
         }
         <div class="overflow-x-auto rounded-[10px] bg-[var(--ff-surface-card)]">
-          <table class="w-full text-left text-xs">
+          <table class="ff-sticky-actions w-full text-left text-xs">
             <thead class="bg-[var(--ff-surface-hover)] text-[var(--ff-text-muted)] font-bold uppercase tracking-[0.05em]">
               <tr>
                 <th class="p-3">Template</th>
