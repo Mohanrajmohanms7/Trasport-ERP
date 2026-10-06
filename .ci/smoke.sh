@@ -1073,8 +1073,9 @@ if [ -n "$DI" ]; then
 else echo "SKIP dashboard branch (no pending invoice)"; fi
 # fuel: create one entry through the API (as the demo loader does), then move it to the other branch
 V1=$($PSQL "SELECT id FROM vehicles WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")
+D1=$($PSQL "SELECT id FROM drivers WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")   # a fuel entry needs its driver
 ODO=$((100000 + RANDOM))
-R=$(api POST /fuel '{"vehicle":{"id":'$V1'},"fuelDate":"'$(date +%F)'","fuelStation":"Flow Review Fuels","fuelQuantity":10,"ratePerLitre":92.4,"totalAmount":924,"paymentMethod":"CASH","invoiceNumber":"FR-'$RANDOM'","previousOdometer":'$ODO',"currentOdometer":'$((ODO+50))'}')
+R=$(api POST /fuel '{"vehicle":{"id":'$V1'},"driver":{"id":'$D1'},"fuelDate":"'$(date +%F)'","fuelStation":"Flow Review Fuels","fuelQuantity":10,"ratePerLitre":92.4,"totalAmount":924,"paymentMethod":"CASH","invoiceNumber":"FR-'$RANDOM'","previousOdometer":'$ODO',"currentOdometer":'$((ODO+50))'}')
 FEN=$(echo "$R" | j "d['data']['id']" 2>/dev/null); [ -n "$FEN" ] && [ "$FEN" != "None" ] && $PSQL "UPDATE fuel_entries SET branch_id=$F3B WHERE id=$FEN" >/dev/null || echo "fuel create: $(echo $R | cut -c1-200)"
 FE=$($PSQL "SELECT id FROM fuel_entries WHERE company_id=$CI2 AND branch_id=$F3B ORDER BY id DESC LIMIT 1")
 if [ -n "$FE" ]; then
