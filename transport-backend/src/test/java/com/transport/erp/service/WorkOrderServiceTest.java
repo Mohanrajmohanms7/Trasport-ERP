@@ -560,7 +560,8 @@ class WorkOrderServiceTest {
         second.setId(11L);
         second.setName("Second");
         Pageable request = PageRequest.of(0, 20);
-        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), isNull(), any()))
+        // A company admin may filter to any branch of the company (the request asks for branch 2).
+        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(2L), any()))
                 .thenReturn(new PageImpl<>(List.of(10L, 11L), request, 2));
         when(workOrderRepository.findDetailsByIds(List.of(10L, 11L))).thenReturn(List.of(second, first));
 
