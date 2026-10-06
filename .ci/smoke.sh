@@ -993,5 +993,13 @@ R=$(curl -s -X POST "${H[@]}" $API/platform-admin/tenant-subscriptions -d '{"com
 PN=$(pa GET client-plans/$NCID | j "d['data']['planName']"); [ "$PN" = "Professional" ] && pass "recording a subscription updates the client's plan" || fail "tenant subscription" "$PN $(echo $R | cut -c1-160)"
 pa PUT client-plans/$NCID '{"planId":'$ENT'}' >/dev/null
 
+
+# every Platform Admin read API answers
+BAD=""
+for p in stats analytics companies clients "clients/$NCID" plans licenses tenant-subscriptions billing-invoices users audit-logs settings backups announcements tickets tickets/dashboard tickets/notifications tickets/assignees auth/login-history auth/failed-logins auth/active-sessions auth/logout-history features/catalog subscription-plans client-plans "client-plans/$NCID" vehicles trips; do
+  C=$(curl -s -o /dev/null -w "%{http_code}" "${H[@]}" "$API/platform-admin/$p"); [ "$C" = "200" ] || BAD="$BAD $p=$C"
+done
+[ -z "$BAD" ] && pass "all Platform Admin read APIs answer 200" || fail "platform reads" "$BAD"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
