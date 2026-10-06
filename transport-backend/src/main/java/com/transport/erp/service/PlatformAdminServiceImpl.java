@@ -1039,6 +1039,15 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
 
     @Override
     public SaaSTenantSubscription createTenantSubscription(SaaSTenantSubscription sub, String activeUser) {
+        // The request only carries the plan id: load the real plan (a bare {"id":…} cannot be saved as a reference).
+        if (sub.getPlan() == null || sub.getPlan().getId() == null) {
+            throw new com.transport.erp.exception.BusinessValidationException("Plan Required", "SUBSCRIPTION_PLAN_REQUIRED",
+                    "Choose a plan for the subscription.", "Pick a plan from the list.");
+        }
+        sub.setPlan(planRepository.findById(sub.getPlan().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found: " + sub.getPlan().getId())));
+        companyRepository.findById(sub.getCompanyId()).filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Client not found: " + sub.getCompanyId()));
         sub.setStatus("ACTIVE");
         sub.setPaymentStatus("PAID");
         SaaSTenantSubscription saved = subscriptionRepository.save(sub);
