@@ -141,6 +141,7 @@ public class BookingService {
         Booking existing = bookingRepository.findAndLockById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + id));
         tenantAccess.assertOwned(existing.getCompanyId());
+        tenantAccess.assertBranchVisible(existing.getBranchId());
         String st = existing.getStatus() == null ? "" : existing.getStatus().toUpperCase();
         if ("REJECTED".equals(st) || "CANCELLED".equals(st) || "COMPLETED".equals(st) || "CLOSED".equals(st)) {
             throw new com.transport.erp.exception.BusinessValidationException("Booking Locked", "BOOKING_UPDATE_BLOCKED",
@@ -262,6 +263,7 @@ public class BookingService {
         Booking booking = bookingRepository.findAndLockById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + id));
         tenantAccess.assertOwned(booking.getCompanyId());
+        tenantAccess.assertBranchVisible(booking.getBranchId());
         if (!"APPROVED".equalsIgnoreCase(booking.getStatus())) {
             throw new com.transport.erp.exception.BusinessValidationException("Booking Not Open", "BOOKING_CLOSE_BLOCKED",
                     "Booking " + booking.getBookingNumber() + " is " + booking.getStatus() + "; only approved bookings can be closed.",
