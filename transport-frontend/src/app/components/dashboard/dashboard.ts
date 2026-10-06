@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService, MaintenanceDueDashboardItem, MaintenanceDueDashboardResponse } from '../../services/dashboard.service';
@@ -239,9 +240,25 @@ export class DashboardComponent implements OnInit {
     'Generate Report': '/reports-bi'
   };
 
+  /** Company admins can view the whole company or one branch; branch users always get their own branch (server rule). */
+  private http = inject(HttpClient);
+  readonly branches = signal<{ id: number; name: string }[]>([]);
+  readonly branchId = signal<number | null>(null);
+  readonly canPickBranch = computed(() => {
+    const roles = (this.authService.currentUser()?.roles || JSON.parse(localStorage.getItem('roles') || '[]')) as string[];
+    return roles.some(r => ['COMPANY_ADMIN', 'ADMIN', 'SUPER_ADMIN'].includes(String(r).toUpperCase()));
+  });
+  onBranchPick(v: string): void { this.branchId.set(v ? Number(v) : null); this.fetchMetrics(); }
+
   ngOnInit() {
     this.activeRole.set(this.resolveViewRole());
     this.fetchMetrics();
+    if (this.canPickBranch()) {
+      this.http.get<any>('/api/v1/branches', { params: { size: '100' } }).subscribe({
+        next: r => this.branches.set(((r?.data?.content ?? r?.data ?? []) as any[]).filter(b => (b.status || 'ACTIVE') !== 'INACTIVE')),
+        error: () => this.branches.set([])
+      });
+    }
   }
 
   private resolveViewRole(): string {
@@ -283,17 +300,17 @@ export class DashboardComponent implements OnInit {
     };
 
     if (role === 'ADMIN') {
-      this.dashboardService.getAdminMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getAdminMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else if (role === 'OWNER') {
-      this.dashboardService.getOwnerMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getOwnerMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else if (role === 'OPERATIONS') {
-      this.dashboardService.getOperationsMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getOperationsMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else if (role === 'VEHICLE') {
-      this.dashboardService.getVehicleMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getVehicleMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else if (role === 'ACCOUNTANT') {
-      this.dashboardService.getAccountMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getAccountMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else if (role === 'DRIVER') {
-      this.dashboardService.getDriverMetrics().subscribe({ next: apply, error: fail });
+      this.dashboardService.getDriverMetrics(this.branchId()).subscribe({ next: apply, error: fail });
     } else {
       done();
     }

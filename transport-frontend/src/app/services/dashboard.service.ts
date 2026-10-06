@@ -45,27 +45,27 @@ export class DashboardService {
   private http = inject(HttpClient);
   private apiUrl = '/api/v1/dashboard';
 
-  getAdminMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/admin`);
+  getAdminMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/admin`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 
-  getOwnerMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/owner`);
+  getOwnerMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/owner`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 
-  getOperationsMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/operations`);
+  getOperationsMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/operations`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 
-  getVehicleMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/vehicle`);
+  getVehicleMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/vehicle`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 
-  getAccountMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/account`);
+  getAccountMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/account`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 
-  getDriverMetrics(): Observable<ApiResponse<any>> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/driver`);
+  getDriverMetrics(branchId?: number | null): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/driver`, { params: branchId ? { branchId: String(branchId) } : {} });
   }
 }
