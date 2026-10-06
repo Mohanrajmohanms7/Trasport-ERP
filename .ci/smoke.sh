@@ -1054,5 +1054,37 @@ done
 for P in "${!F2ID[@]}"; do $PSQL "UPDATE ${F2T[$P]} SET branch_id=${F2ORIG[$P]} WHERE id=${F2ID[$P]}" >/dev/null; done
 $PSQL "UPDATE app_users SET branch_id=$OPB2 WHERE username='op1'" >/dev/null
 
+# ================= Dashboard by branch + fuel branch isolation =================
+F3B=$(api POST /branches '{"code":"F3-'$RANDOM'","name":"Dashboard Branch","gstNumber":"33ABCDE1234F1Z5","status":"ACTIVE"}' | j "d['data']['id']")
+MB3=$($PSQL "SELECT id FROM branches WHERE company_id=$CI2 AND id<>$F3B AND is_deleted=false ORDER BY id LIMIT 1")
+OPB3=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM app_users WHERE username='op1'"); $PSQL "UPDATE app_users SET branch_id=$MB3 WHERE username='op1'" >/dev/null
+DI=$($PSQL "SELECT id FROM sales_invoices WHERE company_id=$CI2 AND is_deleted=false AND status IN ('PENDING','APPROVED') AND net_amount > 0 ORDER BY id LIMIT 1")
+if [ -n "$DI" ]; then
+  DX=$($PSQL "SELECT net_amount FROM sales_invoices WHERE id=$DI"); DIB=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM sales_invoices WHERE id=$DI")
+  PP() { curl -s -H "Authorization: Bearer $1" "$API/dashboard/admin$2" | j "d['data']['pendingPayments']"; }
+  ALL0=$(PP "$TC" ""); $PSQL "UPDATE sales_invoices SET branch_id=$F3B WHERE id=$DI" >/dev/null
+  ALL1=$(PP "$TC" ""); ONE=$(PP "$TC" "?branchId=$F3B"); OPV=$(PP "$TO" ""); OPX=$(PP "$TO" "?branchId=$F3B")
+  python3 -c "import sys; sys.exit(0 if abs(float('$ALL0')-float('$ALL1'))<0.01 else 1)" && pass "dashboard: company admin 'All branches' total unchanged" || fail "dashboard all" "$ALL0 vs $ALL1"
+  python3 -c "import sys; sys.exit(0 if abs(float('$ONE')-float('$DX'))<0.01 else 1)" && pass "dashboard: company admin picks one branch (= that branch's invoice)" || fail "dashboard one branch" "$ONE vs $DX"
+  python3 -c "import sys; sys.exit(0 if float('$OPV')+float('$DX') <= float('$ALL1')+0.01 else 1)" && pass "dashboard: branch user's figures exclude the other branch" || fail "dashboard branch user" "op=$OPV x=$DX all=$ALL1"
+  python3 -c "import sys; sys.exit(0 if abs(float('$OPV')-float('$OPX'))<0.01 else 1)" && pass "dashboard: branch user cannot switch to another branch" || fail "dashboard branch switch" "$OPV vs $OPX"
+  C=$(code "$NT" GET "/dashboard/admin?branchId=$F3B"); if [ "$C" = "200" ]; then V=$(j "d['data']['pendingPayments']" < /tmp/fr.json); python3 -c "import sys; sys.exit(0 if abs(float('$V')-float('$DX'))>0.001 or float('$DX')==0 else 1)" && pass "dashboard: another company cannot use this company's branch" || fail "dashboard other company" "$V"; else pass "dashboard: another company refused ($C)"; fi
+  $PSQL "UPDATE sales_invoices SET branch_id=$DIB WHERE id=$DI" >/dev/null
+else echo "SKIP dashboard branch (no pending invoice)"; fi
+# fuel: create one entry through the API (as the demo loader does), then move it to the other branch
+V1=$($PSQL "SELECT id FROM vehicles WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")
+D1=$($PSQL "SELECT id FROM drivers WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")   # a fuel entry needs its driver
+ODO=$((100000 + RANDOM))
+R=$(api POST /fuel '{"vehicle":{"id":'$V1'},"driver":{"id":'$D1'},"fuelDate":"'$(date +%F)'","fuelStation":"Flow Review Fuels","fuelQuantity":10,"ratePerLitre":92.4,"totalAmount":924,"paymentMethod":"CASH","invoiceNumber":"FR-'$RANDOM'","previousOdometer":'$ODO',"currentOdometer":'$((ODO+50))'}')
+FEN=$(echo "$R" | j "d['data']['id']" 2>/dev/null); [ -n "$FEN" ] && [ "$FEN" != "None" ] && $PSQL "UPDATE fuel_entries SET branch_id=$F3B WHERE id=$FEN" >/dev/null || echo "fuel create: $(echo $R | cut -c1-200)"
+FE=$($PSQL "SELECT id FROM fuel_entries WHERE company_id=$CI2 AND branch_id=$F3B ORDER BY id DESC LIMIT 1")
+if [ -n "$FE" ]; then
+  L=$(curl -s -H "Authorization: Bearer $TO" "$API/fuel?size=1000" | ids); case " $L " in *" $FE "*) fail "F3 branch user list fuel" "sees $FE";; *) pass "F3 branch user list hides other branch: fuel";; esac
+  L=$(curl -s -H "Authorization: Bearer $TC" "$API/fuel?size=1000" | ids); case " $L " in *" $FE "*) pass "F3 company admin list includes other branch: fuel";; *) fail "F3 company admin fuel" "missing $FE";; esac
+  expect "403 404" "$(code "$TO" GET /fuel/$FE)" "branch user cannot open other-branch fuel"
+  expect "200" "$(code "$TC" GET /fuel/$FE)" "company admin opens other-branch fuel"
+else fail "F3 fuel setup" "could not copy a fuel entry"; fi
+$PSQL "UPDATE app_users SET branch_id=$OPB3 WHERE username='op1'" >/dev/null
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
