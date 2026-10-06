@@ -106,7 +106,7 @@ limits updates every client on that plan. Per client (Client Plans → Manage): 
 Seeded starting prices (INR/month): Starter 1,499 · Growth 3,499 · Professional 7,999 · Enterprise from 14,999 · Trial free.
 
 
-## Login & session protection (V83)
+## Login & session protection (V84)
 - 5 wrong passwords in a row lock the login for 15 minutes (`LoginAttemptService`); an admin password reset unlocks it.
 - Sessions carry a version (`app_users.token_version`, JWT claim `tv`). Force logout, admin password reset, deactivation or
   role loss bump it, so existing logins stop at once; refresh tokens are removed too.
