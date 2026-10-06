@@ -118,8 +118,8 @@ public class MaintenanceRequestService {
         }
         Long branchFilter = driverOnly
                 ? null
-                : (user.getBranchId() != null && !tenantAccess.isSuperAdmin(user)
-                ? user.getBranchId()
+                : (tenantAccess.listBranchScope() != null   // branch users: own branch; company admins: all (or requested)
+                ? tenantAccess.listBranchScope()
                 : requestedBranchId);
         if (tenantAccess.isSuperAdmin(user)) {
             branchFilter = requestedBranchId;

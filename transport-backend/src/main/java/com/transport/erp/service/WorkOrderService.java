@@ -137,7 +137,9 @@ public class WorkOrderService {
         if (companyId == null) {
             return Page.empty(pageable);
         }
-        Long branchFilter = user.getBranchId() != null ? user.getBranchId() : requestedBranchId;
+        // Company admins see every branch (optionally one, by request); branch users only their own.
+        Long scope = tenantAccess.listBranchScope();
+        Long branchFilter = scope != null ? scope : requestedBranchId;
         Pageable sorted = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),

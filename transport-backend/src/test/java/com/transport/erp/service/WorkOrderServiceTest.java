@@ -112,6 +112,8 @@ class WorkOrderServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Mockito would answer 0 for an unstubbed Long; null = company-wide (the admins these tests use).
+        org.mockito.Mockito.lenient().when(tenantAccess.listBranchScope()).thenReturn(null);
         companyAdmin = user("admin", COMPANY, 1L, "COMPANY_ADMIN");
         stubTenant(companyAdmin, false);
         when(workOrderRepository.saveAndFlush(any())).thenAnswer(inv -> {
@@ -406,7 +408,8 @@ class WorkOrderServiceTest {
         when(workOrderRepository.searchIds(eq(COMPANY), any(), any(), any(), any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of()));
         service.list(null, null, null, null, null, OTHER_COMPANY, PageRequest.of(0, 20));
-        verify(workOrderRepository).searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(1L), any());
+        // Company admins are company-wide: no branch filter (branch users are limited; covered by the smoke flow review).
+        verify(workOrderRepository).searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), isNull(), any());
     }
 
     @Test
@@ -557,7 +560,8 @@ class WorkOrderServiceTest {
         second.setId(11L);
         second.setName("Second");
         Pageable request = PageRequest.of(0, 20);
-        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(1L), any()))
+        // A company admin may filter to any branch of the company (the request asks for branch 2).
+        when(workOrderRepository.searchIds(eq(COMPANY), isNull(), isNull(), isNull(), isNull(), eq(2L), any()))
                 .thenReturn(new PageImpl<>(List.of(10L, 11L), request, 2));
         when(workOrderRepository.findDetailsByIds(List.of(10L, 11L))).thenReturn(List.of(second, first));
 

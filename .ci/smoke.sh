@@ -1024,5 +1024,35 @@ fi
 for P in "${!FRID[@]}"; do $PSQL "UPDATE ${FRT[$P]} SET branch_id=${FRORIG[$P]} WHERE id=${FRID[$P]}" >/dev/null; done
 for U in op1 bm1 vw1; do $PSQL "UPDATE app_users SET branch_id=${FRUB[$U]:-NULL} WHERE username='$U'" >/dev/null; done
 
+# ================= FLOW REVIEW 2: actions on other-branch records, ops modules =================
+FRB2=$(api POST /branches '{"code":"F2-'$RANDOM'","name":"Flow Review Branch 2","gstNumber":"33ABCDE1234F1Z5","status":"ACTIVE"}' | j "d['data']['id']")
+MAINB2=$($PSQL "SELECT id FROM branches WHERE company_id=$CI2 AND id<>$FRB2 AND is_deleted=false ORDER BY id LIMIT 1")
+OPB2=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM app_users WHERE username='op1'"); $PSQL "UPDATE app_users SET branch_id=$MAINB2 WHERE username='op1'" >/dev/null
+declare -A F2T=( [bookings]=bookings [trips]=trips [invoices]=sales_invoices [receipts]=customer_receipts [expenses]=expenses [payables/bills]=supplier_bills [work-orders]=work_orders [maintenance-requests]=maintenance_requests )
+declare -A F2ID F2ORIG
+for P in "${!F2T[@]}"; do
+  TBL=${F2T[$P]}; ID=$($PSQL "SELECT id FROM $TBL WHERE company_id=$CI2 AND is_deleted=false ORDER BY id DESC LIMIT 1" 2>/dev/null)
+  [ -z "$ID" ] && { echo "SKIP F2 $P (no $TBL rows)"; continue; }
+  F2ID[$P]=$ID; F2ORIG[$P]=$($PSQL "SELECT COALESCE(branch_id::text,'NULL') FROM $TBL WHERE id=$ID"); $PSQL "UPDATE $TBL SET branch_id=$FRB2 WHERE id=$ID" >/dev/null
+done
+# lists of the ops modules
+for P in payables/bills work-orders maintenance-requests; do
+  ID=${F2ID[$P]:-}; [ -z "$ID" ] && continue
+  L=$(curl -s -H "Authorization: Bearer $TO" "$API/$P?size=1000" | ids); case " $L " in *" $ID "*) fail "F2 branch user list $P" "sees other-branch id $ID";; *) pass "F2 branch user list hides other branch: $P";; esac
+  L=$(curl -s -H "Authorization: Bearer $TC" "$API/$P?size=1000" | ids); case " $L " in *" $ID "*) pass "F2 company admin list includes other branch: $P";; *) fail "F2 company admin list $P" "missing id $ID";; esac
+done
+for P in work-orders maintenance-requests; do ID=${F2ID[$P]:-}; [ -n "$ID" ] && expect "403 404" "$(code "$TO" GET /$P/$ID)" "branch user cannot open other-branch $P"; done
+# actions by a branch user on other-branch records must be refused (403/404), never processed
+B=${F2ID[bookings]:-0}; T2=${F2ID[trips]:-0}; I=${F2ID[invoices]:-0}; E=${F2ID[expenses]:-0}; RC=${F2ID[receipts]:-0}
+for A in "PUT /bookings/$B {}" "POST /bookings/$B/approve" "POST /bookings/$B/close" "POST /bookings/$B/reject" "DELETE /bookings/$B" \
+         "PUT /trips/$T2 {}" "POST /trips/$T2/dispatch" "POST /trips/$T2/complete" "DELETE /trips/$T2" "POST /invoices/from-trip/$T2" \
+         "PUT /invoices/$I {}" "POST /invoices/$I/approve" "POST /invoices/$I/cancel" "DELETE /invoices/$I" \
+         "PUT /expenses/$E {}" "POST /expenses/$E/approve" "POST /expenses/$E/reject" "POST /expenses/$E/cancel" "DELETE /expenses/$E" \
+         "PUT /receipts/$RC {}" "POST /receipts/$RC/approve" "POST /receipts/$RC/cancel" "DELETE /receipts/$RC"; do
+  set -- $A; expect "403 404" "$(code "$TO" $1 $2 ${3:-})" "branch user refused: $1 $2"
+done
+for P in "${!F2ID[@]}"; do $PSQL "UPDATE ${F2T[$P]} SET branch_id=${F2ORIG[$P]} WHERE id=${F2ID[$P]}" >/dev/null; done
+$PSQL "UPDATE app_users SET branch_id=$OPB2 WHERE username='op1'" >/dev/null
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
