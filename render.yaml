@@ -11,16 +11,17 @@ services:
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      # Database: Neon (free PostgreSQL, no expiry). Set these three in the Render dashboard (Environment):
+      #   DATABASE_URL      = jdbc:postgresql://<neon direct host, without -pooler>/<db>?sslmode=require
+      #   DATABASE_USERNAME = <neon user>
+      #   DATABASE_PASSWORD = <neon password>
+      # sync: false = Render keeps the dashboard values and never overwrites them on a blueprint sync.
       - key: DATABASE_URL
-        value: jdbc:postgresql://transport-db:5432/transport_erp
+        sync: false
       - key: DATABASE_USERNAME
-        fromDatabase:
-          name: transport-db
-          property: user
+        sync: false
       - key: DATABASE_PASSWORD
-        fromDatabase:
-          name: transport-db
-          property: password
+        sync: false
       - key: JWT_SECRET
         generateWith: true
       - key: JWT_EXPIRATION
@@ -47,7 +48,8 @@ services:
         destination: /index.html
 
 databases:
-  # 3. PostgreSQL Database Service
+  # 3. PostgreSQL Database Service — the old free Render database (expires after 30 days). No longer used by the
+  #    backend once DATABASE_URL points to Neon; delete it in the Render dashboard after the move, then remove this block.
   - name: transport-db
     databaseName: transport_erp
     user: transport_admin
