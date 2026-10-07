@@ -58,6 +58,26 @@ def main():
     # 1. Render backend service and its region
     svcs = render("GET", "/services?limit=100")
     allsv = [s["service"] for s in svcs]
+    if MODE == "inspect":
+        for x in allsv:
+            d = x.get("serviceDetails") or {}
+            line = f"{x['name']} | {x.get('type')} | {d.get('url')} | region {d.get('region')} | suspended {x.get('suspended')} | repo {x.get('repo')} branch {x.get('branch')} root {x.get('rootDir')} | updated {x.get('updatedAt')}"
+            if x.get("type") == "web_service":
+                ev = render("GET", f"/services/{x['id']}/env-vars?limit=100")
+                keys = {e['envVar']['key']: e['envVar'].get('value') or '' for e in ev}
+                for v in keys.values(): mask(v) if len(v) > 12 and 'jdbc' not in v else None
+                dbu = keys.get('DATABASE_URL', '')
+                line += f" | env keys: {sorted(keys)} | DATABASE_URL host: {dbu.split('//')[-1].split('/')[0] if dbu else '-'}"
+                deps = render("GET", f"/services/{x['id']}/deploys?limit=1")
+                if deps: line += f" | last deploy: {deps[0]['deploy'].get('status')} {deps[0]['deploy'].get('finishedAt')}"
+            else:
+                try:
+                    routes = render("GET", f"/services/{x['id']}/routes?limit=20")
+                    line += " | routes: " + "; ".join(f"{r['route']['type']} {r['route']['source']} -> {r['route']['destination']}" for r in routes)
+                except SystemExit as e:
+                    line += f" | routes: {e}"
+            step(line)
+        return
     svc = next((x for x in allsv if x["name"] == SERVICE), None) or next((x for x in allsv if x.get("type") == "web_service" and "backend" in x["name"]), None)
     if not svc:
         owners = render("GET", "/owners?limit=20")

@@ -24,7 +24,7 @@ jobs:
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          MODE: ${{ github.event.inputs.mode || 'setup' }}
+          MODE: ${{ github.event.inputs.mode || 'inspect' }}
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           GH_SHA: ${{ github.sha }}
