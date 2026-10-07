@@ -147,7 +147,9 @@ def main():
     if MODE == "setup":
         # SPRING_DATASOURCE_* override DATABASE_* in Spring, and the live service has both: set both to Neon.
         for k, v in (("DATABASE_URL", jdbc), ("DATABASE_USERNAME", role), ("DATABASE_PASSWORD", pwd),
-                     ("SPRING_DATASOURCE_URL", jdbc), ("SPRING_DATASOURCE_USERNAME", role), ("SPRING_DATASOURCE_PASSWORD", pwd)):
+                     ("SPRING_DATASOURCE_URL", jdbc), ("SPRING_DATASOURCE_USERNAME", role), ("SPRING_DATASOURCE_PASSWORD", pwd),
+                     # Free plan = 512 MB: the JVM default heap (25 % = 128 MB) ran out at start-up since 5 Oct (OutOfMemoryError).
+                     ("JAVA_TOOL_OPTIONS", "-XX:MaxRAMPercentage=60 -XX:+UseSerialGC -Xss512k -XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m")):
             render("PUT", f"/services/{sid}/env-vars/{k}", {"value": v})
         step(f"Render settings updated: DATABASE_URL = jdbc:postgresql://{host}/{DB}?sslmode=require, DATABASE_USERNAME = {role}, DATABASE_PASSWORD = (hidden)")
         dep = render("POST", f"/services/{sid}/deploys", {"clearCache": "do_not_clear"})
