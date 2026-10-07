@@ -626,7 +626,7 @@
 
         <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
-          <ff-dropdown formControlName="docType" label="Document Classification" [options]="documentTypeOptions" [required]="true" searchPlaceholder="Search options..." />
+          <ff-dropdown formControlName="docType" label="Document Classification" [createLabel]="la.label('document type')" (ffCreate)="newDocumentType($event)" [options]="documentTypeOptions" [required]="true" searchPlaceholder="Search options..." />
 
           <ff-textbox formControlName="docNumber" label="Document Register Number" placeholder="Enter Document Register Number" prefixIcon="tag" [required]="true" />
 
@@ -661,7 +661,7 @@
 
         <form [formGroup]="maintenanceForm" (ngSubmit)="saveMaintenanceLog()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
-          <ff-dropdown formControlName="serviceType" label="Service Classification" [options]="serviceTypeOptions" [required]="true" searchPlaceholder="Search options..." />
+          <ff-dropdown formControlName="serviceType" label="Service Classification" [createLabel]="la.label('service type')" (ffCreate)="newServiceType($event)" [options]="serviceTypeOptions" [required]="true" searchPlaceholder="Search options..." />
 
           <div class="grid grid-cols-2 gap-4">
             <ff-datepicker formControlName="serviceDate" label="Service Date" [required]="true" />
@@ -695,4 +695,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }

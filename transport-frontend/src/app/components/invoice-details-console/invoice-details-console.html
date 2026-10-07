@@ -219,7 +219,7 @@
               <div formGroupName="customer">
                 <ff-dropdown formControlName="id" label="Select Corporate Customer" [createLabel]="qc.label('customer')" (ffCreate)="newCustomer($event)" [remoteSearch]="customerPick.search" [resolveMissing]="customerPick.resolve" [options]="customerOptions" [required]="true" searchPlaceholder="Search options..." />
               </div>
-              <ff-dropdown formControlName="paymentTerms" label="Payment Terms" [options]="paymentTermsOptions" [required]="true" searchPlaceholder="Search options..." />
+              <ff-dropdown formControlName="paymentTerms" label="Payment Terms" [createLabel]="la.label('payment terms')" (ffCreate)="newPaymentTerms($event)" [options]="paymentTermsOptions" [required]="true" searchPlaceholder="Search options..." />
               <ff-number formControlName="discount" label="Discount (before GST)" placeholder="0.00" [min]="0" />
               <ff-datepicker formControlName="invoiceDate" label="Invoice Date" [max]="today" [required]="true" />
               <ff-textbox formControlName="placeOfSupply" label="Place of Supply (State Code)" placeholder="Auto from customer GSTIN, e.g. 33" prefixIcon="place" />
@@ -325,4 +325,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }

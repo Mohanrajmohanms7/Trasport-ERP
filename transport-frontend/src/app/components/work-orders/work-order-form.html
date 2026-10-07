@@ -42,7 +42,8 @@
         }
       } @else {
         <label class="ops-field">
-          Maintenance type *
+          <span class="flex justify-between gap-2">Maintenance type *
+            @if (la.canAdd()) { <button type="button" class="text-[11px] font-semibold text-[var(--ff-color-primary-600)] underline" (click)="newMaintenanceType()">+ Add new</button> }</span>
           <select required class="ops-input" [ngModel]="maintenanceType()" (ngModelChange)="maintenanceType.set($event)" name="maintenanceType">
             <option value="">Select type</option>
             @for (type of types(); track type.code) {
@@ -105,4 +106,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }

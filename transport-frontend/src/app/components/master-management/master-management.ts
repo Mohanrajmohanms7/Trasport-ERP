@@ -65,7 +65,7 @@ export class MasterManagementComponent implements OnInit {
   // Use logged-in tenant (never hardcode company 1 for multi-tenant)
   companyId = signal<number>(resolveTenantCompanyId());
   activeTab = signal<string>('vehicle'); // 'vehicle', 'driver', 'customer', 'lookup'
-  lookupType = signal<string>('DEPARTMENT'); // For generic lookups
+  lookupType = signal<string>('VEHICLE_TYPE'); // For generic lookups
 
   ownerTypes = signal<any[]>([]);
   statuses = signal<any[]>([]);
@@ -96,16 +96,19 @@ export class MasterManagementComponent implements OnInit {
   lookups = signal<LookupValue[]>([]);
 
   // Lookup Type Options
+  // Categories that screens use (Admin → Dropdown Lists). Values added with "+ Add New" on those screens appear here.
   lookupTypes = [
-    { value: 'DEPARTMENT', label: 'Department' },
-    { value: 'DESIGNATION', label: 'Designation' },
     { value: 'VEHICLE_TYPE', label: 'Vehicle Type' },
     { value: 'VEHICLE_CATEGORY', label: 'Vehicle Category' },
     { value: 'VEHICLE_CAPACITY', label: 'Vehicle Capacity' },
-    { value: 'FUEL_TYPE', label: 'Fuel Type' },
-    { value: 'EXPENSE_CATEGORY', label: 'Expense Category' },
+    { value: 'VEHICLE_DOCUMENT_TYPE', label: 'Vehicle Document Type' },
+    { value: 'MAINTENANCE_TYPE', label: 'Maintenance / Service Type' },
+    { value: 'DRIVER_DOCUMENT_TYPE', label: 'Driver Document Type' },
+    { value: 'CUSTOMER_DOCUMENT_TYPE', label: 'Customer Document Type' },
+    { value: 'EXPENSE_TYPE', label: 'Expense Type' },
     { value: 'PAYMENT_METHOD', label: 'Payment Method' },
-    { value: 'MATERIAL_UNIT', label: 'Material Unit' },
+    { value: 'PAYMENT_TERMS', label: 'Payment Terms' },
+    { value: 'FUEL_TYPE', label: 'Fuel Type' },
     { value: 'MATERIAL_CATEGORY', label: 'Material Category' }
   ];
 

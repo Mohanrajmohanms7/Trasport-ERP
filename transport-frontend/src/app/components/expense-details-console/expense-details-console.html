@@ -157,7 +157,7 @@
               <div formGroupName="trip">
                 <ff-dropdown formControlName="id" label="Link Trip" [remoteSearch]="tripPick.search" [resolveMissing]="tripPick.resolve" [options]="tripOptions" searchPlaceholder="Search options..." />
               </div>
-              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
+              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [createLabel]="la.label('payment mode')" (ffCreate)="newPaymentMethod($event)" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
             </div>
 
             <ff-textbox formControlName="remarks" label="Internal Remarks" placeholder="Voucher audit remarks" prefixIcon="notes" />
@@ -182,4 +182,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }

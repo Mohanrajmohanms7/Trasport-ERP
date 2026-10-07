@@ -11,10 +11,11 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { PickerService, activeOrSelected } from '../../services/picker.service';
 import { FfDropdownComponent, FfSelectOption } from '@ff/ui';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-work-order-form',
   standalone: true,
-imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, QuickCreateComponent, FfDropdownComponent],
+imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, QuickCreateComponent, FfDropdownComponent, LookupAddComponent],
   templateUrl: './work-order-form.html'
 })
 export class WorkOrderFormComponent implements OnInit {
@@ -25,6 +26,11 @@ export class WorkOrderFormComponent implements OnInit {
   private router = inject(Router);
   private http = inject(HttpClient);
   private masters = inject(MasterService);
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newMaintenanceType(): void {
+    this.lookupAdd.start('MAINTENANCE_TYPE', 'maintenance type', '', rec => { this.types.set([...this.types(), rec]); this.maintenanceType.set(rec.code); });
+  }
   private workOrders = inject(WorkOrderService);
 
   loading = signal(true);
