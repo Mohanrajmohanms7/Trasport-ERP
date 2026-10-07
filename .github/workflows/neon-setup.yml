@@ -1,0 +1,26 @@
+# One-off operations job: create the free Neon PostgreSQL database for the Render test environment, point the
+# Render backend at it, deploy and verify. Runs on a push to branch ops/neon-setup (or manually). No application code.
+# Secrets: NEON_API_KEY, RENDER_API_KEY. Passwords are masked in the logs.
+name: neon-setup
+on:
+  push:
+    branches: [ops/neon-setup]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "setup = create + switch Render + deploy + verify; check = verify only"
+        default: setup
+jobs:
+  neon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client >/dev/null && psql --version
+      - name: Neon + Render
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          MODE: ${{ github.event.inputs.mode || 'setup' }}
+        run: python3 .github/scripts/neon_setup.py
