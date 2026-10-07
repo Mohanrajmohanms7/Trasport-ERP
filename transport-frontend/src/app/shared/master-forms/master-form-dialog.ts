@@ -12,10 +12,11 @@ type Kind = 'vehicle' | 'customer';
  * Create / edit dialog for the core masters that have their own screens (Vehicles, Customers),
  * so each master is created and maintained in exactly one place.
  */
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../lookup-add/lookup-add';
 @Component({
   selector: 'app-master-form-dialog',
   standalone: true,
-  imports: [FormValidationDirective, CommonModule, FormsModule],
+  imports: [FormValidationDirective, CommonModule, FormsModule, LookupAddComponent],
   template: `
     <div class="fixed inset-0 z-[95] flex items-center justify-center p-2 bg-slate-950/70">
       <form (ngSubmit)="save()" (click)="$event.stopPropagation()"
@@ -29,9 +30,9 @@ type Kind = 'vehicle' | 'customer';
           @if (kind() === 'vehicle') {
             <label class="flex flex-col gap-1">Registration number *<input required class="mf-in uppercase" [(ngModel)]="f.code" name="code" placeholder="TN01AB1234" /></label>
             <label class="flex flex-col gap-1">Display name *<input required class="mf-in" [(ngModel)]="f.name" name="name" placeholder="e.g. Tipper 12 — TN01AB1234" /></label>
-            <label class="flex flex-col gap-1">Type<select class="mf-in" [(ngModel)]="f.typeId" name="type"><option [ngValue]="null">—</option>@for (t of types(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
-            <label class="flex flex-col gap-1">Category<select class="mf-in" [(ngModel)]="f.categoryId" name="category"><option [ngValue]="null">—</option>@for (t of categories(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
-            <label class="flex flex-col gap-1">Capacity<select class="mf-in" [(ngModel)]="f.capacityId" name="capacity"><option [ngValue]="null">—</option>@for (t of capacities(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
+            <label class="flex flex-col gap-1"><span class="flex justify-between gap-2">Type@if (la.canAdd()) {<button type="button" class="la-link" (click)="newType()">+ Add new</button>}</span><select class="mf-in" [(ngModel)]="f.typeId" name="type"><option [ngValue]="null">—</option>@for (t of types(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
+            <label class="flex flex-col gap-1"><span class="flex justify-between gap-2">Category@if (la.canAdd()) {<button type="button" class="la-link" (click)="newCategory()">+ Add new</button>}</span><select class="mf-in" [(ngModel)]="f.categoryId" name="category"><option [ngValue]="null">—</option>@for (t of categories(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
+            <label class="flex flex-col gap-1"><span class="flex justify-between gap-2">Capacity@if (la.canAdd()) {<button type="button" class="la-link" (click)="newCapacity()">+ Add new</button>}</span><select class="mf-in" [(ngModel)]="f.capacityId" name="capacity"><option [ngValue]="null">—</option>@for (t of capacities(); track t.id) {<option [ngValue]="t.id">{{ t.name }}</option>}</select></label>
             <div class="flex items-end text-[11px] font-normal">Add more types / capacities in Admin → Dropdown Lists.</div>
             <label class="flex flex-col gap-1">Brand<input class="mf-in" [(ngModel)]="f.brand" name="brand" placeholder="Tata, Ashok Leyland…" /></label>
             <label class="flex flex-col gap-1">Model<input class="mf-in" [(ngModel)]="f.model" name="model" /></label>
@@ -66,8 +67,12 @@ type Kind = 'vehicle' | 'customer';
         </div>
       </form>
     </div>
+  
+    @if (lookupAdd.open(); as l) {
+      <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
+    }
   `,
-  styles: [`.mf-in { height: 40px; border: 1px solid var(--ff-border-default); border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 400;
+  styles: [`.la-link { font-size: 11px; font-weight: 600; color: var(--ff-color-primary-600); text-decoration: underline; } .mf-in { height: 40px; border: 1px solid var(--ff-border-default); border-radius: 8px; padding: 0 10px; font-size: 14px; font-weight: 400;
     background: var(--ff-surface-card); color: var(--ff-text-primary); }`]
 })
 export class MasterFormDialogComponent implements OnChanges {
@@ -83,6 +88,11 @@ export class MasterFormDialogComponent implements OnChanges {
   types = signal<any[]>([]);
   categories = signal<any[]>([]);
   capacities = signal<any[]>([]);
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newType(): void { this.lookupAdd.start('VEHICLE_TYPE', 'vehicle type', '', rec => { this.types.set([...this.types(), rec]); this.f.typeId = rec.id; }); }
+  newCategory(): void { this.lookupAdd.start('VEHICLE_CATEGORY', 'vehicle category', '', rec => { this.categories.set([...this.categories(), rec]); this.f.categoryId = rec.id; }); }
+  newCapacity(): void { this.lookupAdd.start('VEHICLE_CAPACITY', 'vehicle capacity', '', rec => { this.capacities.set([...this.capacities(), rec]); this.f.capacityId = rec.id; }); }
   branches = signal<any[]>([]);
   f: any = {};
   saving = signal(false);

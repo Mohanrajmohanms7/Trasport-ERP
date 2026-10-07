@@ -19,10 +19,11 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-payment-details-console',
   standalone: true,
-imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -108,6 +109,12 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   readonly customerPick = this.picker.bind('customers', this.customers);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newPaymentMethod(text: string): void {
+    this.lookupAdd.start('PAYMENT_METHOD', 'payment mode', text, rec => { this.paymentMethods.set([...this.paymentMethods(), rec]); this.receiptForm.get('paymentMethod')?.setValue(rec.code); });
+  }
+
   newCustomer(text: string): void {
     this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.receiptForm.get('customer.id')?.setValue(rec.id); });
   }

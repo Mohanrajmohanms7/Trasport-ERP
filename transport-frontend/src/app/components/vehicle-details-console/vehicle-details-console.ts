@@ -25,10 +25,11 @@ import { MaintenanceRequest, MaintenanceRequestService, maintenanceRequestError 
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-vehicle-details-console',
   standalone: true,
-imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [LookupAddComponent, FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, EntityPhotoComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -103,6 +104,15 @@ export class VehicleDetailsConsoleComponent implements OnInit {
   }
   documentTypes = signal<any[]>([]);
   serviceTypes = signal<any[]>([]);
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newDocumentType(text: string): void {
+    this.lookupAdd.start('VEHICLE_DOCUMENT_TYPE', 'document type', text, rec => { this.documentTypes.set([...this.documentTypes(), rec]); this.documentForm.get('docType')?.setValue(rec.code); });
+  }
+  newServiceType(text: string): void {
+    this.lookupAdd.start('MAINTENANCE_TYPE', 'service type', text, rec => { this.serviceTypes.set([...this.serviceTypes(), rec]); this.maintenanceForm.get('serviceType')?.setValue(rec.code); });
+  }
+
 
   get vehicleOptions(): FfSelectOption[] {
     return [

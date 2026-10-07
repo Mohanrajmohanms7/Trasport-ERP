@@ -360,7 +360,7 @@
 
         <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
           
-          <ff-dropdown formControlName="docType" label="Document Classification" [options]="documentTypeOptions" [required]="true" searchPlaceholder="Search options..." />
+          <ff-dropdown formControlName="docType" label="Document Classification" [createLabel]="la.label('document type')" (ffCreate)="newDocType($event)" [options]="documentTypeOptions" [required]="true" searchPlaceholder="Search options..." />
 
           <ff-textbox formControlName="docNumber" label="Document Reg Number" placeholder="Reg Number" prefixIcon="tag" [required]="true" />
 
@@ -377,3 +377,7 @@
   }
 
 </div>
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
+}

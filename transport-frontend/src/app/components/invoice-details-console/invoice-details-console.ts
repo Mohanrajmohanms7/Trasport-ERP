@@ -22,10 +22,11 @@ import { uomLabel, orderLineText } from '../../shared/uom-label';
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-invoice-details-console',
   standalone: true,
-imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -106,6 +107,12 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   readonly customerPick = this.picker.bind('customers', this.customers);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newPaymentTerms(text: string): void {
+    this.lookupAdd.start('PAYMENT_TERMS', 'payment terms', text, rec => { this.paymentTerms.set([...this.paymentTerms(), rec]); this.invoiceForm.get('paymentTerms')?.setValue(rec.code); });
+  }
+
   newCustomer(text: string): void {
     this.quick.start('customer', text, rec => { PickerService.merge(this.customers, [rec]); this.invoiceForm.get('customer.id')?.setValue(rec.id); });
   }

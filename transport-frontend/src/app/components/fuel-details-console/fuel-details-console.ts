@@ -18,10 +18,11 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-fuel-details-console',
   standalone: true,
-imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -66,6 +67,12 @@ export class FuelDetailsConsoleComponent implements OnInit {
   readonly tripPick = this.picker.bindTrips(this.trips, false);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newPaymentMethod(text: string): void {
+    this.lookupAdd.start('PAYMENT_METHOD', 'payment mode', text, rec => { this.paymentMethods.set([...this.paymentMethods(), rec]); this.entryForm.get('paymentMethod')?.setValue(rec.code); });
+  }
+
   newVehicle(text: string): void {
     this.quick.start('vehicle', text, rec => { PickerService.merge(this.vehicles, [rec]); this.entryForm.get('vehicle.id')?.setValue(rec.id); });
   }

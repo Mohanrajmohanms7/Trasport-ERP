@@ -107,7 +107,7 @@
       @if (showDocEditor()) {
         <ff-card title="New Document" class="driver-ops-editor">
           <form [formGroup]="documentForm" (ngSubmit)="saveDocument()" class="driver-form">
-            <ff-dropdown formControlName="docType" label="Document Type" [options]="docTypeOptions" [required]="true" />
+            <ff-dropdown formControlName="docType" label="Document Type" [createLabel]="la.label('document type')" (ffCreate)="newDocType($event)" [options]="docTypeOptions" [required]="true" />
             <ff-textbox formControlName="docNumber" label="Document Number" [required]="true" />
             <ff-textbox formControlName="filePath" label="File Path / URL" placeholder="Optional reference" />
             <div class="driver-form__footer">
@@ -209,3 +209,7 @@
     }
   }
 </ff-sidebar>
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
+}

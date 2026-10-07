@@ -17,10 +17,11 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 
 import { PickerService, activeOrSelected, tripLabel } from '../../services/picker.service';
 import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../../shared/quick-create/quick-create';
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-expense-details-console',
   standalone: true,
-imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -64,6 +65,12 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   paymentMethods = signal<any[]>([]);
   readonly qc = inject(QuickCreateService);
   readonly quick = new QuickCreateHost();
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newPaymentMethod(text: string): void {
+    this.lookupAdd.start('PAYMENT_METHOD', 'payment mode', text, rec => { this.paymentMethods.set([...this.paymentMethods(), rec]); this.expenseForm.get('paymentMethod')?.setValue(rec.code); });
+  }
+
   newCategory(text: string): void {
     this.quick.start('expenseCategory', text, rec => { this.categories.set([...this.categories(), rec]); this.expenseForm.get('category')?.setValue(rec.code); });
   }

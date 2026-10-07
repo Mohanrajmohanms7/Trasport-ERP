@@ -1086,5 +1086,15 @@ if [ -n "$FE" ]; then
 else fail "F3 fuel setup" "could not copy a fuel entry"; fi
 $PSQL "UPDATE app_users SET branch_id=$OPB3 WHERE username='op1'" >/dev/null
 
+# ---------------- Dropdown Lists: + Add New (lookups) ----------------
+L1=$(curl -s -H "Authorization: Bearer $TC" "$API/lookups/list?type=DRIVER_DOCUMENT_TYPE" | j "len(d['data'])"); [ "${L1:-0}" -ge 1 ] && pass "driver document types load from Dropdown Lists ($L1)" || fail "driver doc types" "$L1"
+R=$(api POST /lookups '{"type":"PAYMENT_METHOD","code":"PHONEPE_TEST","name":"PhonePe (test)","status":"ACTIVE"}'); LID=$(echo "$R" | j "d['data']['id']")
+[ -n "$LID" ] && [ "$LID" != "None" ] && pass "admin adds a dropdown value (payment mode)" || fail "lookup add" "$(echo $R | cut -c1-160)"
+curl -s -H "Authorization: Bearer $TC" "$API/lookups/list?type=PAYMENT_METHOD" | grep -q "PHONEPE_TEST" && pass "new value appears in the payment mode list" || fail "lookup listed" "x"
+R=$(api POST /lookups '{"type":"PAYMENT_METHOD","code":"PHONEPE_TEST","name":"PhonePe again","status":"ACTIVE"}'); echo "$R" | grep -q "already exists" && pass "duplicate code refused" || fail "lookup duplicate" "$(echo $R | cut -c1-160)"
+C=$(as "$TO" POST /lookups '{"type":"PAYMENT_METHOD","code":"OP_TRY","name":"Operator try","status":"ACTIVE"}'); [ "$C" = "403" ] && pass "operator cannot add dropdown values (403)" || fail "lookup permission" "$C"
+curl -s -H "Authorization: Bearer $NT" "$API/lookups/list?type=PAYMENT_METHOD" | grep -q "PHONEPE_TEST" && fail "lookup tenant leak" "other company sees it" || pass "another company does not see the new value"
+C=$(as "$NT" PUT /lookups/$LID '{"type":"PAYMENT_METHOD","code":"PHONEPE_TEST","name":"hijack","status":"ACTIVE"}'); [ "$C" = "403" ] && pass "another company cannot edit the value (403)" || fail "lookup cross edit" "$C"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
