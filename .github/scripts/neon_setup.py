@@ -2,7 +2,7 @@
 
 Never prints a password or key (GitHub masks them; values are registered with ::add-mask::).
 """
-import json, os, subprocess, sys, time, urllib.error, urllib.request
+import json, urllib.parse, os, subprocess, sys, time, urllib.error, urllib.request
 
 NEON = "https://console.neon.tech/api/v2"
 RENDER = "https://api.render.com/v1"
@@ -84,6 +84,20 @@ def main():
                 except SystemExit as e:
                     line += f" | routes: {e}"
             step(line)
+        # Crash log of the latest failed deploy of the backend (application logs around its start)
+        be = next((x for x in allsv if x["name"] == SERVICE), None)
+        if be:
+            try:
+                owner = be.get("ownerId")
+                deps = render("GET", f"/services/{be['id']}/deploys?limit=1")
+                d0 = deps[0]["deploy"]; start, end = d0.get("createdAt"), d0.get("finishedAt")
+                q = urllib.parse.urlencode({"ownerId": owner, "resource": be["id"], "startTime": start, "endTime": end, "limit": 100, "direction": "backward"})
+                logs = render("GET", f"/logs?{q}")
+                items = logs.get("logs", []) if isinstance(logs, dict) else logs
+                keep = [i.get("message", "") for i in items if any(k in i.get("message", "") for k in ("ERROR", "Exception", "Caused by", "Flyway", "Migration", "failed", "APPLICATION FAILED", "Description", "Action", "OutOfMemory", "Killed"))]
+                step("CRASH LOG (latest deploy " + str(d0.get('id')) + "):\n" + "\n".join(m[:400] for m in reversed(keep[:40])) if keep else f"CRASH LOG: no matching lines ({len(items)} log lines)")
+            except SystemExit as e:
+                step(f"CRASH LOG: {e}")
         return
     svc = next((x for x in allsv if x["name"] == SERVICE), None) or next((x for x in allsv if x.get("type") == "web_service" and "backend" in x["name"]), None)
     if not svc:
