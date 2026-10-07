@@ -976,7 +976,17 @@ if [ -n "$BT" ] && [ -n "$BB2" ] && [ "$BB2" != "None" ]; then
 else fail "billing branch setup" "trip=$BT branch=$BB2"; fi
 
 # ================= FLOW REVIEW: roles x modules, branch isolation, company isolation ==========
-R_ACC=$(RID ACCOUNTANT); R_BM=$(RID BRANCH_MANAGER); mkuser acc1 $R_ACC >/dev/null; mkuser bm1 $R_BM >/dev/null
+# Roles may already exist: fall back to the existing role id. Print what the server answers (test users only).
+DR=$(post /roles '{"code":"ACCOUNTANT","name":"ACCOUNTANT","status":"ACTIVE"}'); echo "DIAG role ACCOUNTANT: $(echo "$DR" | cut -c1-200)"
+R_ACC=$(echo "$DR" | j "d['data']['id']" 2>/dev/null); [ -z "$R_ACC" ] || [ "$R_ACC" = "None" ] && R_ACC=$($PSQL "SELECT id FROM app_roles WHERE code='ACCOUNTANT' AND is_deleted=false ORDER BY id LIMIT 1")
+DR=$(post /roles '{"code":"BRANCH_MANAGER","name":"BRANCH_MANAGER","status":"ACTIVE"}'); echo "DIAG role BRANCH_MANAGER: $(echo "$DR" | cut -c1-200)"
+R_BM=$(echo "$DR" | j "d['data']['id']" 2>/dev/null); [ -z "$R_BM" ] || [ "$R_BM" = "None" ] && R_BM=$($PSQL "SELECT id FROM app_roles WHERE code='BRANCH_MANAGER' AND is_deleted=false ORDER BY id LIMIT 1")
+for U in acc1:$R_ACC bm1:$R_BM; do
+  DU=$(post /users "{\"username\":\"${U%%:*}\",\"name\":\"${U%%:*}\",\"code\":\"${U%%:*}\",\"password\":\"Secret@123\",\"status\":\"ACTIVE\",\"roles\":[{\"id\":${U##*:}}]}")
+  echo "DIAG user ${U%%:*} (role ${U##*:}): $(echo "$DU" | cut -c1-200)"
+  echo "DIAG login ${U%%:*}: $(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d "{\"username\":\"${U%%:*}\",\"password\":\"Secret@123\"}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('success'), d.get('message'), (d.get('errors') or [''])[0][:120], 'token' if (d.get('data') or {}).get('token') else 'no-token')")"
+  echo "DIAG db ${U%%:*}: $($PSQL "SELECT status, company_id, failed_login_attempts, locked_until, token_version FROM app_users WHERE username='${U%%:*}'")"
+done
 TA=$(tok acc1 Secret@123); TB=$(tok bm1 Secret@123)
 code() { curl -s -o /tmp/fr.json -w "%{http_code}" -X "$2" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' "$API$3" ${4:+-d "$4"}; }
 expect() { local want=$1 got=$2 msg=$3; case " $want " in *" $got "*) pass "FR $msg ($got)";; *) fail "FR $msg" "got $got want $want :: $(head -c 160 /tmp/fr.json)";; esac; }
