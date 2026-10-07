@@ -216,7 +216,7 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
+              <ff-dropdown formControlName="paymentMethod" label="Payment Mode" [createLabel]="la.label('payment mode')" (ffCreate)="newPaymentMethod($event)" [options]="paymentMethodOptions" [required]="true" searchPlaceholder="Search options..." />
               <div class="pt-[9px]">
                 <ff-textbox formControlName="invoiceNumber" label="Invoice / Receipt Number" placeholder="Bill Reference" prefixIcon="receipt" />
               </div>
@@ -279,4 +279,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (lookupAdd.open(); as l) {
+  <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }

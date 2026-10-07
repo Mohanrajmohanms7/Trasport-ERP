@@ -48,10 +48,11 @@ import {
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { MaintenanceRequestService, maintenanceRequestError } from '../../services/maintenance-request.service';
 
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-driver-details-console',
   standalone: true,
-  imports: [FormValidationDirective, BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
+  imports: [LookupAddComponent, FormValidationDirective, BulkUploadDialogComponent, EntityPhotoComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     FfPageContainerComponent,
@@ -122,6 +123,12 @@ export class DriverDetailsConsoleComponent implements OnInit {
 
   statuses = signal<any[]>([]);
   docTypes = signal<any[]>([]);
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newDocType(text: string): void {
+    this.lookupAdd.start('DRIVER_DOCUMENT_TYPE', 'document type', text, rec => { this.docTypes.set([...this.docTypes(), rec]); this.documentForm.get('docType')?.setValue(rec.code); });
+  }
+
   attendanceStatuses = signal<any[]>([]);
 
   get statusOptions(): FfSelectOption[] {
@@ -535,7 +542,7 @@ export class DriverDetailsConsoleComponent implements OnInit {
     this.masterService.getLookupList(this.companyId, 'DRIVER_STATUS').subscribe((res: any) => {
       if (res.success && res.data) this.statuses.set(res.data);
     });
-    this.masterService.getLookupList(this.companyId, 'DRIVER_DOC_TYPE').subscribe((res: any) => {
+    this.masterService.getLookupList(this.companyId, 'DRIVER_DOCUMENT_TYPE').subscribe((res: any) => {
       if (res.success && res.data) this.docTypes.set(res.data);
     });
     this.masterService.getLookupList(this.companyId, 'ATTENDANCE_STATUS').subscribe((res: any) => {

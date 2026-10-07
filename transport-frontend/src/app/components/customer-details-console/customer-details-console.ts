@@ -18,10 +18,11 @@ import { FfDropdownComponent, FfSelectOption, FfTextboxComponent, FfTextareaComp
 import { resolveTenantCompanyId } from '../../shared/tenant-context';
 import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 
+import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../shared/lookup-add/lookup-add';
 @Component({
   selector: 'app-customer-details-console',
   standalone: true,
-  imports: [FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
+  imports: [LookupAddComponent, FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -67,12 +68,24 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   contacts = signal<CustomerContact[]>([]);
   deliverySites = signal<CustomerDeliverySite[]>([]);
   documents = signal<CustomerDocument[]>([]);
-  documentTypeOptions: FfSelectOption[] = [
-    { label: 'GST CERTIFICATE', value: 'GST_CERT' },
-    { label: 'PAN CARD', value: 'PAN_CARD' },
-    { label: 'KYC REGISTRATION', value: 'KYC' },
-    { label: 'LEGAL AGREEMENT', value: 'AGREEMENT' }
+  /** Customer document types come from Admin → Dropdown Lists (CUSTOMER_DOCUMENT_TYPE); the original fixed types stay
+   *  available so existing documents keep their label. */
+  private readonly baseDocTypes = [
+    { name: 'GST Certificate', code: 'GST_CERT' }, { name: 'PAN Card', code: 'PAN_CARD' },
+    { name: 'KYC Registration', code: 'KYC' }, { name: 'Legal Agreement', code: 'AGREEMENT' }
   ];
+  docTypes = signal<any[]>([]);
+  readonly la = inject(LookupAddService);
+  readonly lookupAdd = new LookupAddHost();
+  newDocType(text: string): void {
+    this.lookupAdd.start('CUSTOMER_DOCUMENT_TYPE', 'document type', text, rec => { this.docTypes.set([...this.docTypes(), rec]); this.documentForm.get('docType')?.setValue(rec.code); });
+  }
+
+  get documentTypeOptions(): FfSelectOption[] {
+    const byCode = new Map<string, string>();
+    for (const t of [...this.baseDocTypes, ...this.docTypes()]) if (t?.code && !byCode.has(t.code)) byCode.set(t.code, t.name);
+    return [...byCode].map(([value, label]) => ({ label, value }));
+  }
 
   get customerOptions(): FfSelectOption[] {
     return [
@@ -142,6 +155,7 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   }
 
   loadCustomers() {
+    this.masterService.getLookupList(this.companyId, 'CUSTOMER_DOCUMENT_TYPE').subscribe({ next: r => { if (r?.success && r.data) this.docTypes.set(r.data as any[]); }, error: () => {} });
     this.masterService.getMasters<any>('customers', this.companyId, { size: 100, page: 0 }).subscribe(res => {
       if (res.success && res.data) {
         const list = res.data.content || res.data || [];
