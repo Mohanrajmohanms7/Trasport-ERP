@@ -105,7 +105,7 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
   }, tenant);
   const pg = await ctx.newPage();
   pg.on('pageerror', e => console.log('PAGE_ERROR ' + pg.url() + ' ' + e.message.slice(0, 150)));
-  for (const [path, name] of [['/branches', 'm-branches'], ['/lookups', 'm-lookups'], ['/vehicles?new=1', 'm-vehicle-new'], ['/customers?new=1', 'm-customer-new'], ['/masters', 'm-masters-redirect'], ['/company-admin', 'm-settings']]) {
+  for (const [path, name] of [['/branches', 'm-branches'], ['/lookup-values', 'm-lookups'], ['/vehicles?new=1', 'm-vehicle-new'], ['/customers?new=1', 'm-customer-new'], ['/masters', 'm-masters-redirect'], ['/company-admin', 'm-settings']]) {
     await pg.goto('http://localhost:4200' + path, { waitUntil: 'networkidle' });
     await pg.waitForTimeout(1500);
     console.log('ROUTE ' + path + ' -> ' + pg.url());
@@ -310,8 +310,9 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
     await pg.goto('http://localhost:4200/inventory/stock', { waitUntil: 'networkidle' }); await typeIn('stock-part', 'oil');
     // + Add New on a Dropdown-Lists dropdown (expense payment mode) and on the vehicle form's Type
     try {
-      await pg.goto('http://localhost:4200/expenses', { waitUntil: 'networkidle' });
+      await pg.goto('http://localhost:4200/expense-logs', { waitUntil: 'networkidle' });
       await pg.locator('button:has-text("Record Expense")').first().click(); await pg.waitForTimeout(800);
+      console.log('LA expense screen: ' + pg.url());
       const pmDd = pg.locator('ff-dropdown', { hasText: 'Payment Mode' }).first();
       await pmDd.locator('.ff-dd__trigger').click(); await pg.waitForTimeout(500);
       await pg.locator('.ff-dd__search-input').first().fill('Paytm Wallet'); await pg.waitForTimeout(500);
@@ -319,8 +320,7 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
       await pg.locator('app-lookup-add button[type="submit"]').click(); await pg.waitForTimeout(1500);
       console.log('LA payment mode selected: ' + (((await pmDd.locator('.ff-dd__trigger').textContent()) || '').trim().slice(0, 40)));
       await pg.screenshot({ path: 'shots/la-expense-payment-mode.png' });
-      await pg.goto('http://localhost:4200/vehicles', { waitUntil: 'networkidle' });
-      await pg.locator('button[class*="bg-[var(--ff-color-primary-600)]"]:has(.material-icons)').filter({ hasText: /vehicle/i }).first().click(); await pg.waitForTimeout(800);
+      await pg.goto('http://localhost:4200/vehicles?new=1', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1500);
       await pg.locator('app-master-form-dialog .la-link').first().click(); await pg.waitForTimeout(500);
       await pg.locator('app-lookup-add input[name="name"]').fill('Trailer 14 Wheel'); await pg.locator('app-lookup-add button[type="submit"]').click(); await pg.waitForTimeout(1500);
       const sel = await pg.locator('app-master-form-dialog select[name="type"]').evaluate(e => e.options[e.selectedIndex]?.text || '');
