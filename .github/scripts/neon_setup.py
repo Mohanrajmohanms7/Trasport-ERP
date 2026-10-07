@@ -56,10 +56,12 @@ def post_comment(text):
 
 def main():
     # 1. Render backend service and its region
-    svcs = render("GET", f"/services?name={SERVICE}&limit=20")
-    svc = next((s["service"] for s in svcs if s["service"]["name"] == SERVICE), None)
+    svcs = render("GET", "/services?limit=100")
+    allsv = [s["service"] for s in svcs]
+    svc = next((x for x in allsv if x["name"] == SERVICE), None) or next((x for x in allsv if x.get("type") == "web_service" and "backend" in x["name"]), None)
     if not svc:
-        raise SystemExit(f"Render service {SERVICE} not found (services: {[s['service']['name'] for s in svcs]})")
+        owners = render("GET", "/owners?limit=20")
+        raise SystemExit(f"Render backend not found. Services visible to this key: {[(x['name'], x.get('type'), (x.get('serviceDetails') or {}).get('url')) for x in allsv]}; workspaces: {[o['owner']['name'] for o in owners]}")
     sid = svc["id"]; region = (svc.get("serviceDetails") or {}).get("region", "singapore")
     step(f"Render service {SERVICE} found, region {region}")
 
