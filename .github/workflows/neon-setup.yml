@@ -10,6 +10,8 @@ on:
       mode:
         description: "setup = create + switch Render + deploy + verify; check = verify only"
         default: setup
+permissions:
+  contents: write
 jobs:
   neon:
     runs-on: ubuntu-latest
@@ -23,4 +25,7 @@ jobs:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           MODE: ${{ github.event.inputs.mode || 'setup' }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          GH_SHA: ${{ github.sha }}
         run: python3 .github/scripts/neon_setup.py
