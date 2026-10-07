@@ -107,12 +107,18 @@ def main():
     step(f"Render service {SERVICE} found, region {region}")
 
     # 2. Neon project (create once, reuse afterwards)
-    projects = neon("GET", "/projects").get("projects", [])
+    # Neon keys that belong to an organization need its org_id on project calls.
+    orgs = neon("GET", "/users/me/organizations").get("organizations", [])
+    org_id = orgs[0]["id"] if orgs else None
+    step(f"Neon organization: {orgs[0].get('name') if orgs else '(personal account)'}")
+    projects = neon("GET", "/projects" + (f"?org_id={org_id}" if org_id else "")).get("projects", [])
     proj = next((p for p in projects if p["name"] == PROJECT), None)
     if not proj:
         if MODE != "setup":
             raise SystemExit("Neon project not found — run with mode=setup")
-        created = neon("POST", "/projects", {"project": {"name": PROJECT, "pg_version": 16, "region_id": REGION.get(region, "aws-ap-southeast-1")}})
+        body = {"name": PROJECT, "pg_version": 16, "region_id": REGION.get(region, "aws-ap-southeast-1")}
+        if org_id: body["org_id"] = org_id
+        created = neon("POST", "/projects", {"project": body})
         proj = created["project"]; step(f"Neon project {PROJECT} created in {proj['region_id']}")
     else:
         step(f"Neon project {PROJECT} already exists in {proj['region_id']} — reused")
