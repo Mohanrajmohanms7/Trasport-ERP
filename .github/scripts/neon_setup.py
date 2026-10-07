@@ -6,8 +6,10 @@ import json, os, subprocess, sys, time, urllib.error, urllib.request
 
 NEON = "https://console.neon.tech/api/v2"
 RENDER = "https://api.render.com/v1"
-PROJECT, DB, SERVICE = "transaflow-test", "transport_erp", "transport-backend"
+PROJECT, DB, SERVICE = "transaflow-test", "transport_erp", "Trasport-ERP-1"   # the live Render backend (render.yaml names differ)
 MODE = os.environ.get("MODE", "setup")
+_mf = os.path.join(os.path.dirname(__file__), "neon_mode")
+if os.path.exists(_mf): MODE = open(_mf).read().strip() or MODE   # push runs: mode from this file
 REGION = {"oregon": "aws-us-west-2", "ohio": "aws-us-east-2", "virginia": "aws-us-east-1",
           "frankfurt": "aws-eu-central-1", "singapore": "aws-ap-southeast-1"}
 
@@ -68,8 +70,13 @@ def main():
                 for v in keys.values(): mask(v) if len(v) > 12 and 'jdbc' not in v else None
                 dbu = keys.get('DATABASE_URL', '')
                 line += f" | env keys: {sorted(keys)} | DATABASE_URL host: {dbu.split('//')[-1].split('/')[0] if dbu else '-'}"
-                deps = render("GET", f"/services/{x['id']}/deploys?limit=1")
-                if deps: line += f" | last deploy: {deps[0]['deploy'].get('status')} {deps[0]['deploy'].get('finishedAt')}"
+                deps = render("GET", f"/services/{x['id']}/deploys?limit=5")
+                if deps: line += " | deploys: " + "; ".join(f"{d['deploy'].get('status')} {str(d['deploy'].get('finishedAt'))[:16]} {(d['deploy'].get('commit') or {}).get('id','')[:7]}" for d in deps)
+                try:
+                    evs = render("GET", f"/services/{x['id']}/events?limit=12")
+                    line += " | events: " + "; ".join(f"{e['event'].get('type')} {str(e['event'].get('timestamp'))[:16]} {json.dumps(e['event'].get('details'))[:220]}" for e in evs)
+                except SystemExit as e:
+                    line += f" | events: {e}"
             else:
                 try:
                     routes = render("GET", f"/services/{x['id']}/routes?limit=20")
@@ -124,7 +131,9 @@ def main():
     # 3. Point Render at Neon and deploy
     jdbc = f"jdbc:postgresql://{host}/{DB}?sslmode=require"
     if MODE == "setup":
-        for k, v in (("DATABASE_URL", jdbc), ("DATABASE_USERNAME", role), ("DATABASE_PASSWORD", pwd)):
+        # SPRING_DATASOURCE_* override DATABASE_* in Spring, and the live service has both: set both to Neon.
+        for k, v in (("DATABASE_URL", jdbc), ("DATABASE_USERNAME", role), ("DATABASE_PASSWORD", pwd),
+                     ("SPRING_DATASOURCE_URL", jdbc), ("SPRING_DATASOURCE_USERNAME", role), ("SPRING_DATASOURCE_PASSWORD", pwd)):
             render("PUT", f"/services/{sid}/env-vars/{k}", {"value": v})
         step(f"Render settings updated: DATABASE_URL = jdbc:postgresql://{host}/{DB}?sslmode=require, DATABASE_USERNAME = {role}, DATABASE_PASSWORD = (hidden)")
         dep = render("POST", f"/services/{sid}/deploys", {"clearCache": "do_not_clear"})
