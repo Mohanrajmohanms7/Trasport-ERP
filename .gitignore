@@ -28,3 +28,4 @@ TestBuilder.java
 .idea/
 .vscode/
 *.log
+__pycache__/
