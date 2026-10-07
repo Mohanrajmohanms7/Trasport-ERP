@@ -975,7 +975,8 @@ if [ -n "$BT" ] && [ -n "$BB2" ] && [ "$BB2" != "None" ]; then
   $PSQL "UPDATE trips SET branch_id=${BTB:-NULL} WHERE id=$BT" >/dev/null; $PSQL "UPDATE app_users SET branch_id=${OPB:-NULL} WHERE username='op1'" >/dev/null
 else fail "billing branch setup" "trip=$BT branch=$BB2"; fi
 
-# ================= FLOW REVIEW: roles x modules, branch isolation, company isolation ==========R_ACC=$(RID ACCOUNTANT); R_BM=$(RID BRANCH_MANAGER); mkuser acc1 $R_ACC >/dev/null; mkuser bm1 $R_BM >/dev/null
+# ================= FLOW REVIEW: roles x modules, branch isolation, company isolation ==========
+R_ACC=$(RID ACCOUNTANT); R_BM=$(RID BRANCH_MANAGER); mkuser acc1 $R_ACC >/dev/null; mkuser bm1 $R_BM >/dev/null
 TA=$(tok acc1 Secret@123); TB=$(tok bm1 Secret@123)
 code() { curl -s -o /tmp/fr.json -w "%{http_code}" -X "$2" -H "Authorization: Bearer $1" -H 'Content-Type: application/json' "$API$3" ${4:+-d "$4"}; }
 expect() { local want=$1 got=$2 msg=$3; case " $want " in *" $got "*) pass "FR $msg ($got)";; *) fail "FR $msg" "got $got want $want :: $(head -c 160 /tmp/fr.json)";; esac; }
@@ -1084,7 +1085,6 @@ if [ -n "$FE" ]; then
   expect "200" "$(code "$TC" GET /fuel/$FE)" "company admin opens other-branch fuel"
 else fail "F3 fuel setup" "could not copy a fuel entry"; fi
 $PSQL "UPDATE app_users SET branch_id=$OPB3 WHERE username='op1'" >/dev/null
-=======
 
 # ---------------- Platform Admin review: security & consistency ----------------
 R=$(curl -s -X POST $API/auth/reset-password -H 'Content-Type: application/json' -d '{"username":"admin","token":"anything","newPassword":"Hack@12345Ab"}')
