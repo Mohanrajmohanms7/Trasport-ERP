@@ -1,4 +1,4 @@
-# Keeps the Render test backend awake (free plan sleeps after 15 min idle, then the first request waits 30-60 s).
+# Keeps the Render test backend (service Trasport-ERP-1) awake (free plan sleeps after 15 min idle, then the first request waits 30-60 s).
 # Any response wakes it. Remove this file when moving to a paid Render plan (which never sleeps).
 name: keep-alive
 on:
@@ -11,4 +11,4 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Ping backend
-        run: curl -s -o /dev/null -w "backend %{http_code} in %{time_total}s\n" --max-time 120 https://transport-backend.onrender.com/api/v1/auth/login || true
+        run: curl -s -o /dev/null -w "backend %{http_code} in %{time_total}s\n" --max-time 120 https://trasport-erp-1.onrender.com/api/v1/auth/login || true
