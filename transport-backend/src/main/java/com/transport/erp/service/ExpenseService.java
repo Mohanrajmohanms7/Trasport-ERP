@@ -22,6 +22,10 @@ import java.util.List;
 @Service
 public class ExpenseService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
     @org.springframework.beans.factory.annotation.Autowired
     private ApprovalPolicyService approvalPolicy;
 
@@ -94,6 +98,9 @@ public class ExpenseService {
         BigDecimal gst = expense.getGstAmount() != null ? expense.getGstAmount() : BigDecimal.ZERO;
         expense.setTotalAmount(amt.add(gst));
 
+        if (operationalGuards != null && expense.getTrip() != null && expense.getTrip().getId() != null) {   // expense on a trip = that trip's vehicle / driver
+            operationalGuards.assertMatchesTrip(expense.getTrip().getId(), expense.getCompanyId(), (expense.getVehicle() != null ? expense.getVehicle().getId() : null), (expense.getDriver() != null ? expense.getDriver().getId() : null), "expense");
+        }
         Expense saved = expenseRepository.save(expense);
 
         auditService.log(username, "EXPENSE_CREATED", "expenses", saved.getId(), null,
@@ -139,6 +146,9 @@ public class ExpenseService {
         existing.setRemarks(details.getRemarks());
         existing.setUpdatedBy(username);
 
+        if (operationalGuards != null && existing.getTrip() != null && existing.getTrip().getId() != null) {   // expense on a trip = that trip's vehicle / driver
+            operationalGuards.assertMatchesTrip(existing.getTrip().getId(), existing.getCompanyId(), (existing.getVehicle() != null ? existing.getVehicle().getId() : null), (existing.getDriver() != null ? existing.getDriver().getId() : null), "expense");
+        }
         Expense saved = expenseRepository.save(existing);
 
         auditService.log(username, "EXPENSE_UPDATED", "expenses", saved.getId(), null,

@@ -14,6 +14,10 @@ import java.util.Optional;
 @Service
 public class CustomerService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
     @Autowired
     private CustomerRepository customerRepository;
 
@@ -58,6 +62,7 @@ public class CustomerService {
                     "Customer code already exists in this company: " + customer.getCode());
         }
         customer.setIsDeleted(false);
+        if (operationalGuards != null) operationalGuards.assertUniqueCustomerGstin(companyId, customer.getGstNumber(), null);
         return customerRepository.save(customer);
     }
 
@@ -87,6 +92,7 @@ public class CustomerService {
             customer.setBranchId(customerDetails.getBranchId());
         }
 
+        if (operationalGuards != null) operationalGuards.assertUniqueCustomerGstin(customer.getCompanyId(), customer.getGstNumber(), customer.getId());
         return customerRepository.save(customer);
     }
 

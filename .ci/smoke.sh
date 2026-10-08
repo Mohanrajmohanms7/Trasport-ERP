@@ -1145,5 +1145,47 @@ C=$(as "$TO" POST /lookups '{"type":"PAYMENT_METHOD","code":"OP_TRY","name":"Ope
 curl -s -H "Authorization: Bearer $NT" "$API/lookups/list?type=PAYMENT_METHOD" | grep -q "PHONEPE_TEST" && fail "lookup tenant leak" "other company sees it" || pass "another company does not see the new value"
 C=$(as "$NT" PUT /lookups/$LID '{"type":"PAYMENT_METHOD","code":"PHONEPE_TEST","name":"hijack","status":"ACTIVE"}'); [ "$C" = "403" ] && pass "another company cannot edit the value (403)" || fail "lookup cross edit" "$C"
 
+# ================= BUSINESS GAPS (flow review 3): one trip at a time, trip-matched costs, inactive, duplicates =================
+TODAY=$(date +%F)
+GV1=$(api POST /vehicles '{"code":"TN46GG0001","name":"TN46GG0001","status":"ACTIVE"}' | j "d['data']['id']")
+GV2=$(api POST /vehicles '{"code":"TN46GG0002","name":"TN46GG0002","status":"ACTIVE"}' | j "d['data']['id']")
+GD1=$(api POST /drivers '{"code":"GD-1","name":"Guard Driver One","licenseNumber":"TN4620260091","phoneNumber":"9000000091","status":"ACTIVE"}' | j "d['data']['id']")
+GD2=$(api POST /drivers '{"code":"GD-2","name":"Guard Driver Two","licenseNumber":"TN4620260092","phoneNumber":"9000000092","status":"ACTIVE"}' | j "d['data']['id']")
+GB=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":6,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
+api POST /bookings/$GB/approve >/dev/null
+gtrip() { api POST /trips '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$2'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']"; }
+GT1=$(gtrip $GV1 $GD1); GT2=$(gtrip $GV1 $GD2); GT3=$(gtrip $GV2 $GD1)
+[ -n "$GT1" ] && [ -n "$GT2" ] && [ "$GT3" != "None" ] && pass "BG plan several trips for the same lorry / driver (allowed)" || fail "BG plan trips" "$GT1 $GT2 $GT3"
+R=$(api POST /trips/$GT1/dispatch); [ "$(echo "$R" | j "d['data']['status']")" = "DISPATCHED" ] && pass "BG first trip dispatched" || fail "BG dispatch 1" "$(echo $R | cut -c1-160)"
+R=$(api POST /trips/$GT2/dispatch); echo "$R" | grep -q "Vehicle On Another Trip" && pass "BG same lorry cannot be dispatched twice" || fail "BG vehicle busy" "$(echo $R | cut -c1-200)"
+R=$(api POST /trips/$GT3/dispatch); echo "$R" | grep -q "Driver On Another Trip" && pass "BG same driver cannot be dispatched twice" || fail "BG driver busy" "$(echo $R | cut -c1-200)"
+R=$(api POST /expenses '{"expenseDate":"'$TODAY'","category":"TOLL","vehicle":{"id":'$GV2'},"driver":{"id":'$GD1'},"trip":{"id":'$GT1'},"amount":100,"totalAmount":100,"paymentMethod":"CASH","description":"guard test"}')
+echo "$R" | grep -q "Vehicle Does Not Match Trip" && pass "BG expense on another lorry's trip refused" || fail "BG expense trip vehicle" "$(echo $R | cut -c1-200)"
+R=$(api POST /expenses '{"expenseDate":"'$TODAY'","category":"TOLL","vehicle":{"id":'$GV1'},"driver":{"id":'$GD2'},"trip":{"id":'$GT1'},"amount":100,"totalAmount":100,"paymentMethod":"CASH","description":"guard test"}')
+echo "$R" | grep -q "Driver Does Not Match Trip" && pass "BG expense with another driver refused" || fail "BG expense trip driver" "$(echo $R | cut -c1-200)"
+R=$(api POST /expenses '{"expenseDate":"'$TODAY'","category":"TOLL","vehicle":{"id":'$GV1'},"driver":{"id":'$GD1'},"trip":{"id":'$GT1'},"amount":100,"totalAmount":100,"paymentMethod":"CASH","description":"guard test ok"}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG expense matching the trip saved" || fail "BG expense ok" "$(echo $R | cut -c1-200)"
+api POST /trips/$GT1/complete >/dev/null
+R=$(api POST /trips/$GT2/dispatch); [ "$(echo "$R" | j "d['data']['status']")" = "DISPATCHED" ] && pass "BG lorry free again after completing" || fail "BG dispatch after complete" "$(echo $R | cut -c1-160)"
+api POST /trips/$GT2/complete >/dev/null
+$PSQL "UPDATE vehicles SET status='INACTIVE' WHERE id=$GV2" >/dev/null
+R=$(api POST /trips '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV2'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}')
+echo "$R" | grep -q "Vehicle Inactive" && pass "BG inactive vehicle refused on a new trip" || fail "BG inactive vehicle" "$(echo $R | cut -c1-200)"
+R=$(api PUT /trips/$GT3 '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV2'},"driver":{"id":'$GD1'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG existing trip with a now-inactive vehicle still editable" || fail "BG inactive existing" "$(echo $R | cut -c1-200)"
+$PSQL "UPDATE vehicles SET status='ACTIVE' WHERE id=$GV2" >/dev/null
+GC=$(api POST /customers '{"code":"GC-1","name":"Guard Inactive Co","status":"ACTIVE"}' | j "d['data']['id']"); $PSQL "UPDATE customers SET status='INACTIVE' WHERE id=$GC" >/dev/null
+R=$(api POST /bookings '{"customer":{"id":'$GC'},"details":[{"material":{"id":'$MAT'},"quantity":1,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}')
+echo "$R" | grep -q "Customer Inactive" && pass "BG inactive customer refused on a new booking" || fail "BG inactive customer" "$(echo $R | cut -c1-200)"
+R=$(api POST /customers '{"code":"GC-2","name":"Guard GST One","gstNumber":"33AAGCG9001A1Z1","status":"ACTIVE"}'); GG1=$(echo "$R" | j "d['data']['id']")
+R=$(api POST /customers '{"code":"GC-3","name":"Guard GST Two","gstNumber":"33aagcg9001a1z1","status":"ACTIVE"}')
+echo "$R" | grep -q "GSTIN Already Used" && pass "BG duplicate customer GSTIN refused (any case)" || fail "BG gstin dup" "$(echo $R | cut -c1-200)"
+R=$(api PUT /customers/$GG1 '{"code":"GC-2","name":"Guard GST One","gstNumber":"33AAGCG9001A1Z1","status":"ACTIVE"}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG editing a customer keeps its own GSTIN" || fail "BG gstin self edit" "$(echo $R | cut -c1-200)"
+GS=$(api POST /suppliers '{"code":"GS-1","name":"Guard Spares","status":"ACTIVE"}' | j "d['data']['id']")
+R=$(api POST /payables/bills '{"supplier":{"id":'$GS'},"supplierBillNo":"GS/2627/001","billDate":"'$TODAY'","category":"REPAIR","taxableAmount":500,"gstAmount":0}'); [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG first supplier bill saved" || fail "BG bill 1" "$(echo $R | cut -c1-200)"
+R=$(api POST /payables/bills '{"supplier":{"id":'$GS'},"supplierBillNo":"gs/2627/001","billDate":"'$TODAY'","category":"REPAIR","taxableAmount":500,"gstAmount":0}')
+echo "$R" | grep -q "Bill Already Entered" && pass "BG same supplier bill number refused" || fail "BG bill dup" "$(echo $R | cut -c1-200)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
