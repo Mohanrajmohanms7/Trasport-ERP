@@ -40,7 +40,7 @@ export class ForgotPasswordComponent {
       next: (res) => {
         this.loading.set(false);
         if (res.success) {
-          this.successMessage.set('Reset link sent to your registered email address!');
+          this.successMessage.set('Request noted. Email reset is not available yet — please ask your company admin (or TransaFlow support) to reset your password.');
         } else {
           this.errorMessage.set(res.message || 'Forgot password request failed.');
         }

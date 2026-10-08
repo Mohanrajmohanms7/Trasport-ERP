@@ -56,4 +56,12 @@ public class AppUser extends BaseEntity {
 
     @Column(name = "failed_login_attempts")
     private Integer failedLoginAttempts = 0;
+
+    /** Bumped to end all of this user's logins at once (force logout, admin reset, deactivation). */
+    @Column(name = "token_version", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Integer tokenVersion = 0;
+
+    @Column(name = "locked_until")
+    private java.time.LocalDateTime lockedUntil;
 }

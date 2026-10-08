@@ -985,10 +985,10 @@
               <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
                 <th class="p-2">Plan Code</th>
                 <th class="p-2">Plan Name</th>
-                <th class="p-2">Monthly Fee</th>
-                <th class="p-2">Users Limit</th>
-                <th class="p-2">Vehicles Limit</th>
-                <th class="p-2">Invoices Limit</th>
+                <th class="p-2">Price / month</th>
+                <th class="p-2">Logins</th>
+                <th class="p-2">Trucks</th>
+                <th class="p-2">Branches</th>
                 <th class="p-2">Status</th>
                 <th class="p-2 text-right">Actions</th>
               </tr>
@@ -997,10 +997,10 @@
               <tr *ngFor="let item of plans()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
                 <td class="p-2 font-mono font-bold">{{ item.code }}</td>
                 <td class="p-2 font-semibold text-slate-800 dark:text-slate-200">{{ item.name }}</td>
-                <td class="p-2 font-bold text-slate-950 dark:text-white">₹{{ item.price | number:'1.2-2' }}</td>
-                <td class="p-2 font-mono">{{ item.maxUsers }} Max</td>
-                <td class="p-2 font-mono">{{ item.maxVehicles }} Max</td>
-                <td class="p-2 font-mono">{{ item.maxInvoices }} Max</td>
+                <td class="p-2 font-bold text-slate-950 dark:text-white">₹{{ item.price | number:'1.0-0' }}<span *ngIf="item.priceYearly" class="block text-[10px] font-normal text-slate-500">₹{{ item.priceYearly | number:'1.0-0' }} / year</span></td>
+                <td class="p-2 font-mono">{{ lim(item.maxUsers) }}</td>
+                <td class="p-2 font-mono">{{ lim(item.maxVehicles) }}</td>
+                <td class="p-2 font-mono">{{ lim(item.maxBranches) }}</td>
                 <td class="p-2">
                   <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ item.status }}</span>
                 </td>
@@ -1023,7 +1023,7 @@
           <table class="ff-sticky-actions w-full text-xs text-left border-collapse">
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
-                <th class="p-2">Tenant Company ID</th>
+                <th class="p-2">Client</th>
                 <th class="p-2">License Key</th>
                 <th class="p-2">Activation Date</th>
                 <th class="p-2">Expiry Date</th>
@@ -1035,12 +1035,12 @@
             </thead>
             <tbody>
               <tr *ngFor="let item of licenses()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
-                <td class="p-2 font-mono">Company ID: {{ item.companyId }}</td>
+                <td class="p-2 font-mono">{{ coName(item.companyId) }}</td>
                 <td class="p-2 font-mono font-bold text-slate-800 dark:text-slate-200">{{ item.licenseKey }}</td>
                 <td class="p-2">{{ item.activationDate }}</td>
                 <td class="p-2">{{ item.expiryDate }}</td>
-                <td class="p-2 font-mono">{{ item.maxUsers }}</td>
-                <td class="p-2 font-mono">{{ item.maxVehicles }}</td>
+                <td class="p-2 font-mono">{{ lim(item.maxUsers) }}</td>
+                <td class="p-2 font-mono">{{ lim(item.maxVehicles) }}</td>
                 <td class="p-2">
                   <span [class.bg-emerald-50]="item.status === 'ACTIVE'" [class.text-emerald-700]="item.status === 'ACTIVE'" [class.dark:bg-emerald-950/20]="item.status === 'ACTIVE'" [class.bg-rose-50]="item.status === 'REVOKED'" [class.text-rose-700]="item.status === 'REVOKED'" [class.dark:bg-rose-950/20]="item.status === 'REVOKED'" class="px-2 py-0.5 rounded text-[10px] font-bold">
                     {{ item.status }}
@@ -1152,7 +1152,7 @@
                       <span *ngFor="let r of item.roles" class="bg-blue-50 text-blue-700 dark:bg-blue-950/20 px-1.5 py-0.5 rounded text-[9px] font-bold">{{ r.code }}</span>
                     </td>
                     <td class="p-2 font-mono text-[9px] text-slate-500">
-                      Co ID: {{ item.companyId }} / Br ID: {{ item.branchId }}
+                      {{ coName(item.companyId) }}
                     </td>
                     <td class="p-2">
                       <div class="flex flex-col">
@@ -1162,7 +1162,7 @@
                     </td>
                     <td class="p-2">
                       <div class="flex flex-col">
-                        <span class="font-mono text-[9px] text-slate-400">Exp: {{ item.passwordExpiry | date:'shortDate' }}</span>
+                        @if (item.passwordExpiry) { <span class="font-mono text-[9px] text-slate-400">Password expires {{ item.passwordExpiry | date:'shortDate' }}</span> }
                         <span *ngIf="item.forcePasswordChange" class="text-rose-600 font-bold text-[9px] uppercase">Force Change active</span>
                       </div>
                     </td>
@@ -1517,7 +1517,7 @@
             <thead>
               <tr class="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 text-slate-500 font-bold">
                 <th class="p-2">Invoice Number</th>
-                <th class="p-2">Tenant Company ID</th>
+                <th class="p-2">Client</th>
                 <th class="p-2">Invoice Date</th>
                 <th class="p-2">Amount Paid</th>
                 <th class="p-2">Billing Period</th>
@@ -1529,7 +1529,7 @@
             <tbody>
               <tr *ngFor="let item of invoices()" class="border-b border-slate-50 dark:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-700/30">
                 <td class="p-2 font-mono font-bold">{{ item.invoiceNumber }}</td>
-                <td class="p-2 font-mono text-slate-500">Company ID: {{ item.companyId }}</td>
+                <td class="p-2 font-mono text-slate-500">{{ coName(item.companyId) }}</td>
                 <td class="p-2">{{ item.invoiceDate }}</td>
                 <td class="p-2 font-bold text-slate-900 dark:text-white">₹{{ item.amount | number:'1.2-2' }}</td>
                 <td class="p-2 text-slate-500 text-[10px]">{{ item.billingPeriodStart }} to {{ item.billingPeriodEnd }}</td>
@@ -1697,7 +1697,7 @@
                       <td class="p-3 font-semibold text-slate-800 dark:text-white">{{ row.username }}</td>
                       <td class="p-3 font-bold">{{ row.name }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.email || 'N/A' }}</td>
-                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ coName(row.companyId) }}</td>
                       <td class="p-3">
                         <span class="bg-blue-50 text-blue-700 dark:bg-blue-950/20 px-2 py-0.5 rounded text-[10px] font-semibold">{{ row.roleCode || 'OPERATOR' }}</span>
                       </td>
@@ -1716,7 +1716,7 @@
                       <td class="p-3 font-semibold">{{ row.brand }} {{ row.model }}</td>
                       <td class="p-3">{{ row.type?.name || 'Tipper' }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.ownerType }}</td>
-                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ coName(row.companyId) }}</td>
                       <td class="p-3">
                         <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20">{{ row.status }}</span>
                       </td>
@@ -1728,7 +1728,7 @@
                       <td class="p-3 font-mono text-slate-500">{{ row.bookingCode || 'BKG-001' }}</td>
                       <td class="p-3 font-mono font-semibold">{{ row.vehicleCode || 'MH-12-PQ-4567' }}</td>
                       <td class="p-3 font-bold">{{ row.driverName || 'Ramesh Kumar' }}</td>
-                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ coName(row.companyId) }}</td>
                       <td class="p-3">
                         <span class="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 px-2 py-0.5 rounded text-[10px] font-bold">{{ row.status }}</span>
                       </td>
@@ -1737,7 +1737,7 @@
                     <!-- Revenue Row -->
                     @if (detailModalType() === 'monthly_revenue' || detailModalType() === 'yearly_revenue') {
                       <td class="p-3 font-mono font-bold text-slate-800 dark:text-white">{{ row.invoiceNumber }}</td>
-                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.companyId }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ coName(row.companyId) }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.invoiceDate }}</td>
                       <td class="p-3 font-bold text-emerald-600 dark:text-emerald-400">₹{{ row.amount | number:'1.2-2' }}</td>
                       <td class="p-3 text-[10px]">{{ row.billingPeriodStart }} to {{ row.billingPeriodEnd }}</td>
@@ -1751,7 +1751,7 @@
                     @if (detailModalType() === 'today_login') {
                       <td class="p-3 font-semibold text-slate-800 dark:text-white">{{ row.username }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.user?.email || 'N/A' }}</td>
-                      <td class="p-3 font-mono text-slate-500">Company ID: {{ row.user?.companyId }}</td>
+                      <td class="p-3 font-mono text-slate-500">{{ coName(row.user?.companyId) }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.loginTime }}</td>
                       <td class="p-3 font-mono text-[10px]">{{ row.ipAddress }}</td>
                       <td class="p-3 text-slate-400 text-[10px] truncate max-w-xs" [title]="row.userAgent">{{ row.userAgent }}</td>
@@ -1762,7 +1762,7 @@
                       <td class="p-3 font-mono font-bold text-blue-600 dark:text-blue-400">{{ row.code }}</td>
                       <td class="p-3 font-bold text-slate-800 dark:text-white">{{ row.name }}</td>
                       <td class="p-3 font-semibold">{{ row.plan?.name || 'TRIAL' }}</td>
-                      <td class="p-3 text-slate-500 text-[10px]">Max Users: {{ row.maxUsers }} · Vehicles: {{ row.maxVehicles }}</td>
+                      <td class="p-3 text-slate-500 text-[10px]">Logins: {{ lim(row.maxUsers) }} · Trucks: {{ lim(row.maxVehicles) }}</td>
                       <td class="p-3 font-bold text-slate-900 dark:text-white font-mono">{{ row.storage }}</td>
                       <td class="p-3">
                         <span class="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 px-2 py-0.5 rounded text-[10px] font-bold">ACTIVE</span>

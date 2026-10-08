@@ -65,7 +65,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-                if (jwtUtil.validateToken(jwt, userDetails)) {
+                AppUser tokenOwner = userRepository.findByUsernameAndIsDeletedFalse(username).orElse(null);
+                Integer tokenVersion = jwtUtil.extractClaim(jwt, c -> c.get("tv", Integer.class));
+                int currentVersion = tokenOwner == null || tokenOwner.getTokenVersion() == null ? 0 : tokenOwner.getTokenVersion();
+                boolean sessionValid = tokenOwner != null && "ACTIVE".equalsIgnoreCase(String.valueOf(tokenOwner.getStatus()))
+                        && (tokenVersion == null ? 0 : tokenVersion) == currentVersion;
+                // Force logout, admin password reset or deactivation end existing logins at once.
+                if (sessionValid && jwtUtil.validateToken(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -88,6 +94,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             // could fail lazily and silently skip this check.
                             boolean isSuperAdmin = userDetails.getAuthorities().stream()
                                     .anyMatch(a -> "ROLE_SUPER_ADMIN".equals(a.getAuthority()));
+                            // Suspended / removed client: nobody of that company can use the app.
+                            if (!isSuperAdmin && (Boolean.TRUE.equals(company.getIsDeleted()) || !"ACTIVE".equalsIgnoreCase(String.valueOf(company.getStatus())))
+                                    && !request.getRequestURI().startsWith("/api/v1/auth/logout")) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                response.setContentType("application/json");
+                                response.getWriter().write("{\"success\":false,\"message\":\"COMPANY_SUSPENDED\",\"data\":null,\"errors\":[\"Your company account is not active. Contact TransaFlow support.\"]}");
+                                return;
+                            }
                             if (!isSuperAdmin) {
                                 LocalDate today = LocalDate.now();
                                 boolean isExpired = (company.getSubscriptionEndDate() != null && today.isAfter(company.getSubscriptionEndDate()))
