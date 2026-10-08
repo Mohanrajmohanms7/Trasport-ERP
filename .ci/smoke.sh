@@ -1151,14 +1151,18 @@ GV1=$(api POST /vehicles '{"code":"TN46GG0001","name":"TN46GG0001","status":"ACT
 GV2=$(api POST /vehicles '{"code":"TN46GG0002","name":"TN46GG0002","status":"ACTIVE"}' | j "d['data']['id']")
 GD1=$(api POST /drivers '{"code":"GD-1","name":"Guard Driver One","licenseNumber":"TN4620260091","phoneNumber":"9000000091","status":"ACTIVE"}' | j "d['data']['id']")
 GD2=$(api POST /drivers '{"code":"GD-2","name":"Guard Driver Two","licenseNumber":"TN4620260092","phoneNumber":"9000000092","status":"ACTIVE"}' | j "d['data']['id']")
+api POST /vehicles/$GV1/driver/$GD1 >/dev/null; api POST /vehicles/$GV2/driver/$GD2 >/dev/null   # trips need the driver assigned to the lorry
 GB=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":6,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
 api POST /bookings/$GB/approve >/dev/null
 gtrip() { api POST /trips '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$2'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']"; }
-GT1=$(gtrip $GV1 $GD1); GT2=$(gtrip $GV1 $GD2); GT3=$(gtrip $GV2 $GD1)
-[ -n "$GT1" ] && [ -n "$GT2" ] && [ "$GT3" != "None" ] && pass "BG plan several trips for the same lorry / driver (allowed)" || fail "BG plan trips" "$GT1 $GT2 $GT3"
+GT1=$(gtrip $GV1 $GD1); GT2=$(gtrip $GV1 $GD1); GT3=$(gtrip $GV2 $GD2); GT4=$(gtrip $GV2 $GD2)
+[ -n "$GT1" ] && [ -n "$GT2" ] && [ -n "$GT3" ] && [ -n "$GT4" ] && [ "$GT4" != "None" ] && pass "BG plan several trips for the same lorry (allowed)" || fail "BG plan trips" "$GT1 $GT2 $GT3 $GT4"
 R=$(api POST /trips/$GT1/dispatch); [ "$(echo "$R" | j "d['data']['status']")" = "DISPATCHED" ] && pass "BG first trip dispatched" || fail "BG dispatch 1" "$(echo $R | cut -c1-160)"
 R=$(api POST /trips/$GT2/dispatch); echo "$R" | grep -q "Vehicle On Another Trip" && pass "BG same lorry cannot be dispatched twice" || fail "BG vehicle busy" "$(echo $R | cut -c1-200)"
+# driver moved to the other lorry while still out on GT1 (reassignment simulated in the database)
+$PSQL "UPDATE trips SET driver_id=$GD1 WHERE id=$GT3" >/dev/null
 R=$(api POST /trips/$GT3/dispatch); echo "$R" | grep -q "Driver On Another Trip" && pass "BG same driver cannot be dispatched twice" || fail "BG driver busy" "$(echo $R | cut -c1-200)"
+$PSQL "UPDATE trips SET driver_id=$GD2 WHERE id=$GT3" >/dev/null
 R=$(api POST /expenses '{"expenseDate":"'$TODAY'","category":"TOLL","vehicle":{"id":'$GV2'},"driver":{"id":'$GD1'},"trip":{"id":'$GT1'},"amount":100,"totalAmount":100,"paymentMethod":"CASH","description":"guard test"}')
 echo "$R" | grep -q "Vehicle Does Not Match Trip" && pass "BG expense on another lorry's trip refused" || fail "BG expense trip vehicle" "$(echo $R | cut -c1-200)"
 R=$(api POST /expenses '{"expenseDate":"'$TODAY'","category":"TOLL","vehicle":{"id":'$GV1'},"driver":{"id":'$GD2'},"trip":{"id":'$GT1'},"amount":100,"totalAmount":100,"paymentMethod":"CASH","description":"guard test"}')
@@ -1171,7 +1175,7 @@ api POST /trips/$GT2/complete >/dev/null
 $PSQL "UPDATE vehicles SET status='INACTIVE' WHERE id=$GV2" >/dev/null
 R=$(api POST /trips '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV2'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}')
 echo "$R" | grep -q "Vehicle Inactive" && pass "BG inactive vehicle refused on a new trip" || fail "BG inactive vehicle" "$(echo $R | cut -c1-200)"
-R=$(api PUT /trips/$GT3 '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV2'},"driver":{"id":'$GD1'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}')
+R=$(api PUT /trips/$GT4 '{"booking":{"id":'$GB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV2'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}')
 [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG existing trip with a now-inactive vehicle still editable" || fail "BG inactive existing" "$(echo $R | cut -c1-200)"
 $PSQL "UPDATE vehicles SET status='ACTIVE' WHERE id=$GV2" >/dev/null
 GC=$(api POST /customers '{"code":"GC-1","name":"Guard Inactive Co","status":"ACTIVE"}' | j "d['data']['id']"); $PSQL "UPDATE customers SET status='INACTIVE' WHERE id=$GC" >/dev/null
@@ -1179,7 +1183,7 @@ R=$(api POST /bookings '{"customer":{"id":'$GC'},"details":[{"material":{"id":'$
 echo "$R" | grep -q "Customer Inactive" && pass "BG inactive customer refused on a new booking" || fail "BG inactive customer" "$(echo $R | cut -c1-200)"
 R=$(api POST /customers '{"code":"GC-2","name":"Guard GST One","gstNumber":"33AAGCG9001A1Z1","status":"ACTIVE"}'); GG1=$(echo "$R" | j "d['data']['id']")
 R=$(api POST /customers '{"code":"GC-3","name":"Guard GST Two","gstNumber":"33aagcg9001a1z1","status":"ACTIVE"}')
-echo "$R" | grep -q "GSTIN Already Used" && pass "BG duplicate customer GSTIN refused (any case)" || fail "BG gstin dup" "$(echo $R | cut -c1-200)"
+echo "$R" | grep -q "is already on customer" && pass "BG duplicate customer GSTIN refused (any case)" || fail "BG gstin dup" "$(echo $R | cut -c1-200)"
 R=$(api PUT /customers/$GG1 '{"code":"GC-2","name":"Guard GST One","gstNumber":"33AAGCG9001A1Z1","status":"ACTIVE"}')
 [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "BG editing a customer keeps its own GSTIN" || fail "BG gstin self edit" "$(echo $R | cut -c1-200)"
 GS=$(api POST /suppliers '{"code":"GS-1","name":"Guard Spares","status":"ACTIVE"}' | j "d['data']['id']")
