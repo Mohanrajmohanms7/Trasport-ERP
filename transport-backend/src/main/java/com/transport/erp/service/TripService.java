@@ -38,6 +38,10 @@ import java.util.Optional;
 @Service
 public class TripService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
 
     @Autowired
     private TripRepository tripRepository;
@@ -178,6 +182,10 @@ public class TripService {
 
         resolveLoadingSource(trip, trip.getQuarry(), trip.getLoadingLocation());
         validateVehicleDriverAssignment(trip);
+        if (operationalGuards != null) {   // new trips: no inactive vehicle / driver
+            operationalGuards.assertActive("vehicles", (trip.getVehicle() != null ? trip.getVehicle().getId() : null), "Vehicle");
+            operationalGuards.assertActive("drivers", (trip.getDriver() != null ? trip.getDriver().getId() : null), "Driver");
+        }
         assertVehicleAvailableForNewTrip(trip, null);
 
         if (trip.getDetails() != null) {
@@ -226,10 +234,20 @@ public class TripService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found for trip " + existing.getTripNumber()));
 
         Long previousVehicleId = existing.getVehicle() == null ? null : existing.getVehicle().getId();
+        Long previousDriverId = existing.getDriver() == null ? null : existing.getDriver().getId();
+        if (completed && operationalGuards != null && details.getTripDate() != null) {
+            // Payroll counts completed trips by date: keep approved / paid months stable.
+            operationalGuards.assertPayrollMonthOpen(previousDriverId, existing.getTripDate(), details.getTripDate());
+        }
         if (!completed) {
             // Vehicle/driver cannot change after the truck has delivered.
             existing.setVehicle(details.getVehicle());
             existing.setDriver(details.getDriver());
+            if (operationalGuards != null) {   // a newly chosen vehicle / driver must be active (unchanged ones may stay)
+                Long nv = (details.getVehicle() != null ? details.getVehicle().getId() : null), nd = (details.getDriver() != null ? details.getDriver().getId() : null);
+                if (nv != null && !nv.equals(previousVehicleId)) operationalGuards.assertActive("vehicles", nv, "Vehicle");
+                if (nd != null && !nd.equals(previousDriverId)) operationalGuards.assertActive("drivers", nd, "Driver");
+            }
             validateVehicleDriverAssignment(existing);
             assertVehicleAvailableForNewTrip(existing, previousVehicleId);
         }
@@ -583,6 +601,9 @@ public class TripService {
             throw new BusinessValidationException("Vehicle And Driver Required", "TRIP_DISPATCH_UNASSIGNED",
                     "Trip " + trip.getTripNumber() + " needs a vehicle and a driver before dispatch.",
                     "Edit the trip and allocate a vehicle and driver.");
+        }
+        if (operationalGuards != null) {   // a lorry / driver can be out on only one trip at a time
+            operationalGuards.assertFreeToDispatch(trip.getId(), trip.getCompanyId(), trip.getVehicle().getId(), trip.getDriver().getId());
         }
         trip.setStatus("DISPATCHED");
         trip.setUpdatedBy(dispatchedByUsername);

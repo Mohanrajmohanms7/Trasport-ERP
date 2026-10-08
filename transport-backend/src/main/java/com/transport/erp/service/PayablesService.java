@@ -27,6 +27,10 @@ import java.util.*;
 @Service
 public class PayablesService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
     public static final Map<String, String[]> CATEGORY_ACCOUNT = Map.of(
             "REPAIR", new String[]{"5400", "Vehicle Repair & Maintenance", "EXPENSE"},
             "TYRES", new String[]{"5410", "Tyres & Tubes", "EXPENSE"},
@@ -94,6 +98,7 @@ public class PayablesService {
         b.setIsDeleted(false);
         b.setCreatedBy(username);
         applyBillInputs(b, in);
+        if (operationalGuards != null) operationalGuards.assertUniqueSupplierBillNo(b.getCompanyId(), supplier.getId(), b.getSupplierBillNo(), null);
         b.setBillNumber(documentNumberService.next(b.getCompanyId(), "SUPPLIER_BILL", "SB-", b.getBillDate()));
         b.setCode(b.getBillNumber());
         b.setName("Bill " + supplier.getName());
@@ -111,6 +116,7 @@ public class PayablesService {
         }
         if (in.getSupplier() != null && in.getSupplier().getId() != null) b.setSupplier(requireSupplier(in.getSupplier().getId()));
         applyBillInputs(b, in);
+        if (operationalGuards != null && b.getSupplier() != null) operationalGuards.assertUniqueSupplierBillNo(b.getCompanyId(), b.getSupplier().getId(), b.getSupplierBillNo(), b.getId());
         b.setUpdatedBy(username);
         return billRepository.save(b);
     }

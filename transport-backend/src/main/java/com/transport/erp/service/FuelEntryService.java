@@ -22,6 +22,10 @@ import java.util.Optional;
 @Service
 public class FuelEntryService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
     @org.springframework.beans.factory.annotation.Autowired
     private ApprovalPolicyService approvalPolicy;
 
@@ -215,6 +219,9 @@ public class FuelEntryService {
             }
         }
 
+        if (operationalGuards != null && entry.getTrip() != null && entry.getTrip().getId() != null) {   // fuel on a trip = that trip's vehicle / driver
+            operationalGuards.assertMatchesTrip(entry.getTrip().getId(), entry.getCompanyId(), (entry.getVehicle() != null ? entry.getVehicle().getId() : null), (entry.getDriver() != null ? entry.getDriver().getId() : null), "fuel entry");
+        }
         FuelEntry saved = fuelEntryRepository.save(entry);
 
         if (req != null) {
@@ -458,6 +465,9 @@ public class FuelEntryService {
         existing.setRemarks(details.getRemarks());
         existing.setUpdatedBy(username);
 
+        if (operationalGuards != null && existing.getTrip() != null && existing.getTrip().getId() != null) {   // fuel on a trip = that trip's vehicle / driver
+            operationalGuards.assertMatchesTrip(existing.getTrip().getId(), existing.getCompanyId(), (existing.getVehicle() != null ? existing.getVehicle().getId() : null), (existing.getDriver() != null ? existing.getDriver().getId() : null), "fuel entry");
+        }
         FuelEntry saved = fuelEntryRepository.save(existing);
 
         auditService.log(username, "FUEL_ENTRY_UPDATED", "fuel_entries", saved.getId(), null,

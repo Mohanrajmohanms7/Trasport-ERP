@@ -283,6 +283,7 @@ def main():
         bookings.append(b)
 
     # ------------------------------------------------------------------ 7. Trips (dispatch, complete, weighbridge)
+    busy_v, busy_d = set(), set()   # a lorry / driver can be out on only one trip at a time
     print('[7] Trips')
     trips = []
     loads = {'MSAND': 4, 'PSAND': 3.5, 'BM20': 4.5, 'BM40': 4.5, 'JALLI6': 3.5, 'GRAVEL': 5}  # Units per lorry load
@@ -307,8 +308,11 @@ def main():
             if recent and t % 2 == 0:
                 trips.append({'id': tr['id'], 'status': 'PLANNED', 'ago': ago, 'b': b, 'v': v, 'dr': dr})
                 continue
+            if recent and (v['id'] in busy_v or dr['id'] in busy_d):
+                recent = False   # this lorry / driver is already out: this load was delivered earlier
             api.post(f"/trips/{tr['id']}/dispatch")
             if recent:
+                busy_v.add(v['id']); busy_d.add(dr['id'])
                 trips.append({'id': tr['id'], 'status': 'DISPATCHED', 'ago': ago, 'b': b, 'v': v, 'dr': dr})
                 continue
             api.post(f"/trips/{tr['id']}/complete")
@@ -326,7 +330,7 @@ def main():
         tr = api.post('/trips', {'booking': {'id': b['id']}, 'tripDate': d(0), 'vehicle': {'id': vehicles[vi]['id']},
                                  'driver': {'id': drivers[vi]['id']}, 'details': [{'material': {'id': mats[b['mc']]['id']},
                                  'quantity': loads[b['mc']]}]})
-        if tr and n == 1:
+        if tr and n == 1 and vehicles[vi]['id'] not in busy_v and drivers[vi]['id'] not in busy_d:
             api.post(f"/trips/{tr['id']}/dispatch")
     # close one booking early (customer needs no more loads)
     closable = [b for b in bookings if b['action'] == 'APPROVE' and b['ci'] == 7]

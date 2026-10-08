@@ -19,6 +19,10 @@ import com.transport.erp.security.TenantParentAccess;
 @Service
 public class BookingService {
 
+    /** Business-rule checks (flow review). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private OperationalGuards operationalGuards;
+
     @org.springframework.beans.factory.annotation.Autowired
     private com.transport.erp.repository.SalesInvoiceRepository salesInvoiceRepository;
 
@@ -83,6 +87,7 @@ public class BookingService {
             throw new com.transport.erp.exception.BusinessValidationException("Customer Required", "BOOKING_CUSTOMER_REQUIRED",
                     "Select the customer for this booking.", "Choose a customer, then add the materials.");
         }
+        if (operationalGuards != null) operationalGuards.assertActive("customers", booking.getCustomer().getId(), "Customer");
         String prefix = settingService.getByKey("PREFIX_BOOKING").map(s -> s.getValueData()).orElse("BKG-");
         String defaultStatus = settingService.getByKey("DEFAULT_BOOKING_STATUS").map(s -> s.getValueData()).orElse("PENDING");
         
