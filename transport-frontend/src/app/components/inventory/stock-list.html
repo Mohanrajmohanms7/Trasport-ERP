@@ -92,4 +92,26 @@
       </table>
     </div>
   }
+  @if (costRow(); as cr) {
+    <div class="fixed inset-0 z-[90] flex items-center justify-center p-2 bg-slate-950/70">
+      <form (ngSubmit)="saveCost()" class="w-full max-w-sm rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)] p-5 flex flex-col gap-3" role="dialog" aria-label="Set cost">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h2 class="text-base font-bold">Set cost</h2>
+            <p class="text-xs text-[var(--ff-text-secondary)]">{{ cr.sparePartName }} · {{ cr.warehouseCode || cr.warehouseName }} · {{ cr.availableQuantity }} on hand</p>
+          </div>
+          <button type="button" class="w-9 h-9 rounded-lg hover:bg-[var(--ff-surface-hover)]" (click)="costRow.set(null)" aria-label="Close"><span class="material-icons">close</span></button>
+        </div>
+        <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Unit cost (₹) *
+          <input type="number" min="0.01" step="0.01" required name="cost" class="h-10 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-3 text-sm" [(ngModel)]="costValue" (input)="costError.set('')" />
+        </label>
+        @if (costError()) { <p class="text-xs text-rose-600" role="alert">{{ costError() }}</p> }
+        <p class="text-[11px] text-[var(--ff-text-muted)]">This values stock that was entered without a cost and posts it to the inventory account. It can be set once.</p>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="costRow.set(null)">Cancel</button>
+          <button type="submit" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold disabled:opacity-50" [disabled]="costSaving()">{{ costSaving() ? 'Saving…' : 'Save cost' }}</button>
+        </div>
+      </form>
+    </div>
+  }
 </div>

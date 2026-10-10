@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
@@ -38,6 +39,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../share
   styleUrl: './customer-details-console.css'
 })
 export class CustomerDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private http = inject(HttpClient);
@@ -132,14 +134,16 @@ export class CustomerDetailsConsoleComponent implements OnInit {
   }
   /** Delete; the server refuses when the customer is used in trips, bookings, invoices, fuel or jobs (deactivate instead). */
   deleteCustomer(rec: any): void {
-    if (!rec?.id || !confirm(`Delete ${rec.name || rec.code}? This cannot be undone.`)) return;
-    this.http.delete<any>(`/api/v1/customers/${rec.id}`).subscribe({
-      next: (r: any) => {
-        if (r && r.success === false) { this.notify.error((r.errors && r.errors[0]) || r.message || 'Could not delete'); return; }
-        this.notify.success('Customer deleted');
-        this.loadCustomers();
-      },
-      error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not delete')
+    if (!rec?.id) return;
+    this.appConfirm.ask({ title: 'Delete Customer', message: `Delete customer ${rec.name || rec.code}? This cannot be undone.`, type: 'danger', confirmText: 'Delete' }, () => {
+      this.http.delete<any>(`/api/v1/customers/${rec.id}`).subscribe({
+        next: (r: any) => {
+          if (r && r.success === false) { this.notify.error((r.errors && r.errors[0]) || r.message || 'Could not delete'); return; }
+          this.notify.success('Customer deleted');
+          this.loadCustomers();
+        },
+        error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not delete')
+      });
     });
   }
   onCustomerSaved(c: any): void {

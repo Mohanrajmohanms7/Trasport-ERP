@@ -1,3 +1,4 @@
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -32,6 +33,7 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 export class SetupWizardComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private notify = inject(FfNotificationService);
   private companyService = inject(CompanyAdminService);
   private masterService = inject(MasterService);
   private setupService = inject(SetupService);
@@ -229,7 +231,7 @@ export class SetupWizardComponent implements OnInit {
             || res.message
             || 'Supporting example data loaded. Create 1 Customer, 1 Vehicle, 1 Driver next.';
           this.errorMessage.set('');
-          alert(msg);
+          this.notify.success(msg);
         } else {
           this.errorMessage.set(res.message || 'Could not load supporting data.');
         }

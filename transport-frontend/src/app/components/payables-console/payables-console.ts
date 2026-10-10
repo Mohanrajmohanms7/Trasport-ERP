@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
@@ -25,6 +26,7 @@ imports: [FormValidationDirective, CommonModule, FormsModule, RouterLink, Attach
   templateUrl: './payables-console.html'
 })
 export class PayablesConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private picker = inject(PickerService);
   get supplierOpts(): FfSelectOption[] { return activeOrSelected(this.suppliers(), [this.bill?.supplierId, this.pay?.supplierId]).map((x: any) => ({ label: x.name || x.code, value: String(x.id) })); }
   get vehicleOpts(): FfSelectOption[] { return activeOrSelected(this.vehicles(), this.bill?.vehicleId).map((v: any) => ({ label: v.name || v.code, value: String(v.id) })); }
@@ -148,18 +150,20 @@ export class PayablesConsoleComponent implements OnInit {
   }
 
   approveBill(b: any): void {
-    if (!confirm(`Approve ${b.billNumber}? It will be posted to accounts.`)) return;
-    this.http.post<any>(`/api/v1/payables/bills/${b.id}/approve`, {}).subscribe({
-      next: () => { this.notify.success('Bill approved and posted'); this.load(); },
-      error: e => this.notify.error(this.err(e, 'Approve failed'))
+    this.appConfirm.ask({ title: 'Approve Bill', message: `Approve ${b.billNumber}? It will be posted to accounts and locked.`, type: 'primary', confirmText: 'Approve', confirmIcon: 'check_circle' }, () => {
+      this.http.post<any>(`/api/v1/payables/bills/${b.id}/approve`, {}).subscribe({
+        next: () => { this.notify.success('Bill approved and posted'); this.load(); },
+        error: e => this.notify.error(this.err(e, 'Approve failed'))
+      });
     });
   }
 
   cancelBill(b: any): void {
-    if (!confirm(`Cancel ${b.billNumber}?`)) return;
-    this.http.post<any>(`/api/v1/payables/bills/${b.id}/cancel`, {}).subscribe({
-      next: () => { this.notify.success('Bill cancelled'); this.load(); },
-      error: e => this.notify.error(this.err(e, 'Cancel failed'))
+    this.appConfirm.ask({ title: 'Cancel Bill', message: `Cancel ${b.billNumber}? Its accounting entry is reversed.`, type: 'danger', confirmText: 'Cancel bill', confirmIcon: 'block', cancelText: 'Keep' }, () => {
+      this.http.post<any>(`/api/v1/payables/bills/${b.id}/cancel`, {}).subscribe({
+        next: () => { this.notify.success('Bill cancelled'); this.load(); },
+        error: e => this.notify.error(this.err(e, 'Cancel failed'))
+      });
     });
   }
 
@@ -214,10 +218,11 @@ export class PayablesConsoleComponent implements OnInit {
   }
 
   cancelPayment(p: any): void {
-    if (!confirm(`Cancel payment ${p.paymentNumber}? The entry is reversed and the bills become unpaid again.`)) return;
-    this.http.post<any>(`/api/v1/payables/payments/${p.id}/cancel`, {}).subscribe({
-      next: () => { this.notify.success('Payment cancelled'); this.paymentDetail.set(null); this.load(); },
-      error: e => this.notify.error(this.err(e, 'Cancel failed'))
+    this.appConfirm.ask({ title: 'Cancel Payment', message: `Cancel payment ${p.paymentNumber}? The entry is reversed and the bills become unpaid again.`, type: 'danger', confirmText: 'Cancel payment', confirmIcon: 'block', cancelText: 'Keep' }, () => {
+      this.http.post<any>(`/api/v1/payables/payments/${p.id}/cancel`, {}).subscribe({
+        next: () => { this.notify.success('Payment cancelled'); this.paymentDetail.set(null); this.load(); },
+        error: e => this.notify.error(this.err(e, 'Cancel failed'))
+      });
     });
   }
 }

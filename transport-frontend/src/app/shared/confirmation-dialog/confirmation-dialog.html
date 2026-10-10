@@ -1,4 +1,5 @@
-<div class="ff-confirm" [attr.data-tone]="tone">
+<div class="ff-confirm" [attr.data-tone]="tone" role="alertdialog" [attr.aria-label]="data.title">
+  <button type="button" class="ff-confirm__close" (click)="cancel()" aria-label="Close"><span class="material-icons">close</span></button>
   <div class="ff-confirm__badge" aria-hidden="true">
     <span class="material-icons">{{ iconName }}</span>
   </div>
@@ -11,7 +12,7 @@
       {{ cancelLabel }}
     </button>
     <button type="button" class="ff-confirm__btn ff-confirm__btn--solid" style="color:#ffffff !important;" (click)="confirm()">
-      <span class="material-icons">{{ tone === 'danger' ? 'delete' : 'check' }}</span>
+      <span class="material-icons">{{ confirmIconName }}</span>
       {{ confirmLabel }}
     </button>
   </div>

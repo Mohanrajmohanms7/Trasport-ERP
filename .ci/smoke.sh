@@ -1191,5 +1191,9 @@ R=$(api POST /payables/bills '{"supplier":{"id":'$GS'},"supplierBillNo":"GS/2627
 R=$(api POST /payables/bills '{"supplier":{"id":'$GS'},"supplierBillNo":"gs/2627/001","billDate":"'$TODAY'","category":"REPAIR","taxableAmount":500,"gstAmount":0}')
 echo "$R" | grep -q "Bill Already Entered" && pass "BG same supplier bill number refused" || fail "BG bill dup" "$(echo $R | cut -c1-200)"
 
+# ---------------- No browser-native popups (confirm / alert / prompt) ----------------
+NATIVE=$(grep -rnE "(^|[^.A-Za-z0-9_])(window\.)?(confirm|alert|prompt)\(" --include=*.ts ../transport-frontend/src/app | grep -v "\.spec\.ts" | grep -vE "^\S+:\s*\*|//|  confirm\(\): void|confirm\(options|confirm\(id: number\)|private confirm\(" )
+[ -z "$NATIVE" ] && pass "no browser-native confirm/alert/prompt in the app" || fail "native popups" "$(echo "$NATIVE" | head -3)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

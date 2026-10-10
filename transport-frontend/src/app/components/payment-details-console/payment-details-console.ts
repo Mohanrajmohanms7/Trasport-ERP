@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
@@ -39,6 +40,7 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class PaymentDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private paymentMgmtService = inject(PaymentMgmtService);
@@ -1043,10 +1045,11 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   }
 
   applyAdvance(c: any): void {
-    if (!confirm(`Apply ₹${Number(c.totalAdvance).toFixed(2)} advance of ${c.customerName} to their oldest open invoices?`)) return;
-    this.paymentMgmtService.applyCustomerAdvance(c.customerId).subscribe({
-      next: (r: any) => { this.notify.success(r?.message || 'Advance applied'); this.refreshDashboard(); },
-      error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not apply advance')
+    this.appConfirm.ask({ title: 'Apply Advance', message: `Apply ₹${Number(c.totalAdvance).toFixed(2)} advance of ${c.customerName} to their oldest open invoices?`, type: 'primary', confirmText: 'Apply', confirmIcon: 'done_all' }, () => {
+      this.paymentMgmtService.applyCustomerAdvance(c.customerId).subscribe({
+        next: (r: any) => { this.notify.success(r?.message || 'Advance applied'); this.refreshDashboard(); },
+        error: (e: any) => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not apply advance')
+      });
     });
   }
 

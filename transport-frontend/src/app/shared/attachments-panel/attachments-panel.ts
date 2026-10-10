@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../confirmation-dialog/app-confirm.service';
 import { FeatureService } from '../../services/feature.service';
 import { Component, OnChanges, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -68,6 +69,7 @@ interface AttachmentRow {
   `
 })
 export class AttachmentsPanelComponent implements OnChanges {
+  private appConfirm = inject(AppConfirmService);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
   readonly features = inject(FeatureService);
@@ -132,10 +134,11 @@ export class AttachmentsPanelComponent implements OnChanges {
   }
 
   remove(a: AttachmentRow): void {
-    if (!confirm(`Remove ${a.originalName}?`)) return;
-    this.http.delete<any>(`/api/v1/attachments/${a.id}`).subscribe({
-      next: () => { this.notify.success('Attachment removed'); this.load(); },
-      error: e => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not remove')
+    this.appConfirm.ask({ title: 'Remove Document', message: `Remove ${a.originalName}? The file is deleted.`, type: 'danger', confirmText: 'Remove' }, () => {
+      this.http.delete<any>(`/api/v1/attachments/${a.id}`).subscribe({
+        next: () => { this.notify.success('Attachment removed'); this.load(); },
+        error: e => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not remove')
+      });
     });
   }
 

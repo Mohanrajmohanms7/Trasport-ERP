@@ -1,3 +1,4 @@
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
@@ -28,13 +29,26 @@ export class StockListComponent implements OnInit {
   showUpload = signal(false);
   /** One-time cost for stock entered before costing existed (posts it to the inventory account). */
   setCost(row: any): void {
-    const v = prompt(`Unit cost (₹) for ${row.sparePartName} in ${row.warehouseCode || row.warehouseName}\nQuantity on hand: ${row.availableQuantity}`);
-    if (v === null) return;
-    const cost = Number(v);
-    if (!(cost > 0)) { alert('Enter a cost greater than zero.'); return; }
+    this.costRow.set(row);
+    this.costValue = null;
+    this.costError.set('');
+  }
+
+  /** In-app "Set cost" popup (replaces the browser prompt). */
+  costRow = signal<any | null>(null);
+  costValue: number | null = null;
+  costError = signal('');
+  costSaving = signal(false);
+
+  saveCost(): void {
+    const row = this.costRow();
+    const cost = Number(this.costValue);
+    if (!row) return;
+    if (!(cost > 0)) { this.costError.set('Please enter a unit cost greater than zero'); return; }
+    this.costSaving.set(true);
     this.inventory.setInitialCost(row.id, cost).subscribe({
-      next: () => this.load(),
-      error: (e: any) => alert(e?.error?.errors?.[0] || e?.error?.message || 'Could not set cost')
+      next: () => { this.costSaving.set(false); this.costRow.set(null); this.notify.success('Cost saved'); this.load(); },
+      error: (e: any) => { this.costSaving.set(false); this.costError.set(e?.error?.errors?.[0] || e?.error?.message || 'Could not set cost'); }
     });
   }
 
@@ -49,6 +63,7 @@ export class StockListComponent implements OnInit {
   }
 
   private inventory = inject(InventoryService);
+  private notify = inject(FfNotificationService);
   private spareParts = inject(SparePartService);
   private router = inject(Router);
   private auth = inject(AuthService);

@@ -95,6 +95,11 @@ Don't disable Save just because fields are empty — let the user click and see 
 screens are lazy-loaded (`loadComponent` in `app.routes.ts`; only login + shell load up front), V83 adds list indexes.
 The Render test backend (free plan) is kept awake by `.github/workflows/keep-alive.yml`; drop it on a paid plan.
 
+**Confirmations (UI rule).** Never use the browser's `confirm()` / `alert()` / `prompt()`. Ask with
+`AppConfirmService.ask({ title, message, type: 'danger' | 'warning' | 'primary', confirmText }, () => action())`
+(`shared/confirmation-dialog`): the action runs only on the confirm button; Cancel / X / Esc do nothing; the background is
+ignored. Messages name the record. A smoke check fails the build if a native popup is added.
+
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").
 

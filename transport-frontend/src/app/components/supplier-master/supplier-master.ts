@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { BulkUploadDialogComponent } from '../../shared/bulk-upload/bulk-upload-dialog';
@@ -19,6 +20,7 @@ import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attach
   templateUrl: './supplier-master.html'
 })
 export class SupplierMasterComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   /** Excel bulk creation dialog. */
@@ -81,10 +83,11 @@ export class SupplierMasterComponent implements OnInit {
   }
 
   remove(r: any): void {
-    if (!confirm(`Delete ${r.name}?`)) return;
-    this.http.delete<any>(`/api/v1/suppliers/${r.id}`).subscribe({
-      next: () => { this.notify.success('Supplier deleted'); this.load(); },
-      error: e => this.notify.error(this.err(e, 'Could not delete'))
+    this.appConfirm.ask({ title: 'Delete Supplier', message: `Delete supplier ${r.name}? This cannot be undone.`, type: 'danger', confirmText: 'Delete' }, () => {
+      this.http.delete<any>(`/api/v1/suppliers/${r.id}`).subscribe({
+        next: () => { this.notify.success('Supplier deleted'); this.load(); },
+        error: e => this.notify.error(this.err(e, 'Could not delete'))
+      });
     });
   }
 }

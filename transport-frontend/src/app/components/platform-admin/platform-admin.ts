@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { ClientPlansComponent } from './client-plans/client-plans';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureAccessComponent } from './feature-access/feature-access';
@@ -299,6 +300,7 @@ imports: [ClientPlansComponent, FormValidationDirective, FeatureAccessComponent,
   `]
 })
 export class PlatformAdminComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private platformService = inject(PlatformAdminService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
@@ -1061,7 +1063,7 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   deleteClient(client: any): void {
-    if (confirm(`Are you sure you want to permanently delete SaaS Client "${client.name}"? This soft-deletes the tenant data.`)) {
+    this.appConfirm.ask({ title: 'Delete Client', message: `Delete client "${client.name}"? All its users lose access. This cannot be undone.`, type: 'danger', confirmText: 'Delete' }, () => {
       this.loading.set(true);
       this.platformService.deleteCompany(client.id).subscribe({
         next: (res) => {
@@ -1076,20 +1078,24 @@ export class PlatformAdminComponent implements OnInit {
           this.loading.set(false);
         }
       });
-    }
+    });
   }
 
   toggleCompanyStatus(company: any): void {
     const newStatus = company.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    this.platformService.updateCompanyStatus(company.id, newStatus).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess(`Company status updated to ${newStatus}`);
-          this.loadClients();
-        }
-      },
-      error: (e) => this.handleError(e)
-    });
+    const run = () => {
+      this.platformService.updateCompanyStatus(company.id, newStatus).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess(`Company status updated to ${newStatus}`);
+            this.loadClients();
+          }
+        },
+        error: (e) => this.handleError(e)
+      });
+    };
+    if (newStatus === 'ACTIVE') { run(); return; }
+    this.appConfirm.ask({ title: 'Suspend Client', message: `Suspend "${company.name}"? All its users are signed out and cannot log in until you re-activate it.`, type: 'danger', confirmText: 'Suspend', confirmIcon: 'block' }, run);
   }
 
   saveCompany(): void {
@@ -1280,14 +1286,16 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   revokeLicense(id: number): void {
-    this.platformService.revokeLicense(id).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess('Tenant license key revoked successfully.');
-          this.loadLicenses();
-        }
-      },
-      error: (e) => this.handleError(e)
+    this.appConfirm.ask({ title: 'Revoke Licence', message: 'Revoke this licence key? It stops working immediately.', type: 'danger', confirmText: 'Revoke', confirmIcon: 'key_off' }, () => {
+      this.platformService.revokeLicense(id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess('Tenant license key revoked successfully.');
+            this.loadLicenses();
+          }
+        },
+        error: (e) => this.handleError(e)
+      });
     });
   }
 
@@ -1433,32 +1441,40 @@ export class PlatformAdminComponent implements OnInit {
 
   toggleUserLock(user: any): void {
     const newStatus = user.status === 'LOCKED' ? 'ACTIVE' : 'LOCKED';
-    this.platformService.updateUserLockStatus(user.id, newStatus).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess(`User lock status changed to ${newStatus}`);
-          this.loadUsersAndSessions();
-        }
-      },
-      error: (e) => this.handleError(e)
-    });
+    const run = () => {
+      this.platformService.updateUserLockStatus(user.id, newStatus).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess(`User lock status changed to ${newStatus}`);
+            this.loadUsersAndSessions();
+          }
+        },
+        error: (e) => this.handleError(e)
+      });
+    };
+    if (newStatus === 'ACTIVE') { run(); return; }
+    this.appConfirm.ask({ title: 'Lock User', message: `Lock "${user.username}"? They are signed out and cannot log in until unlocked.`, type: 'warning', confirmText: 'Lock', confirmIcon: 'lock' }, run);
   }
 
   toggleUserDisable(user: any): void {
     const newStatus = user.status === 'INACTIVE' ? 'ACTIVE' : 'INACTIVE';
-    this.platformService.updateUserLockStatus(user.id, newStatus).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess(`User marked as ${newStatus === 'ACTIVE' ? 'ENABLED' : 'DISABLED'}`);
-          this.loadUsersAndSessions();
-        }
-      },
-      error: (e) => this.handleError(e)
-    });
+    const run = () => {
+      this.platformService.updateUserLockStatus(user.id, newStatus).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess(`User marked as ${newStatus === 'ACTIVE' ? 'ENABLED' : 'DISABLED'}`);
+            this.loadUsersAndSessions();
+          }
+        },
+        error: (e) => this.handleError(e)
+      });
+    };
+    if (newStatus === 'ACTIVE') { run(); return; }
+    this.appConfirm.ask({ title: 'Disable User', message: `Disable "${user.username}"? They are signed out at once.`, type: 'danger', confirmText: 'Disable', confirmIcon: 'person_off' }, run);
   }
 
   expirePassword(user: any): void {
-    if (confirm(`Are you sure you want to expire password for user "${user.username}"? They will need to reset it.`)) {
+    this.appConfirm.ask({ title: 'Expire Password', message: `Expire the password of "${user.username}"? They must set a new password at their next login.`, type: 'warning', confirmText: 'Expire', confirmIcon: 'lock_clock' }, () => {
       this.loading.set(true);
       this.platformService.expireUserPassword(user.id).subscribe({
         next: (res) => {
@@ -1473,11 +1489,11 @@ export class PlatformAdminComponent implements OnInit {
           this.loading.set(false);
         }
       });
-    }
+    });
   }
 
   forcePasswordChange(user: any): void {
-    if (confirm(`Are you sure you want to force password change for user "${user.username}" on their next login?`)) {
+    this.appConfirm.ask({ title: 'Force Password Change', message: `"${user.username}" must change their password at their next login.`, type: 'warning', confirmText: 'Confirm', confirmIcon: 'password' }, () => {
       this.loading.set(true);
       this.platformService.forceUserPasswordChange(user.id).subscribe({
         next: (res) => {
@@ -1492,11 +1508,11 @@ export class PlatformAdminComponent implements OnInit {
           this.loading.set(false);
         }
       });
-    }
+    });
   }
 
   terminateSession(session: any): void {
-    if (confirm(`Force terminate active session for user "${session.username}"?`)) {
+    this.appConfirm.ask({ title: 'End Session', message: `Sign "${session.username}" out of all devices now?`, type: 'danger', confirmText: 'Sign out', confirmIcon: 'logout' }, () => {
       this.loading.set(true);
       this.platformService.forceLogoutSession(session.id).subscribe({
         next: (res) => {
@@ -1511,7 +1527,7 @@ export class PlatformAdminComponent implements OnInit {
           this.loading.set(false);
         }
       });
-    }
+    });
   }
 
   triggerPasswordReset(userId: number): void {
@@ -1681,17 +1697,19 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   closeTicket(ticket: SupportTicket): void {
-    this.platformService.updateTicketStatus(ticket.id!, 'CLOSED').subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess('Ticket status updated to CLOSED');
-          this.loadTickets();
-          if (this.selectedTicket()?.id === ticket.id) {
-            this.showTicketThread.set(false);
+    this.appConfirm.ask({ title: 'Close Ticket', message: `Close ticket ${ticket.ticketNumber || ''}? The client can no longer reply to it.`, type: 'warning', confirmText: 'Close ticket', confirmIcon: 'task_alt' }, () => {
+      this.platformService.updateTicketStatus(ticket.id!, 'CLOSED').subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess('Ticket status updated to CLOSED');
+            this.loadTickets();
+            if (this.selectedTicket()?.id === ticket.id) {
+              this.showTicketThread.set(false);
+            }
           }
-        }
-      },
-      error: (e) => this.handleError(e)
+        },
+        error: (e) => this.handleError(e)
+      });
     });
   }
 
@@ -1731,14 +1749,16 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   deleteAnnouncement(id: number): void {
-    this.platformService.deleteAnnouncement(id).subscribe({
-      next: (res) => {
-        if (res.success) {
-          this.showSuccess('Broadcast announcement deleted successfully.');
-          this.loadAnnouncements();
-        }
-      },
-      error: (e) => this.handleError(e)
+    this.appConfirm.ask({ title: 'Delete Announcement', message: 'Delete this announcement? Clients will no longer see it.', type: 'danger', confirmText: 'Delete' }, () => {
+      this.platformService.deleteAnnouncement(id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.showSuccess('Broadcast announcement deleted successfully.');
+            this.loadAnnouncements();
+          }
+        },
+        error: (e) => this.handleError(e)
+      });
     });
   }
 

@@ -19,6 +19,26 @@ app-confirmation-dialog .ff-confirm {
     0 10px 24px rgba(2, 6, 23, 0.3) !important;
 }
 
+app-confirmation-dialog .ff-confirm { position: relative !important; }
+
+app-confirmation-dialog .ff-confirm__close {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  border: 0 !important;
+  border-radius: 0.6rem !important;
+  background: transparent !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+}
+
+app-confirmation-dialog .ff-confirm__close:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+
 app-confirmation-dialog .ff-confirm__badge {
   width: 3.25rem !important;
   height: 3.25rem !important;

@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -19,6 +20,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
   templateUrl: './branch-master.html'
 })
 export class BranchMasterComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
   private companyId = resolveTenantCompanyId();
@@ -97,14 +99,15 @@ export class BranchMasterComponent implements OnInit {
   }
 
   remove(b: any): void {
-    if (!confirm(`Delete branch ${b.name}?`)) return;
-    this.http.delete<any>(`/api/v1/branches/${b.id}`).subscribe({
-      next: r => {
-        if (r?.success === false) { this.notify.error(r.errors?.[0] || r.message); return; }
-        this.notify.success('Branch deleted');
-        this.load();
-      },
-      error: e => this.notify.error(this.err(e, 'Could not delete branch'))
+    this.appConfirm.ask({ title: 'Delete Branch', message: `Delete branch ${b.name}? This cannot be undone.`, type: 'danger', confirmText: 'Delete' }, () => {
+      this.http.delete<any>(`/api/v1/branches/${b.id}`).subscribe({
+        next: r => {
+          if (r?.success === false) { this.notify.error(r.errors?.[0] || r.message); return; }
+          this.notify.success('Branch deleted');
+          this.load();
+        },
+        error: e => this.notify.error(this.err(e, 'Could not delete branch'))
+      });
     });
   }
 
