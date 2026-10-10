@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -24,6 +25,7 @@ type Tab = 'expenses' | 'reports' | 'categories';
   templateUrl: './family-expenses.html'
 })
 export class FamilyExpensesComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private api = inject(FamilyExpenseService);
   private notify = inject(FfNotificationService);
   private dialog = inject(MatDialog);
@@ -246,6 +248,8 @@ export class FamilyExpensesComponent implements OnInit {
   }
   deleteCategory(c: FamilyOption): void {
     if (!c.id) return;
-    this.api.deleteCategory(c.id).subscribe({ next: r => this.afterCategories(r, 'Category deleted'), error: e => this.notify.error(this.err(e, 'Could not delete')) });
+    this.appConfirm.ask({ title: 'Delete Category', message: `Delete category "${c.name}"?`, type: 'danger', confirmText: 'Delete' }, () => {
+      this.api.deleteCategory(c.id!).subscribe({ next: r => this.afterCategories(r, 'Category deleted'), error: e => this.notify.error(this.err(e, 'Could not delete')) });
+    });
   }
 }

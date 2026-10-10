@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -19,6 +20,7 @@ imports: [FormValidationDirective, AttachmentsPanelComponent, CommonModule, Form
   templateUrl: './work-order-detail.html'
 })
 export class WorkOrderDetailComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private picker = inject(PickerService);
   get partOpts(): FfSelectOption[] { return this.spareParts().map((p: any) => ({ label: [p.code, p.name].filter(Boolean).join(' — '), value: String(p.id) })); }
   /** Which action panel is open: complete, cancel or edit. */
@@ -281,9 +283,11 @@ export class WorkOrderDetailComponent implements OnInit {
   removePart(line: WorkOrderPartLine) {
     const current = this.order();
     if (!current || !this.canEditLines(current)) return;
-    this.workOrders.removePart(current.id, line.id).subscribe({
-      next: res => this.afterLine(res, 'Part removed.'),
-      error: err => this.error.set(workOrderError(err))
+    this.appConfirm.ask({ title: 'Remove Part', message: `Remove ${line.sparePartName || 'this part'} from the work order?`, type: 'danger', confirmText: 'Remove' }, () => {
+      this.workOrders.removePart(current.id, line.id).subscribe({
+        next: res => this.afterLine(res, 'Part removed.'),
+        error: err => this.error.set(workOrderError(err))
+      });
     });
   }
 
@@ -327,9 +331,11 @@ export class WorkOrderDetailComponent implements OnInit {
   removeLabour(line: WorkOrderLabourLine) {
     const current = this.order();
     if (!current || !this.canEditLines(current)) return;
-    this.workOrders.removeLabour(current.id, line.id).subscribe({
-      next: res => this.afterLine(res, 'Labour removed.'),
-      error: err => this.error.set(workOrderError(err))
+    this.appConfirm.ask({ title: 'Remove Labour Line', message: `Remove the labour line "${line.description || ''}"?`, type: 'danger', confirmText: 'Remove' }, () => {
+      this.workOrders.removeLabour(current.id, line.id).subscribe({
+        next: res => this.afterLine(res, 'Labour removed.'),
+        error: err => this.error.set(workOrderError(err))
+      });
     });
   }
 

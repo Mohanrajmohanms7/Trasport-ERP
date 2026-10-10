@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../../shared/confirmation-dialog/app-confirm.service';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +20,7 @@ interface Row { code: string; plan?: boolean; override?: boolean | null; effecti
   templateUrl: './feature-access.html'
 })
 export class FeatureAccessComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
 
@@ -140,10 +142,11 @@ export class FeatureAccessComponent implements OnInit {
   resetToPlan(): void {
     const id = this.selectedId();
     if (!id || this.mode() !== 'client') return;
-    if (!confirm('Remove all client-specific settings? The client will get exactly what its plan includes.')) return;
-    this.http.post<any>(`/api/v1/platform-admin/companies/${id}/features/reset`, {}).subscribe({
-      next: r => { this.apply(r?.data); this.notify.success('Client now follows its plan'); },
-      error: () => this.notify.error('Could not reset')
+    this.appConfirm.ask({ title: 'Reset to Plan', message: 'Remove all client-specific settings? The client will get exactly what its plan includes.', type: 'warning', confirmText: 'Reset', confirmIcon: 'restart_alt' }, () => {
+      this.http.post<any>(`/api/v1/platform-admin/companies/${id}/features/reset`, {}).subscribe({
+        next: r => { this.apply(r?.data); this.notify.success('Client now follows its plan'); },
+        error: () => this.notify.error('Could not reset')
+      });
     });
   }
 

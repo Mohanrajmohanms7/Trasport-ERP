@@ -8,6 +8,8 @@ export interface ConfirmationData {
   confirmText?: string;
   cancelText?: string;
   type?: 'primary' | 'danger' | 'warning';
+  /** Material icon on the confirm button (default: delete for danger, check otherwise). */
+  confirmIcon?: string;
 }
 
 @Component({
@@ -45,6 +47,10 @@ export class ConfirmationDialogComponent implements OnInit {
 
   get confirmLabel(): string {
     return this.data.confirmText || (this.tone === 'danger' ? 'Delete' : 'Confirm');
+  }
+
+  get confirmIconName(): string {
+    return this.data.confirmIcon || (this.tone === 'danger' ? 'delete' : 'check');
   }
 
   get cancelLabel(): string {

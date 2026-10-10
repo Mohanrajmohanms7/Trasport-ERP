@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -106,6 +107,7 @@ imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsCompo
   `]
 })
 export class BookingDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private bookingMgmtService = inject(BookingMgmtService);
   private masterService = inject(MasterService);
   private picker = inject(PickerService);
@@ -452,13 +454,15 @@ export class BookingDetailsConsoleComponent implements OnInit {
   }
 
   closeBooking(bkg: Booking) {
-    if (!bkg.id) return;
-    this.bookingMgmtService.closeBooking(bkg.id).subscribe({
-      next: () => {
-        this.notify.success('Booking closed — no more trips can be planned on it');
-        this.loadBookings();
-      },
-      error: (e) => this.notify.error(this.apiError(e, 'Failed to close booking'))
+    this.appConfirm.ask({ title: 'Close Booking', message: `Close booking ${bkg.bookingNumber}? No more trips can be planned on it.`, type: 'warning', confirmText: 'Close booking', confirmIcon: 'lock' }, () => {
+      if (!bkg.id) return;
+      this.bookingMgmtService.closeBooking(bkg.id).subscribe({
+        next: () => {
+          this.notify.success('Booking closed — no more trips can be planned on it');
+          this.loadBookings();
+        },
+        error: (e) => this.notify.error(this.apiError(e, 'Failed to close booking'))
+      });
     });
   }
 

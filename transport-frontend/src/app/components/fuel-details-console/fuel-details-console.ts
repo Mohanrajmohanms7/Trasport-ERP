@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
@@ -38,6 +39,7 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class FuelDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private fuelMgmtService = inject(FuelMgmtService);
@@ -303,13 +305,15 @@ export class FuelDetailsConsoleComponent implements OnInit {
   }
 
   rejectRequest(req: FuelRequest) {
-    if (!req.id) return;
-    this.fuelMgmtService.rejectFuelRequest(req.id).subscribe({
-      next: () => {
-        this.notify.success('Fuel request rejected successfully');
-        this.loadFuelRequests();
-      },
-      error: () => this.notify.error('Failed to reject fuel request')
+    this.appConfirm.ask({ title: 'Reject Fuel Request', message: `Reject fuel request ${req.requestNumber || ''}?`, type: 'danger', confirmText: 'Reject', confirmIcon: 'block' }, () => {
+      if (!req.id) return;
+      this.fuelMgmtService.rejectFuelRequest(req.id).subscribe({
+        next: () => {
+          this.notify.success('Fuel request rejected successfully');
+          this.loadFuelRequests();
+        },
+        error: () => this.notify.error('Failed to reject fuel request')
+      });
     });
   }
 }
