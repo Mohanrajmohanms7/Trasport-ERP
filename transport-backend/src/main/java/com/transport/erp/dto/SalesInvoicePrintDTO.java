@@ -61,6 +61,9 @@ public class SalesInvoicePrintDTO {
     @Getter
     @Setter
     public static class SalesInvoicePrintLineItemDTO {
+        /** Delivered quantity, printed under the billed quantity when the client bills by order (V85). */
+        private java.math.BigDecimal deliveredQuantity;
+        private String quantityBasis;
         private Long detailId;
         private Long tripId;
         private String tripNumber;

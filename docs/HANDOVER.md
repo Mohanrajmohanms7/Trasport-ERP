@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V84__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V86__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -99,6 +99,13 @@ The Render test backend (free plan) is kept awake by `.github/workflows/keep-ali
 `AppConfirmService.ask({ title, message, type: 'danger' | 'warning' | 'primary', confirmText }, () => action())`
 (`shared/confirmation-dialog`): the action runs only on the confirm button; Cancel / X / Esc do nothing; the background is
 ignored. Messages name the record. A smoke check fails the build if a native popup is added.
+
+**Invoice quantity basis (V85).** Per client, set only by Platform Admin (Feature Access → client → "Invoice quantity
+basis"): `DELIVERED` (default, every client) bills delivered-else-planned; `ORDERED` bills each trip's planned quantity,
+or more if more was delivered. One rule everywhere: `BillingQuantityPolicy` (Java) and `billed_qty()` (SQL) — invoices,
+booking balance / completion, booking-delivery / pending / unbilled reports. The delivered quantity is always copied from
+the trip onto the invoice line (`delivered_quantity`, never from the request) and printed ("delivered 1.75"); never hidden.
+Changing the basis is audited and affects new invoices only.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").

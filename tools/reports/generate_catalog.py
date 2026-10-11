@@ -303,7 +303,7 @@ rep("purchase-register","Warehouse & stock","Spare parts purchase register","Sto
  AND {OPT('it.warehouse_id','warehouseId')} AND {OPT('it.spare_part_id','sparePartId')} ORDER BY it.created_date""", finance=False)
 
 # ---------------- BOOKINGS ----------------
-DELIV="""(SELECT COALESCE(SUM(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id
+DELIV="""(SELECT COALESCE(SUM(billed_qty(td.quantity, td.delivered_quantity, t.company_id)),0) FROM trip_details td JOIN trips t ON t.id = td.trip_id
   WHERE t.booking_id = bk.id AND td.material_id = bd.material_id AND t.status = 'COMPLETED' AND t.is_deleted = false AND td.is_deleted = false)"""
 rep("booking-register","Bookings & delivery","Booking & delivery status","Booked vs delivered vs pending quantity per booking and material.",
  ["date","branch","customer","status"],
@@ -401,8 +401,8 @@ rep("unbilled-trips","Outstanding & pending","Unbilled completed trips","Complet
  [C("trip_no","Trip"),C("trip_date","Date","date"),C("age_days","Age (days)","number"),C("customer","Customer"),C("vehicle","Vehicle"),C("material","Material"),
   C("qty","Qty","qty",True),C("uom","Unit"),C("est_taxable","Est. taxable","money",True)],
  f"""SELECT t.trip_number trip_no, t.trip_date, CURRENT_DATE - t.trip_date age_days, c.name customer, v.name vehicle, m.name material,
- COALESCE(NULLIF(td.delivered_quantity,0), td.quantity) qty, {UL('um')} uom,
- ROUND(COALESCE(NULLIF(td.delivered_quantity,0), td.quantity) * (COALESCE(NULLIF(td.rate,0), bd.rate, 0) + COALESCE(bd.transport_rate,0)
+ billed_qty(td.quantity, td.delivered_quantity, t.company_id) qty, {UL('um')} uom,
+ ROUND(billed_qty(td.quantity, td.delivered_quantity, t.company_id) * (COALESCE(NULLIF(td.rate,0), bd.rate, 0) + COALESCE(bd.transport_rate,0)
    + COALESCE(NULLIF(td.loading_charges,0), bd.loading_charge, 0) + COALESCE(NULLIF(td.royalty,0), bd.royalty_rate, 0)), 2) est_taxable
  {TRIP_JOINS} LEFT JOIN LATERAL (SELECT * FROM booking_details x WHERE x.booking_id = t.booking_id AND x.material_id = td.material_id AND x.is_deleted = false LIMIT 1) bd ON true
  {TRIP_WHERE} AND t.status = 'COMPLETED'

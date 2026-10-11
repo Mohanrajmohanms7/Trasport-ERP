@@ -78,10 +78,36 @@ export class FeatureAccessComponent implements OnInit {
     this.draft.set({});
   }
 
+  /** Client's invoice quantity basis (DELIVERED default | ORDERED), set only here. */
+  billingBasis = signal<string>('DELIVERED');
+  billingChoice = signal<string | null>(null);
+
+  private loadBillingBasis(id: number): void {
+    this.billingChoice.set(null);
+    this.http.get<any>(`/api/v1/platform-admin/companies/${id}/billing-basis`).subscribe({
+      next: r => this.billingBasis.set(r?.data?.basis || 'DELIVERED'), error: () => this.billingBasis.set('DELIVERED')
+    });
+  }
+
+  saveBillingBasis(): void {
+    const id = this.selectedId(); const b = this.billingChoice();
+    if (!id || !b) return;
+    const msg = b === 'ORDERED'
+      ? 'New invoices of this client will bill the ordered quantity (the delivered quantity is printed on the invoice). Approved invoices do not change.'
+      : 'New invoices of this client will bill the delivered quantity. Approved invoices do not change.';
+    this.appConfirm.ask({ title: 'Change Billing Basis', message: msg, type: 'warning', confirmText: 'Change' }, () => {
+      this.http.put<any>(`/api/v1/platform-admin/companies/${id}/billing-basis`, {}, { params: { basis: b } }).subscribe({
+        next: r => { this.billingBasis.set(r?.data?.basis || b); this.billingChoice.set(null); this.notify.success('Billing basis saved'); },
+        error: e => this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not save')
+      });
+    });
+  }
+
   select(id: any): void {
     const n = id ? Number(id) : null;
     this.selectedId.set(n);
     if (!n) return;
+    if (this.mode() === 'client') this.loadBillingBasis(n);
     const url = this.mode() === 'client' ? `/api/v1/platform-admin/companies/${n}/features` : `/api/v1/platform-admin/plans/${n}/features`;
     this.http.get<any>(url).subscribe(r => this.apply(r?.data));
   }
