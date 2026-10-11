@@ -76,4 +76,11 @@ export class BookingMgmtService {
   exportXlsx(): Observable<Blob> {
     return this.http.get('/api/v1/bookings/export/xlsx', { responseType: 'blob' });
   }
+
+  /** Rates of the customer's last booking of this material (same delivery site when given). */
+  lastRates(customerId: number, materialId: number, deliverySiteId: number | null) {
+    let url = `/api/v1/bookings/last-rates?customerId=${customerId}&materialId=${materialId}`;
+    if (deliverySiteId) url += `&deliverySiteId=${deliverySiteId}`;
+    return this.http.get<any>(url);
+  }
 }

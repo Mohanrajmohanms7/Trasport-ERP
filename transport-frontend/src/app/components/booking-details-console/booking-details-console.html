@@ -174,7 +174,10 @@
                     <div formGroupName="uom">
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptionsFor(row)" [required]="true" />
                     </div>
-                    <ff-number formControlName="rate" [label]="'Rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
+                    <ff-number formControlName="rate" [label]="'Material rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
+                    <ff-number formControlName="transportRate" [label]="'Freight / ' + (rowUnit(row) || 'unit')" [min]="0" />
+                    <ff-number formControlName="royaltyRate" [label]="'Royalty / ' + (rowUnit(row) || 'unit')" [min]="0" />
+                    <ff-number formControlName="loadingCharge" [label]="'Loading / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="gstPercentage" label="GST (%)" [min]="0" [max]="100" />
                     
                     <div class="flex flex-col gap-1">
@@ -184,6 +187,10 @@
                         <span class="text-[10px] text-[var(--ff-color-primary-600)] font-sans font-semibold">(Incl. GST)</span>
                       </div>
                     </div>
+                    <p class="sm:col-span-2 lg:col-span-8 text-[11px] text-[var(--ff-text-muted)] -mt-1">
+                      Per {{ rowUnit(row) || 'unit' }}: ₹{{ perUnitTotal(row) | number:'1.2-2' }} (material + freight + royalty + loading)
+                      @if (rateHints.get(row); as h) { <span class="text-[var(--ff-color-primary-600)] font-semibold"> · {{ h }}</span> }
+                    </p>
 
                     <div class="flex items-center justify-end gap-2 lg:pb-2">
                       <button type="button" (click)="removeDetail(idx)" class="p-2 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] rounded-lg transition" title="Delete Row">
