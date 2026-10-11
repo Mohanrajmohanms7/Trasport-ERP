@@ -443,6 +443,22 @@ public class PlatformAdminController {
     @Autowired
     private com.transport.erp.service.SupportTicketService supportTickets;
 
+    // Client billing basis (V85): DELIVERED (default) or ORDERED — set here only.
+    @Autowired
+    private com.transport.erp.service.BillingQuantityPolicy billingQuantityPolicy;
+
+    @GetMapping("/companies/{id}/billing-basis")
+    public ApiResponse<Map<String, Object>> getBillingBasis(@PathVariable Long id) {
+        return ApiResponse.success(Map.of("basis", billingQuantityPolicy.basis(id)), "Billing basis");
+    }
+
+    @PutMapping("/companies/{id}/billing-basis")
+    public ApiResponse<Map<String, Object>> setBillingBasis(@PathVariable Long id, @RequestParam String basis,
+                                                            java.security.Principal principal) {
+        String b = billingQuantityPolicy.setBasis(id, basis, principal != null ? principal.getName() : "platform-admin");
+        return ApiResponse.success(Map.of("basis", b), "Billing basis updated");
+    }
+
     @GetMapping("/tickets")
     public ApiResponse<Page<Map<String, Object>>> getSupportTickets(
             @RequestParam(required = false) String status,

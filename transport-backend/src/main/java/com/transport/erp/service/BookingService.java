@@ -181,7 +181,7 @@ public class BookingService {
         // booked quantity cannot drop below what was already moved.
         java.util.Map<Long, BigDecimal> moved = new java.util.HashMap<>();
         for (Object[] row : tripRepository.sumQuantityByMaterialForBooking(existing.getId(), -1L)) {
-            moved.put((Long) row[0], (BigDecimal) row[1]);
+            moved.put(((Number) row[0]).longValue(), new BigDecimal(row[1].toString()));
         }
         if (!moved.isEmpty()) {
             java.util.Map<Long, BigDecimal> newQty = new java.util.HashMap<>();

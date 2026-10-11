@@ -246,6 +246,9 @@
                       <ff-dropdown formControlName="id" label="Material Master" [remoteSearch]="materialPick.search" [resolveMissing]="materialPick.resolve" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
+                    @if (row.get('quantityBasis')?.value === 'ORDERED' && row.get('deliveredQuantity')?.value != null && +row.get('deliveredQuantity')?.value !== +row.get('quantity')?.value) {
+                      <p class="text-[11px] font-semibold text-amber-700 -mt-1" data-testid="billed-as-ordered">Billed as ordered — delivered {{ row.get('deliveredQuantity')?.value }} {{ rowUnit(row) }}</p>
+                    }
                     <div formGroupName="uom">
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptions()" [required]="true" />
                     </div>

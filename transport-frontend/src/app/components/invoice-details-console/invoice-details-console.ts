@@ -278,6 +278,8 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
         id: [d?.uom?.id ?? this.defaultUnitId, Validators.required]
       }),
       quantity: [d?.quantity ?? 1, [Validators.required, Validators.min(0.01)]],
+      deliveredQuantity: [d?.deliveredQuantity ?? null],   // kept from the trip; shown when billed as ordered
+      quantityBasis: [d?.quantityBasis ?? null],
       rate: [d?.rate ?? 0, [Validators.required, Validators.min(0)]],
       freightCharges: [d?.freightCharges ?? 0, [Validators.required, Validators.min(0)]],
       loadingCharges: [d?.loadingCharges ?? 0, [Validators.required, Validators.min(0)]],

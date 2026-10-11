@@ -212,6 +212,10 @@ public class SalesInvoicePdfGenerator {
                 itemsTable.addCell(createBodyCell(item.getTripNumber() != null ? item.getTripNumber() : "N/A", normalFont));
                 String qty = item.getQuantity() != null ? item.getQuantity().stripTrailingZeros().toPlainString() : "0";
                 if (item.getUomLabel() != null && !item.getUomLabel().isBlank()) qty = qty + " " + item.getUomLabel();
+                if ("ORDERED".equals(item.getQuantityBasis()) && item.getDeliveredQuantity() != null && item.getQuantity() != null
+                        && item.getDeliveredQuantity().compareTo(item.getQuantity()) != 0) {
+                    qty = qty + "\n(delivered " + item.getDeliveredQuantity().stripTrailingZeros().toPlainString() + ")";   // billed as ordered: shown, never hidden
+                }
                 itemsTable.addCell(createBodyCell(qty, normalFont, Element.ALIGN_RIGHT));
                 itemsTable.addCell(createBodyCell(curFormat.format(item.getRate()), normalFont, Element.ALIGN_RIGHT));
                 itemsTable.addCell(createBodyCell(curFormat.format(addCharges), normalFont, Element.ALIGN_RIGHT));

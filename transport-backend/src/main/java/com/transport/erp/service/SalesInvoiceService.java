@@ -40,6 +40,10 @@ import com.transport.erp.model.Branch;
 @Service
 public class SalesInvoiceService {
 
+    /** Client billing basis (Platform Admin). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private BillingQuantityPolicy billingQuantityPolicy;
+
     @org.springframework.beans.factory.annotation.Autowired
     private ApprovalPolicyService approvalPolicy;
 
@@ -301,6 +305,17 @@ public class SalesInvoiceService {
 
         java.util.Map<Long, Trip> trips = new java.util.HashMap<>();
         for (Trip t : tripRepository.findAndLockAllByIds(tripIds)) trips.put(t.getId(), t);
+        // The delivered quantity on each trip line is taken from the trip itself (never from the request), so an
+        // invoice billed "as ordered" always shows the real delivered quantity (V85).
+        String basisNow = billingQuantityPolicy == null ? BillingQuantityPolicy.DELIVERED : billingQuantityPolicy.basis(invoice.getCompanyId());
+        for (SalesInvoiceDetail d : invoice.getDetails()) {
+            if (d.getTrip() == null || d.getTrip().getId() == null || d.getMaterial() == null) continue;
+            Trip tr = trips.get(d.getTrip().getId());
+            if (tr == null || tr.getDetails() == null) continue;
+            tr.getDetails().stream().filter(td -> td.getMaterial() != null && td.getMaterial().getId().equals(d.getMaterial().getId()))
+                    .findFirst().ifPresent(td -> d.setDeliveredQuantity(td.getDeliveredQuantity()));
+            if (d.getQuantityBasis() == null) d.setQuantityBasis(basisNow);
+        }
 
         List<Long> alreadyBilled = invoiceRepository.findTripIdsOnActiveInvoices(tripIds,
                 excludeInvoiceId != null ? excludeInvoiceId : -1L);
@@ -623,11 +638,12 @@ public class SalesInvoiceService {
                     "Select trips of one customer for one invoice.");
         }
 
+        String billingBasis = billingQuantityPolicy == null ? BillingQuantityPolicy.DELIVERED : billingQuantityPolicy.basis(trip.getCompanyId());
         for (TripDetail td : trip.getDetails()) {
             if (td.getMaterial() == null) {
                 throw new IllegalArgumentException("Material information is missing from trip details.");
             }
-            BigDecimal billQty = td.getBillableQuantity();
+            BigDecimal billQty = BillingQuantityPolicy.billQty(td, billingBasis);
             if (billQty == null || billQty.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalArgumentException("Quantity is invalid for material: " + td.getMaterial().getName());
             }
@@ -657,6 +673,8 @@ public class SalesInvoiceService {
             detail.setUom(td.getUom());   // billed in the unit the trip moved (booking unit); never converted
             // Bill the weighbridge delivered quantity when recorded; trip-level rates win, booking rates fill gaps.
             detail.setQuantity(billQty);
+            detail.setDeliveredQuantity(td.getDeliveredQuantity());   // always kept and shown, whatever the basis
+            detail.setQuantityBasis(billingBasis);
             detail.setRate(positiveOr(td.getRate(), bookingDetail.getRate()));
             detail.setLoadingCharges(positiveOr(td.getLoadingCharges(), bookingDetail.getLoadingCharge()));
             detail.setRoyalty(positiveOr(td.getRoyalty(), bookingDetail.getRoyaltyRate()));
@@ -767,6 +785,8 @@ public class SalesInvoiceService {
                     idto.setMaterialName(detail.getMaterial().getName());
                 }
                 idto.setQuantity(detail.getQuantity() != null ? detail.getQuantity() : BigDecimal.ZERO);
+                idto.setDeliveredQuantity(detail.getDeliveredQuantity());
+                idto.setQuantityBasis(detail.getQuantityBasis());
                 if (detail.getUom() != null) {
                     idto.setUomCode(detail.getUom().getCode());
                     idto.setUomLabel(OrderUomService.label(detail.getUom()));

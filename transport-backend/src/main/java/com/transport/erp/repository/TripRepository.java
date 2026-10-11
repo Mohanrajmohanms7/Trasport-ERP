@@ -77,31 +77,27 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                                     @Param("statuses") Collection<String> statuses,
                                     @Param("fromDate") LocalDate fromDate, @Param("toDate") LocalDate toDate);
 
-    /** Quantity already moved per material for a booking (delivered if recorded, else planned), excluding one trip. */
-    @Query("""
-            SELECT d.material.id,
-                   COALESCE(SUM(CASE WHEN d.deliveredQuantity IS NOT NULL AND d.deliveredQuantity > 0
-                                     THEN d.deliveredQuantity ELSE d.quantity END), 0)
-            FROM TripDetail d
-            WHERE d.trip.booking.id = :bookingId
-              AND d.trip.isDeleted = false AND d.isDeleted = false
-              AND d.trip.status <> 'CANCELLED'
-              AND d.trip.id <> :excludeTripId
-            GROUP BY d.material.id
-            """)
+    /**
+     * Quantity already moved per material for a booking, excluding one trip. Uses the client's billing basis
+     * (V85 billed_qty: DELIVERED = delivered if recorded else planned; ORDERED = planned, or more if over-delivered).
+     */
+    @Query(value = """
+            SELECT d.material_id, COALESCE(SUM(billed_qty(d.quantity, d.delivered_quantity, t.company_id)), 0)
+              FROM trip_details d JOIN trips t ON t.id = d.trip_id
+             WHERE t.booking_id = :bookingId AND t.is_deleted = false AND d.is_deleted = false
+               AND t.status <> 'CANCELLED' AND t.id <> :excludeTripId
+             GROUP BY d.material_id
+            """, nativeQuery = true)
     List<Object[]> sumQuantityByMaterialForBooking(@Param("bookingId") Long bookingId, @Param("excludeTripId") Long excludeTripId);
 
-    /** Quantity delivered per material by COMPLETED trips of a booking. */
-    @Query("""
-            SELECT d.material.id,
-                   COALESCE(SUM(CASE WHEN d.deliveredQuantity IS NOT NULL AND d.deliveredQuantity > 0
-                                     THEN d.deliveredQuantity ELSE d.quantity END), 0)
-            FROM TripDetail d
-            WHERE d.trip.booking.id = :bookingId
-              AND d.trip.isDeleted = false AND d.isDeleted = false
-              AND d.trip.status = 'COMPLETED'
-            GROUP BY d.material.id
-            """)
+    /** Quantity delivered (per the client's billing basis) per material by COMPLETED trips of a booking. */
+    @Query(value = """
+            SELECT d.material_id, COALESCE(SUM(billed_qty(d.quantity, d.delivered_quantity, t.company_id)), 0)
+              FROM trip_details d JOIN trips t ON t.id = d.trip_id
+             WHERE t.booking_id = :bookingId AND t.is_deleted = false AND d.is_deleted = false
+               AND t.status = 'COMPLETED'
+             GROUP BY d.material_id
+            """, nativeQuery = true)
     List<Object[]> sumDeliveredByMaterialForBooking(@Param("bookingId") Long bookingId);
 
     @Query("SELECT COUNT(t) FROM Trip t WHERE t.booking.id = :bookingId AND t.isDeleted = false AND t.status IN ('PLANNED', 'DISPATCHED')")

@@ -38,6 +38,10 @@ import java.util.Optional;
 @Service
 public class TripService {
 
+    /** Client billing basis (Platform Admin). May be absent in plain unit tests. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private BillingQuantityPolicy billingQuantityPolicy;
+
     /** Business-rule checks (flow review). May be absent in plain unit tests. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private OperationalGuards operationalGuards;
@@ -303,7 +307,7 @@ public class TripService {
         if (booked.isEmpty()) return;
         Map<Long, BigDecimal> delivered = new HashMap<>();
         for (Object[] row : tripRepository.sumDeliveredByMaterialForBooking(bookingId)) {
-            delivered.put((Long) row[0], (BigDecimal) row[1]);
+            delivered.put(((Number) row[0]).longValue(), new BigDecimal(row[1].toString()));
         }
         boolean full = booked.entrySet().stream()
                 .allMatch(e -> delivered.getOrDefault(e.getKey(), BigDecimal.ZERO).compareTo(e.getValue()) >= 0);
@@ -418,7 +422,8 @@ public class TripService {
             }
             if (d.getCode() == null) d.setCode("TRIP-LINE");
             if (d.getName() == null) d.setName("Trip Line");
-            thisTripQty.merge(bd.getMaterial().getId(), d.getBillableQuantity(), BigDecimal::add);
+            String basis = billingQuantityPolicy == null ? BillingQuantityPolicy.DELIVERED : billingQuantityPolicy.basis(booking.getCompanyId());
+            thisTripQty.merge(bd.getMaterial().getId(), BillingQuantityPolicy.billQty(d, basis), BigDecimal::add);
         }
 
         BigDecimal tolerancePct = tolerancePercent(booking.getCompanyId());
@@ -460,7 +465,7 @@ public class TripService {
     private Map<Long, BigDecimal> movedByMaterial(Long bookingId, Long excludeTripId) {
         Map<Long, BigDecimal> moved = new HashMap<>();
         for (Object[] row : tripRepository.sumQuantityByMaterialForBooking(bookingId, excludeTripId != null ? excludeTripId : -1L)) {
-            moved.put((Long) row[0], (BigDecimal) row[1]);
+            moved.put(((Number) row[0]).longValue(), new BigDecimal(row[1].toString()));
         }
         return moved;
     }

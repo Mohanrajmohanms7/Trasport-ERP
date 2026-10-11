@@ -1214,5 +1214,32 @@ if [ -n "$LL" ]; then
   [ "$($PSQL "SELECT loading_charges FROM trip_details WHERE trip_id=${RT2:-0}")" = "35.00" ] && pass "RT loading falls back to the loading point's charge" || fail "RT loading fallback" "trip=$RT2 $($PSQL "SELECT loading_charges FROM trip_details WHERE trip_id=${RT2:-0}")"
 else echo "SKIP RT loading fallback (no loading point in the test company)"; fi
 
+# ================= Client billing basis (V85): DELIVERED default, ORDERED per client (Platform Admin) =================
+pa() { curl -s -X "$1" -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$API$2"; }   # platform admin
+C=$(as "$TC" PUT "/platform-admin/companies/$CI2/billing-basis?basis=ORDERED"); [ "$C" = "403" ] && pass "BQ client admin cannot change the billing basis (403)" || fail "BQ basis guard" "$C"
+R=$(pa PUT "/platform-admin/companies/$CI2/billing-basis?basis=HIDE"); echo "$R" | grep -q "Delivered quantity or Ordered quantity" && pass "BQ invalid basis refused" || fail "BQ invalid basis" "$(echo $R | cut -c1-160)"
+[ "$(pa GET /platform-admin/companies/$CI2/billing-basis | j "d['data']['basis']")" = "DELIVERED" ] && pass "BQ every client starts on DELIVERED" || fail "BQ default" "x"
+bq_flow() {   # $1 = basis label; prints "invoiceId billedQty deliveredQty basis bookingStatus"
+  local B=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
+  api POST /bookings/$B/approve >/dev/null
+  local T=$(api POST /trips '{"booking":{"id":'$B'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD1'},"details":[{"material":{"id":'$MAT'},"quantity":2}]}' | j "d['data']['id']")
+  api POST /trips/$T/dispatch >/dev/null; api POST /trips/$T/complete >/dev/null
+  api PUT /trips/$T '{"booking":{"id":'$B'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD1'},"details":[{"material":{"id":'$MAT'},"quantity":2,"loadedQuantity":2,"deliveredQuantity":1.75}]}' >/dev/null
+  local R=$(api POST /invoices/from-trip/$T)
+  echo "$R" | j "str(d['data']['id'])+' '+str(float(d['data']['details'][0]['quantity']))+' '+str(float(d['data']['details'][0].get('deliveredQuantity') or 0))+' '+str(d['data']['details'][0].get('quantityBasis'))" 2>/dev/null | tr -d '\n'
+  echo " $($PSQL "SELECT status FROM bookings WHERE id=$B")"
+}
+R=$(pa PUT "/platform-admin/companies/$CI2/billing-basis?basis=ORDERED"); [ "$(echo "$R" | j "d['data']['basis']")" = "ORDERED" ] && pass "BQ platform admin switches this client to ORDERED" || fail "BQ set ordered" "$(echo $R | cut -c1-160)"
+[ "$($PSQL "SELECT COUNT(*) FROM audit_logs WHERE action='BILLING_BASIS_CHANGED' AND entity_id=$CI2")" -ge 1 ] && pass "BQ basis change is audited" || fail "BQ audit" "x"
+set -- $(bq_flow ORDERED); INV1=$1
+[ "$2" = "2.0" ] && [ "$3" = "1.75" ] && [ "$4" = "ORDERED" ] && pass "BQ ORDERED: ordered 2, delivered 1.75 -> billed 2 (delivered 1.75 kept)" || fail "BQ ordered invoice" "$*"
+[ "$5" = "COMPLETED" ] && pass "BQ ORDERED: booking completed (no false 0.25 pending)" || fail "BQ ordered booking" "$*"
+[ "$($PSQL "SELECT billing_quantity_basis FROM companies WHERE id=$NCID")" = "DELIVERED" ] && pass "BQ other clients unchanged (DELIVERED)" || fail "BQ other client" "x"
+pa PUT "/platform-admin/companies/$CI2/billing-basis?basis=DELIVERED" >/dev/null
+set -- $(bq_flow DELIVERED)
+[ "$2" = "1.75" ] && [ "$4" = "DELIVERED" ] && pass "BQ DELIVERED: same delivery -> billed 1.75 (default behaviour)" || fail "BQ delivered invoice" "$*"
+[ "$5" = "APPROVED" ] && pass "BQ DELIVERED: booking keeps 0.25 pending (default behaviour)" || fail "BQ delivered booking" "$*"
+[ "$(curl -s -H "Authorization: Bearer $TOKEN" $API/invoices/$INV1 | j "float(d['data']['details'][0]['quantity'])")" = "2.0" ] && pass "BQ switching back does not change the earlier invoice" || fail "BQ earlier invoice" "x"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

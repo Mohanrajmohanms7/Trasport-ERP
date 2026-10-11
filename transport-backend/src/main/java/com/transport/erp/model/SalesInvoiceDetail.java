@@ -33,6 +33,14 @@ public class SalesInvoiceDetail extends BaseEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal quantity = BigDecimal.ZERO;
 
+    /** Delivered quantity of the trip at billing time (V85) — shown on the invoice when it differs from the billed quantity. */
+    @Column(name = "delivered_quantity", precision = 12, scale = 3)
+    private BigDecimal deliveredQuantity;
+
+    /** DELIVERED or ORDERED: the client's billing basis used for this line (V85). */
+    @Column(name = "quantity_basis", length = 20)
+    private String quantityBasis;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal rate = BigDecimal.ZERO;
 

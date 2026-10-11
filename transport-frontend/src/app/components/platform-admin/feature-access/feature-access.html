@@ -41,6 +41,22 @@
   @if (selectedId() && mode() === 'client') {
     <!-- Units this client may use on bookings / trips / invoices (saved immediately, separate from the feature switches) -->
     <app-order-units-panel [companyId]="selectedId()" [canEdit]="true" />
+    <!-- Invoice quantity basis for this client only (V85). Delivered = default for every client. -->
+    <section class="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col gap-3" data-testid="billing-basis">
+      <div>
+        <h3 class="text-sm font-bold">Invoice quantity basis</h3>
+        <p class="text-xs text-slate-500">Which quantity this client's invoices bill. The delivered quantity is always kept and printed on the invoice.</p>
+      </div>
+      <label class="flex items-start gap-2 text-sm"><input type="radio" name="bqb" value="DELIVERED" [ngModel]="billingBasis()" (ngModelChange)="billingChoice.set($event)" />
+        <span><b>Delivered quantity</b> (default) — bill what was delivered (e.g. ordered 2, delivered 1.75 → bill 1.75)</span></label>
+      <label class="flex items-start gap-2 text-sm"><input type="radio" name="bqb" value="ORDERED" [ngModel]="billingBasis()" (ngModelChange)="billingChoice.set($event)" />
+        <span><b>Ordered quantity</b> — bill each trip's ordered quantity, or more if more was delivered (ordered 2, delivered 1.75 → bill 2, invoice shows “delivered 1.75”)</span></label>
+      <div class="flex items-center gap-2">
+        <button type="button" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-semibold disabled:opacity-50"
+                [disabled]="!billingChoice() || billingChoice() === billingBasis()" (click)="saveBillingBasis()">Save billing basis</button>
+        <span class="text-[11px] text-slate-500">Applies to new invoices only; approved invoices never change.</span>
+      </div>
+    </section>
   }
 
   @if (selectedId()) {
