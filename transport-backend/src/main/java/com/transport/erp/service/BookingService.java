@@ -19,6 +19,30 @@ import com.transport.erp.security.TenantParentAccess;
 @Service
 public class BookingService {
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate lastRatesJdbc;
+
+    /**
+     * Rates used on this customer's most recent booking of the material (same delivery site when given):
+     * pre-fills a new booking line — material rate, freight (transport), royalty, loading. Null when none.
+     */
+    public java.util.Map<String, Object> lastRates(Long customerId, Long deliverySiteId, Long materialId) {
+        if (customerId == null || materialId == null || lastRatesJdbc == null) return null;
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        org.springframework.jdbc.core.namedparam.MapSqlParameterSource p = new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("cid", companyId)
+                .addValue("cust", customerId).addValue("mat", materialId).addValue("site", deliverySiteId, java.sql.Types.BIGINT);
+        java.util.List<java.util.Map<String, Object>> rows = lastRatesJdbc.queryForList("""
+                SELECT bd.rate AS "rate", bd.transport_rate AS "transportRate", bd.royalty_rate AS "royaltyRate",
+                       bd.loading_charge AS "loadingCharge", b.booking_number AS "bookingNumber", b.booking_date AS "bookingDate"
+                  FROM booking_details bd JOIN bookings b ON b.id = bd.booking_id
+                 WHERE b.company_id = :cid AND b.customer_id = :cust AND bd.material_id = :mat
+                   AND b.is_deleted = false AND COALESCE(bd.is_deleted, false) = false
+                   AND COALESCE(b.status, '') NOT IN ('CANCELLED', 'REJECTED')
+                   AND (:site IS NULL OR b.delivery_site_id = :site)
+                 ORDER BY b.booking_date DESC, b.id DESC LIMIT 1""", p);
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
     /** Business-rule checks (flow review). May be absent in plain unit tests. */
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private OperationalGuards operationalGuards;

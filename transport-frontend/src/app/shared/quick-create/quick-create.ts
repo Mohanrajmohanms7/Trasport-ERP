@@ -85,9 +85,6 @@ export class QuickCreateService {
                   @for (u of uoms(); track u.id) { <option [ngValue]="u.id">{{ u.label || u.name }}</option> }
                 </select></label>
               <label class="flex flex-col gap-1">Material rate (₹ / unit)<input type="number" min="0" step="0.01" class="qc-in" [(ngModel)]="f.defaultRate" name="mrate" /></label>
-              <label class="flex flex-col gap-1">Transport rate (₹ / unit)<input type="number" min="0" step="0.01" class="qc-in" [(ngModel)]="f.transportRate" name="trate" /></label>
-              <label class="flex flex-col gap-1">Royalty (₹ / unit)<input type="number" min="0" step="0.01" class="qc-in" [(ngModel)]="f.royaltyRate" name="roy" /></label>
-              <label class="flex flex-col gap-1">Loading (₹ / unit)<input type="number" min="0" step="0.01" class="qc-in" [(ngModel)]="f.loadingCharge" name="load" /></label>
             }
             @if (kind() === 'quarry') {
               <label class="flex flex-col gap-1 sm:col-span-2">Location / address<input class="qc-in" [(ngModel)]="f.locationAddress" name="qaddr" /></label>
@@ -175,8 +172,7 @@ export class QuickCreateComponent implements OnChanges {
       body = { ...body, phone: this.f.phone || null, gstNumber: String(this.f.gstNumber || '').trim().toUpperCase() || null };
     } else if (k === 'material') {
       url = '/api/v1/materials';
-      body = { ...body, defaultUom: this.f.defaultUomId ? { id: this.f.defaultUomId } : null, defaultRate: Number(this.f.defaultRate || 0),
-        transportRate: Number(this.f.transportRate || 0), royaltyRate: Number(this.f.royaltyRate || 0), loadingCharge: Number(this.f.loadingCharge || 0) };
+      body = { ...body, defaultUom: this.f.defaultUomId ? { id: this.f.defaultUomId } : null, defaultRate: Number(this.f.defaultRate || 0) };   // freight / royalty / loading are entered per booking
     } else if (k === 'quarry') {
       url = '/api/v1/quarries';
       body = { ...body, locationAddress: this.f.locationAddress || null, contactNumber: this.f.contactNumber || null };

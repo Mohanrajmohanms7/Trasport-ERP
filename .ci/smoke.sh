@@ -1195,5 +1195,24 @@ echo "$R" | grep -q "Bill Already Entered" && pass "BG same supplier bill number
 NATIVE=$(grep -rnE "(^|[^.A-Za-z0-9_])(window\.)?(confirm|alert|prompt)\(" --include=*.ts ../transport-frontend/src/app | grep -v "\.spec\.ts" | grep -vE "^\S+:\s*\*|//|  confirm\(\): void|confirm\(options|confirm\(id: number\)|private confirm\(" )
 [ -z "$NATIVE" ] && pass "no browser-native confirm/alert/prompt in the app" || fail "native popups" "$(echo "$NATIVE" | head -3)"
 
+# ================= BOOKING RATES: material + freight + royalty + loading, booking -> trip -> invoice =================
+RB=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":4300,"transportRate":1450,"royaltyRate":270,"loadingCharge":180,"gstPercentage":5}]}' | j "d['data']['id']")
+[ "$($PSQL "SELECT net_amount FROM booking_details WHERE booking_id=$RB")" = "13020.00" ] && pass "RT booking line = 2 x (4300+1450+270+180) + 5% = 13020" || fail "RT booking amount" "$($PSQL "SELECT net_amount FROM booking_details WHERE booking_id=$RB")"
+api POST /bookings/$RB/approve >/dev/null
+R=$(api GET "/bookings/last-rates?customerId=$CUST&materialId=$MAT"); [ "$(echo "$R" | j "'ok' if (float(d['data']['transportRate']), float(d['data']['royaltyRate']), float(d['data']['loadingCharge'])) == (1450.0, 270.0, 180.0) else 'no'")" = "ok" ] && pass "RT last rates suggest freight / royalty / loading of the last booking" || fail "RT last rates" "$(echo $R | cut -c1-200)"
+C=$(as "$NT" GET "/bookings/last-rates?customerId=$CUST&materialId=$MAT"); R=$(cat /tmp/r.json 2>/dev/null); curl -s -H "Authorization: Bearer $NT" "$API/bookings/last-rates?customerId=$CUST&materialId=$MAT" | grep -q "1450" && fail "RT last rates tenant" "other company sees the rates" || pass "RT another company does not get the rates"
+RT=$(api POST /trips '{"booking":{"id":'$RB'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD1'},"details":[{"material":{"id":'$MAT'},"quantity":2}]}' | j "d['data']['id']")
+[ "$($PSQL "SELECT royalty||'/'||loading_charges FROM trip_details WHERE trip_id=$RT")" = "270.00/180.00" ] && pass "RT trip copies royalty and loading from the booking" || fail "RT trip rates" "$($PSQL "SELECT rate, royalty, loading_charges FROM trip_details WHERE trip_id=$RT")"
+api POST /trips/$RT/dispatch >/dev/null; api POST /trips/$RT/complete >/dev/null
+R=$(api POST /invoices/from-trip/$RT)
+[ "$($PSQL "SELECT freight_charges||'/'||royalty||'/'||loading_charges||'/'||taxable_amount FROM sales_invoice_details WHERE trip_id=$RT ORDER BY id DESC LIMIT 1")" = "1450.00/270.00/180.00/12400.00" ] && pass "RT invoice line: freight 1450, royalty 270, loading 180, taxable 12400" || fail "RT invoice rates" "$($PSQL "SELECT rate, freight_charges, royalty, loading_charges, taxable_amount FROM sales_invoice_details WHERE trip_id=$RT") :: $(echo $R | cut -c1-160)"
+LL=$($PSQL "SELECT id FROM loading_locations WHERE company_id=$CI2 AND is_deleted=false ORDER BY id LIMIT 1")
+if [ -n "$LL" ]; then
+  $PSQL "UPDATE loading_locations SET loading_charges=35 WHERE id=$LL" >/dev/null
+  RB2=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":1,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); api POST /bookings/$RB2/approve >/dev/null
+  RT2=$(api POST /trips '{"booking":{"id":'$RB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD1'},"loadingLocation":{"id":'$LL'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
+  [ "$($PSQL "SELECT loading_charges FROM trip_details WHERE trip_id=${RT2:-0}")" = "35.00" ] && pass "RT loading falls back to the loading point's charge" || fail "RT loading fallback" "trip=$RT2 $($PSQL "SELECT loading_charges FROM trip_details WHERE trip_id=${RT2:-0}")"
+else echo "SKIP RT loading fallback (no loading point in the test company)"; fi
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

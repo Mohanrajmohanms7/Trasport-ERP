@@ -4,7 +4,7 @@ import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attach
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { BookingMgmtService, Booking, BookingDetail } from '../../services/booking-mgmt.service';
 import { MasterService } from '../../services/master.service';
 import { CustomerMgmtService } from '../../services/customer-mgmt.service';
@@ -328,15 +328,37 @@ export class BookingDetailsConsoleComponent implements OnInit {
     this.applyMaterialToDetail(this.detailsArray.at(index) as FormGroup, matId);
   }
 
+  /** "Rates from BKG-… (date)" under a booking line whose rates came from the customer's last booking. */
+  readonly rateHints = new Map<AbstractControl, string>();
+
+  perUnitTotal(row: AbstractControl): number {
+    const v = (k: string) => Number(row.get(k)?.value || 0);
+    return v('rate') + v('transportRate') + v('royaltyRate') + v('loadingCharge');
+  }
+
+  /** Same customer + delivery site + material booked before: suggest the rates used last time (user can change them). */
+  private prefillLastRates(row: FormGroup, materialId: number): void {
+    const raw: any = this.bookingForm?.getRawValue?.() || {};
+    const customerId = raw?.customer?.id, siteId = raw?.deliverySite?.id;
+    if (!customerId || !materialId) return;
+    this.bookingMgmtService.lastRates(+customerId, materialId, siteId ? +siteId : null).subscribe({
+      next: (r: any) => {
+        const d = r?.data;
+        if (!d || Number(row.get('material.id')?.value) !== materialId) return;   // user moved on
+        row.patchValue({ rate: d.rate ?? row.get('rate')?.value, transportRate: d.transportRate ?? 0, royaltyRate: d.royaltyRate ?? 0, loadingCharge: d.loadingCharge ?? 0 });
+        this.rateHints.set(row, `Rates from ${d.bookingNumber || 'the last booking'}${d.bookingDate ? ' (' + d.bookingDate + ')' : ''}`);
+      },
+      error: () => {}
+    });
+  }
+
   private applyMaterialToDetail(row: FormGroup, matId: any) {
     const mat = this.materials().find(m => m.id === +matId);
     if (mat) {
-      row.patchValue({
-        rate: mat.defaultRate ?? 0,
-        transportRate: mat.transportRate ?? 0,
-        royaltyRate: mat.royaltyRate ?? 0,
-        loadingCharge: mat.loadingCharge ?? 0
-      });
+      // The material master keeps only the material rate; freight / royalty / loading belong to the booking.
+      row.patchValue({ rate: mat.defaultRate ?? 0, transportRate: 0, royaltyRate: 0, loadingCharge: 0 });
+      this.rateHints.delete(row);
+      this.prefillLastRates(row, +matId);
       // The material's default unit when it is switched on for orders, else the company default.
       const preferred = this.orderUnits().find(u => u.id === mat.defaultUom?.id)?.id ?? this.defaultUnitId;
       if (preferred) row.get('uom.id')?.setValue(preferred);

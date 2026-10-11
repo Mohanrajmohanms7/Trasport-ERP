@@ -37,6 +37,13 @@ public class BookingController {
     }
 
     /** Booking dropdowns (receipt link): search by booking no., optionally one customer; no rejected / cancelled. */
+    /** Rates of the customer's last booking of this material (same site when given) — pre-fills a new booking line. */
+    @GetMapping("/last-rates")
+    public ApiResponse<java.util.Map<String, Object>> lastRates(@RequestParam Long customerId, @RequestParam Long materialId,
+                                                                @RequestParam(required = false) Long deliverySiteId) {
+        return ApiResponse.success(bookingService.lastRates(customerId, deliverySiteId, materialId), "Last rates");
+    }
+
     @GetMapping("/picker")
     public ApiResponse<Page<Booking>> pickBookings(
             @RequestParam(required = false) Long companyId,

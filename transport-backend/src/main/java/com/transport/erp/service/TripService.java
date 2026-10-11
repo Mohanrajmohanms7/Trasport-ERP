@@ -412,6 +412,10 @@ public class TripService {
             if (d.getRate() == null || d.getRate().signum() <= 0) d.setRate(nz(bd.getRate()));
             if (d.getRoyalty() == null || d.getRoyalty().signum() <= 0) d.setRoyalty(nz(bd.getRoyaltyRate()));
             if (d.getLoadingCharges() == null || d.getLoadingCharges().signum() <= 0) d.setLoadingCharges(nz(bd.getLoadingCharge()));
+            if (d.getLoadingCharges().signum() <= 0 && trip.getLoadingLocation() != null
+                    && trip.getLoadingLocation().getLoadingCharges() != null && trip.getLoadingLocation().getLoadingCharges().signum() > 0) {
+                d.setLoadingCharges(trip.getLoadingLocation().getLoadingCharges());   // booking has no loading rate: use the loading point's
+            }
             if (d.getCode() == null) d.setCode("TRIP-LINE");
             if (d.getName() == null) d.setName("Trip Line");
             thisTripQty.merge(bd.getMaterial().getId(), d.getBillableQuantity(), BigDecimal::add);
