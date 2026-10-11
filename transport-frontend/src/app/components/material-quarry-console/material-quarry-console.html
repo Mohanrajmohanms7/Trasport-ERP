@@ -422,7 +422,7 @@
                 <tr class="bg-[var(--ff-surface-hover)] border-b border-[var(--ff-border-divider)] text-[var(--ff-text-muted)] uppercase tracking-[0.05em] font-bold">
                   <th class="p-4">Code</th>
                   <th class="p-4">Loading Point Name</th>
-                  <th class="p-4 text-right">Standard Loading Charges</th>
+                  <th class="p-4 text-right">Loading (₹ / unit)</th>
                   <th class="p-4">Geo Coordinates</th>
                   <th class="p-4 text-center">Actions</th>
                 </tr>
@@ -600,7 +600,7 @@
           <ff-number formControlName="materialRate" label="Base Material Rate" placeholder="0.00" [min]="0" [required]="true" />
           <ff-number formControlName="transportRate" label="Default Transport Rate" placeholder="0.00" [min]="0" [required]="true" />
           <ff-number formControlName="royaltyRate" label="Government Royalty Charges" placeholder="0.00" [min]="0" [required]="true" />
-          <ff-number formControlName="loadingCharge" label="Default Loading Charges" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-number formControlName="loadingCharge" label="Default loading (₹ per unit)" placeholder="0.00" [min]="0" [required]="true" />
           <ff-datepicker formControlName="effectiveDate" label="Effective Active Date" [required]="true" />
 
           <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">
@@ -630,7 +630,7 @@
             <ff-textbox formControlName="locationCode" label="Location Code" placeholder="Enter Location Code" prefixIcon="tag" [required]="true" />
             <ff-textbox formControlName="loadingPoint" label="Loading Point Name" placeholder="Location Name" prefixIcon="location_on" [required]="true" />
           </div>
-          <ff-number formControlName="loadingCharges" label="Loading Point Charges" placeholder="0.00" [min]="0" [required]="true" />
+          <ff-number formControlName="loadingCharges" label="Loading charges (₹ per unit)" placeholder="0.00" [min]="0" [required]="true" />
           <div class="grid grid-cols-2 gap-4">
             <ff-number formControlName="latitude" label="Latitude Coord" placeholder="Enter Latitude" [allowNegative]="true" />
             <ff-number formControlName="longitude" label="Longitude Coord" placeholder="Enter Longitude" [allowNegative]="true" />
