@@ -590,7 +590,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     const itemsHtml = (data.items || []).map((item: any, index: number) => `
       <tr>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">${index + 1}</td>
-        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.materialName || 'General Freight'}</td>
+        <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.materialName || 'Transport charges'}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb;">${item.tripNumber || 'N/A'}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">${item.quantity}${item.uomLabel ? ' ' + item.uomLabel : ''}</td>
         <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">₹${(item.rate || 0).toFixed(2)}</td>
