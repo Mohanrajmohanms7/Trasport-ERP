@@ -250,7 +250,7 @@
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptions()" [required]="true" />
                     </div>
                     <ff-number formControlName="rate" [label]="perUnitLabel('Rate', row) + ' (INR)'" [min]="0" [required]="true" />
-                    <ff-number formControlName="freightCharges" [label]="perUnitLabel('Freight', row)" [min]="0" [required]="true" />
+                    <ff-number formControlName="freightCharges" [label]="perUnitLabel('Transport charge', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="loadingCharges" [label]="perUnitLabel('Loading', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="royalty" [label]="perUnitLabel('Royalty', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="gstPercentage" label="GST %" [min]="0" [max]="28" [required]="true" />

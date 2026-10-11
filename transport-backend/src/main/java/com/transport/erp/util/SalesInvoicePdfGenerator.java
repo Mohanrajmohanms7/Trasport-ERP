@@ -208,7 +208,7 @@ public class SalesInvoicePdfGenerator {
                 BigDecimal addCharges = item.getFreightCharges().add(item.getLoadingCharges()).add(item.getRoyalty());
 
                 itemsTable.addCell(createBodyCell(String.valueOf(count++), normalFont, Element.ALIGN_CENTER));
-                itemsTable.addCell(createBodyCell(item.getMaterialName() != null ? item.getMaterialName() : "General Freight", normalFont));
+                itemsTable.addCell(createBodyCell(item.getMaterialName() != null ? item.getMaterialName() : "Transport charges", normalFont));
                 itemsTable.addCell(createBodyCell(item.getTripNumber() != null ? item.getTripNumber() : "N/A", normalFont));
                 String qty = item.getQuantity() != null ? item.getQuantity().stripTrailingZeros().toPlainString() : "0";
                 if (item.getUomLabel() != null && !item.getUomLabel().isBlank()) qty = qty + " " + item.getUomLabel();
