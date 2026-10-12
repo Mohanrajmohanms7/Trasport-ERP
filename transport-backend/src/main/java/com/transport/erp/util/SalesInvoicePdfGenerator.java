@@ -13,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;   // not com.lowagie.text.List
 
 /**
  * Invoice PDF — "Design A, Classic GST" (approved layout). Prints the saved invoice exactly (no recalculation):
