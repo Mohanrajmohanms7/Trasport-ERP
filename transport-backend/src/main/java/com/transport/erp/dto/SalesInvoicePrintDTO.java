@@ -37,6 +37,24 @@ public class SalesInvoicePrintDTO {
     private String companyEmail;
     private String companyGSTIN;
     private String companyPAN;
+    private String companyLogo;        // data URL or stored file name (web links are not fetched)
+    /** Logo image bytes resolved on the server for the PDF (not sent to the screen). */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private byte[] logoImage;
+    private String companyState;
+    private String companyCity;
+    private String companyPincode;
+    private String branchGSTIN;
+    private String bookingNumber;
+    private LocalDate dueDate;
+    private String shipToName;
+    private String shipToAddress;
+    private String bankName;
+    private String bankBranch;
+    private String bankAccountNumber;
+    private String bankIfsc;
+    private String upiId;
+    private String invoiceTerms;
 
     // Branch Information
     private Long branchId;
@@ -61,6 +79,9 @@ public class SalesInvoicePrintDTO {
     @Getter
     @Setter
     public static class SalesInvoicePrintLineItemDTO {
+        private LocalDate tripDate;
+        private String vehicleNumber;
+        private String hsnCode;
         /** Delivered quantity, printed under the billed quantity when the client bills by order (V85). */
         private java.math.BigDecimal deliveredQuantity;
         private String quantityBasis;

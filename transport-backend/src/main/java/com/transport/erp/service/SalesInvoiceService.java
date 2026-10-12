@@ -738,6 +738,16 @@ public class SalesInvoiceService {
                 dto.setCompanyEmail(c.getEmail());
                 dto.setCompanyGSTIN(c.getGstNumber());
                 dto.setCompanyPAN(c.getPanNumber());
+                dto.setCompanyLogo(c.getLogo());
+                dto.setCompanyState(c.getState());
+                dto.setCompanyCity(c.getCity());
+                dto.setCompanyPincode(c.getPincode());
+                dto.setBankName(c.getBankName());
+                dto.setBankBranch(c.getBankBranch());
+                dto.setBankAccountNumber(c.getBankAccountNumber());
+                dto.setBankIfsc(c.getBankIfsc());
+                dto.setUpiId(c.getUpiId());
+                dto.setInvoiceTerms(c.getInvoiceTerms());
             });
         }
 
@@ -748,7 +758,24 @@ public class SalesInvoiceService {
                 dto.setBranchName(b.getName());
                 dto.setBranchAddress(b.getAddress());
                 dto.setBranchPhone(b.getPhone());
+                dto.setBranchGSTIN(b.getGstNumber());
             });
+        }
+        // Due date from the payment terms (same day counts as receipts' ageing); booking + ship-to from the first trip
+        if (invoice.getInvoiceDate() != null) dto.setDueDate(invoice.getInvoiceDate().plusDays(termDays(invoice.getPaymentTerms())));
+        if (invoice.getDetails() != null) {
+            invoice.getDetails().stream().map(SalesInvoiceDetail::getTrip).filter(java.util.Objects::nonNull)
+                    .map(com.transport.erp.model.Trip::getBooking).filter(java.util.Objects::nonNull).findFirst().ifPresent(bk -> {
+                dto.setBookingNumber(bk.getBookingNumber());
+                if (bk.getDeliverySite() != null) {
+                    dto.setShipToName(bk.getDeliverySite().getSiteName());
+                    dto.setShipToAddress(bk.getDeliverySite().getAddress());
+                }
+            });
+        }
+        if (dto.getShipToAddress() == null && customer != null) {
+            dto.setShipToName(customer.getName());
+            dto.setShipToAddress(customer.getAddress());
         }
 
         // Financial calculations
@@ -779,10 +806,13 @@ public class SalesInvoiceService {
                 if (detail.getTrip() != null) {
                     idto.setTripId(detail.getTrip().getId());
                     idto.setTripNumber(detail.getTrip().getTripNumber());
+                    idto.setTripDate(detail.getTrip().getTripDate());
+                    if (detail.getTrip().getVehicle() != null) idto.setVehicleNumber(detail.getTrip().getVehicle().getCode());
                 }
                 if (detail.getMaterial() != null) {
                     idto.setMaterialId(detail.getMaterial().getId());
                     idto.setMaterialName(detail.getMaterial().getName());
+                    idto.setHsnCode(detail.getMaterial().getHsnCode());
                 }
                 idto.setQuantity(detail.getQuantity() != null ? detail.getQuantity() : BigDecimal.ZERO);
                 idto.setDeliveredQuantity(detail.getDeliveredQuantity());
@@ -831,7 +861,35 @@ public class SalesInvoiceService {
     @Transactional(readOnly = true)
     public void generateInvoicePdf(Long id, java.io.OutputStream os) throws Exception {
         SalesInvoicePrintDTO data = getInvoicePrintData(id);
+        data.setLogoImage(loadLogo(data.getCompanyLogo()));
         com.transport.erp.util.SalesInvoicePdfGenerator.generateSalesInvoicePdf(data, os);
+    }
+
+    /** Days for a payment-terms code (IMMEDIATE = 0, NET_7 / NET_15 / NET_30 / NET_45 / NET_60). */
+    static long termDays(String terms) {
+        if (terms == null) return 0;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+)").matcher(terms);
+        return m.find() ? Long.parseLong(m.group(1)) : 0;
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.transport.erp.repository.StoredFileRepository storedFileRepository;
+
+    /** Company logo for the PDF: a data URL or a file stored in TransaFlow. Web links are never fetched. Never fails. */
+    private byte[] loadLogo(String logo) {
+        try {
+            if (logo == null || logo.isBlank()) return null;
+            String v = logo.trim();
+            if (v.startsWith("data:image")) {
+                int comma = v.indexOf(',');
+                return comma > 0 ? java.util.Base64.getDecoder().decode(v.substring(comma + 1).trim()) : null;
+            }
+            if (v.contains("://") || storedFileRepository == null) return null;
+            String name = v.substring(v.lastIndexOf('/') + 1);
+            return storedFileRepository.findFirstByStoredNameAndIsDeletedFalse(name).map(f -> f.getContent()).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
 

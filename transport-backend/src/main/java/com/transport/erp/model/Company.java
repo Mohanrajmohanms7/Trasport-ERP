@@ -53,6 +53,14 @@ public class Company extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String logo;
 
+    // Invoice PDF (V86) — optional bank / UPI / terms printed in the invoice footer
+    @Column(name = "bank_name", length = 120) private String bankName;
+    @Column(name = "bank_branch", length = 120) private String bankBranch;
+    @Column(name = "bank_account_number", length = 40) private String bankAccountNumber;
+    @Column(name = "bank_ifsc", length = 20) private String bankIfsc;
+    @Column(name = "upi_id", length = 80) private String upiId;
+    @Column(name = "invoice_terms", columnDefinition = "TEXT") private String invoiceTerms;
+
     /** Initials shown above "TransaFlow" after login (e.g. PKC). Blank = derived from the name. */
     @Column(name = "short_name", length = 8)
     private String shortName;

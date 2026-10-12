@@ -84,6 +84,24 @@
               <ff-textbox formControlName="pincode" label="Pincode" placeholder="Pincode" prefixIcon="pin_drop" [digitsOnly]="true" [required]="true" />
             </div>
 
+            <!-- Bank & Invoice: printed in the invoice footer (all optional) -->
+            <div class="flex flex-col gap-3 pt-2" data-testid="bank-invoice">
+              <div>
+                <h3 class="text-sm font-bold text-[var(--ff-text-primary)]">Bank &amp; Invoice</h3>
+                <p class="text-xs text-[var(--ff-text-muted)]">Printed at the bottom of every invoice. Leave blank to print the space empty.</p>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ff-textbox formControlName="bankName" label="Bank name" placeholder="Indian Bank" prefixIcon="account_balance" />
+                <ff-textbox formControlName="bankBranch" label="Branch" placeholder="Perambalur" prefixIcon="location_city" />
+                <ff-textbox formControlName="bankAccountNumber" label="Account number" placeholder="0000 1234 5678" prefixIcon="numbers" />
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <ff-textbox formControlName="bankIfsc" label="IFSC" placeholder="IDIB000P000" prefixIcon="badge" />
+                <ff-textbox formControlName="upiId" label="UPI ID" placeholder="name@bank" prefixIcon="qr_code_2" />
+              </div>
+              <ff-textarea formControlName="invoiceTerms" label="Invoice terms" [rows]="3" placeholder="1. Payment within 30 days. 2. Subject to Perambalur jurisdiction." />
+            </div>
+
             <div class="flex justify-end pt-4 border-t border-[var(--ff-border-divider)]">
               <ff-button type="submit" label="Save Profile Details" icon="save" variant="primary" [disabled]="loading()" />
             </div>

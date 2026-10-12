@@ -85,6 +85,7 @@ export class QuickCreateService {
                   @for (u of uoms(); track u.id) { <option [ngValue]="u.id">{{ u.label || u.name }}</option> }
                 </select></label>
               <label class="flex flex-col gap-1">Material rate (₹ / unit)<input type="number" min="0" step="0.01" class="qc-in" [(ngModel)]="f.defaultRate" name="mrate" /></label>
+              <label class="flex flex-col gap-1">HSN / SAC code<input class="qc-in" inputmode="numeric" maxlength="12" [(ngModel)]="f.hsnCode" name="mhsn" placeholder="e.g. 2505" /></label>
             }
             @if (kind() === 'quarry') {
               <label class="flex flex-col gap-1 sm:col-span-2">Location / address<input class="qc-in" [(ngModel)]="f.locationAddress" name="qaddr" /></label>
@@ -172,7 +173,7 @@ export class QuickCreateComponent implements OnChanges {
       body = { ...body, phone: this.f.phone || null, gstNumber: String(this.f.gstNumber || '').trim().toUpperCase() || null };
     } else if (k === 'material') {
       url = '/api/v1/materials';
-      body = { ...body, defaultUom: this.f.defaultUomId ? { id: this.f.defaultUomId } : null, defaultRate: Number(this.f.defaultRate || 0) };   // freight / royalty / loading are entered per booking
+      body = { ...body, defaultUom: this.f.defaultUomId ? { id: this.f.defaultUomId } : null, defaultRate: Number(this.f.defaultRate || 0), hsnCode: String(this.f.hsnCode || '').replace(/[^0-9]/g, '') || null };   // freight / royalty / loading are entered per booking
     } else if (k === 'quarry') {
       url = '/api/v1/quarries';
       body = { ...body, locationAddress: this.f.locationAddress || null, contactNumber: this.f.contactNumber || null };

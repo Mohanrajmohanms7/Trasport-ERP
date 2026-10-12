@@ -13,6 +13,10 @@ import java.math.BigDecimal;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Material extends BaseEntity {
 
+    /** HSN / SAC code printed on invoices (V86, optional). */
+    @Column(name = "hsn_code", length = 12)
+    private String hsnCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private LookupValue category;

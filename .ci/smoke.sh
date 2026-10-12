@@ -1241,5 +1241,24 @@ set -- $(bq_flow DELIVERED)
 [ "$5" = "APPROVED" ] && pass "BQ DELIVERED: booking keeps 0.25 pending (default behaviour)" || fail "BQ delivered booking" "$*"
 [ "$(curl -s -H "Authorization: Bearer $TOKEN" $API/invoices/$INV1 | j "float(d['data']['details'][0]['quantity'])")" = "2.0" ] && pass "BQ switching back does not change the earlier invoice" || fail "BQ earlier invoice" "x"
 
+# ================= Invoice PDF "Design A" (V86): intra-state, inter-state (IGST), draft, cancelled, empty / filled bank =================
+pdfok() { local C=$(curl -s -o /tmp/inv.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/invoices/$1/pdf); local SZ=$(stat -c%s /tmp/inv.pdf 2>/dev/null || echo 0)
+  [ "$C" = "200" ] && [ "$(head -c 4 /tmp/inv.pdf)" = "%PDF" ] && [ "$SZ" -gt 2000 ] && pass "PDF $2 ($SZ bytes)" || fail "PDF $2" "HTTP $C size $SZ $(head -c 120 /tmp/inv.pdf)"; }
+PMAT=$($PSQL "SELECT id FROM materials WHERE company_id=1 AND is_deleted=false ORDER BY id LIMIT 1")
+$PSQL "UPDATE materials SET hsn_code='2505' WHERE id=$PMAT" >/dev/null
+mkinv() { post /invoices '{"customer":{"id":'$1'},"paymentTerms":"NET_30","discount":0,"details":[{"material":{"id":'$PMAT'},"quantity":2,"rate":4300,"freightCharges":1450,"loadingCharges":180,"royalty":270,"gstPercentage":5}]}' | j "d['data']['id']"; }
+PI1=$(mkinv $CUST_TN); pdfok $PI1 "draft intra-state, no bank details (DRAFT watermark)"
+post /invoices/$PI1/approve >/dev/null; pdfok $PI1 "approved intra-state (CGST + SGST)"
+$PSQL "UPDATE companies SET bank_name='Indian Bank', bank_branch='Perambalur', bank_account_number='0000 1234 5678', bank_ifsc='IDIB000P000', upi_id='pkc@ibl', invoice_terms='1. Payment within 30 days. 2. Subject to Perambalur jurisdiction.' WHERE id=1" >/dev/null
+pdfok $PI1 "approved with bank details and terms"
+PCI=$(post /customers '{"code":"PDF-IGST","name":"Karaikal Port Contractors","gstNumber":"34AAACK9101L1Z1","address":"Port Road, Karaikal, Puducherry","status":"ACTIVE"}' | j "d['data']['id']")
+PI2=$(mkinv $PCI); ST=$(curl -s -H "Authorization: Bearer $TOKEN" $API/invoices/$PI2 | j "d['data'].get('supplyType')")
+echo "$ST" | grep -qi "INTER" && pass "PDF test invoice is inter-state ($ST)" || fail "PDF igst setup" "$ST"
+pdfok $PI2 "inter-state (IGST)"
+PI3=$(mkinv $CUST_TN); post /invoices/$PI3/approve >/dev/null; post /invoices/$PI3/cancel '{"reason":"PDF test"}' >/dev/null
+[ "$($PSQL "SELECT status FROM sales_invoices WHERE id=$PI3")" = "CANCELLED" ] && pdfok $PI3 "cancelled (CANCELLED watermark)" || fail "PDF cancel setup" "$($PSQL "SELECT status FROM sales_invoices WHERE id=$PI3")"
+LONG=$(python3 -c "import json; print(json.dumps({'customer':{'id':$CUST_TN},'paymentTerms':'NET_15','discount':0,'details':[{'material':{'id':$PMAT},'quantity':1+i%3,'rate':4300,'freightCharges':1450,'loadingCharges':180,'royalty':270,'gstPercentage':5} for i in range(30)]}))")
+PI4=$(post /invoices "$LONG" | j "d['data']['id']"); pdfok $PI4 "30-line invoice over several pages"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

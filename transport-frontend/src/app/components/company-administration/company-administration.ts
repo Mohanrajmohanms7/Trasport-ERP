@@ -96,7 +96,14 @@ export class CompanyAdministrationComponent implements OnInit {
       country: ['India', Validators.required],
       pincode: ['', [Validators.required, Validators.maxLength(10)]],
       logo: [''],
-      digitalSignature: ['']
+      digitalSignature: [''],
+      // Bank & Invoice (printed on the invoice; all optional)
+      bankName: ['', [Validators.maxLength(120)]],
+      bankBranch: ['', [Validators.maxLength(120)]],
+      bankAccountNumber: ['', [Validators.maxLength(40), Validators.pattern(/^[0-9A-Za-z -]*$/)]],
+      bankIfsc: ['', [Validators.pattern(/^([A-Za-z]{4}0[A-Za-z0-9]{6})?$/)]],
+      upiId: ['', [Validators.maxLength(80), Validators.pattern(/^([A-Za-z0-9._-]+@[A-Za-z0-9.-]+)?$/)]],
+      invoiceTerms: ['', [Validators.maxLength(2000)]]
     });
 
     this.branchForm = this.fb.group({

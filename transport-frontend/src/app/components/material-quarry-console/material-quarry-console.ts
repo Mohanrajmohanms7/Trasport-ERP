@@ -161,6 +161,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(150)]],
       description: [''],
       defaultRate: [0, [Validators.min(0)]],
+      hsnCode: ['', [Validators.maxLength(12), Validators.pattern(/^[0-9]*$/)]],
       density: [1.5, [Validators.min(0)]],
       defaultUomId: [null],
       status: ['ACTIVE']

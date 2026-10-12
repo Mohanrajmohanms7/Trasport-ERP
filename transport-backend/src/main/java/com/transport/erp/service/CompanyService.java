@@ -54,6 +54,13 @@ public class CompanyService {
         company.setStatus(companyDetails.getStatus());
         company.setGstNumber(companyDetails.getGstNumber());
         company.setPanNumber(companyDetails.getPanNumber());
+        // Bank & invoice details (V86): saved only when the request carries them (older screens leave them as they are)
+        if (companyDetails.getBankName() != null) company.setBankName(companyDetails.getBankName());
+        if (companyDetails.getBankBranch() != null) company.setBankBranch(companyDetails.getBankBranch());
+        if (companyDetails.getBankAccountNumber() != null) company.setBankAccountNumber(companyDetails.getBankAccountNumber());
+        if (companyDetails.getBankIfsc() != null) company.setBankIfsc(companyDetails.getBankIfsc().trim().toUpperCase());
+        if (companyDetails.getUpiId() != null) company.setUpiId(companyDetails.getUpiId());
+        if (companyDetails.getInvoiceTerms() != null) company.setInvoiceTerms(companyDetails.getInvoiceTerms());
         company.setCinNumber(companyDetails.getCinNumber());
         company.setPhone(companyDetails.getPhone());
         company.setEmail(companyDetails.getEmail());
