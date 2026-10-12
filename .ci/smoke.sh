@@ -1243,7 +1243,8 @@ set -- $(bq_flow DELIVERED)
 
 # ================= Invoice PDF "Design A" (V86): intra-state, inter-state (IGST), draft, cancelled, empty / filled bank =================
 pdfok() { local C=$(curl -s -o /tmp/inv.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/invoices/$1/pdf); local SZ=$(stat -c%s /tmp/inv.pdf 2>/dev/null || echo 0)
-  [ "$C" = "200" ] && [ "$(head -c 4 /tmp/inv.pdf)" = "%PDF" ] && [ "$SZ" -gt 2000 ] && pass "PDF $2 ($SZ bytes)" || fail "PDF $2" "HTTP $C size $SZ $(head -c 120 /tmp/inv.pdf)"; }
+  [ "$C" = "200" ] && [ "$(head -c 4 /tmp/inv.pdf)" = "%PDF" ] && [ "$SZ" -gt 2000 ] && pass "PDF $2 ($SZ bytes)" || fail "PDF $2" "HTTP $C size $SZ $(head -c 120 /tmp/inv.pdf)"
+  mkdir -p "${GITHUB_WORKSPACE:-/tmp}/shots/pdf" && cp /tmp/inv.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-$1.pdf" 2>/dev/null || true; }   # kept for visual review
 PMAT=$($PSQL "SELECT id FROM materials WHERE company_id=1 AND is_deleted=false ORDER BY id LIMIT 1")
 $PSQL "UPDATE materials SET hsn_code='2505' WHERE id=$PMAT" >/dev/null
 mkinv() { post /invoices '{"customer":{"id":'$1'},"paymentTerms":"NET_30","discount":0,"details":[{"material":{"id":'$PMAT'},"quantity":2,"rate":4300,"freightCharges":1450,"loadingCharges":180,"royalty":270,"gstPercentage":5}]}' | j "d['data']['id']"; }
