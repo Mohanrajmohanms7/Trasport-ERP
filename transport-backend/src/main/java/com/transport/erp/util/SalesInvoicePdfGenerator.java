@@ -58,7 +58,7 @@ public final class SalesInvoicePdfGenerator {
         doc.add(title);
 
         // 2-3. Company box + invoice facts
-        PdfPTable head = table(new float[]{58, 42});
+        PdfPTable head = table(new float[]{56, 44});
         PdfPCell co = new PdfPCell(); box(co, Rectangle.LEFT | Rectangle.BOTTOM | Rectangle.RIGHT); co.setPadding(6);
         Image logo = logo(d.getLogoImage());
         if (logo != null) { logo.scaleToFit(70, 38); co.addElement(logo); }
@@ -106,9 +106,9 @@ public final class SalesInvoicePdfGenerator {
         doc.add(parties);
 
         // 5. Items (header row repeats on every page; rows may split, text wraps)
-        PdfPTable items = table(new float[]{4, 31, 7, 7, 6, 10, 11, 5, 8, 11});
+        PdfPTable items = table(new float[]{4, 27, 7, 7, 6, 10, 12, 5, 10, 12});   // money columns wide enough for lakh amounts
         items.setHeaderRows(1);
-        items.setSplitLate(false);
+        items.setSplitLate(true);   // a row moves whole to the next page (splits only if taller than a page)
         for (String h : new String[]{"#", "DESCRIPTION", "HSN", "QTY", "UNIT", "RATE / UNIT", "TAXABLE", "GST", "TAX", "AMOUNT"}) {
             PdfPCell hc = cell(h, f(7, true, Color.BLACK), Element.ALIGN_CENTER, Rectangle.BOX); hc.setBackgroundColor(HEAD); items.addCell(hc);
         }
@@ -306,7 +306,7 @@ public final class SalesInvoicePdfGenerator {
     private static void fact(PdfPTable t, String label, String value, boolean bold, boolean leftColumn) {
         PdfPCell c = new PdfPCell(); box(c, Rectangle.BOTTOM | (leftColumn ? Rectangle.RIGHT : 0)); c.setPadding(5);
         c.addElement(para(label, f(7, false, MUTED)));
-        c.addElement(para(blank(value) ? " " : value, f(9, bold, Color.BLACK)));
+        c.addElement(para(blank(value) ? " " : value, f(bold ? 9 : 8, bold, Color.BLACK)));
         t.addCell(c);
     }
     private static void totalRow(PdfPTable t, String label, String value, boolean grand) {
