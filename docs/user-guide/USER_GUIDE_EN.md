@@ -263,7 +263,7 @@ Open the completed trip (**Edit**):
 2. Tick the trips of **one customer** (or *select all of this customer*) → **One invoice for N trips**.
    (Or use the **Generate** button on a single trip.)
 3. A **DRAFT** invoice is created: quantity = delivered quantity, in the trip's unit (e.g. *2 Unit*); rates from the booking.
-   Line value = qty × (material rate + transport charge + loading + royalty). **Discount is taken before GST.**
+   Line value = qty × (material rate + transport charge + loading + royalty). The printed invoice shows your bank details and terms (System Settings → Company profile → **Bank & Invoice**) and each material's **HSN / SAC code** (Material Master). **Discount is taken before GST.**
 4. **Edit** the draft if needed: invoice date (not future, not before the trip date), place of supply (2-digit state code,
    e.g. 33), discount, payment terms.
 5. **Approve** → posts **Customer Receivable** / **Freight Income** + **GST Liability**. Number `INV-2627/000xx`.

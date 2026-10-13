@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V86__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V87__…sql` (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -106,6 +106,13 @@ or more if more was delivered. One rule everywhere: `BillingQuantityPolicy` (Jav
 booking balance / completion, booking-delivery / pending / unbilled reports. The delivered quantity is always copied from
 the trip onto the invoice line (`delivered_quantity`, never from the request) and printed ("delivered 1.75"); never hidden.
 Changing the basis is audited and affects new invoices only.
+
+**Invoice PDF — Design A, Classic GST (V86).** `util/SalesInvoicePdfGenerator` (OpenPDF) prints the saved invoice only (no
+recalculation): title bar, company / invoice facts (branch GSTIN / address win when set), bill-to / ship-to (booking delivery
+site, else customer), items with trip · date · vehicle and Material + Transport + Loading + Royalty, "Delivered x · billed as
+ordered" for ORDERED clients, amount in words (`util/AmountInWords`, Indian Lakh / Crore), totals, HSN summary, bank / terms /
+signatory, DRAFT / CANCELLED watermark, header row repeated on every page. Font: bundled DejaVu Sans Condensed (₹ sign).
+Bank / UPI / terms: System Settings → Company profile → Bank & Invoice; HSN: Material Master. Empty values print blank.
 
 **Errors.** Business-rule failures throw `exception/BusinessValidationException(title, CODE, message, userAction)` → shown to
 users verbatim. Write messages a transport clerk understands ("Customer owes ₹… — collect payment or raise the limit").

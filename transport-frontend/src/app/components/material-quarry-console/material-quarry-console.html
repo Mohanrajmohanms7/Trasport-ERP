@@ -489,6 +489,7 @@
           <ff-textbox formControlName="name" label="Material Name" prefixIcon="label" [required]="true" />
           <ff-dropdown [formGroup]="materialForm" name="defaultUomId" label="Default UOM" [options]="uomOptions" />
           <ff-number formControlName="defaultRate" label="Default Rate" [min]="0" />
+          <ff-textbox formControlName="hsnCode" label="HSN / SAC code" placeholder="e.g. 2505" prefixIcon="qr_code" [digitsOnly]="true" />
           <ff-number formControlName="density" label="Density" [min]="0" [step]="0.001" />
           <ff-textarea formControlName="description" label="Description" [rows]="2" />
           <div class="flex justify-end gap-3 pt-4 border-t border-[var(--ff-border-divider)] mt-auto">

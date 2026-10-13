@@ -81,6 +81,7 @@ public class MaterialService {
         material.setCategory(materialDetails.getCategory());
         material.setUnit(materialDetails.getUnit());
         material.setDefaultRate(materialDetails.getDefaultRate());
+        material.setHsnCode(materialDetails.getHsnCode() == null || materialDetails.getHsnCode().isBlank() ? null : materialDetails.getHsnCode().trim());
         material.setDensity(materialDetails.getDensity());
         // The default order unit was only saved on create before; edits from the Material screen were lost.
         material.setDefaultUom(resolveDefaultUom(materialDetails.getDefaultUom(), material.getCompanyId()));
