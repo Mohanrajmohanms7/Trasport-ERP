@@ -122,6 +122,10 @@ public class Company extends BaseEntity {
     @Column(name = "plan_enforced", nullable = false)
     private Boolean planEnforced = false;
 
+    /** Set after a limit edit when the client already uses more than the new limit (not stored). */
+    @Transient
+    private String limitWarning;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "subscription_plan_id")
     private SaaSPlan subscriptionPlan;

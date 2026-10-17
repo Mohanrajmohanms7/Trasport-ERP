@@ -1112,8 +1112,10 @@ export class PlatformAdminComponent implements OnInit {
     if (this.isEditMode() && formVal.id) {
       this.platformService.updateCompany(formVal.id, formVal).subscribe({
         next: (res) => {
+          if (res && res.success === false) { this.handleError({ error: res }); this.loading.set(false); return; }
           if (res.success) {
-            this.showSuccess('Client profile details updated successfully');
+            // the server warns when the client already uses more than a lowered limit (nothing is removed)
+            this.showSuccess(res.data?.limitWarning ? 'Client updated. ' + res.data.limitWarning : 'Client profile details updated successfully');
             this.companyForm.reset();
             this.showCompanyForm.set(false);
             this.isEditMode.set(false);
@@ -1791,7 +1793,9 @@ export class PlatformAdminComponent implements OnInit {
 
   private handleError(err: any): void {
     const defaultMsg = 'An error occurred during platform administration operations.';
-    this.errorMsg.set(err?.error?.message || err?.message || defaultMsg);
+    const e = err?.error;
+    const detail = e?.errors?.[0];   // business rule messages carry the detail here (e.g. "The plan includes 10 vehicles …")
+    this.errorMsg.set(detail ? (e?.message && e.message !== detail ? e.message + ': ' : '') + detail : (e?.message || err?.message || defaultMsg));
     this.successMsg.set('');
     setTimeout(() => this.errorMsg.set(''), 5500);
   }

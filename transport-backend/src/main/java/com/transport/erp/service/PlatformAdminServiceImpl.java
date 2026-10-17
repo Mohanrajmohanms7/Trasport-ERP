@@ -667,6 +667,9 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         savedCompany.setMaxVehicles(maxVehicles);
         savedCompany.setMaxBranches(plan.getMaxBranches());
         savedCompany.setPlanEnforced(true);      // new clients get exactly their plan
+        // Custom limits above the plan = extras (client limit = plan + extras), so a later plan sync keeps them.
+        savedCompany.setExtraVehicles(extraOver(plan.getMaxVehicles(), maxVehicles));
+        savedCompany.setExtraUsers(extraOver(plan.getMaxUsers(), maxUsers));
         companyRepository.save(savedCompany);
 
         String licenseKey = "LIC-" + companyCode + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
@@ -959,6 +962,16 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         Long newPlanId = companyDetails.getSubscriptionPlan() != null ? companyDetails.getSubscriptionPlan().getId() : null;
         Long oldPlanId = company.getSubscriptionPlan() != null ? company.getSubscriptionPlan().getId() : null;
         boolean planApplied = Boolean.TRUE.equals(company.getPlanEnforced());
+        String limitWarning = null;
+        if (planApplied) {
+            // Client on a plan: limit = plan limit + extras. An edited limit is stored as that difference (extras),
+            // so it persists and survives later plan syncs. Only a changed limit is touched.
+            SaaSPlan target = newPlanId != null && !newPlanId.equals(oldPlanId)
+                    ? planRepository.findById(newPlanId).orElse(company.getSubscriptionPlan()) : company.getSubscriptionPlan();
+            limitWarning = join(
+                    editLimit(company, target, companyDetails.getMaxVehicles(), true, id),
+                    editLimit(company, target, companyDetails.getMaxUsers(), false, id));
+        }
         if (!planApplied) {
             // Legacy client: limits and plan as edited here.
             company.setMaxUsers(companyDetails.getMaxUsers());
@@ -968,12 +981,16 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         // With a plan applied, limits come from the plan + extras; a plan change goes through Client Plans (history, limits).
         
         Company updated = companyRepository.save(company);
+        // keep the active licence showing the same limits
+        jdbcTemplate.update("UPDATE saas_licenses SET max_users = ?, max_vehicles = ? WHERE company_id = ? AND status = 'ACTIVE'",
+                updated.getMaxUsers() == null ? 0 : updated.getMaxUsers(), updated.getMaxVehicles() == null ? 0 : updated.getMaxVehicles(), id);
         if (planApplied && newPlanId != null && !newPlanId.equals(oldPlanId)) {
             subscriptionPlanService.apply(id, newPlanId, "Changed from client edit", activeUser);
             updated = companyRepository.findById(id).orElse(updated);
         }
         auditService.log(activeUser, "UPDATE_COMPANY", "companies", id, null,
                 "Updated SaaS client details: " + updated.getName());
+        updated.setLimitWarning(limitWarning);
         return updated;
     }
 
@@ -1539,5 +1556,54 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
             throw new com.transport.erp.exception.BusinessValidationException("Platform Company", "PLATFORM_COMPANY_PROTECTED",
                     "This company holds the platform admin login(s) and cannot be suspended or deleted.", "Choose a client company.");
         }
+    }
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Autowired
+    private PlanLimitService planLimitService;
+
+    /** Extras needed for a custom limit above the plan limit (0 when not above, or when the plan is unlimited). */
+    private static int extraOver(Integer planLimit, Integer limit) {
+        if (planLimit == null || planLimit <= 0 || limit == null) return 0;
+        return Math.max(0, limit - planLimit);
+    }
+
+    /**
+     * Edit one limit (vehicles or users) of a client on a plan. Unchanged / empty → untouched. Below the plan's included
+     * number (or a number on an unlimited plan) cannot be expressed as extras → clear error. Returns a warning when the
+     * client already uses more than the new limit (nothing is deleted; new additions are blocked until under the limit).
+     */
+    private String editLimit(Company c, SaaSPlan plan, Integer requested, boolean vehicles, Long companyId) {
+        Integer current = vehicles ? c.getMaxVehicles() : c.getMaxUsers();
+        if (requested == null || requested.equals(current)) return null;
+        String what = vehicles ? "vehicles" : "users";
+        if (requested < 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Invalid Limit", "CLIENT_LIMIT_INVALID",
+                    "The " + what + " limit cannot be negative.", "Enter 0 or more.");
+        }
+        Integer planLimit = plan == null ? null : (vehicles ? plan.getMaxVehicles() : plan.getMaxUsers());
+        if (planLimit == null || planLimit <= 0) {
+            if (requested == 0) return null;   // stays unlimited
+            throw new com.transport.erp.exception.BusinessValidationException("Plan Is Unlimited", "CLIENT_LIMIT_PLAN_UNLIMITED",
+                    "This client's plan allows unlimited " + what + ", so a " + what + " limit cannot be set here.",
+                    "Choose a plan with a " + what + " limit in Client Plans.");
+        }
+        if (requested < planLimit) {
+            throw new com.transport.erp.exception.BusinessValidationException("Below The Plan", "CLIENT_LIMIT_BELOW_PLAN",
+                    "The " + (plan.getName() == null ? "client's" : plan.getName()) + " plan includes " + planLimit + " " + what
+                            + "; the limit cannot be lower than that.",
+                    "Enter " + planLimit + " or more, or choose a smaller plan in Client Plans.");
+        }
+        if (vehicles) { c.setExtraVehicles(requested - planLimit); c.setMaxVehicles(requested); }
+        else { c.setExtraUsers(requested - planLimit); c.setMaxUsers(requested); }
+        long used = planLimitService.used(companyId, vehicles ? PlanLimitService.Kind.VEHICLES : PlanLimitService.Kind.USERS);
+        return used > requested ? "The client already has " + used + " active " + (vehicles ? "trucks" : "staff logins")
+                + ", more than the new limit of " + requested + ". Nothing was removed; new ones are blocked until they are under the limit." : null;
+    }
+
+    private static String join(String a, String b) {
+        if (a == null) return b;
+        return b == null ? a : a + " " + b;
     }
 }
