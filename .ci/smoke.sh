@@ -1286,9 +1286,11 @@ R=$(edit_limits $((LPV+4)) "")
 R=$(edit_limits $((LPV-1)) ""); echo "$R" | grep -q "includes $LPV" && [ "$(lims)" = "$((LPV+4))/$((LPU+3))/4/3" ] && pass "LIM below the plan refused with a clear message, nothing changed" || fail "LIM below plan" "$(echo $R | cut -c1-200)"
 R=$(edit_limits -3 ""); echo "$R" | grep -qi "negative\|cannot be lower" && pass "LIM negative limit refused" || fail "LIM negative" "$(echo $R | cut -c1-160)"
 LT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"ltl.admin","password":"Ltl@2026x"}' | j "d['data']['token']")
-OK=0; for i in $(seq 1 $((LPV+4))); do C=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT'$((1000+i))'","name":"TN46LT'$((1000+i))'","status":"ACTIVE"}'); { [ "$C" = "200" ] || [ "$C" = "201" ]; } && OK=$((OK+1)); done
+for i in $(seq 1 $((LPV+4))); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT'$((1000+i))'","name":"TN46LT'$((1000+i))'","status":"ACTIVE"}'; done
+OK=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")   # counted in the database (the API answers 200 even when it refuses)
 R=$(curl -s -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT9999","name":"TN46LT9999","status":"ACTIVE"}')
-[ "$OK" = "$((LPV+4))" ] && echo "$R" | grep -q "Plan Limit Reached\|allows $((LPV+4))" && pass "LIM vehicle creation follows the edited limit ($OK allowed, next refused)" || fail "LIM enforcement" "created $OK of $((LPV+4)) :: $(echo $R | cut -c1-160)"
+AFTER=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")
+[ "$OK" = "$((LPV+4))" ] && [ "$AFTER" = "$OK" ] && echo "$R" | grep -q "allows $((LPV+4)) active" && pass "LIM vehicle creation follows the edited limit ($OK created, next refused)" || fail "LIM enforcement" "created $OK / after $AFTER of $((LPV+4)) :: $(echo $R | cut -c1-160)"
 R=$(edit_limits $LPV ""); W=$(echo "$R" | j "d['data'].get('limitWarning') or ''")
 echo "$W" | grep -q "already has $((LPV+4)) active" && [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")" = "$((LPV+4))" ] && pass "LIM lowering below current use warns and keeps every vehicle" || fail "LIM over-use warning" "$W"
 [ "$($PSQL "SELECT max_vehicles||'/'||max_users FROM companies WHERE id=$NCID")" = "$VEM_BEFORE" ] && pass "LIM other client's limits unchanged ($VEM_BEFORE)" || fail "LIM tenant isolation" "x"
