@@ -1261,5 +1261,38 @@ PI3=$(mkinv $CUST_TN); post /invoices/$PI3/approve >/dev/null; post /invoices/$P
 LONG=$(python3 -c "import json; print(json.dumps({'customer':{'id':$CUST_TN},'paymentTerms':'NET_15','discount':0,'details':[{'material':{'id':$PMAT},'quantity':1+i%3,'rate':4300,'freightCharges':1450,'loadingCharges':180,'royalty':270,'gstPercentage':5} for i in range(30)]}))")
 PI4=$(post /invoices "$LONG" | j "d['data']['id']"); pdfok $PI4 "30-line invoice over several pages"
 
+# ================= Client vehicle / user limits: onboarding + edit after onboarding (Platform Admin) =================
+LP=$(curl -s $API/auth/plans -H "Authorization: Bearer $TOKEN" | j "[p['id'] for p in d['data'] if (p.get('maxVehicles') or 0) > 0 and (p.get('maxUsers') or 0) > 0][0]")
+LPV=$($PSQL "SELECT max_vehicles FROM saas_plans WHERE id=$LP"); LPU=$($PSQL "SELECT max_users FROM saas_plans WHERE id=$LP")
+VEM_BEFORE=$($PSQL "SELECT max_vehicles||'/'||max_users FROM companies WHERE id=$NCID")
+R=$(post /platform-admin/onboard '{"name":"Limit Test Lorries","shortName":"LTL","ownerName":"Limit Tester","phone":"9000022222","email":"ltl@example.com","state":"Tamil Nadu","subscriptionPlanId":'$LP',"maxVehicles":'$((LPV+2))',"maxUsers":'$((LPU+1))',"adminUsername":"ltl.admin","adminPassword":"Ltl@2026x","sendWelcomeEmail":false}')
+LCID=$(echo "$R" | j "d['data']['companyId']")
+lims() { $PSQL "SELECT max_vehicles||'/'||max_users||'/'||COALESCE(extra_vehicles,0)||'/'||COALESCE(extra_users,0) FROM companies WHERE id=$LCID"; }
+[ "$(lims)" = "$((LPV+2))/$((LPU+1))/2/1" ] && pass "LIM onboarding keeps custom limits ($(lims) = vehicles/users/extras)" || fail "LIM onboarding" "$(lims) plan $LPV/$LPU"
+edit_limits() {   # same body the edit screen sends: the client as listed + subscriptionPlan {id}; $1 vehicles, $2 users ("" = leave)
+  curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/clients/$LCID | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']
+if d.get('subscriptionPlanId'): d['subscriptionPlan']={'id':d['subscriptionPlanId']}
+if '$1': d['maxVehicles']=int('$1')
+if '$2': d['maxUsers']=int('$2')
+print(json.dumps(d))" > /tmp/lim.json
+  curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$LCID --data @/tmp/lim.json; }
+R=$(edit_limits $((LPV+5)) $((LPU+3)))
+[ "$(lims)" = "$((LPV+5))/$((LPU+3))/5/3" ] && pass "LIM edit both limits after onboarding is saved ($(lims))" || fail "LIM edit both (the reported bug)" "$(lims) :: $(echo $R | cut -c1-200)"
+[ "$(curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/clients/$LCID | j "str(d['data']['maxVehicles'])+'/'+str(d['data']['maxUsers'])")" = "$((LPV+5))/$((LPU+3))" ] && pass "LIM client screen shows the new limits after reload" || fail "LIM reload" "x"
+[ "$($PSQL "SELECT max_vehicles||'/'||max_users FROM saas_licenses WHERE company_id=$LCID AND status='ACTIVE' LIMIT 1")" = "$((LPV+5))/$((LPU+3))" ] && pass "LIM active licence shows the same limits" || fail "LIM licence" "x"
+R=$(edit_limits $((LPV+4)) "")
+[ "$(lims)" = "$((LPV+4))/$((LPU+3))/4/3" ] && pass "LIM edit only vehicles: users unchanged ($(lims))" || fail "LIM one field" "$(lims)"
+R=$(edit_limits $((LPV-1)) ""); echo "$R" | grep -q "includes $LPV" && [ "$(lims)" = "$((LPV+4))/$((LPU+3))/4/3" ] && pass "LIM below the plan refused with a clear message, nothing changed" || fail "LIM below plan" "$(echo $R | cut -c1-200)"
+R=$(edit_limits -3 ""); echo "$R" | grep -qi "negative\|cannot be lower" && pass "LIM negative limit refused" || fail "LIM negative" "$(echo $R | cut -c1-160)"
+LT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"ltl.admin","password":"Ltl@2026x"}' | j "d['data']['token']")
+OK=0; for i in $(seq 1 $((LPV+4))); do C=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT'$((1000+i))'","name":"TN46LT'$((1000+i))'","status":"ACTIVE"}'); { [ "$C" = "200" ] || [ "$C" = "201" ]; } && OK=$((OK+1)); done
+R=$(curl -s -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT9999","name":"TN46LT9999","status":"ACTIVE"}')
+[ "$OK" = "$((LPV+4))" ] && echo "$R" | grep -q "Plan Limit Reached\|allows $((LPV+4))" && pass "LIM vehicle creation follows the edited limit ($OK allowed, next refused)" || fail "LIM enforcement" "created $OK of $((LPV+4)) :: $(echo $R | cut -c1-160)"
+R=$(edit_limits $LPV ""); W=$(echo "$R" | j "d['data'].get('limitWarning') or ''")
+echo "$W" | grep -q "already has $((LPV+4)) active" && [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")" = "$((LPV+4))" ] && pass "LIM lowering below current use warns and keeps every vehicle" || fail "LIM over-use warning" "$W"
+[ "$($PSQL "SELECT max_vehicles||'/'||max_users FROM companies WHERE id=$NCID")" = "$VEM_BEFORE" ] && pass "LIM other client's limits unchanged ($VEM_BEFORE)" || fail "LIM tenant isolation" "x"
+C=$(as "$LT" PUT /platform-admin/companies/$LCID '{}'); [ "$C" = "403" ] && pass "LIM a client admin cannot edit limits (403)" || fail "LIM permission" "$C"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

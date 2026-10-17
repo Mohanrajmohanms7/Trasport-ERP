@@ -763,6 +763,7 @@
 
             <ff-number label="Maximum Users Limit" formControlName="maxUsers"></ff-number>
             <ff-number label="Maximum Vehicles Limit" formControlName="maxVehicles"></ff-number>
+            <p class="md:col-span-3 text-[11px] text-slate-500 -mt-2">For a client on a plan, the part of a limit above the plan's included number is saved as extras (see Client Plans, billed with the plan). A limit cannot be lower than the plan includes.</p>
 
             <div class="md:col-span-3 flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
               <button type="button" (click)="showCompanyForm.set(false); isEditMode.set(false)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-350 rounded text-xs font-semibold">Cancel</button>
