@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -142,15 +143,58 @@ class TripMaintenanceBlockTest {
     }
 
     @Test
-    @DisplayName("A missing driver assignment is still rejected before maintenance state is considered")
-    void assignmentStillRequired() {
-        when(assignmentRepository.findByVehicleIdAndDriverIdAndRemovalDateIsNullAndIsDeletedFalse(1L, 2L))
-                .thenReturn(Optional.empty());
+    @DisplayName("Another driver than the vehicle's regular driver needs confirmation; nothing is saved and maintenance is not consulted")
+    void differentDriverNeedsConfirmation() {
+        regularDriver(1L, 3L, "K. Kumar");
         BusinessValidationException ex = assertThrows(BusinessValidationException.class,
                 () -> tripService.createTrip(trip(1L, 2L), "driver"));
-        assertEquals("DRIVER_VEHICLE_ASSIGNMENT_REQUIRED", ex.getErrorCode());
+        assertEquals("TRIP_DRIVER_NOT_REGULAR", ex.getErrorCode());
+        assertEquals(TripService.DRIVER_CONFIRM_TITLE, ex.getTitle());
+        assertTrue(String.join(" ", ex.getErrors()).contains("K. Kumar"));
         verify(maintenanceState, never()).isVehicleUnderMaintenance(any());
         verify(tripRepository, never()).save(any());
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("The vehicle's regular driver needs no confirmation")
+    void regularDriverNeedsNoConfirmation() {
+        regularDriver(1L, 2L, "D. Two");
+        Trip saved = tripService.createTrip(trip(1L, 2L), "companyadmin");
+        assertEquals("PLANNED", saved.getStatus());
+        assertEquals(2L, saved.getDriver().getId());
+    }
+
+    @Test
+    @DisplayName("Confirmed: the trip keeps the selected driver and Vehicle Master is not changed")
+    void confirmedDifferentDriverCreatesTrip() {
+        regularDriver(1L, 3L, "K. Kumar");
+        Trip t = trip(1L, 2L);
+        t.setConfirmDriverOverride(true);
+        Trip saved = tripService.createTrip(t, "companyadmin");
+        assertEquals("PLANNED", saved.getStatus());
+        assertEquals(2L, saved.getDriver().getId());
+        verify(maintenanceState).isVehicleUnderMaintenance(1L);     // maintenance still checked after confirmation
+        verify(assignmentRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Confirmation does not bypass maintenance")
+    void confirmationDoesNotBypassMaintenance() {
+        regularDriver(1L, 3L, "K. Kumar");
+        when(maintenanceState.isVehicleUnderMaintenance(1L)).thenReturn(true);
+        Trip t = trip(1L, 2L);
+        t.setConfirmDriverOverride(true);
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () -> tripService.createTrip(t, "companyadmin"));
+        assertEquals("VEHICLE_UNDER_MAINTENANCE", ex.getErrorCode());
+        verify(tripRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("A vehicle without a regular driver needs no confirmation")
+    void noRegularDriverNoConfirmation() {
+        Trip saved = tripService.createTrip(trip(1L, 2L), "companyadmin");
+        assertEquals("PLANNED", saved.getStatus());
     }
 
     @Test
@@ -201,6 +245,15 @@ class TripMaintenanceBlockTest {
             assertFalse(type.contains("WorkOrderFinancialPosting"));
             assertFalse(type.contains("MaintenanceRequest"));
         }
+    }
+
+    private void regularDriver(Long vehicleId, Long driverId, String name) {
+        Driver d = new Driver();
+        d.setId(driverId);
+        d.setName(name);
+        VehicleDriverAssignment a = new VehicleDriverAssignment();
+        a.setDriver(d);
+        when(assignmentRepository.findByVehicleIdAndRemovalDateIsNullAndIsDeletedFalse(vehicleId)).thenReturn(Optional.of(a));
     }
 
     private Trip stored(Trip trip) {

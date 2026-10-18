@@ -1296,5 +1296,28 @@ echo "$W" | grep -q "already has $((LPV+4)) active" && [ "$($PSQL "SELECT COUNT(
 [ "$($PSQL "SELECT max_vehicles||'/'||max_users FROM companies WHERE id=$NCID")" = "$VEM_BEFORE" ] && pass "LIM other client's limits unchanged ($VEM_BEFORE)" || fail "LIM tenant isolation" "x"
 C=$(as "$LT" PUT /platform-admin/companies/$LCID '{}'); [ "$C" = "403" ] && pass "LIM a client admin cannot edit limits (403)" || fail "LIM permission" "$C"
 
+# ================= Trip driver other than the vehicle's regular driver: confirm, never change Vehicle Master =================
+DB2=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":10,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); api POST /bookings/$DB2/approve >/dev/null
+dtrip() { api POST /trips '{"booking":{"id":'$DB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$2'},'"${3:-}"'"details":[{"material":{"id":'$MAT'},"quantity":1}]}'; }
+ntrips() { $PSQL "SELECT COUNT(*) FROM trips WHERE booking_id=$DB2 AND is_deleted=false"; }
+R=$(dtrip $GV1 $GD1); [ "$(echo "$R" | j "d['data']['status']")" = "PLANNED" ] && pass "DRV 1 regular driver: trip created with no confirmation" || fail "DRV 1" "$(echo $R | cut -c1-200)"
+N0=$(ntrips); R=$(dtrip $GV1 $GD2)
+echo "$R" | grep -q "Different Driver For This Trip" && echo "$R" | grep -q "currently assigned to another driver" && [ "$(ntrips)" = "$N0" ] && pass "DRV 2+3 other driver: confirmation asked, nothing created without it" || fail "DRV 2/3" "$(echo $R | cut -c1-220)"
+R=$(dtrip $GV1 $GD2 '"confirmDriverOverride":true,'); DT=$(echo "$R" | j "d['data']['id']")
+[ "$($PSQL "SELECT driver_id FROM trips WHERE id=$DT")" = "$GD2" ] && pass "DRV 4 confirmed: trip created with the selected driver" || fail "DRV 4" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$GV1 AND removal_date IS NULL AND is_deleted=false")" = "$GD1" ] && pass "DRV 4b Vehicle Master assignment unchanged (regular driver still GD-1)" || fail "DRV 4b" "x"
+R=$(dtrip 999999 $GD1 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Vehicle Not Found" && pass "DRV 5a unknown vehicle id refused" || fail "DRV 5a" "$(echo $R | cut -c1-200)"
+R=$(dtrip $GV1 999999 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Driver Not Found" && pass "DRV 5b unknown driver id refused" || fail "DRV 5b" "$(echo $R | cut -c1-200)"
+XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
+XD=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/drivers -d '{"code":"XD-1","name":"Other Co Driver","licenseNumber":"TN4620269901","phoneNumber":"9000099901","status":"ACTIVE"}' | j "d['data']['id']")
+N0=$(ntrips); R=$(dtrip $XV $GD1 '"confirmDriverOverride":true,'); R2=$(dtrip $GV1 $XD '"confirmDriverOverride":true,')
+echo "$R" | grep -q "Vehicle Not Found" && echo "$R2" | grep -q "Driver Not Found" && [ "$(ntrips)" = "$N0" ] && pass "DRV 9 another company's vehicle / driver refused even when confirmed" || fail "DRV 9" "$(echo $R | cut -c1-120) | $(echo $R2 | cut -c1-120)"
+api POST /trips/$DT/dispatch >/dev/null
+R=$(dtrip $GV2 $GD2); T3=$(echo "$R" | j "d['data']['id']"); R=$(api POST /trips/$T3/dispatch)
+echo "$R" | grep -q "Driver On Another Trip" && pass "DRV 7 one-trip-at-a-time still applies to the selected driver" || fail "DRV 7" "$(echo $R | cut -c1-200)"
+api POST /trips/$DT/complete >/dev/null
+R=$(api PUT /trips/$DT '{"booking":{"id":'$DB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1,"loadedQuantity":1,"deliveredQuantity":1}]}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && [ "$($PSQL "SELECT driver_id FROM trips WHERE id=$DT")" = "$GD2" ] && pass "DRV 8 editing a past trip keeps its actual driver, no re-confirmation" || fail "DRV 8" "$(echo $R | cut -c1-200)"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

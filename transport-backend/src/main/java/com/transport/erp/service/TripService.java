@@ -185,7 +185,7 @@ public class TripService {
         if (trip.getName() == null) trip.setName("Trip " + trip.getTripNumber());
 
         resolveLoadingSource(trip, trip.getQuarry(), trip.getLoadingLocation());
-        validateVehicleDriverAssignment(trip);
+        validateVehicleDriverAssignment(trip, null, null, trip.getConfirmDriverOverride());
         if (operationalGuards != null) {   // new trips: no inactive vehicle / driver
             operationalGuards.assertActive("vehicles", (trip.getVehicle() != null ? trip.getVehicle().getId() : null), "Vehicle");
             operationalGuards.assertActive("drivers", (trip.getDriver() != null ? trip.getDriver().getId() : null), "Driver");
@@ -252,7 +252,7 @@ public class TripService {
                 if (nv != null && !nv.equals(previousVehicleId)) operationalGuards.assertActive("vehicles", nv, "Vehicle");
                 if (nd != null && !nd.equals(previousDriverId)) operationalGuards.assertActive("drivers", nd, "Driver");
             }
-            validateVehicleDriverAssignment(existing);
+            validateVehicleDriverAssignment(existing, previousVehicleId, previousDriverId, details.getConfirmDriverOverride());
             assertVehicleAvailableForNewTrip(existing, previousVehicleId);
         }
         if (details.getTripDate() != null) {
@@ -555,25 +555,43 @@ public class TripService {
         return v == null ? BigDecimal.ZERO : v;
     }
 
-    private void validateVehicleDriverAssignment(Trip trip) {
-        if (trip != null && trip.getVehicle() != null && trip.getVehicle().getId() != null
-                && trip.getDriver() != null && trip.getDriver().getId() != null) {
-            Long vehId = trip.getVehicle().getId();
-            Long drvId = trip.getDriver().getId();
-            Optional<VehicleDriverAssignment> activeAssign = assignmentRepository
-                    .findByVehicleIdAndDriverIdAndRemovalDateIsNullAndIsDeletedFalse(vehId, drvId);
-            if (activeAssign.isEmpty()) {
-                List<String> errorDetails = new ArrayList<>();
-                errorDetails.add(String.format("Driver ID %d is not actively assigned to Vehicle ID %d.", drvId, vehId));
-                throw new BusinessValidationException(
-                        "Vehicle Driver Assignment Required",
-                        "DRIVER_VEHICLE_ASSIGNMENT_REQUIRED",
-                        "Trip cannot be dispatched/created without an active vehicle-driver pairing assignment.",
-                        "Create an active vehicle-driver assignment before selecting this vehicle and driver for the trip.",
-                        errorDetails
-                );
-            }
+    /** Title the trip screen recognises to ask "use this vehicle with the selected driver?" (then resubmits with confirmDriverOverride). */
+    public static final String DRIVER_CONFIRM_TITLE = "Different Driver For This Trip";
+
+    /**
+     * Vehicle / driver on a trip. Both must belong to the trip's company. The vehicle's Vehicle Master driver is its regular
+     * driver, not a restriction: another driver needs the user's confirmation (confirmDriverOverride = true), once per change.
+     * The same driver, a vehicle without a regular driver, or an edit that keeps vehicle and driver need no confirmation.
+     * Vehicle Master is never changed here. Activity, maintenance and one-trip-at-a-time rules are checked separately.
+     */
+    private void validateVehicleDriverAssignment(Trip trip, Long previousVehicleId, Long previousDriverId, Boolean confirmed) {
+        if (trip == null || trip.getVehicle() == null || trip.getVehicle().getId() == null
+                || trip.getDriver() == null || trip.getDriver().getId() == null) {
+            return;
         }
+        Long vehId = trip.getVehicle().getId();
+        Long drvId = trip.getDriver().getId();
+        if (operationalGuards != null) {
+            operationalGuards.assertBelongsToCompany("vehicles", vehId, trip.getCompanyId(), "Vehicle");
+            operationalGuards.assertBelongsToCompany("drivers", drvId, trip.getCompanyId(), "Driver");
+        }
+        if (vehId.equals(previousVehicleId) && drvId.equals(previousDriverId)) {
+            return;   // unchanged on an edit: never re-ask, never rewrite history
+        }
+        Optional<VehicleDriverAssignment> regular = assignmentRepository.findByVehicleIdAndRemovalDateIsNullAndIsDeletedFalse(vehId);
+        if (regular.isEmpty() || regular.get().getDriver() == null || drvId.equals(regular.get().getDriver().getId())) {
+            return;
+        }
+        if (Boolean.TRUE.equals(confirmed)) {
+            return;
+        }
+        String regularName = regular.get().getDriver().getName();
+        throw new BusinessValidationException(
+                DRIVER_CONFIRM_TITLE,
+                "TRIP_DRIVER_NOT_REGULAR",
+                "This vehicle is currently assigned to another driver. Do you want to use this vehicle with the selected driver for this trip?",
+                "Regular driver: " + (regularName == null ? "another driver" : regularName)
+                        + ". Confirming uses the selected driver for this trip only; the vehicle's regular driver does not change.");
     }
 
     /**
