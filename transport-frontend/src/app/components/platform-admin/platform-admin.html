@@ -533,8 +533,15 @@
                 <ff-textbox label="Phone" [required]="true" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
                 <ff-textbox label="Email" [required]="true" type="email" formControlName="email" placeholder="Enter Email Address"
                   [errorMessages]="{ email: 'Enter a valid email address (example@company.com)' }"></ff-textbox>
-                <ff-textbox label="GSTIN" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
-                  [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
+<div class="flex flex-col gap-1 text-xs">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase">GST Registration <span class="text-rose-600">*</span></label>
+                  <select formControlName="gstRegistrationStatus" data-testid="gst-status"
+                    class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                    <option *ngFor="let s of gstStatuses" [ngValue]="s.value">{{ s.label }}</option>
+                  </select>
+                </div>
+                <ff-textbox *ngIf="companyForm.value.gstRegistrationStatus === 'REGISTERED'" label="GSTIN" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
+                  [errorMessages]="{ required: 'GSTIN is required for a registered business', pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
                 <ff-textbox label="PAN (Optional)" formControlName="panNumber" placeholder="Enter PAN Number"></ff-textbox>
                 <ff-textbox label="Address" [required]="true" formControlName="address" placeholder="Enter Address"></ff-textbox>
                 <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Enter City"></ff-textbox>
@@ -608,7 +615,7 @@
                   <p><span class="text-slate-400">Company:</span> <strong>{{ companyForm.value.name }}</strong></p>
                   <p><span class="text-slate-400">Owner:</span> {{ companyForm.value.ownerName }}</p>
                   <p><span class="text-slate-400">Email:</span> {{ companyForm.value.email }}</p>
-                  <p><span class="text-slate-400">GSTIN:</span> {{ companyForm.value.gstNumber }}</p>
+                  <p><span class="text-slate-400">GSTIN:</span> {{ companyForm.value.gstRegistrationStatus === 'REGISTERED' ? companyForm.value.gstNumber : (companyForm.value.gstRegistrationStatus === 'PENDING' ? 'Registration pending' : 'Unregistered') }}</p>
                   <p><span class="text-slate-400">Plan:</span> <strong>{{ selectedPlanLabel() }}</strong></p>
                   <p><span class="text-slate-400">Limits:</span> {{ companyForm.value.maxUsers }} users · {{ companyForm.value.maxVehicles }} vehicles</p>
                 </div>
@@ -727,8 +734,15 @@
             <ff-textbox label="Business Type" [required]="true" formControlName="businessType" placeholder="Enter Industry"></ff-textbox>
             <ff-textbox label="Contact Phone Number" [required]="true" formControlName="phone" placeholder="Enter Mobile Number"></ff-textbox>
             <ff-textbox label="Official Contact Email" [required]="true" type="email" formControlName="email" placeholder="Enter Email Address"></ff-textbox>
-            <ff-textbox label="GSTIN Number" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
-              [errorMessages]="{ pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
+<div class="flex flex-col gap-1 text-xs">
+              <label class="text-[10px] font-bold text-slate-400 uppercase">GST Registration <span class="text-rose-600">*</span></label>
+              <select formControlName="gstRegistrationStatus" data-testid="gst-status"
+                class="px-2.5 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-250 dark:border-slate-700 rounded text-xs text-slate-800 dark:text-slate-200">
+                <option *ngFor="let s of gstStatuses" [ngValue]="s.value">{{ s.label }}</option>
+              </select>
+            </div>
+            <ff-textbox *ngIf="companyForm.value.gstRegistrationStatus === 'REGISTERED'" label="GSTIN Number" [required]="true" formControlName="gstNumber" placeholder="Enter GSTIN"
+              [errorMessages]="{ required: 'GSTIN is required for a registered business', pattern: 'Enter a valid 15-character GSTIN (e.g. 09AAAAA1111A1Z1)' }"></ff-textbox>
             <ff-textbox label="PAN Number (Optional)" formControlName="panNumber" placeholder="Enter PAN Number"></ff-textbox>
             <ff-textbox label="Headquarters Address" [required]="true" formControlName="address" placeholder="Enter Address Details"></ff-textbox>
             <ff-textbox label="City" [required]="true" formControlName="city" placeholder="Enter City"></ff-textbox>

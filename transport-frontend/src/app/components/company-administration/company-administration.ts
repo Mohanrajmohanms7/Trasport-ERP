@@ -1,3 +1,4 @@
+import { GST_STATUSES, wireGstRegistration } from '../../shared/gst-registration';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -41,6 +42,7 @@ import {
   styles: []
 })
 export class CompanyAdministrationComponent implements OnInit {
+  readonly gstStatusOpts = GST_STATUSES.map(s => ({ label: s.label, value: s.value }));
   private companyAdminService = inject(CompanyAdminService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);
@@ -84,7 +86,8 @@ export class CompanyAdministrationComponent implements OnInit {
     this.companyForm = this.fb.group({
       code: [{ value: '', disabled: true }],
       name: ['', [Validators.required, Validators.maxLength(150)]],
-      gstNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/)]],
+      gstRegistrationStatus: ['REGISTERED', Validators.required],
+      gstNumber: [''],   // required + format only when Registered (wireGstRegistration)
       panNumber: ['', [Validators.required, Validators.pattern(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/)]],
       cinNumber: ['', [Validators.maxLength(21)]],
       phone: ['', [Validators.required, Validators.maxLength(20)]],
@@ -105,6 +108,7 @@ export class CompanyAdministrationComponent implements OnInit {
       upiId: ['', [Validators.maxLength(80), Validators.pattern(/^([A-Za-z0-9._-]+@[A-Za-z0-9.-]+)?$/)]],
       invoiceTerms: ['', [Validators.maxLength(2000)]]
     });
+    wireGstRegistration(this.companyForm);
 
     this.branchForm = this.fb.group({
       code: ['', [Validators.required, Validators.maxLength(50)]],

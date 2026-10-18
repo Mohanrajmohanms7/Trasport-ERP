@@ -1,5 +1,6 @@
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { ClientPlansComponent } from './client-plans/client-plans';
+import { GST_STATUSES, wireGstRegistration } from '../../shared/gst-registration';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureAccessComponent } from './feature-access/feature-access';
 import { SupportTicketsComponent } from './support-tickets/support-tickets';
@@ -300,6 +301,7 @@ imports: [ClientPlansComponent, FormValidationDirective, FeatureAccessComponent,
   `]
 })
 export class PlatformAdminComponent implements OnInit {
+  readonly gstStatuses = GST_STATUSES;
   private appConfirm = inject(AppConfirmService);
   private platformService = inject(PlatformAdminService);
   private authService = inject(AuthService);
@@ -514,7 +516,8 @@ export class PlatformAdminComponent implements OnInit {
       businessType: ['', [Validators.required]],
       phone: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      gstNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/)]],
+      gstRegistrationStatus: ['REGISTERED', Validators.required],
+      gstNumber: [''],   // required + format only when Registered (wireGstRegistration)
       panNumber: [''],
       address: ['', Validators.required],
       city: ['', Validators.required],
@@ -535,6 +538,7 @@ export class PlatformAdminComponent implements OnInit {
       adminUsername: [''],
       adminPassword: ['']
     });
+    wireGstRegistration(this.companyForm);
 
     this.planForm = this.fb.group({
       code: ['', Validators.required],
@@ -896,6 +900,7 @@ export class PlatformAdminComponent implements OnInit {
     this.copiedField.set('');
     this.companyForm.reset({
       storage: '10 GB',
+      gstRegistrationStatus: 'REGISTERED',
       subscriptionStatus: 'ACTIVE',
       maxUsers: 5,
       maxVehicles: 5,
@@ -911,7 +916,7 @@ export class PlatformAdminComponent implements OnInit {
     this.onboardingStep.set(1);
     this.onboardingResult.set(null);
     this.errorMsg.set('');
-    this.companyForm.reset({ storage: '10 GB', sendWelcomeEmail: true, maxUsers: 5, maxVehicles: 5, billingMonths: 1, subscriptionStatus: 'ACTIVE' });
+    this.companyForm.reset({ storage: '10 GB', gstRegistrationStatus: 'REGISTERED', sendWelcomeEmail: true, maxUsers: 5, maxVehicles: 5, billingMonths: 1, subscriptionStatus: 'ACTIVE' });
   }
 
   onboardingNext(): void {
@@ -1009,7 +1014,8 @@ export class PlatformAdminComponent implements OnInit {
       businessType: v.businessType,
       phone: v.phone,
       email: v.email,
-      gstNumber: v.gstNumber,
+      gstRegistrationStatus: v.gstRegistrationStatus,
+      gstNumber: v.gstRegistrationStatus === 'REGISTERED' ? (v.gstNumber || '').toUpperCase() : null,
       panNumber: v.panNumber,
       address: v.address,
       city: v.city,
