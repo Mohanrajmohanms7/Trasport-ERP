@@ -1308,7 +1308,8 @@ R=$(dtrip $GV1 $GD2 '"confirmDriverOverride":true,'); DT=$(echo "$R" | j "d['dat
 [ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$GV1 AND removal_date IS NULL AND is_deleted=false")" = "$GD1" ] && pass "DRV 4b Vehicle Master assignment unchanged (regular driver still GD-1)" || fail "DRV 4b" "x"
 R=$(dtrip 999999 $GD1 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Vehicle Not Found" && pass "DRV 5a unknown vehicle id refused" || fail "DRV 5a" "$(echo $R | cut -c1-200)"
 R=$(dtrip $GV1 999999 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Driver Not Found" && pass "DRV 5b unknown driver id refused" || fail "DRV 5b" "$(echo $R | cut -c1-200)"
-XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
+XV=$($PSQL "SELECT id FROM vehicles WHERE company_id=$NCID AND is_deleted=false ORDER BY id LIMIT 1")   # another company's vehicle
+[ -z "$XV" ] && XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
 XD=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/drivers -d '{"code":"XD-1","name":"Other Co Driver","licenseNumber":"TN4620269901","phoneNumber":"9000099901","status":"ACTIVE"}' | j "d['data']['id']")
 N0=$(ntrips); R=$(dtrip $XV $GD1 '"confirmDriverOverride":true,'); R2=$(dtrip $GV1 $XD '"confirmDriverOverride":true,')
 echo "$R" | grep -q "Vehicle Not Found" && echo "$R2" | grep -q "Driver Not Found" && [ "$(ntrips)" = "$N0" ] && pass "DRV 9 another company's vehicle / driver refused even when confirmed" || fail "DRV 9" "$(echo $R | cut -c1-120) | $(echo $R2 | cut -c1-120)"
