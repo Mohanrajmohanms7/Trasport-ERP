@@ -6,7 +6,9 @@ export PGPASSWORD=ci_password
 PSQL="psql -h localhost -U transport_admin -d transport_erp -tAc"
 FAILS=0
 pass() { echo "PASS $1"; }
-fail() { echo "FAIL $1 :: $2"; FAILS=$((FAILS+1)); }
+FAILED_LIST=""
+fail() { echo "FAIL $1 :: $2"; FAILS=$((FAILS+1)); FAILED_LIST="$FAILED_LIST
+FAILED: $1 :: $(echo "$2" | cut -c1-200)"; }   # repeated at the end so the CI report always shows them
 j() { python3 -c "import sys,json;d=json.load(sys.stdin);print(eval(sys.argv[1]))" "$1"; }
 
 for i in $(seq 1 15); do
@@ -1330,5 +1332,6 @@ C=$(as "$NT" PUT /companies/$GR '{"gstRegistrationStatus":"UNREGISTERED"}'); [ "
 C=$(as "$GT" PUT /platform-admin/companies/$GU '{"gstRegistrationStatus":"REGISTERED","gstNumber":"33ABCDE1234F1Z5"}'); [ "$C" = "403" ] && pass "GSTREG 7b a client admin cannot use the Platform Admin edit (403)" || fail "GSTREG 7b" "$C"
 [ "$($PSQL "SELECT gst_registration_status||'/'||COALESCE(gst_number,'NULL') FROM companies WHERE id=$GU")" = "UNREGISTERED/NULL" ] && pass "GSTREG 7c refused requests changed nothing" || fail "GSTREG 7c" "x"
 
+[ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
