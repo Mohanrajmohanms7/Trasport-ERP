@@ -1296,5 +1296,39 @@ echo "$W" | grep -q "already has $((LPV+4)) active" && [ "$($PSQL "SELECT COUNT(
 [ "$($PSQL "SELECT max_vehicles||'/'||max_users FROM companies WHERE id=$NCID")" = "$VEM_BEFORE" ] && pass "LIM other client's limits unchanged ($VEM_BEFORE)" || fail "LIM tenant isolation" "x"
 C=$(as "$LT" PUT /platform-admin/companies/$LCID '{}'); [ "$C" = "403" ] && pass "LIM a client admin cannot edit limits (403)" || fail "LIM permission" "$C"
 
+# ================= GST registration status at onboarding (V87): GSTIN required only when REGISTERED =================
+[ "$($PSQL "SELECT gst_registration_status FROM companies WHERE id=$NCID")" = "UNREGISTERED" ] && pass "GSTREG older onboarding payload without GSTIN -> UNREGISTERED (Velan)" || fail "GSTREG velan" "x"
+[ "$($PSQL "SELECT gst_registration_status FROM companies WHERE gst_number='33AAKFP4521M1Z6' ORDER BY id LIMIT 1")" = "REGISTERED" ] && pass "GSTREG older onboarding payload with GSTIN -> REGISTERED (PKC)" || fail "GSTREG pkc" "x"
+gonb() { post /platform-admin/onboard '{"name":"'"$1"'","shortName":"'"$2"'","ownerName":"Owner","phone":"9000033333","email":"'"$2"'@example.com","state":"Tamil Nadu","subscriptionPlanId":'$PLAN',"gstRegistrationStatus":'"$3"',"gstNumber":'"$4"',"adminUsername":"'"$5"'","adminPassword":"Gst@2026x","sendWelcomeEmail":false}'; }
+R=$(gonb "GST Registered Lorries" "GRL" '"REGISTERED"' '"33abcde1234f1z5"' grl.admin); GR=$(echo "$R" | j "d['data']['companyId']")
+[ "$($PSQL "SELECT gst_registration_status||'/'||gst_number FROM companies WHERE id=$GR")" = "REGISTERED/33ABCDE1234F1Z5" ] && pass "GSTREG 1 registered with a valid GSTIN (stored upper case)" || fail "GSTREG 1" "$(echo $R | cut -c1-200)"
+R=$(gonb "GST Missing Lorries" "GML" '"REGISTERED"' 'null' gml.admin); echo "$R" | grep -q "GSTIN is required" && pass "GSTREG 2a registered without GSTIN refused" || fail "GSTREG 2a" "$(echo $R | cut -c1-200)"
+R=$(gonb "GST Bad Lorries" "GBL" '"REGISTERED"' '"33ABC123"' gbl.admin); echo "$R" | grep -q "not in the correct format" && pass "GSTREG 2b registered with an invalid GSTIN refused" || fail "GSTREG 2b" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM companies WHERE name IN ('GST Missing Lorries','GST Bad Lorries')")" = "0" ] && pass "GSTREG refused onboardings created nothing" || fail "GSTREG refused leftovers" "x"
+R=$(gonb "GST Unregistered Lorries" "GUL" '"UNREGISTERED"' '""' gul.admin); GU=$(echo "$R" | j "d['data']['companyId']")
+[ "$($PSQL "SELECT gst_registration_status||'/'||COALESCE(gst_number,'NULL') FROM companies WHERE id=$GU")" = "UNREGISTERED/NULL" ] && pass "GSTREG 3 unregistered onboarded without GSTIN (stored as NULL)" || fail "GSTREG 3" "$(echo $R | cut -c1-200)"
+R=$(gonb "GST Pending Lorries" "GPL" '"PENDING"' 'null' gpl.admin); GP=$(echo "$R" | j "d['data']['companyId']")
+[ "$($PSQL "SELECT gst_registration_status||'/'||COALESCE(gst_number,'NULL') FROM companies WHERE id=$GP")" = "PENDING/NULL" ] && pass "GSTREG 4 pending onboarded without GSTIN" || fail "GSTREG 4" "$(echo $R | cut -c1-200)"
+R=$(gonb "GST Odd Lorries" "GOL" '"UNREGISTERED"' '"33ABCDE1234F1Z5"' gol.admin); echo "$R" | grep -q "only when the GST registration status is Registered" && pass "GSTREG GSTIN with Unregistered refused" || fail "GSTREG unregistered+gstin" "$(echo $R | cut -c1-200)"
+gedit() {   # Platform Admin edit with the same body the client edit screen sends; $1 company, $2 python edits
+  curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/clients/$1 | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']
+if d.get('subscriptionPlanId'): d['subscriptionPlan']={'id':d['subscriptionPlanId']}
+$2
+print(json.dumps(d))" > /tmp/g.json
+  curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$1 --data @/tmp/g.json; }
+R=$(gedit $GP "d['gstRegistrationStatus']='REGISTERED'; d['gstNumber']='33PQRST5678K1Z2'")
+[ "$($PSQL "SELECT gst_registration_status||'/'||gst_number FROM companies WHERE id=$GP")" = "REGISTERED/33PQRST5678K1Z2" ] && pass "GSTREG 5 pending -> registered with GSTIN after onboarding" || fail "GSTREG 5" "$(echo $R | cut -c1-200)"
+R=$(gedit $GR "d['ownerName']='New Owner'")
+[ "$($PSQL "SELECT gst_registration_status||'/'||gst_number||'/'||owner_name FROM companies WHERE id=$GR")" = "REGISTERED/33ABCDE1234F1Z5/New Owner" ] && pass "GSTREG 6a unrelated Platform Admin edit keeps the GSTIN" || fail "GSTREG 6a" "$(echo $R | cut -c1-200)"
+GT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"grl.admin","password":"Gst@2026x"}' | j "d['data']['token']")
+curl -s -H "Authorization: Bearer $GT" $API/companies/$GR | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']; d.pop('gstNumber',None); d.pop('gstRegistrationStatus',None); d['phone']='9000044444'; print(json.dumps(d))" > /tmp/g2.json
+R=$(curl -s -X PUT -H "Authorization: Bearer $GT" -H 'Content-Type: application/json' $API/companies/$GR --data @/tmp/g2.json)
+[ "$($PSQL "SELECT gst_registration_status||'/'||gst_number||'/'||phone FROM companies WHERE id=$GR")" = "REGISTERED/33ABCDE1234F1Z5/9000044444" ] && pass "GSTREG 6b company profile update without GST fields keeps the GSTIN" || fail "GSTREG 6b" "$(echo $R | cut -c1-200)"
+C=$(as "$NT" PUT /companies/$GR '{"gstRegistrationStatus":"UNREGISTERED"}'); [ "$C" = "403" ] && pass "GSTREG 7a another client cannot change this client's GST details (403)" || fail "GSTREG 7a" "$C"
+C=$(as "$GT" PUT /platform-admin/companies/$GU '{"gstRegistrationStatus":"REGISTERED","gstNumber":"33ABCDE1234F1Z5"}'); [ "$C" = "403" ] && pass "GSTREG 7b a client admin cannot use the Platform Admin edit (403)" || fail "GSTREG 7b" "$C"
+[ "$($PSQL "SELECT gst_registration_status||'/'||COALESCE(gst_number,'NULL') FROM companies WHERE id=$GU")" = "UNREGISTERED/NULL" ] && pass "GSTREG 7c refused requests changed nothing" || fail "GSTREG 7c" "x"
+
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

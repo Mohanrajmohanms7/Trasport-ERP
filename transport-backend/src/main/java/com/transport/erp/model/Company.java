@@ -20,6 +20,19 @@ public class Company extends BaseEntity {
     @Column(name = "gst_number", length = 20)
     private String gstNumber;
 
+    /** REGISTERED / UNREGISTERED / PENDING (V87). GSTIN is required only when REGISTERED (util/GstRegistration). */
+    @Column(name = "gst_registration_status", length = 20, nullable = false)
+    private String gstRegistrationStatus;   // no Java default: "not sent" must stay null so older payloads keep the saved value
+
+    /** A company saved without a status (bootstrap, older create paths): a GSTIN means REGISTERED, else UNREGISTERED. */
+    @jakarta.persistence.PrePersist
+    void defaultGstRegistrationStatus() {
+        if (gstRegistrationStatus == null || gstRegistrationStatus.isBlank()) {
+            gstRegistrationStatus = gstNumber != null && !gstNumber.isBlank() ? "REGISTERED" : "UNREGISTERED";
+        }
+        if (gstNumber != null && gstNumber.isBlank()) gstNumber = null;
+    }
+
     @Column(name = "pan_number", length = 10)
     private String panNumber;
 

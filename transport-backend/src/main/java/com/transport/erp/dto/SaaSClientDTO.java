@@ -15,6 +15,7 @@ public class SaaSClientDTO {
     private String phone;
     private String email;
     private String gstNumber;
+    private String gstRegistrationStatus;
     private String address;
     private String city;
     private String state;

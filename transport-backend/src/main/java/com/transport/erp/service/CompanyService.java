@@ -52,7 +52,10 @@ public class CompanyService {
         company.setName(companyDetails.getName());
         company.setDescription(companyDetails.getDescription());
         company.setStatus(companyDetails.getStatus());
-        company.setGstNumber(companyDetails.getGstNumber());
+        com.transport.erp.util.GstRegistration.Result gst = com.transport.erp.util.GstRegistration.resolve(
+                companyDetails.getGstRegistrationStatus(), companyDetails.getGstNumber(), company.getGstRegistrationStatus(), company.getGstNumber());
+        company.setGstRegistrationStatus(gst.status());
+        company.setGstNumber(gst.gstin());
         company.setPanNumber(companyDetails.getPanNumber());
         // Bank & invoice details (V86): saved only when the request carries them (older screens leave them as they are)
         if (companyDetails.getBankName() != null) company.setBankName(companyDetails.getBankName());

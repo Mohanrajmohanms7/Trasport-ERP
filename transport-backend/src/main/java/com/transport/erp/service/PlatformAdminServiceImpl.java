@@ -5,6 +5,7 @@ import com.transport.erp.dto.ClientOnboardingResult;
 import com.transport.erp.dto.PlatformAdminStatsDTO;
 import com.transport.erp.dto.SaaSClientDTO;
 import com.transport.erp.model.*;
+import com.transport.erp.util.GstRegistration;
 import com.transport.erp.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -402,6 +403,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         req.setPhone(company.getPhone());
         req.setEmail(company.getEmail());
         req.setGstNumber(company.getGstNumber());
+        req.setGstRegistrationStatus(company.getGstRegistrationStatus());
         req.setPanNumber(company.getPanNumber());
         req.setAddress(company.getAddress());
         req.setCity(company.getCity());
@@ -447,7 +449,9 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         company.setBusinessType(request.getBusinessType());
         company.setPhone(request.getPhone());
         company.setEmail(request.getEmail().trim());
-        company.setGstNumber(request.getGstNumber());
+        GstRegistration.Result gst = GstRegistration.resolve(request.getGstRegistrationStatus(), request.getGstNumber(), null, null);
+        company.setGstRegistrationStatus(gst.status());
+        company.setGstNumber(gst.gstin());
         company.setPanNumber(request.getPanNumber());
         company.setAddress(request.getAddress());
         company.setCity(request.getCity());
@@ -885,6 +889,7 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         dto.setPhone(company.getPhone());
         dto.setEmail(company.getEmail());
         dto.setGstNumber(company.getGstNumber());
+        dto.setGstRegistrationStatus(company.getGstRegistrationStatus());
         dto.setAddress(company.getAddress());
         dto.setCity(company.getCity());
         dto.setState(company.getState());
@@ -944,7 +949,10 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         company.setBusinessType(companyDetails.getBusinessType());
         company.setPhone(companyDetails.getPhone());
         company.setEmail(companyDetails.getEmail());
-        company.setGstNumber(companyDetails.getGstNumber());
+        GstRegistration.Result gst = GstRegistration.resolve(companyDetails.getGstRegistrationStatus(), companyDetails.getGstNumber(),
+                company.getGstRegistrationStatus(), company.getGstNumber());
+        company.setGstRegistrationStatus(gst.status());
+        company.setGstNumber(gst.gstin());
         company.setPanNumber(companyDetails.getPanNumber());
         company.setAddress(companyDetails.getAddress());
         company.setCity(companyDetails.getCity());

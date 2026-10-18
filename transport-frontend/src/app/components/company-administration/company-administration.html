@@ -64,7 +64,11 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <ff-textbox formControlName="gstNumber" label="GSTIN Registry" placeholder="27AAAAA1111A1Z1" prefixIcon="badge" [required]="true" />
+              <ff-dropdown formControlName="gstRegistrationStatus" label="GST registration" [options]="gstStatusOpts" [required]="true" [clearable]="false" data-testid="profile-gst-status" />
+              @if (companyForm.get('gstRegistrationStatus')?.value === 'REGISTERED') {
+                <ff-textbox formControlName="gstNumber" label="GSTIN Registry" placeholder="27AAAAA1111A1Z1" prefixIcon="badge" [required]="true"
+                  [errorMessages]="{ required: 'GSTIN is required for a registered business', pattern: 'Enter a valid 15-character GSTIN (e.g. 33ABCDE1234F1Z5)' }" />
+              }
               <ff-textbox formControlName="panNumber" label="PAN Card No" placeholder="AAAAA1111A" prefixIcon="badge" [required]="true" />
               <ff-textbox formControlName="cinNumber" label="CIN Registry" placeholder="CIN Number" prefixIcon="badge" />
             </div>

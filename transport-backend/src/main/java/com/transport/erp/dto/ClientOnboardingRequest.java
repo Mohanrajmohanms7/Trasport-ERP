@@ -13,6 +13,8 @@ public class ClientOnboardingRequest {
     private String phone;
     private String email;
     private String gstNumber;
+    /** REGISTERED / UNREGISTERED / PENDING; when absent, a GSTIN means REGISTERED (older payloads). */
+    private String gstRegistrationStatus;
     private String panNumber;
     private String address;
     private String city;
