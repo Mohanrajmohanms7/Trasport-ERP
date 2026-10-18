@@ -22,7 +22,7 @@ H=(-H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json')
 post() { curl -s -X POST "${H[@]}" "$API$1" -d "${2:-{\}}"; }
 put()  { curl -s -X PUT  "${H[@]}" "$API$1" -d "$2"; }
 
-$PSQL "UPDATE companies SET gst_number='33AAAAA0000A1Z5'; UPDATE branches SET gst_number=NULL;" >/dev/null
+$PSQL "UPDATE companies SET gst_number='33AAAAA0000A1Z5', gst_registration_status='REGISTERED'; UPDATE branches SET gst_number=NULL;" >/dev/null
 
 R=$(post /customers '{"code":"C-KA","name":"Karnataka Builders","gstNumber":"29BBBBB0000B1Z5","status":"ACTIVE"}'); echo "customer: $R" | cut -c1-300
 CUST=$(echo "$R" | j "d['data']['id']")
@@ -1331,6 +1331,30 @@ R=$(curl -s -X PUT -H "Authorization: Bearer $GT" -H 'Content-Type: application/
 C=$(as "$NT" PUT /companies/$GR '{"gstRegistrationStatus":"UNREGISTERED"}'); [ "$C" = "403" ] && pass "GSTREG 7a another client cannot change this client's GST details (403)" || fail "GSTREG 7a" "$C"
 C=$(as "$GT" PUT /platform-admin/companies/$GU '{"gstRegistrationStatus":"REGISTERED","gstNumber":"33ABCDE1234F1Z5"}'); [ "$C" = "403" ] && pass "GSTREG 7b a client admin cannot use the Platform Admin edit (403)" || fail "GSTREG 7b" "$C"
 [ "$($PSQL "SELECT gst_registration_status||'/'||COALESCE(gst_number,'NULL') FROM companies WHERE id=$GU")" = "UNREGISTERED/NULL" ] && pass "GSTREG 7c refused requests changed nothing" || fail "GSTREG 7c" "x"
+
+# ================= Trip driver other than the vehicle's regular driver: confirm, never change Vehicle Master =================
+DB2=$(api POST /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":10,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); api POST /bookings/$DB2/approve >/dev/null
+dtrip() { api POST /trips '{"booking":{"id":'$DB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$2'},'"${3:-}"'"details":[{"material":{"id":'$MAT'},"quantity":1}]}'; }
+ntrips() { $PSQL "SELECT COUNT(*) FROM trips WHERE booking_id=$DB2 AND is_deleted=false"; }
+R=$(dtrip $GV1 $GD1); [ "$(echo "$R" | j "d['data']['status']")" = "PLANNED" ] && pass "DRV 1 regular driver: trip created with no confirmation" || fail "DRV 1" "$(echo $R | cut -c1-200)"
+N0=$(ntrips); R=$(dtrip $GV1 $GD2)
+echo "$R" | grep -q "Different Driver For This Trip" && echo "$R" | grep -q "currently assigned to another driver" && [ "$(ntrips)" = "$N0" ] && pass "DRV 2+3 other driver: confirmation asked, nothing created without it" || fail "DRV 2/3" "$(echo $R | cut -c1-220)"
+R=$(dtrip $GV1 $GD2 '"confirmDriverOverride":true,'); DT=$(echo "$R" | j "d['data']['id']")
+[ "$($PSQL "SELECT driver_id FROM trips WHERE id=$DT")" = "$GD2" ] && pass "DRV 4 confirmed: trip created with the selected driver" || fail "DRV 4" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$GV1 AND removal_date IS NULL AND is_deleted=false")" = "$GD1" ] && pass "DRV 4b Vehicle Master assignment unchanged (regular driver still GD-1)" || fail "DRV 4b" "x"
+R=$(dtrip 999999 $GD1 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Vehicle Not Found" && pass "DRV 5a unknown vehicle id refused" || fail "DRV 5a" "$(echo $R | cut -c1-200)"
+R=$(dtrip $GV1 999999 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Driver Not Found" && pass "DRV 5b unknown driver id refused" || fail "DRV 5b" "$(echo $R | cut -c1-200)"
+XV=$($PSQL "SELECT id FROM vehicles WHERE company_id=$NCID AND is_deleted=false ORDER BY id LIMIT 1")   # another company's vehicle
+[ -z "$XV" ] && XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
+XD=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/drivers -d '{"code":"XD-1","name":"Other Co Driver","licenseNumber":"TN4620269901","phoneNumber":"9000099901","status":"ACTIVE"}' | j "d['data']['id']")
+N0=$(ntrips); R=$(dtrip $XV $GD1 '"confirmDriverOverride":true,'); R2=$(dtrip $GV1 $XD '"confirmDriverOverride":true,')
+echo "$R" | grep -q "Vehicle Not Found" && echo "$R2" | grep -q "Driver Not Found" && [ "$(ntrips)" = "$N0" ] && pass "DRV 9 another company's vehicle / driver refused even when confirmed" || fail "DRV 9" "$(echo $R | cut -c1-120) | $(echo $R2 | cut -c1-120)"
+api POST /trips/$DT/dispatch >/dev/null
+R=$(dtrip $GV2 $GD2); T3=$(echo "$R" | j "d['data']['id']"); R=$(api POST /trips/$T3/dispatch)
+echo "$R" | grep -q "Driver On Another Trip" && pass "DRV 7 one-trip-at-a-time still applies to the selected driver" || fail "DRV 7" "$(echo $R | cut -c1-200)"
+api POST /trips/$DT/complete >/dev/null
+R=$(api PUT /trips/$DT '{"booking":{"id":'$DB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1,"loadedQuantity":1,"deliveredQuantity":1}]}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && [ "$($PSQL "SELECT driver_id FROM trips WHERE id=$DT")" = "$GD2" ] && pass "DRV 8 editing a past trip keeps its actual driver, no re-confirmation" || fail "DRV 8" "$(echo $R | cut -c1-200)"
 
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"

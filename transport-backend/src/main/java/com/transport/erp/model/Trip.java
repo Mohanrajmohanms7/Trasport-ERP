@@ -14,6 +14,13 @@ import java.util.List;
 @Table(name = "trips")
 public class Trip extends BaseEntity {
 
+    /**
+     * Request-only: the user confirmed using a driver other than the vehicle's regular (Vehicle Master) driver for this
+     * trip. Not stored; the trip's driver is the actual driver. Vehicle Master is never changed by a trip.
+     */
+    @Transient
+    private Boolean confirmDriverOverride;
+
     @Column(name = "trip_number", nullable = false, length = 100)
     private String tripNumber;
 
