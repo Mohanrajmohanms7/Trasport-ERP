@@ -139,4 +139,15 @@ public class OperationalGuards {
             }
         }
     }
+
+    /** The vehicle / driver must exist in this company (rejects another company's or a deleted id; reveals nothing about it). */
+    public void assertBelongsToCompany(String table, Long id, Long companyId, String what) {
+        if (id == null || companyId == null) return;
+        List<Long> owner = jdbc.queryForList("SELECT company_id FROM " + table + " WHERE id = :id AND is_deleted = false",
+                new MapSqlParameterSource("id", id), Long.class);
+        if (owner.isEmpty() || !companyId.equals(owner.get(0))) {
+            throw err(what + " Not Found", what.toUpperCase() + "_NOT_FOUND",
+                    "The selected " + what.toLowerCase() + " was not found.", "Choose the " + what.toLowerCase() + " again from the list.");
+        }
+    }
 }

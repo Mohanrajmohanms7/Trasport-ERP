@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal, effect, DestroyRef } from '@angular/core';
@@ -42,6 +43,7 @@ imports: [FormValidationDirective, ExportButtonsComponent, QuickCreateComponent,
   styles: []
 })
 export class TripDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   private tripMgmtService = inject(TripMgmtService);
   private invoiceMgmtService = inject(InvoiceMgmtService);
   private router = inject(Router);
@@ -477,7 +479,9 @@ export class TripDetailsConsoleComponent implements OnInit {
     this.showEditor.set(true);
   }
 
-  saveTrip() {
+  /** @param confirmDriverOverride set after the user confirms a driver other than the vehicle's regular driver */
+  saveTrip(confirmDriverOverride = false) {
+    if (this.loading()) return;   // no duplicate submissions while a save is running
     if (this.detailsArray.length === 0) {
       this.notify.error(this.balance() && !this.balance()!.anythingLeft
         ? 'Nothing is left to plan on this booking.'
@@ -499,6 +503,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       if (d.loadedQuantity === '' ) d.loadedQuantity = null;
       if (d.deliveredQuantity === '') d.deliveredQuantity = null;
     }
+    if (confirmDriverOverride) val.confirmDriverOverride = true;
 
     if (tripObj && tripObj.id) {
       this.tripMgmtService.updateTrip(tripObj.id, val).subscribe({
@@ -510,6 +515,7 @@ export class TripDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
+          if (this.needsDriverConfirm(err)) { this.askDriverConfirm(err); return; }
           this.notify.error(this.tripError(err, 'Failed to update trip'));
         }
       });
@@ -523,10 +529,31 @@ export class TripDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
+          if (this.needsDriverConfirm(err)) { this.askDriverConfirm(err); return; }
           this.notify.error(this.tripError(err, 'Failed to create trip'));
         }
       });
     }
+  }
+
+  /** The server asks before using a driver other than the vehicle's regular (Vehicle Master) driver (TripService.DRIVER_CONFIRM_TITLE). */
+  private needsDriverConfirm(err: any): boolean {
+    return err?.error?.message === 'Different Driver For This Trip';
+  }
+
+  /** Confirm → save again with confirmDriverOverride; Cancel / X → nothing is saved and the form stays open for correction. */
+  private askDriverConfirm(err: any): void {
+    const errors: string[] = Array.isArray(err?.error?.errors) ? err.error.errors : [];
+    const question = errors[0] || 'This vehicle is currently assigned to another driver. Do you want to use this vehicle with the selected driver for this trip?';
+    const detail = (errors.find(e => String(e).startsWith('Action:')) || '').replace(/^Action:\s*/, '');
+    this.appConfirm.ask({
+      title: 'Different Driver',
+      message: detail ? question + ' ' + detail : question,
+      type: 'warning',
+      confirmText: 'Use this driver',
+      confirmIcon: 'swap_horiz',
+      cancelText: 'Cancel'
+    }, () => this.saveTrip(true));
   }
 
   /** Business errors carry a short title in `message` and the actual reason in `errors[0]`. */
