@@ -397,7 +397,32 @@ public class XlsxExportService {
             for (int k = 0; k < v.length; k++) t[k] = t[k].add(v[k]);
         }
         rows.add(new Object[]{"TOTAL", null, rows.size() + " invoice(s)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8], t[9]});
-        return render(format, "Sales Invoices — statement with ADJUSTED amounts (official invoice amounts shown in the Official columns)", headers, rows);
+        String notice = "Sales Invoices — statement with ADJUSTED amounts (official invoice amounts shown in the Official columns)";
+        if ("pdf".equalsIgnoreCase(format)) return render(format, notice, headers, rows);
+        // Excel: the shared builder uses the title only as the sheet name (31 characters), so the notice is added as row 1 here.
+        return withNoticeRow(buildExcelWorkbook("Adjusted amounts", headers, rows), notice
+                + ". Invoices are not changed by this file.", headers.length);
+    }
+
+    /** Puts a bold notice in the first row of the first sheet (rows below move down by two). Used by the custom export only. */
+    private static byte[] withNoticeRow(byte[] xlsx, String notice, int columns) {
+        try (Workbook wb = new XSSFWorkbook(new java.io.ByteArrayInputStream(xlsx)); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sh = wb.getSheetAt(0);
+            sh.shiftRows(0, Math.max(sh.getLastRowNum(), 0), 2);
+            CellStyle st = wb.createCellStyle();
+            Font fnt = wb.createFont();
+            fnt.setBold(true);
+            fnt.setColor(IndexedColors.DARK_RED.getIndex());
+            st.setFont(fnt);
+            Cell c = sh.createRow(0).createCell(0);
+            c.setCellValue(notice);
+            c.setCellStyle(st);
+            if (columns > 1) sh.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, columns - 1));
+            wb.write(out);
+            return out.toByteArray();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Could not build the custom export", e);
+        }
     }
 
     private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
