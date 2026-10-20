@@ -359,6 +359,62 @@ public class XlsxExportService {
         return render(format, "Sales Invoices", headers, rows);
     }
 
+    /** One edited invoice row for the custom export (custom amounts only; originals are read from the database). */
+    public record CustomInvoiceAmounts(Long invoiceId, BigDecimal subtotal, BigDecimal discount, BigDecimal gst, BigDecimal paid) {}
+
+    /**
+     * Invoice list with customer-facing adjusted amounts — READ ONLY: nothing is saved and no invoice changes.
+     * The official amounts come from the database (never from the request) and are always printed next to the custom
+     * amounts, with the difference; the title says the amounts are adjusted. Taxable / net / balance are recalculated here.
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportSalesInvoicesCustom(List<CustomInvoiceAmounts> edits, String format) {
+        if (edits == null || edits.isEmpty()) throw customErr("Add at least one invoice to the custom export.");
+        if (edits.size() > 2000) throw customErr("A custom export can hold at most 2,000 invoices.");
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        String[] headers = {"Invoice No", "Invoice Date", "Customer", "Official Net", "Official Balance",
+                "Subtotal", "Discount", "Taxable", "GST", "Net", "Paid", "Balance", "Difference (Net)"};
+        List<Object[]> rows = new ArrayList<>();
+        BigDecimal[] t = new BigDecimal[10];
+        java.util.Arrays.fill(t, BigDecimal.ZERO);
+        java.util.Set<Long> seen = new java.util.HashSet<>();
+        for (CustomInvoiceAmounts e : edits) {
+            if (e == null || e.invoiceId() == null || !seen.add(e.invoiceId())) throw customErr("Each invoice can be listed once.");
+            SalesInvoice i = salesInvoiceRepository.findById(e.invoiceId())
+                    .filter(x -> !Boolean.TRUE.equals(x.getIsDeleted()) && companyId.equals(x.getCompanyId()))
+                    .orElseThrow(() -> customErr("An invoice in the list was not found. Reload the invoice list and try again."));
+            BigDecimal sub = money(e.subtotal(), "Subtotal", i), disc = money(e.discount(), "Discount", i),
+                    gst = money(e.gst(), "GST", i), paid = money(e.paid(), "Paid", i);
+            if (disc.compareTo(sub) > 0) throw customErr("Discount cannot be more than the subtotal (" + i.getInvoiceNumber() + ").");
+            BigDecimal taxable = sub.subtract(disc), net = taxable.add(gst);
+            if (paid.compareTo(net) > 0) throw customErr("Paid cannot be more than the net amount (" + i.getInvoiceNumber() + ").");
+            BigDecimal bal = net.subtract(paid);
+            BigDecimal offNet = nz(i.getNetAmount()), offBal = offNet.subtract(nz(i.getPaidAmount()));
+            BigDecimal diff = net.subtract(offNet);
+            rows.add(new Object[]{i.getInvoiceNumber(), i.getInvoiceDate(), i.getCustomer() != null ? i.getCustomer().getName() : "",
+                    offNet, offBal, sub, disc, taxable, gst, net, paid, bal, diff});
+            BigDecimal[] v = {offNet, offBal, sub, disc, taxable, gst, net, paid, bal, diff};
+            for (int k = 0; k < v.length; k++) t[k] = t[k].add(v[k]);
+        }
+        rows.add(new Object[]{"TOTAL", null, rows.size() + " invoice(s)", t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8], t[9]});
+        return render(format, "Sales Invoices — statement with ADJUSTED amounts (official invoice amounts shown in the Official columns)", headers, rows);
+    }
+
+    private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
+
+    private static BigDecimal money(BigDecimal v, String field, SalesInvoice i) {
+        if (v == null) throw customErr(field + " is required (" + i.getInvoiceNumber() + ").");
+        if (v.signum() < 0) throw customErr(field + " cannot be negative (" + i.getInvoiceNumber() + ").");
+        if (v.stripTrailingZeros().scale() > 2) throw customErr(field + " can have at most 2 decimals (" + i.getInvoiceNumber() + ").");
+        if (v.compareTo(new BigDecimal("999999999999.99")) > 0) throw customErr(field + " is too large (" + i.getInvoiceNumber() + ").");
+        return v.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
+
+    private static com.transport.erp.exception.BusinessValidationException customErr(String msg) {
+        return new com.transport.erp.exception.BusinessValidationException("Custom Export Not Valid", "CUSTOM_EXPORT_INVALID", msg,
+                "Correct the amounts in the custom export and try again.");
+    }
+
     @Transactional(readOnly = true)
     public byte[] exportCustomerReceipts(Long companyId) {
         return exportCustomerReceipts(companyId, "xlsx");

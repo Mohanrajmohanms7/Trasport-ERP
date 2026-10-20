@@ -9,7 +9,22 @@
       </h1>
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Generate corporate tax invoices, compute CGST/SGST breakdowns, and reconcile customer ledgers</p>
     </div>
-    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="invoices" /></div>
+    <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="invoices" />
+      @if (features.has('export')) {
+        <div class="inline-flex rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] overflow-hidden" role="group" aria-label="Custom export">
+          <button type="button" (click)="openCustomExport('xlsx')" [disabled]="!invoices().length" data-testid="custom-excel"
+                  class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] disabled:opacity-50"
+                  title="Excel of the listed invoices with adjusted amounts (invoices are not changed)">
+            <span class="material-icons text-base text-emerald-600">edit_note</span>Custom Excel
+          </button>
+          <button type="button" (click)="openCustomExport('pdf')" [disabled]="!invoices().length" data-testid="custom-pdf"
+                  class="h-10 px-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] border-l border-[var(--ff-border-default)] disabled:opacity-50"
+                  title="PDF of the listed invoices with adjusted amounts (invoices are not changed)">
+            <span class="material-icons text-base text-rose-600">edit_document</span>Custom PDF
+          </button>
+        </div>
+      }
+    </div>
   </header>
 
   <!-- Main console layouts -->
@@ -332,4 +347,7 @@
 
 @if (lookupAdd.open(); as l) {
   <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
+}
+@if (customExportFormat(); as fmt) {
+  <app-invoice-custom-export [invoices]="customExportRows" [format]="fmt" (closed)="customExportFormat.set(null)" />
 }

@@ -1356,6 +1356,38 @@ api POST /trips/$DT/complete >/dev/null
 R=$(api PUT /trips/$DT '{"booking":{"id":'$DB2'},"tripDate":"'$TODAY'","vehicle":{"id":'$GV1'},"driver":{"id":'$GD2'},"details":[{"material":{"id":'$MAT'},"quantity":1,"loadedQuantity":1,"deliveredQuantity":1}]}')
 [ "$(echo "$R" | j "d.get('success')")" = "True" ] && [ "$($PSQL "SELECT driver_id FROM trips WHERE id=$DT")" = "$GD2" ] && pass "DRV 8 editing a past trip keeps its actual driver, no re-confirmation" || fail "DRV 8" "$(echo $R | cut -c1-200)"
 
+# ================= Invoice List: Custom PDF / Excel with adjusted amounts (file only; invoices never change) =================
+CE=$(mktemp -d)
+C=$(curl -s -o $CE/n.xlsx -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$API/exports/invoices?format=xlsx"); [ "$C" = "200" ] && [ "$(head -c 2 $CE/n.xlsx)" = "PK" ] && pass "CEX existing invoice Excel export still works" || fail "CEX normal xlsx" "$C"
+C=$(curl -s -o $CE/n.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" "$API/exports/invoices?format=pdf"); [ "$C" = "200" ] && [ "$(head -c 4 $CE/n.pdf)" = "%PDF" ] && pass "CEX existing invoice PDF export still works" || fail "CEX normal pdf" "$C"
+IDS=$($PSQL "SELECT string_agg(id::text, ',' ORDER BY id) FROM (SELECT id FROM sales_invoices WHERE company_id=1 AND is_deleted=false ORDER BY id LIMIT 2) x")
+I1=${IDS%%,*}; I2=${IDS##*,}
+FP() { $PSQL "SELECT md5(string_agg(id||':'||subtotal||':'||discount||':'||taxable_amount||':'||tax_amount||':'||net_amount||':'||paid_amount||':'||COALESCE(updated_at::text,''), '|' ORDER BY id)) FROM sales_invoices WHERE company_id=1"; }
+BEFORE=$(FP)
+BODY='[{"invoiceId":'$I1',"subtotal":10000.50,"discount":500.25,"gst":475.01,"paid":1000},{"invoiceId":'$I2',"subtotal":2500,"discount":0,"gst":125,"paid":0}]'
+C=$(curl -s -o $CE/c.xlsx -w "%{http_code}" -X POST "${H[@]}" "$API/exports/invoices/custom?format=xlsx" -d "$BODY")
+[ "$C" = "200" ] && [ "$(head -c 2 $CE/c.xlsx)" = "PK" ] && pass "CEX custom Excel downloads" || fail "CEX custom xlsx" "$C $(head -c 200 $CE/c.xlsx)"
+python3 - "$CE/c.xlsx" > $CE/x.txt <<'PYX'
+import sys, zipfile, re
+z = zipfile.ZipFile(sys.argv[1]); txt = ' '.join(z.read(n).decode('utf-8', 'ignore') for n in z.namelist() if n.endswith('.xml'))
+print('ADJ' if 'ADJUSTED' in txt else 'noadj'); print('NET' if re.search(r'9975\.26', txt) else 'nonet'); print('OFF' if 'Official Net' in txt else 'nooff')
+PYX
+[ "$(tr '\n' ' ' < $CE/x.txt)" = "ADJ NET OFF " ] && pass "CEX custom Excel has the adjusted title, official column and recalculated net (10000.50 - 500.25 + 475.01 = 9975.26)" || fail "CEX xlsx content" "$(tr '\n' ' ' < $CE/x.txt)"
+C=$(curl -s -o $CE/c.pdf -w "%{http_code}" -X POST "${H[@]}" "$API/exports/invoices/custom?format=pdf" -d "$BODY")
+[ "$C" = "200" ] && [ "$(head -c 4 $CE/c.pdf)" = "%PDF" ] && pass "CEX custom PDF downloads" || fail "CEX custom pdf" "$C $(head -c 200 $CE/c.pdf)"
+mkdir -p "${GITHUB_WORKSPACE:-/tmp}/shots/pdf" && cp $CE/c.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoices-custom.pdf" 2>/dev/null || true
+[ "$(FP)" = "$BEFORE" ] && pass "CEX invoices unchanged after custom exports (amounts and update time)" || fail "CEX invoices changed" "x"
+cex() { curl -s -X POST "${H[@]}" "$API/exports/invoices/custom?format=xlsx" -d "$1"; }
+R=$(cex '[{"invoiceId":'$I1',"subtotal":-1,"discount":0,"gst":0,"paid":0}]'); echo "$R" | grep -q "cannot be negative" && pass "CEX negative amount refused" || fail "CEX negative" "$(echo $R | cut -c1-160)"
+R=$(cex '[{"invoiceId":'$I1',"subtotal":100.555,"discount":0,"gst":0,"paid":0}]'); echo "$R" | grep -q "at most 2 decimals" && pass "CEX 3 decimals refused" || fail "CEX decimals" "$(echo $R | cut -c1-160)"
+R=$(cex '[{"invoiceId":'$I1',"subtotal":100,"discount":150,"gst":0,"paid":0}]'); echo "$R" | grep -q "more than the subtotal" && pass "CEX discount above subtotal refused" || fail "CEX discount" "$(echo $R | cut -c1-160)"
+R=$(cex '[{"invoiceId":'$I1',"subtotal":100,"discount":0,"gst":5,"paid":200}]'); echo "$R" | grep -q "more than the net amount" && pass "CEX paid above net refused" || fail "CEX paid" "$(echo $R | cut -c1-160)"
+R=$(cex '[{"invoiceId":'$I1',"subtotal":1,"discount":0,"gst":0,"paid":0},{"invoiceId":'$I1',"subtotal":1,"discount":0,"gst":0,"paid":0}]'); echo "$R" | grep -q "listed once" && pass "CEX duplicate invoice refused" || fail "CEX duplicate" "$(echo $R | cut -c1-160)"
+OI=$($PSQL "SELECT id FROM sales_invoices WHERE company_id<>1 AND is_deleted=false ORDER BY id LIMIT 1")
+R=$(cex '[{"invoiceId":'${OI:-999999}',"subtotal":1,"discount":0,"gst":0,"paid":0}]'); echo "$R" | grep -q "was not found" && pass "CEX another company's invoice refused" || fail "CEX tenant" "$(echo $R | cut -c1-160)"
+C=$(as "$TO" POST "/exports/invoices/custom?format=xlsx" "$BODY"); [ "$C" = "403" ] && pass "CEX operator role cannot use the custom invoice export (403)" || fail "CEX role" "$C"
+[ "$(FP)" = "$BEFORE" ] && pass "CEX invoices still unchanged after refused requests" || fail "CEX invoices changed 2" "x"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

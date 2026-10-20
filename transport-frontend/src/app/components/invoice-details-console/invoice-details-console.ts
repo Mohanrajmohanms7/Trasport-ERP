@@ -1,3 +1,4 @@
+import { InvoiceCustomExportComponent } from './invoice-custom-export';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
@@ -26,7 +27,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../share
 @Component({
   selector: 'app-invoice-details-console',
   standalone: true,
-imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [InvoiceCustomExportComponent, LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -43,6 +44,14 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class InvoiceDetailsConsoleComponent implements OnInit {
+  /** Custom PDF / Excel export of the listed invoices with adjusted amounts (file only; invoices are never changed). */
+  customExportFormat = signal<'pdf' | 'xlsx' | null>(null);
+  customExportRows: any[] = [];
+  openCustomExport(format: 'pdf' | 'xlsx'): void {
+    this.customExportRows = this.invoices().map(i => ({ ...i }));   // a copy of the listed invoices
+    this.customExportFormat.set(format);
+  }
+
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private invoiceMgmtService = inject(InvoiceMgmtService);
