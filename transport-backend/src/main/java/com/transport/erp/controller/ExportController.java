@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -53,6 +54,26 @@ public class ExportController {
                 Map.entry("suppliers", exports::exportSuppliers),
                 Map.entry("warehouses", exports::exportWarehouses)
         );
+    }
+
+    /**
+     * Invoice list with customer-facing adjusted amounts (Invoice List → Custom PDF / Custom Excel). Read only: no invoice
+     * or other record is changed. Same finance roles as the invoice export.
+     */
+    @PostMapping("/invoices/custom")
+    public ResponseEntity<byte[]> exportInvoicesCustom(@RequestParam(defaultValue = "xlsx") String format,
+                                                       @RequestBody List<XlsxExportService.CustomInvoiceAmounts> rows) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean allowed = auth != null && auth.getAuthorities().stream().anyMatch(a -> FINANCE_ROLES.contains(a.getAuthority()));
+        if (!allowed) throw new AccessDeniedException("Finance exports need an accounts or admin role.");
+        boolean pdf = "pdf".equalsIgnoreCase(format);
+        byte[] body = exports.exportSalesInvoicesCustom(rows, pdf ? "pdf" : "xlsx");
+        String file = "invoices_custom_" + LocalDate.now() + (pdf ? ".pdf" : ".xlsx");
+        return ResponseEntity.ok()
+                .contentType(pdf ? MediaType.APPLICATION_PDF
+                        : MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file + "\"")
+                .body(body);
     }
 
     @GetMapping("/{module}")
