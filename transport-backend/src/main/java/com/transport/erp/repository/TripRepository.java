@@ -135,5 +135,10 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @org.springframework.data.repository.query.Param("branchId") Long branchId,
             @org.springframework.data.repository.query.Param("status") String status,
             org.springframework.data.domain.Pageable pageable);
+
+    /** Lorries on a driver's open trips (Planned / Dispatched) — the driver may act for them (e.g. report a breakdown). */
+    @Query("SELECT DISTINCT t.vehicle FROM Trip t WHERE t.companyId = :companyId AND t.driver.id = :driverId "
+            + "AND t.isDeleted = false AND t.status IN ('PLANNED', 'DISPATCHED') AND t.vehicle IS NOT NULL")
+    List<com.transport.erp.model.Vehicle> findOpenTripVehiclesForDriver(@Param("companyId") Long companyId, @Param("driverId") Long driverId);
 }
 

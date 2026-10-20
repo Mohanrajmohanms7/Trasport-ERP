@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
@@ -39,6 +40,7 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class FuelDetailsConsoleComponent implements OnInit {
+  private httpFlow = inject(HttpClient);
   private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
@@ -162,6 +164,7 @@ export class FuelDetailsConsoleComponent implements OnInit {
       previousOdometer: [0, [Validators.required, Validators.min(0)]],
       remarks: ['']
     });
+    this.entryForm.get('trip.id')?.valueChanges.subscribe(id => this.fillFromTrip(id));
 
     this.requestForm = this.fb.group({
       trip: this.fb.group({
@@ -314,6 +317,20 @@ export class FuelDetailsConsoleComponent implements OnInit {
         },
         error: () => this.notify.error('Failed to reject fuel request')
       });
+    });
+  }
+
+  /** New entry: choosing a trip fills the trip's vehicle and driver (costs on a trip must match them). Edits are never changed. */
+  private fillFromTrip(tripId: any): void {
+    if (!tripId || this.editingEntry()?.id) return;
+    this.httpFlow.get<any>(`/api/v1/trips/${tripId}`).subscribe({
+      next: r => {
+        const t = r?.data;
+        if (!t || String(this.entryForm.get('trip.id')?.value) !== String(tripId)) return;   // trip changed meanwhile
+        if (t.vehicle?.id) { PickerService.merge(this.vehicles, [t.vehicle]); this.entryForm.get('vehicle.id')?.setValue(t.vehicle.id); }
+        if (t.driver?.id) { PickerService.merge(this.drivers, [t.driver]); this.entryForm.get('driver.id')?.setValue(t.driver.id); }
+      },
+      error: () => { /* keep what the user selected; the server still checks the match */ }
     });
   }
 }

@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -43,6 +44,7 @@ imports: [FormValidationDirective, ExportButtonsComponent, QuickCreateComponent,
   styles: []
 })
 export class TripDetailsConsoleComponent implements OnInit {
+  private httpFlow = inject(HttpClient);
   private appConfirm = inject(AppConfirmService);
   private tripMgmtService = inject(TripMgmtService);
   private invoiceMgmtService = inject(InvoiceMgmtService);
@@ -361,6 +363,28 @@ export class TripDetailsConsoleComponent implements OnInit {
       details: this.fb.array([])
     });
     this.tripForm.get('booking.id')?.valueChanges.subscribe(id => this.onBookingChange(id));
+    this.tripForm.get('vehicle.id')?.valueChanges.subscribe(v => this.prefillRegularDriver(v));
+  }
+
+  /** Driver filled in from the vehicle (so a later vehicle change may replace it, but never a driver the user chose). */
+  private autoDriverId: any = null;
+
+  /** New trip: choosing a vehicle fills its regular (Vehicle Master) driver; still changeable (another driver asks to confirm). */
+  private prefillRegularDriver(vehicleId: any): void {
+    if (!vehicleId || this.editingTrip()?.id) return;
+    const current = this.tripForm.get('driver.id')?.value;
+    if (current && String(current) !== String(this.autoDriverId)) return;
+    this.httpFlow.get<any>(`/api/v1/vehicles/${vehicleId}/driver`).subscribe({
+      next: r => {
+        if (String(this.tripForm.get('vehicle.id')?.value) !== String(vehicleId)) return;   // vehicle changed meanwhile
+        const regular = (r?.data || []).find((a: any) => !a.removalDate && !a.isDeleted && a.driver?.id);
+        if (!regular) return;
+        PickerService.merge(this.drivers, [regular.driver]);
+        this.tripForm.get('driver.id')?.setValue(regular.driver.id);
+        this.autoDriverId = regular.driver.id;
+      },
+      error: () => { /* no regular driver shown: the user picks one */ }
+    });
   }
 
   private buildDetailRow(d?: any) {

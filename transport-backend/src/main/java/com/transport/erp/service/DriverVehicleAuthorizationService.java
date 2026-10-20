@@ -73,7 +73,7 @@ public class DriverVehicleAuthorizationService {
         }
         long matches = assignmentRepository.countActiveAuthorization(
                 user.getId(), user.getCompanyId(), vehicle.getId());
-        if (matches < 1) {
+        if (matches < 1 && !onOpenTrip(user, driver, vehicle.getId())) {
             throw notAuthorized();
         }
     }
@@ -81,7 +81,7 @@ public class DriverVehicleAuthorizationService {
     @Transactional(readOnly = true)
     public List<Long> authorizedVehicleIds(AppUser user) {
         Driver driver = requireLinkedDriver(user);
-        return assignmentRepository.findActivelyAssignedVehicles(user.getCompanyId(), driver.getId()).stream()
+        return withOpenTripVehicles(user, driver).stream()
                 .map(Vehicle::getId)
                 .toList();
     }
@@ -89,7 +89,7 @@ public class DriverVehicleAuthorizationService {
     @Transactional(readOnly = true)
     public List<AuthorizedVehicleResponse> authorizedVehicles(AppUser user) {
         Driver driver = requireLinkedDriver(user);
-        return assignmentRepository.findActivelyAssignedVehicles(user.getCompanyId(), driver.getId()).stream()
+        return withOpenTripVehicles(user, driver).stream()
                 .map(this::toVehicle)
                 .toList();
     }
@@ -125,5 +125,29 @@ public class DriverVehicleAuthorizationService {
                 "DRIVER_VEHICLE_NOT_AUTHORIZED",
                 "DRIVER_VEHICLE_NOT_AUTHORIZED: This driver is not assigned to the selected vehicle.",
                 "Select a vehicle on your active assignment.");
+    }
+
+    /** Open trips (Planned / Dispatched). May be absent in plain unit tests (then only Vehicle Master counts). */
+    @Autowired(required = false)
+    private com.transport.erp.repository.TripRepository tripRepository;
+
+    /** A driver also acts for a lorry they drive on an open trip, e.g. a trip confirmed with another lorry. */
+    private boolean onOpenTrip(AppUser user, Driver driver, Long vehicleId) {
+        if (tripRepository == null || driver == null || driver.getId() == null) return false;
+        return tripRepository.findOpenTripVehiclesForDriver(user.getCompanyId(), driver.getId()).stream()
+                .anyMatch(v -> vehicleId.equals(v.getId()) && !Boolean.TRUE.equals(v.getIsDeleted()));
+    }
+
+    /** Vehicle Master lorries first, then lorries on the driver's open trips (no duplicates). */
+    private List<Vehicle> withOpenTripVehicles(AppUser user, Driver driver) {
+        List<Vehicle> list = new java.util.ArrayList<>(assignmentRepository.findActivelyAssignedVehicles(user.getCompanyId(), driver.getId()));
+        if (tripRepository != null) {
+            java.util.Set<Long> ids = new java.util.HashSet<>();
+            list.forEach(v -> ids.add(v.getId()));
+            for (Vehicle v : tripRepository.findOpenTripVehiclesForDriver(user.getCompanyId(), driver.getId())) {
+                if (!Boolean.TRUE.equals(v.getIsDeleted()) && ids.add(v.getId())) list.add(v);
+            }
+        }
+        return list;
     }
 }

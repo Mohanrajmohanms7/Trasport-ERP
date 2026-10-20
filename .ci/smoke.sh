@@ -1388,6 +1388,25 @@ R=$(cex '[{"invoiceId":'${OI:-999999}',"subtotal":1,"discount":0,"gst":0,"paid":
 C=$(as "$TO" POST "/exports/invoices/custom?format=xlsx" "$BODY"); [ "$C" = "403" ] && pass "CEX operator role cannot use the custom invoice export (403)" || fail "CEX role" "$C"
 [ "$(FP)" = "$BEFORE" ] && pass "CEX invoices still unchanged after refused requests" || fail "CEX invoices changed 2" "x"
 
+# ================= Driver login acts for the lorry on their open trip (e.g. confirmed with another lorry) =================
+DU=$($PSQL "SELECT id FROM app_users WHERE username='drv1'"); DOLD=$($PSQL "SELECT id FROM drivers WHERE app_user_id=$DU")
+FVA=$(post /vehicles '{"code":"TN46FL0001","name":"TN46FL0001","status":"ACTIVE"}' | j "d['data']['id']")
+FVB=$(post /vehicles '{"code":"TN46FL0002","name":"TN46FL0002","status":"ACTIVE"}' | j "d['data']['id']")
+FDA=$(post /drivers '{"code":"FD-A","name":"Flow Driver A","licenseNumber":"TN4620268801","phoneNumber":"9000088801","status":"ACTIVE"}' | j "d['data']['id']")
+FDB=$(post /drivers '{"code":"FD-B","name":"Flow Driver B","licenseNumber":"TN4620268802","phoneNumber":"9000088802","status":"ACTIVE"}' | j "d['data']['id']")
+post /vehicles/$FVA/driver/$FDA >/dev/null; post /vehicles/$FVB/driver/$FDB >/dev/null
+$PSQL "UPDATE drivers SET app_user_id=NULL WHERE app_user_id=$DU; UPDATE drivers SET app_user_id=$DU WHERE id=$FDA" >/dev/null
+mreq() { as "$TD" POST /maintenance-requests '{"vehicleId":'$1',"title":"Breakdown on trip","description":"engine warning","priority":"HIGH"}'; }
+C=$(mreq $FVA); [ "$C" = "200" ] && pass "FLOW driver reports for the Vehicle Master lorry (as before)" || fail "FLOW own lorry" "$C $(cut -c1-160 /tmp/r.json)"
+C=$(mreq $FVB); [ "$C" != "200" ] && pass "FLOW driver cannot report for another lorry without a trip ($C)" || fail "FLOW other lorry no trip" "$C"
+FB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$FB/approve >/dev/null
+FT=$(post /trips '{"booking":{"id":'$FB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVB'},"driver":{"id":'$FDA'},"confirmDriverOverride":true,"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
+C=$(mreq $FVB); [ "$C" = "200" ] && pass "FLOW driver reports a breakdown for the lorry on their open (confirmed) trip" || fail "FLOW open trip lorry" "$C $(cut -c1-160 /tmp/r.json)"
+curl -s -X DELETE "${H[@]}" $API/trips/$FT >/dev/null
+C=$(mreq $FVB); [ "$C" != "200" ] && pass "FLOW access ends when the trip is no longer open ($C)" || fail "FLOW after trip" "$C"
+[ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$FVB AND removal_date IS NULL AND is_deleted=false")" = "$FDB" ] && pass "FLOW Vehicle Master unchanged (regular driver still FD-B)" || fail "FLOW vehicle master" "x"
+$PSQL "UPDATE drivers SET app_user_id=NULL WHERE id=$FDA" >/dev/null; [ -n "$DOLD" ] && $PSQL "UPDATE drivers SET app_user_id=$DU WHERE id=$DOLD" >/dev/null
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
@@ -38,6 +39,7 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class ExpenseDetailsConsoleComponent implements OnInit {
+  private httpFlow = inject(HttpClient);
   private expenseMgmtService = inject(ExpenseMgmtService);
   private masterService = inject(MasterService);
   private picker = inject(PickerService);
@@ -160,6 +162,7 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
       paymentMethod: ['CASH', Validators.required],
       remarks: ['']
     });
+    this.expenseForm.get('trip.id')?.valueChanges.subscribe(id => this.fillFromTrip(id));
   }
 
   loadExpenses() {
@@ -280,6 +283,20 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
           error: () => this.notify.error('Failed to cancel expense entry')
         });
       }
+    });
+  }
+
+  /** New entry: choosing a trip fills the trip's vehicle and driver (costs on a trip must match them). Edits are never changed. */
+  private fillFromTrip(tripId: any): void {
+    if (!tripId || this.editingExpense()?.id) return;
+    this.httpFlow.get<any>(`/api/v1/trips/${tripId}`).subscribe({
+      next: r => {
+        const t = r?.data;
+        if (!t || String(this.expenseForm.get('trip.id')?.value) !== String(tripId)) return;   // trip changed meanwhile
+        if (t.vehicle?.id) { PickerService.merge(this.vehicles, [t.vehicle]); this.expenseForm.get('vehicle.id')?.setValue(t.vehicle.id); }
+        if (t.driver?.id) { PickerService.merge(this.drivers, [t.driver]); this.expenseForm.get('driver.id')?.setValue(t.driver.id); }
+      },
+      error: () => { /* keep what the user selected; the server still checks the match */ }
     });
   }
 }
