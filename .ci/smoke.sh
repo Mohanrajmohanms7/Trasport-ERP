@@ -1409,6 +1409,42 @@ C=$(mreq $FVB); [ "$C" != "200" ] && [ "$C" != "401" ] && pass "FLOW access ends
 [ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$FVB AND removal_date IS NULL AND is_deleted=false")" = "$FDB" ] && pass "FLOW Vehicle Master unchanged (regular driver still FD-B)" || fail "FLOW vehicle master" "x"
 $PSQL "UPDATE drivers SET app_user_id=NULL WHERE id=$FDA" >/dev/null; [ -n "$DOLD" ] && $PSQL "UPDATE drivers SET app_user_id=$DU WHERE id=$DOLD" >/dev/null
 
+# ================= Flow coverage: fuel entry, receipt cancellation reversal, accounts integrity (whole run) =================
+jvmax() { $PSQL "SELECT COALESCE(MAX(id),0) FROM journal_vouchers"; }
+jvnet() { $PSQL "SELECT COUNT(*) FROM (SELECT acc FROM (SELECT debit_account_id acc, amount amt FROM journal_vouchers WHERE id>$1 AND is_deleted=false UNION ALL SELECT credit_account_id, -amount FROM journal_vouchers WHERE id>$1 AND is_deleted=false) x GROUP BY acc HAVING SUM(amt)<>0) y"; }
+# --- Fuel entry: posting, odometer, trip match
+FO=$($PSQL "SELECT COALESCE(MAX(current_odometer),1000) FROM fuel_entries WHERE vehicle_id=$FVA AND is_deleted=false"); J0=$(jvmax)
+R=$(post /fuel '{"vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"fuelDate":"'$TODAY'","fuelStation":"Coverage Fuels","fuelQuantity":20,"ratePerLitre":90,"totalAmount":1800,"paymentMethod":"CASH","invoiceNumber":"COV-'$RANDOM'","previousOdometer":'$FO',"currentOdometer":'$((FO+100))'}')
+FE=$(echo "$R" | j "d['data']['id']" 2>/dev/null)
+[ -n "$FE" ] && [ "$FE" != "None" ] && pass "COV fuel entry saved" || fail "COV fuel entry" "$(echo $R | cut -c1-200)"
+[ "$(jvnet_total=$($PSQL "SELECT COALESCE(SUM(amount),0) FROM journal_vouchers WHERE id>$J0 AND is_deleted=false"); echo $jvnet_total)" = "1800.00" ] && pass "COV fuel posted once to accounts (1,800)" || fail "COV fuel posting" "$($PSQL "SELECT COALESCE(SUM(amount),0)||' in '||COUNT(*) FROM journal_vouchers WHERE id>$J0")"
+R=$(post /fuel '{"vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"fuelDate":"'$TODAY'","fuelStation":"Coverage Fuels","fuelQuantity":5,"ratePerLitre":90,"totalAmount":450,"paymentMethod":"CASH","invoiceNumber":"COV-'$RANDOM'","previousOdometer":'$((FO+100))',"currentOdometer":'$((FO+60))'}')
+[ "$(echo "$R" | j "d.get('success')")" != "True" ] && echo "$R" | grep -qi "odometer" && pass "COV odometer going backwards refused" || fail "COV odometer" "$(echo $R | cut -c1-200)"
+CB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$CB/approve >/dev/null
+CT=$(post /trips '{"booking":{"id":'$CB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVB'},"driver":{"id":'$FDB'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
+R=$(post /fuel '{"vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"trip":{"id":'$CT'},"fuelDate":"'$TODAY'","fuelStation":"Coverage Fuels","fuelQuantity":5,"ratePerLitre":90,"totalAmount":450,"paymentMethod":"CASH","invoiceNumber":"COV-'$RANDOM'","previousOdometer":'$((FO+100))',"currentOdometer":'$((FO+150))'}')
+echo "$R" | grep -q "Vehicle Does Not Match Trip" && pass "COV fuel on another lorry's trip refused" || fail "COV fuel trip match" "$(echo $R | cut -c1-200)"
+# --- Receipt cancellation reverses allocation and accounts
+CI=$(mkinv $CUST_TN); post /invoices/$CI/approve >/dev/null; CNET=$($PSQL "SELECT net_amount FROM sales_invoices WHERE id=$CI"); J1=$(jvmax)
+R=$(post /receipts '{"customerId":'$CUST_TN',"receiptDate":"'$TODAY'","amountReceived":'$CNET',"advanceAmount":0,"paymentMethod":"CASH","referenceNumber":"COV-RC","allocations":[{"invoiceId":'$CI',"amount":'$CNET'}]}'); CR=$(echo "$R" | j "d['data'].get('receiptId') or d['data'].get('id')")
+post /receipts/$CR/approve >/dev/null
+[ "$($PSQL "SELECT payment_status||'/'||(paid_amount=net_amount) FROM sales_invoices WHERE id=$CI")" = "PAID/t" ] && pass "COV receipt pays the invoice in full" || fail "COV receipt paid" "$($PSQL "SELECT payment_status||' '||paid_amount||' of '||net_amount FROM sales_invoices WHERE id=$CI") :: $(echo $R | cut -c1-160)"
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE id>$J1 AND is_deleted=false")" -ge 1 ] && pass "COV receipt posted to accounts" || fail "COV receipt posting" "x"
+post /receipts/$CR/cancel >/dev/null
+[ "$($PSQL "SELECT payment_status||'/'||paid_amount FROM sales_invoices WHERE id=$CI")" = "UNPAID/0.00" ] && pass "COV receipt cancel makes the invoice unpaid again" || fail "COV receipt cancel invoice" "$($PSQL "SELECT payment_status||' '||paid_amount FROM sales_invoices WHERE id=$CI")"
+[ "$(jvnet $J1)" = "0" ] && pass "COV receipt cancel reverses its accounting (every account nets to zero)" || fail "COV receipt reversal" "$(jvnet $J1) account(s) not netted"
+# --- Accounts integrity over EVERYTHING posted in this run
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE is_deleted=false AND amount<=0")" = "0" ] && pass "ACC no journal entry with a zero or negative amount" || fail "ACC amount" "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE is_deleted=false AND amount<=0")"
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE is_deleted=false AND debit_account_id=credit_account_id")" = "0" ] && pass "ACC no entry with the same account on both sides" || fail "ACC same account" "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE is_deleted=false AND debit_account_id=credit_account_id")"
+X=$($PSQL "SELECT COUNT(*) FROM journal_vouchers j JOIN chart_of_accounts a ON a.id IN (j.debit_account_id, j.credit_account_id) WHERE j.is_deleted=false AND a.company_id IS NOT NULL AND j.company_id IS NOT NULL AND a.company_id<>j.company_id")
+[ "$X" = "0" ] && pass "ACC no entry posted to another company's account" || fail "ACC cross-company posting" "$X"
+X=$($PSQL "SELECT COUNT(*) FROM sales_invoices si WHERE si.is_deleted=false AND si.status IN ('APPROVED','PARTIALLY_PAID','PAID') AND NOT EXISTS (SELECT 1 FROM journal_vouchers j WHERE j.is_deleted=false AND (j.reference_number=si.invoice_number OR j.description LIKE '%'||si.invoice_number||'%'))")
+[ "$X" = "0" ] && pass "ACC every approved invoice has its accounting entry" || fail "ACC invoice without entry" "$X invoice(s): $($PSQL "SELECT string_agg(invoice_number, ',') FROM (SELECT invoice_number FROM sales_invoices si WHERE si.is_deleted=false AND si.status IN ('APPROVED','PARTIALLY_PAID','PAID') AND NOT EXISTS (SELECT 1 FROM journal_vouchers j WHERE j.is_deleted=false AND (j.reference_number=si.invoice_number OR j.description LIKE '%'||si.invoice_number||'%')) LIMIT 5) x")"
+for CO in 1 $CI2 $NCID; do
+  TB=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/financial-reports/trial-balance?companyId=$CO" | j "str(d['data'].get('difference'))+'|'+str(d['data'].get('totalPeriodDebit'))+'|'+str(d['data'].get('totalPeriodCredit'))")
+  python3 -c "import sys; d,dr,cr=('$TB'+'||').split('|')[:3]; sys.exit(0 if d not in ('','None') and abs(float(d))<0.005 and abs(float(dr)-float(cr))<0.005 else 1)" 2>/dev/null && pass "ACC trial balance balances for company $CO (debits = credits)" || fail "ACC trial balance company $CO" "$TB"
+done
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
