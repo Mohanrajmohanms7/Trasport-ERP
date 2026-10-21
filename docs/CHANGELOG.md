@@ -9,6 +9,8 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V87 (GST registration status) |
 
 ## 2026-10-21
+- **Documentation: change history (this file), docs index with what-to-update rules, PR checklist; HANDOVER up to date** (docs only)
+  `docs/CHANGELOG.md`, `docs/README.md`, `.github/pull_request_template.md`; HANDOVER: next migration V88, GST status, trip driver vs Vehicle Master, custom invoice export.
 - **Driver flow: open-trip lorry for driver logins; trip form pre-fills regular driver; fuel / expense fill from trip** (PR #35)
   Driver login may act (e.g. report a breakdown) for the lorry on their open trip; trip form pre-fills the regular driver; fuel / expense fill vehicle + driver from the chosen trip (new entries only).
 
