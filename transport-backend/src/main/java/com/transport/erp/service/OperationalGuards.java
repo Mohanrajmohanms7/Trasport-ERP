@@ -150,4 +150,43 @@ public class OperationalGuards {
                     "The selected " + what.toLowerCase() + " was not found.", "Choose the " + what.toLowerCase() + " again from the list.");
         }
     }
+
+    /** Title the fuel screen recognises to ask an admin "odometer replaced / reset?" (then resubmits with odometerReset). */
+    public static final String ODOMETER_RESET_TITLE = "Odometer Lower Than Last Reading";
+
+    /**
+     * Fuel odometer rules. (1) Current below previous is always refused. (2) When {@code checkHistory}: previous below the
+     * lorry's highest reading on or before this fuel date is refused unless an admin confirms a meter replacement / reset.
+     */
+    public void assertFuelOdometer(Long companyId, Long vehicleId, Long excludeId, java.time.LocalDate fuelDate,
+                                   java.math.BigDecimal previous, java.math.BigDecimal current, Boolean reset, boolean checkHistory) {
+        if (previous == null || current == null) return;
+        if (current.compareTo(previous) < 0) {
+            throw err("Odometer Going Backwards", "FUEL_ODOMETER_BACKWARDS",
+                    "Current odometer (" + current.stripTrailingZeros().toPlainString() + ") is lower than previous ("
+                            + previous.stripTrailingZeros().toPlainString() + ").",
+                    "Check the reading on the meter and correct the current or previous odometer.");
+        }
+        if (!checkHistory || vehicleId == null || companyId == null) return;
+        List<java.math.BigDecimal> last = jdbc.queryForList("""
+                SELECT MAX(current_odometer) FROM fuel_entries
+                 WHERE company_id = :cid AND vehicle_id = :vid AND is_deleted = false AND COALESCE(status, '') <> 'CANCELLED'
+                   AND (:ex IS NULL OR id <> :ex) AND (CAST(:d AS date) IS NULL OR fuel_date <= CAST(:d AS date))""",
+                new MapSqlParameterSource("cid", companyId).addValue("vid", vehicleId)
+                        .addValue("ex", excludeId, java.sql.Types.BIGINT).addValue("d", fuelDate, java.sql.Types.DATE), java.math.BigDecimal.class);
+        java.math.BigDecimal lastKm = last.isEmpty() ? null : last.get(0);
+        if (lastKm == null || previous.compareTo(lastKm) >= 0) return;
+        if (Boolean.TRUE.equals(reset)) {
+            org.springframework.security.core.Authentication a = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            boolean admin = a != null && a.getAuthorities().stream().anyMatch(g -> java.util.Set.of(
+                    "ROLE_SUPER_ADMIN", "ROLE_COMPANY_ADMIN", "ROLE_ADMIN", "ROLE_BRANCH_MANAGER", "ROLE_FLEET_MANAGER").contains(g.getAuthority()));
+            if (admin) return;
+            throw err("Admin Confirmation Needed", "FUEL_ODOMETER_RESET_ADMIN",
+                    "Only an admin can confirm that this lorry's odometer was replaced or reset.", "Ask your admin to save this fuel entry.");
+        }
+        throw err(ODOMETER_RESET_TITLE, "FUEL_ODOMETER_BELOW_LAST",
+                "Previous odometer (" + previous.stripTrailingZeros().toPlainString() + ") is lower than this lorry's last reading ("
+                        + lastKm.stripTrailingZeros().toPlainString() + "). Was the odometer replaced or reset?",
+                "Correct the previous odometer, or (admin) confirm that the meter was replaced / reset.");
+    }
 }

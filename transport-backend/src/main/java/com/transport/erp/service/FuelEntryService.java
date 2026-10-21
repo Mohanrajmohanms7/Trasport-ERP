@@ -219,6 +219,10 @@ public class FuelEntryService {
             }
         }
 
+        if (operationalGuards != null) {   // odometer never goes backwards; below the lorry's last reading needs an admin "meter reset"
+            operationalGuards.assertFuelOdometer(entry.getCompanyId(), entry.getVehicle() != null ? entry.getVehicle().getId() : null, null,
+                    entry.getFuelDate(), entry.getPreviousOdometer(), entry.getCurrentOdometer(), entry.getOdometerReset(), true);
+        }
         if (operationalGuards != null && entry.getTrip() != null && entry.getTrip().getId() != null) {   // fuel on a trip = that trip's vehicle / driver
             operationalGuards.assertMatchesTrip(entry.getTrip().getId(), entry.getCompanyId(), (entry.getVehicle() != null ? entry.getVehicle().getId() : null), (entry.getDriver() != null ? entry.getDriver().getId() : null), "fuel entry");
         }
@@ -301,6 +305,10 @@ public class FuelEntryService {
             );
         }
 
+        if (operationalGuards != null) {   // never approve a reading that goes backwards
+            operationalGuards.assertFuelOdometer(entry.getCompanyId(), null, entry.getId(), entry.getFuelDate(),
+                    entry.getPreviousOdometer(), entry.getCurrentOdometer(), null, false);
+        }
         entry.setStatus("APPROVED");
         entry.setUpdatedBy(username);
         FuelEntry saved = fuelEntryRepository.save(entry);
@@ -465,6 +473,10 @@ public class FuelEntryService {
         existing.setRemarks(details.getRemarks());
         existing.setUpdatedBy(username);
 
+        if (operationalGuards != null) {
+            operationalGuards.assertFuelOdometer(existing.getCompanyId(), existing.getVehicle() != null ? existing.getVehicle().getId() : null, existing.getId(),
+                    existing.getFuelDate(), existing.getPreviousOdometer(), existing.getCurrentOdometer(), details.getOdometerReset(), true);
+        }
         if (operationalGuards != null && existing.getTrip() != null && existing.getTrip().getId() != null) {   // fuel on a trip = that trip's vehicle / driver
             operationalGuards.assertMatchesTrip(existing.getTrip().getId(), existing.getCompanyId(), (existing.getVehicle() != null ? existing.getVehicle().getId() : null), (existing.getDriver() != null ? existing.getDriver().getId() : null), "fuel entry");
         }

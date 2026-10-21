@@ -215,11 +215,13 @@ export class FuelDetailsConsoleComponent implements OnInit {
     this.showEntryForm.set(true);
   }
 
-  saveEntry() {
-    if (this.entryForm.invalid) return;
+  /** @param odometerReset set after an admin confirms the lorry's odometer was replaced / reset */
+  saveEntry(odometerReset = false) {
+    if (this.entryForm.invalid || this.loading()) return;
 
     this.loading.set(true);
-    const val = this.entryForm.getRawValue();
+    const val: any = this.entryForm.getRawValue();
+    if (odometerReset) val.odometerReset = true;
     const entryObj = this.editingEntry();
 
     if (entryObj && entryObj.id) {
@@ -232,7 +234,8 @@ export class FuelDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to update fuel entry');
+          if (this.needsOdometerReset(err)) { this.askOdometerReset(err); return; }
+          this.notify.error(this.fuelError(err, 'Failed to update fuel entry'));
         }
       });
     } else {
@@ -245,7 +248,8 @@ export class FuelDetailsConsoleComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.notify.error(err.error?.message || 'Failed to log fuel entry');
+          if (this.needsOdometerReset(err)) { this.askOdometerReset(err); return; }
+          this.notify.error(this.fuelError(err, 'Failed to log fuel entry'));
         }
       });
     }
@@ -332,5 +336,24 @@ export class FuelDetailsConsoleComponent implements OnInit {
       },
       error: () => { /* keep what the user selected; the server still checks the match */ }
     });
+  }
+
+  /** Server title for "previous odometer below the lorry's last reading" (OperationalGuards.ODOMETER_RESET_TITLE). */
+  private needsOdometerReset(err: any): boolean { return err?.error?.message === 'Odometer Lower Than Last Reading'; }
+
+  /** Admin confirms a meter replacement / reset → save again; Cancel keeps the form open for correction. */
+  private askOdometerReset(err: any): void {
+    const reason = (Array.isArray(err?.error?.errors) && err.error.errors[0]) || 'The previous odometer is lower than this lorry\'s last reading.';
+    this.appConfirm.ask({
+      title: 'Odometer Replaced Or Reset?',
+      message: reason + ' Confirm only if the meter was replaced or reset (admin only). Otherwise cancel and correct the reading.',
+      type: 'warning', confirmText: 'Meter was reset', confirmIcon: 'restart_alt', cancelText: 'Correct reading'
+    }, () => this.saveEntry(true));
+  }
+
+  /** Business errors: show the reason (errors[0]) with the title, not just the title. */
+  private fuelError(err: any, fallback: string): string {
+    const e = err?.error, d = Array.isArray(e?.errors) ? e.errors[0] : null;
+    return d ? (e?.message && e.message !== d ? e.message + ': ' : '') + d : (e?.message || fallback);
   }
 }
