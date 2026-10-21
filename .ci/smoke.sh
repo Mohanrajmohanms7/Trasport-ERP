@@ -1396,14 +1396,16 @@ FDA=$(post /drivers '{"code":"FD-A","name":"Flow Driver A","licenseNumber":"TN46
 FDB=$(post /drivers '{"code":"FD-B","name":"Flow Driver B","licenseNumber":"TN4620268802","phoneNumber":"9000088802","status":"ACTIVE"}' | j "d['data']['id']")
 post /vehicles/$FVA/driver/$FDA >/dev/null; post /vehicles/$FVB/driver/$FDB >/dev/null
 $PSQL "UPDATE drivers SET app_user_id=NULL WHERE app_user_id=$DU; UPDATE drivers SET app_user_id=$DU WHERE id=$FDA" >/dev/null
-mreq() { as "$TD" POST /maintenance-requests '{"vehicleId":'$1',"title":"Breakdown on trip","description":"engine warning","priority":"HIGH"}'; }
+FDTK=$(tok drv1 Secret@123)   # fresh driver login (TD is reused as a date further up)
+[ -n "$FDTK" ] && [ "$FDTK" != "None" ] && pass "FLOW driver login for this block" || fail "FLOW driver login" "no token"
+mreq() { as "$FDTK" POST /maintenance-requests '{"vehicleId":'$1',"title":"Breakdown on trip","description":"engine warning","priority":"HIGH"}'; }
 C=$(mreq $FVA); [ "$C" = "200" ] && pass "FLOW driver reports for the Vehicle Master lorry (as before)" || fail "FLOW own lorry" "$C $(cut -c1-160 /tmp/r.json)"
-C=$(mreq $FVB); [ "$C" != "200" ] && pass "FLOW driver cannot report for another lorry without a trip ($C)" || fail "FLOW other lorry no trip" "$C"
+C=$(mreq $FVB); [ "$C" != "200" ] && [ "$C" != "401" ] && pass "FLOW driver cannot report for another lorry without a trip ($C)" || fail "FLOW other lorry no trip" "$C $(cut -c1-160 /tmp/r.json)"
 FB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$FB/approve >/dev/null
 FT=$(post /trips '{"booking":{"id":'$FB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVB'},"driver":{"id":'$FDA'},"confirmDriverOverride":true,"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
 C=$(mreq $FVB); [ "$C" = "200" ] && pass "FLOW driver reports a breakdown for the lorry on their open (confirmed) trip" || fail "FLOW open trip lorry" "$C $(cut -c1-160 /tmp/r.json)"
 curl -s -X DELETE "${H[@]}" $API/trips/$FT >/dev/null
-C=$(mreq $FVB); [ "$C" != "200" ] && pass "FLOW access ends when the trip is no longer open ($C)" || fail "FLOW after trip" "$C"
+C=$(mreq $FVB); [ "$C" != "200" ] && [ "$C" != "401" ] && pass "FLOW access ends when the trip is no longer open ($C)" || fail "FLOW after trip" "$C $(cut -c1-160 /tmp/r.json)"
 [ "$($PSQL "SELECT driver_id FROM vehicle_driver_assignments WHERE vehicle_id=$FVB AND removal_date IS NULL AND is_deleted=false")" = "$FDB" ] && pass "FLOW Vehicle Master unchanged (regular driver still FD-B)" || fail "FLOW vehicle master" "x"
 $PSQL "UPDATE drivers SET app_user_id=NULL WHERE id=$FDA" >/dev/null; [ -n "$DOLD" ] && $PSQL "UPDATE drivers SET app_user_id=$DU WHERE id=$DOLD" >/dev/null
 
