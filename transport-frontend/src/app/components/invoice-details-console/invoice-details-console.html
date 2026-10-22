@@ -98,6 +98,12 @@
                         <button (click)="downloadPdf(inv)" class="h-8 px-2 text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] transition" title="Download PDF Invoice">
                           <span class="material-icons text-sm">picture_as_pdf</span>
                         </button>
+                        @if (features.has('export')) {
+                          <button (click)="openCustomExportFor(inv)" class="h-8 px-2 border-l border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-rose-600 transition"
+                                  title="Custom PDF: adjust this invoice's amounts for one file (the invoice is not changed)" data-testid="row-custom-pdf">
+                            <span class="material-icons text-sm">edit_document</span>
+                          </button>
+                        }
                         <button (click)="printInvoice(inv)" class="h-8 px-2 border-l border-[var(--ff-border-divider)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] transition" title="Print Invoice">
                           <span class="material-icons text-sm">print</span>
                         </button>

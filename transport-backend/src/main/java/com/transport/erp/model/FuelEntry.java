@@ -14,6 +14,10 @@ import java.time.LocalDate;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FuelEntry extends BaseEntity {
 
+    /** Request-only: an admin confirmed the odometer was replaced / reset (reading lower than the lorry's last). Not stored. */
+    @Transient
+    private Boolean odometerReset;
+
     @Column(name = "fuel_entry_number", nullable = false, length = 100)
     private String fuelEntryNumber;
 
