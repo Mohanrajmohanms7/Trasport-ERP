@@ -1,3 +1,4 @@
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { ClientPlansComponent } from './client-plans/client-plans';
 import { GST_STATUSES, wireGstRegistration } from '../../shared/gst-registration';
@@ -301,6 +302,8 @@ imports: [ClientPlansComponent, FormValidationDirective, FeatureAccessComponent,
   `]
 })
 export class PlatformAdminComponent implements OnInit {
+  /** Pop-up notifications: errors (e.g. a refused client edit) must be visible, not only in the page banner. */
+  private toast = inject(FfNotificationService);
   readonly gstStatuses = GST_STATUSES;
   private appConfirm = inject(AppConfirmService);
   private platformService = inject(PlatformAdminService);
@@ -1122,6 +1125,7 @@ export class PlatformAdminComponent implements OnInit {
           if (res.success) {
             // the server warns when the client already uses more than a lowered limit (nothing is removed)
             this.showSuccess(res.data?.limitWarning ? 'Client updated. ' + res.data.limitWarning : 'Client profile details updated successfully');
+            if (res.data?.limitWarning) this.toast.warning('Client updated. ' + res.data.limitWarning); else this.toast.success('Client details saved');
             this.companyForm.reset();
             this.showCompanyForm.set(false);
             this.isEditMode.set(false);
@@ -1801,7 +1805,9 @@ export class PlatformAdminComponent implements OnInit {
     const defaultMsg = 'An error occurred during platform administration operations.';
     const e = err?.error;
     const detail = e?.errors?.[0];   // business rule messages carry the detail here (e.g. "The plan includes 10 vehicles …")
-    this.errorMsg.set(detail ? (e?.message && e.message !== detail ? e.message + ': ' : '') + detail : (e?.message || err?.message || defaultMsg));
+    const msg = detail ? (e?.message && e.message !== detail ? e.message + ': ' : '') + detail : (e?.message || err?.message || defaultMsg);
+    this.errorMsg.set(msg);
+    this.toast.error(msg);   // visible wherever the user is (the edit form has no banner of its own)
     this.successMsg.set('');
     setTimeout(() => this.errorMsg.set(''), 5500);
   }
