@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V87 (GST registration status) |
 
+## 2026-10-23
+- **Platform Admin: refused saves (e.g. a client limit edit) pop up with the reason** (frontend only)
+  Errors also show as a notification, not only in the page banner (the client edit form had none); the save result / over-use warning too.
+
 ## 2026-10-21
 - **Fuel odometer rules + per-invoice Custom PDF** (no migration)
   Fuel: current below previous refused (save and approve); previous below the lorry's last reading (on or before the fuel date) refused unless an admin confirms a meter replacement / reset (`odometerReset`, request only). Fuel screen shows the full reason. Invoice List row action **Custom PDF** for one invoice (same marked read-only custom export).
