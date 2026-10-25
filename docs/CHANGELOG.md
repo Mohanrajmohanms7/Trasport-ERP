@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V87 (GST registration status) |
 
+## 2026-10-25
+- **Fix: vehicle / user limit of a client on an unlimited plan can be edited** (no migration)
+  The number entered is that client's own cap (0 = unlimited), no extras; previously refused with "Plan Is Unlimited" while the onboarding number (e.g. 5) stayed enforced.
+
 ## 2026-10-23
 - **Platform Admin: refused saves (e.g. a client limit edit) pop up with the reason** (frontend only)
   Errors also show as a notification, not only in the page banner (the client edit form had none); the save result / over-use warning too.
