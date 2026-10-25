@@ -9,6 +9,8 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V87 (GST registration status) |
 
 ## 2026-10-25
+- **Trip form: booking materials still to dispatch auto-filled with their pending quantity** (no migration)
+  Booking balance adds `pending` per line (booked − on trips, without tolerance); lines fully on trips are left out (before, the tolerance re-added them); quantity pre-filled; message when nothing is left.
 - **Fix: vehicle / user limit of a client on an unlimited plan can be edited** (no migration)
   The number entered is that client's own cap (0 = unlimited), no extras; previously refused with "Plan Is Unlimited" while the onboarding number (e.g. 5) stayed enforced.
 

@@ -13,6 +13,8 @@ export interface BookingTripBalanceLine {
   /** Already on the booking's other active trips (delivered if recorded, else planned). */
   moved: number;
   remaining: number;
+  /** Still to dispatch: booked − already on trips (no tolerance); 0 when the line is fully on trips. */
+  pending?: number;
   rate: number;
   transportRate: number;
   royaltyRate: number;

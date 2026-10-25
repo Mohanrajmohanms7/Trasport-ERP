@@ -1467,6 +1467,20 @@ for i in $(seq 1 9); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $
 R=$(uedit 0); curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46UP200","name":"TN46UP200","status":"ACTIVE"}'
 [ "$($PSQL "SELECT max_vehicles FROM companies WHERE id=$UC")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false AND status='ACTIVE'")" = "9" ] && pass "UNL 0 = unlimited: the 9th vehicle is accepted" || fail "UNL zero" "$(echo $R | cut -c1-200)"
 
+# ================= Trip form auto-fill: only booking materials still to dispatch, with the pending quantity =================
+M2=$($PSQL "SELECT id FROM materials WHERE company_id=1 AND id<>$MAT AND is_deleted=false ORDER BY id LIMIT 1")
+[ -z "$M2" ] && M2=$(post /materials '{"code":"AF-M2","name":"Blue Metal 20mm","status":"ACTIVE","defaultRate":100}' | j "d['data']['id']")
+AB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5},{"material":{"id":'$M2'},"quantity":3,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
+post /bookings/$AB/approve >/dev/null
+pend() { curl -s -H "Authorization: Bearer $TOKEN" $API/trips/booking-balance/$AB | j "' '.join(str(l['materialId'])+'='+str(float(l.get('pending',-1))) for l in d['data']['lines'])"; }
+P=$(pend); echo "$P" | grep -q "$MAT=2.0" && echo "$P" | grep -q "$M2=3.0" && pass "AF new booking: both materials pending with their booked quantity ($P)" || fail "AF pending start" "$P"
+AT1=$(post /trips '{"booking":{"id":'$AB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"details":[{"material":{"id":'$MAT'},"quantity":2}]}' | j "d['data']['id']")
+P=$(pend); echo "$P" | grep -q "$MAT=0.0" && echo "$P" | grep -q "$M2=3.0" && pass "AF material fully on a trip has pending 0 (left out), the other stays 3 ($P)" || fail "AF pending after trip 1" "$P"
+AT2=$(post /trips '{"booking":{"id":'$AB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"details":[{"material":{"id":'$M2'},"quantity":2}]}' | j "d['data']['id']")
+P=$(pend); echo "$P" | grep -q "$M2=1.0" && pass "AF partly dispatched material pending = booked - on trips ($P)" || fail "AF pending after trip 2" "$P"
+curl -s -X DELETE "${H[@]}" $API/trips/$AT1 >/dev/null; curl -s -X DELETE "${H[@]}" $API/trips/$AT2 >/dev/null
+P=$(pend); echo "$P" | grep -q "$MAT=2.0" && echo "$P" | grep -q "$M2=3.0" && pass "AF removed trips give their quantity back ($P)" || fail "AF pending after delete" "$P"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
