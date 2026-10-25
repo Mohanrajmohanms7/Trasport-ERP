@@ -1452,6 +1452,21 @@ for CO in 1 $CI2 $NCID; do
   python3 -c "import sys; d,dr,cr=('$TB'+'||').split('|')[:3]; sys.exit(0 if d not in ('','None') and abs(float(d))<0.005 and abs(float(dr)-float(cr))<0.005 else 1)" 2>/dev/null && pass "ACC trial balance balances for company $CO (debits = credits)" || fail "ACC trial balance company $CO" "$TB"
 done
 
+# ================= Unlimited plan: the vehicle number entered in the client edit is that client's cap (0 = unlimited) =================
+UP=$($PSQL "SELECT id FROM saas_plans WHERE COALESCE(max_vehicles,0)=0 ORDER BY id LIMIT 1")
+R=$(post /platform-admin/onboard '{"name":"Unlimited Plan Lorries","shortName":"UPL","ownerName":"Owner","phone":"9000055555","email":"upl@example.com","state":"Tamil Nadu","subscriptionPlanId":'$UP',"maxVehicles":5,"maxUsers":3,"adminUsername":"upl.admin","adminPassword":"Upl@2026x","sendWelcomeEmail":false}')
+UC=$(echo "$R" | j "d['data']['companyId']")
+uedit() { curl -s -H "Authorization: Bearer $TOKEN" $API/platform-admin/clients/$UC | python3 -c "
+import sys,json; d=json.load(sys.stdin)['data']
+if d.get('subscriptionPlanId'): d['subscriptionPlan']={'id':d['subscriptionPlanId']}
+d['maxVehicles']=int('$1'); print(json.dumps(d))" > /tmp/u.json; curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$UC --data @/tmp/u.json; }
+R=$(uedit 8); [ "$($PSQL "SELECT max_vehicles||'/'||COALESCE(extra_vehicles,0) FROM companies WHERE id=$UC")" = "8/0" ] && pass "UNL unlimited plan: vehicle limit 5 -> 8 saved (no extras)" || fail "UNL edit 8" "$(echo $R | cut -c1-200)"
+UT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"upl.admin","password":"Upl@2026x"}' | j "d['data']['token']")
+for i in $(seq 1 9); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46UP'$((100+i))'","name":"TN46UP'$((100+i))'","status":"ACTIVE"}'; done
+[ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false AND status='ACTIVE'")" = "8" ] && pass "UNL client can add 8 vehicles, the 9th is refused" || fail "UNL cap 8" "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false")"
+R=$(uedit 0); curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46UP200","name":"TN46UP200","status":"ACTIVE"}'
+[ "$($PSQL "SELECT max_vehicles FROM companies WHERE id=$UC")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false AND status='ACTIVE'")" = "9" ] && pass "UNL 0 = unlimited: the 9th vehicle is accepted" || fail "UNL zero" "$(echo $R | cut -c1-200)"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

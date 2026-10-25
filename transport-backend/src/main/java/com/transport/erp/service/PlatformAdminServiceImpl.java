@@ -1592,10 +1592,13 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         }
         Integer planLimit = plan == null ? null : (vehicles ? plan.getMaxVehicles() : plan.getMaxUsers());
         if (planLimit == null || planLimit <= 0) {
-            if (requested == 0) return null;   // stays unlimited
-            throw new com.transport.erp.exception.BusinessValidationException("Plan Is Unlimited", "CLIENT_LIMIT_PLAN_UNLIMITED",
-                    "This client's plan allows unlimited " + what + ", so a " + what + " limit cannot be set here.",
-                    "Choose a plan with a " + what + " limit in Client Plans.");
+            // Unlimited plan: the number entered is this client's own cap (0 = unlimited); no extras (nothing to bill).
+            if (vehicles) { c.setExtraVehicles(0); c.setMaxVehicles(requested); }
+            else { c.setExtraUsers(0); c.setMaxUsers(requested); }
+            if (requested == 0) return null;
+            long usedNow = planLimitService.used(companyId, vehicles ? PlanLimitService.Kind.VEHICLES : PlanLimitService.Kind.USERS);
+            return usedNow > requested ? "The client already has " + usedNow + " active " + (vehicles ? "trucks" : "staff logins")
+                    + ", more than the new limit of " + requested + ". Nothing was removed; new ones are blocked until they are under the limit." : null;
         }
         if (requested < planLimit) {
             throw new com.transport.erp.exception.BusinessValidationException("Below The Plan", "CLIENT_LIMIT_BELOW_PLAN",
