@@ -1,3 +1,4 @@
+import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { InvoiceCustomExportComponent } from './invoice-custom-export';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
@@ -44,6 +45,7 @@ imports: [InvoiceCustomExportComponent, LookupAddComponent, FormValidationDirect
   styles: []
 })
 export class InvoiceDetailsConsoleComponent implements OnInit {
+  private appConfirm = inject(AppConfirmService);
   /** Custom PDF / Excel export of the listed invoices with adjusted amounts (file only; invoices are never changed). */
   customExportFormat = signal<'pdf' | 'xlsx' | null>(null);
   customExportRows: any[] = [];
@@ -213,6 +215,8 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       discount: [0, [Validators.required, Validators.min(0)]],
       details: this.fb.array([])
     });
+    this.invoiceForm.get('customer.id')?.valueChanges.subscribe(id => this.onCustomerForBilling(id));
+    this.invoiceForm.get('invoiceDate')?.valueChanges.subscribe(() => { if (this.autoLoadedFor) this.onCustomerForBilling(this.autoLoadedFor, true); });
   }
 
   get detailsArray(): FormArray {
@@ -317,16 +321,24 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   }
 
   removeDetail(index: number) {
+    // A trip is invoiced once: removing one of its lines removes the whole trip from this invoice.
+    const tripId = this.detailsArray.at(index)?.get('trip.id')?.value;
+    const sameTrip = tripId ? this.detailsArray.controls.filter(r => String(r.get('trip.id')?.value) === String(tripId)).length : 1;
+    const tripNo = tripId ? (this.trips().find(t => String(t.id) === String(tripId))?.tripNumber || 'this trip') : '';
     const dialogRef = this.dialog.open(ConfirmationDialogComponent, {
       data: {
-        title: 'Remove Line Item',
-        message: 'Remove this invoice line item?',
+        title: sameTrip > 1 ? 'Remove Trip' : 'Remove Line Item',
+        message: sameTrip > 1 ? `Remove ${tripNo} (all its ${sameTrip} material lines) from this invoice? A trip is invoiced once.` : 'Remove this invoice line item?',
         confirmText: 'Remove',
         type: 'danger'
       }
     });
     dialogRef.afterClosed().subscribe(confirmed => {
-      if (confirmed) this.detailsArray.removeAt(index);
+      if (!confirmed) return;
+      if (!tripId) { this.detailsArray.removeAt(index); return; }
+      for (let i = this.detailsArray.length - 1; i >= 0; i--) {
+        if (String(this.detailsArray.at(i).get('trip.id')?.value) === String(tripId)) this.detailsArray.removeAt(i);
+      }
     });
   }
 
@@ -717,5 +729,47 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       </body>
       </html>
     `;
+  }
+
+  /** New invoice: choosing a customer fills the lines from their completed, not-yet-invoiced trips (server-built). */
+  /** Customer whose trips were filled in (so a new invoice date can reload them up to that date). */
+  private autoLoadedFor: number | null = null;
+
+  private onCustomerForBilling(rawId: any, dateChanged = false): void {
+    const customerId = Number(rawId) || null;
+    if (!customerId || this.editingInvoice()?.id) { this.autoLoadedFor = null; return; }
+    const typed = this.detailsArray.controls.some(r => !!r.get('material.id')?.value);
+    const upTo = String(this.invoiceForm.get('invoiceDate')?.value || '').slice(0, 10) || undefined;
+    const load = () => this.invoiceMgmtService.getBillableLines(customerId, upTo).subscribe({
+      next: res => {
+        if (Number(this.invoiceForm.get('customer.id')?.value) !== customerId) return;   // customer changed meanwhile
+        const data = res?.data;
+        const lines = data?.lines || [];
+        while (this.detailsArray.length) this.detailsArray.removeAt(0);
+        const known = new Set(this.trips().map((t: any) => String(t.id)));
+        const extra = lines.filter((l: any) => !known.has(String(l.tripId)))
+          .map((l: any) => ({ id: l.tripId, tripNumber: l.tripNumber, tripDate: l.tripDate }));
+        if (extra.length) this.trips.update(list => [...list, ...extra.filter((t: any, i: number, a: any[]) => a.findIndex(x => x.id === t.id) === i)]);
+        for (const l of lines) {
+          this.detailsArray.push(this.buildDetailRow({
+            trip: { id: l.tripId }, material: { id: l.materialId }, uom: l.uom, quantity: l.quantity,
+            deliveredQuantity: l.deliveredQuantity, quantityBasis: l.quantityBasis, rate: l.rate,
+            freightCharges: l.freightCharges, loadingCharges: l.loadingCharges, royalty: l.royalty, gstPercentage: l.gstPercentage
+          }));
+        }
+        this.autoLoadedFor = customerId;
+        const later = data?.laterTrips ? ` ${data.laterTrips} later trip(s) after the invoice date wait for the next invoice.` : '';
+        const sites = new Set(lines.map((l: any) => l.siteName || '')).size;
+        const mixed = sites > 1 ? ` Trips from ${sites} delivery sites — remove a site's trips if you bill sites separately.` : '';
+        if (!lines.length) { this.addDetail(); this.notify.info('No completed, uninvoiced trips up to the invoice date for this customer.' + later); }
+        else this.notify.success(`${data?.tripCount} trip(s) up to ${upTo || 'today'} added (${lines.length} line(s)); invoiced trips left out.` + later + mixed);
+        if (data?.skipped?.length) this.notify.warning('Not added: ' + data.skipped.join('; '));
+      },
+      error: err => this.notify.error(err?.error?.errors?.[0] || err?.error?.message || 'Could not load the customer\'s trips')
+    });
+    if (!typed) { load(); return; }
+    this.appConfirm.ask({ title: dateChanged ? 'Invoice Date Changed' : 'Load Customer Trips',
+      message: dateChanged ? 'Reload this customer\'s uninvoiced trips up to the new invoice date? (Lines are replaced.)' : 'Replace the current lines with this customer\'s uninvoiced trips?',
+      type: 'warning', confirmText: 'Replace lines', cancelText: 'Keep my lines' }, load);
   }
 }

@@ -305,6 +305,24 @@ public class SalesInvoiceService {
 
         java.util.Map<Long, Trip> trips = new java.util.HashMap<>();
         for (Trip t : tripRepository.findAndLockAllByIds(tripIds)) trips.put(t.getId(), t);
+        // A trip is invoiced once: all of its materials must be on this invoice (otherwise the rest could never be billed).
+        java.util.Map<Long, java.util.Set<Long>> onInvoice = new java.util.HashMap<>();
+        for (SalesInvoiceDetail d : invoice.getDetails()) {
+            if (d.getTrip() != null && d.getTrip().getId() != null && d.getMaterial() != null && d.getMaterial().getId() != null) {
+                onInvoice.computeIfAbsent(d.getTrip().getId(), k -> new java.util.HashSet<>()).add(d.getMaterial().getId());
+            }
+        }
+        for (Trip t : trips.values()) {
+            if (t.getDetails() == null) continue;
+            java.util.List<String> missing = t.getDetails().stream()
+                    .filter(td -> td.getMaterial() != null && !onInvoice.getOrDefault(t.getId(), java.util.Set.of()).contains(td.getMaterial().getId()))
+                    .map(td -> td.getMaterial().getName()).distinct().toList();
+            if (!missing.isEmpty()) {
+                throw new BusinessValidationException("Trip Not Complete On Invoice", "INVOICE_TRIP_PARTIAL",
+                        "Trip " + t.getTripNumber() + " also carried " + String.join(", ", missing) + ", which is not on this invoice.",
+                        "A trip is invoiced once — add all of its materials, or remove the trip from this invoice.");
+            }
+        }
         // The delivered quantity on each trip line is taken from the trip itself (never from the request), so an
         // invoice billed "as ordered" always shows the real delivered quantity (V85).
         String basisNow = billingQuantityPolicy == null ? BillingQuantityPolicy.DELIVERED : billingQuantityPolicy.basis(invoice.getCompanyId());
@@ -685,6 +703,73 @@ public class SalesInvoiceService {
         }
 
         return trip;
+    }
+
+    /**
+     * New-invoice helper: every material line of the customer's completed, not-yet-invoiced trips, built exactly like
+     * "invoice from trip" (billing basis, trip / booking rates, GST). Nothing is saved; trips the user cannot bill are
+     * reported in "skipped". Same company / branch scope as Ready for billing.
+     */
+    @Transactional
+    public java.util.Map<String, Object> billableLinesForCustomer(Long customerId, java.time.LocalDate upTo) {
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        org.springframework.data.domain.Page<Trip> ready = tripRepository.findCompletedTripsReadyForBilling(
+                companyId, tenantAccess.listBranchScope(), org.springframework.data.domain.PageRequest.of(0, 500));
+        SalesInvoice preview = new SalesInvoice();
+        java.util.List<String> skipped = new java.util.ArrayList<>();
+        int trips = 0, later = 0;
+        // Period billing: only trips on or before the invoice date (an invoice cannot be dated before its trips); oldest first.
+        java.util.List<Trip> mine = ready.getContent().stream()
+                .filter(t -> t.getBooking() != null && t.getBooking().getCustomer() != null && customerId.equals(t.getBooking().getCustomer().getId()))
+                .sorted(java.util.Comparator.comparing(Trip::getTripDate, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .thenComparing(Trip::getTripNumber, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .toList();
+        for (Trip t : mine) {
+            if (upTo != null && t.getTripDate() != null && t.getTripDate().isAfter(upTo)) { later++; continue; }
+            int before = preview.getDetails().size();
+            try {
+                addTripLines(preview, t.getId());
+                trips++;
+            } catch (RuntimeException ex) {
+                while (preview.getDetails().size() > before) preview.getDetails().remove(preview.getDetails().size() - 1);
+                skipped.add(t.getTripNumber() + ": " + ex.getMessage());
+            }
+        }
+        java.util.List<java.util.Map<String, Object>> lines = new java.util.ArrayList<>();
+        for (SalesInvoiceDetail d : preview.getDetails()) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("tripId", d.getTrip().getId());
+            m.put("tripNumber", d.getTrip().getTripNumber());
+            m.put("tripDate", d.getTrip().getTripDate());
+            if (d.getTrip().getBooking() != null && d.getTrip().getBooking().getDeliverySite() != null) {
+                m.put("siteName", d.getTrip().getBooking().getDeliverySite().getSiteName());
+            }
+            m.put("materialId", d.getMaterial().getId());
+            m.put("materialName", d.getMaterial().getName());
+            if (d.getUom() != null) {
+                java.util.Map<String, Object> u = new java.util.LinkedHashMap<>();
+                u.put("id", d.getUom().getId());
+                u.put("code", d.getUom().getCode());
+                u.put("symbol", d.getUom().getSymbol());
+                u.put("label", OrderUomService.label(d.getUom()));
+                m.put("uom", u);
+            }
+            m.put("quantity", d.getQuantity());
+            m.put("deliveredQuantity", d.getDeliveredQuantity());
+            m.put("quantityBasis", d.getQuantityBasis());
+            m.put("rate", d.getRate());
+            m.put("freightCharges", d.getFreightCharges());
+            m.put("loadingCharges", d.getLoadingCharges());
+            m.put("royalty", d.getRoyalty());
+            m.put("gstPercentage", d.getGstPercentage());
+            lines.add(m);
+        }
+        java.util.Map<String, Object> out = new java.util.LinkedHashMap<>();
+        out.put("tripCount", trips);
+        out.put("laterTrips", later);   // completed, uninvoiced, but dated after the invoice date (next invoice)
+        out.put("lines", lines);
+        out.put("skipped", skipped);
+        return out;
     }
 
     private static BigDecimal positiveOr(BigDecimal preferred, BigDecimal fallback) {

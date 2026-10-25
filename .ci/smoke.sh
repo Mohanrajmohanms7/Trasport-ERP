@@ -1481,6 +1481,31 @@ P=$(pend); echo "$P" | grep -q "$M2=1.0" && pass "AF partly dispatched material 
 curl -s -X DELETE "${H[@]}" $API/trips/$AT1 >/dev/null; curl -s -X DELETE "${H[@]}" $API/trips/$AT2 >/dev/null
 P=$(pend); echo "$P" | grep -q "$MAT=2.0" && echo "$P" | grep -q "$M2=3.0" && pass "AF removed trips give their quantity back ($P)" || fail "AF pending after delete" "$P"
 
+# ================= New invoice: customer's uninvoiced trips auto-filled; a trip is invoiced whole and once =================
+IB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":4,"rate":100,"transportRate":10,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5},{"material":{"id":'$M2'},"quantity":3,"rate":200,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
+post /bookings/$IB/approve >/dev/null
+itrip() { local T=$(post /trips '{"booking":{"id":'$IB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"details":'"$1"'}' | j "d['data']['id']"); post /trips/$T/dispatch >/dev/null; post /trips/$T/complete >/dev/null; echo $T; }
+IT1=$(itrip '[{"material":{"id":'$MAT'},"quantity":2},{"material":{"id":'$M2'},"quantity":3}]')
+IT2=$(itrip '[{"material":{"id":'$MAT'},"quantity":2}]')
+post /invoices/from-trip/$IT2 >/dev/null
+bl() { curl -s -H "Authorization: Bearer $TOKEN" "$API/invoices/billable-lines?customerId=$1"; }
+R=$(bl $CUST); L1=$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])"); L2=$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT2])")
+[ "$L1" = "2" ] && [ "$L2" = "0" ] && pass "INVF customer's uninvoiced trip offered with both materials; the invoiced trip left out" || fail "INVF billable lines" "T1=$L1 T2=$L2 :: $(echo $R | cut -c1-200)"
+Q=$(echo "$R" | j "[l for l in d['data']['lines'] if l['tripId']==$IT1 and l['materialId']==$MAT][0]['quantity']"); FR=$(echo "$R" | j "[l for l in d['data']['lines'] if l['tripId']==$IT1 and l['materialId']==$MAT][0]['freightCharges']")
+python3 -c "import sys; sys.exit(0 if float('$Q')==2 and float('$FR')==10 else 1)" && pass "INVF lines built like invoice-from-trip (qty 2, transport charge 10)" || fail "INVF line values" "qty=$Q freight=$FR"
+[ "$(bl $CUST_TN | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && pass "INVF another customer does not get this trip" || fail "INVF other customer" "x"
+YDAY=$(date -d "$TODAY -1 day" +%F 2>/dev/null || date -v-1d +%F)
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/invoices/billable-lines?customerId=$CUST&upTo=$YDAY")
+[ "$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && [ "$(echo "$R" | j "d['data']['laterTrips']")" -ge 1 ] && pass "INVF invoice dated before the trip: trip waits for the next invoice (counted as later)" || fail "INVF cut-off" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/invoices/billable-lines?customerId=$CUST&upTo=$TODAY")
+[ "$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "2" ] && pass "INVF invoice dated on the trip day: trip included" || fail "INVF cut-off today" "$(echo $R | cut -c1-200)"
+LINE() { echo '{"trip":{"id":'$IT1'},"material":{"id":'$1'},"quantity":'$2',"rate":'$3',"freightCharges":0,"loadingCharges":0,"royalty":0,"gstPercentage":5}'; }
+R=$(post /invoices '{"customer":{"id":'$CUST'},"paymentTerms":"NET_30","discount":0,"details":['"$(LINE $MAT 2 100)"']}')
+echo "$R" | grep -q "Trip Not Complete On Invoice" && pass "INVF invoice with only part of a trip's materials refused" || fail "INVF partial" "$(echo $R | cut -c1-200)"
+R=$(post /invoices '{"customer":{"id":'$CUST'},"paymentTerms":"NET_30","discount":0,"details":['"$(LINE $MAT 2 100)"','"$(LINE $M2 3 200)"']}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "INVF invoice with the whole trip saved" || fail "INVF whole trip" "$(echo $R | cut -c1-200)"
+[ "$(bl $CUST | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && pass "INVF once invoiced, the trip is no longer offered" || fail "INVF after invoice" "x"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
