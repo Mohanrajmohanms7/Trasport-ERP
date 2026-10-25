@@ -267,10 +267,16 @@ export class TripDetailsConsoleComponent implements OnInit {
         }
         this.balance.set(b);
         while (this.detailsArray.length !== 0) this.detailsArray.removeAt(0);
+        // Every booking material still to dispatch, with its pending quantity as the payload; materials already fully
+        // on trips (planned / dispatched / completed) are left out. The user can lower the quantity (or raise it within tolerance).
         for (const line of b.lines) {
-          if (Number(line.remaining) > 0) {
-            this.detailsArray.push(this.buildDetailRow({ material: { id: line.materialId }, quantity: null }));
+          const pending = Number(line.pending ?? line.remaining);
+          if (pending > 0) {
+            this.detailsArray.push(this.buildDetailRow({ material: { id: line.materialId }, quantity: Math.round(pending * 1000) / 1000 }));
           }
+        }
+        if (this.detailsArray.length === 0) {
+          this.notify.info('All materials of this booking are already on trips — nothing left to dispatch.');
         }
       },
       error: err => {
