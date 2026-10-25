@@ -1506,6 +1506,21 @@ R=$(post /invoices '{"customer":{"id":'$CUST'},"paymentTerms":"NET_30","discount
 [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "INVF invoice with the whole trip saved" || fail "INVF whole trip" "$(echo $R | cut -c1-200)"
 [ "$(bl $CUST | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && pass "INVF once invoiced, the trip is no longer offered" || fail "INVF after invoice" "x"
 
+# ================= Row action Custom PDF: one invoice line by line, quantity / amount adjusted (file only) =================
+LI=$(mkinv $CUST_TN); post /invoices/$LI/approve >/dev/null
+LD=$($PSQL "SELECT id FROM sales_invoice_details WHERE invoice_id=$LI AND is_deleted=false ORDER BY id LIMIT 1")
+LFP() { $PSQL "SELECT md5(string_agg(id||':'||quantity||':'||taxable_amount||':'||net_amount, '|' ORDER BY id))||md5((SELECT net_amount||':'||COALESCE(updated_at::text,'') FROM sales_invoices WHERE id=$LI)) FROM sales_invoice_details WHERE invoice_id=$LI"; }
+LB=$(LFP)
+C=$(curl -s -o /tmp/cl.pdf -w "%{http_code}" -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1.75,"amount":10850}]')
+[ "$C" = "200" ] && [ "$(head -c 4 /tmp/cl.pdf)" = "%PDF" ] && pass "CLP line-level custom PDF downloads" || fail "CLP pdf" "$C $(head -c 200 /tmp/cl.pdf)"
+mkdir -p "${GITHUB_WORKSPACE:-/tmp}/shots/pdf" && cp /tmp/cl.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-custom-lines.pdf" 2>/dev/null || true
+[ "$(LFP)" = "$LB" ] && pass "CLP invoice and its lines unchanged" || fail "CLP invoice changed" "x"
+OD=$($PSQL "SELECT id FROM sales_invoice_details WHERE invoice_id<>$LI AND is_deleted=false ORDER BY id LIMIT 1")
+R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$OD',"quantity":1,"amount":1}]'); echo "$R" | grep -q "does not belong to this invoice" && pass "CLP a line of another invoice refused" || fail "CLP foreign line" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":-1,"amount":1}]'); echo "$R" | grep -q "cannot be negative" && pass "CLP negative quantity refused" || fail "CLP negative" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"amount":10.555}]'); echo "$R" | grep -q "at most 2 decimals" && pass "CLP 3-decimal amount refused" || fail "CLP decimals" "$(echo $R | cut -c1-160)"
+C=$(as "$TO" POST "/exports/invoices/$LI/custom-lines" '[{"detailId":'$LD',"quantity":1,"amount":1}]'); [ "$C" = "403" ] && pass "CLP operator cannot use it (403)" || fail "CLP role" "$C"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

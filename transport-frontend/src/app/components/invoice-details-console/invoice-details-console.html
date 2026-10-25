@@ -355,5 +355,5 @@
   <app-lookup-add [type]="l.type" [title]="l.title" [prefill]="l.text" (saved)="lookupAdd.done($event)" (closed)="lookupAdd.cancel()" />
 }
 @if (customExportFormat(); as fmt) {
-  <app-invoice-custom-export [invoices]="customExportRows" [format]="fmt" (closed)="customExportFormat.set(null)" />
+  <app-invoice-custom-export [invoices]="customExportRows" [format]="fmt" [lineInvoiceId]="customLineInvoiceId" (closed)="customExportFormat.set(null)" />
 }
