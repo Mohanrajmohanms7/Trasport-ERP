@@ -4,7 +4,7 @@ import { FormValidationDirective } from '../../shared/form-validation.directive'
 import { ExportButtonsComponent } from '../../shared/export-buttons/export-buttons';
 import { Component, OnInit, inject, signal, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TripMgmtService, Trip, TripDetail, BookingTripBalance, BookingTripBalanceLine } from '../../services/trip-mgmt.service';
 import { InvoiceMgmtService } from '../../services/invoice-mgmt.service';
@@ -27,7 +27,7 @@ import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-imports: [FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -608,15 +608,75 @@ export class TripDetailsConsoleComponent implements OnInit {
     });
   }
 
+  /** Complete with delivery: one dialog for loaded / delivered quantity (pre-filled), then the usual complete + quantity save. */
+  completing = signal<{ trip: any; lines: { materialName: string; planned: number; loaded: number | null; delivered: number | null }[] } | null>(null);
+  completeBusy = signal(false);
+
   completeTrip(trip: Trip) {
     if (!trip.id) return;
-    this.tripMgmtService.completeTrip(trip.id).subscribe({
-      next: () => {
-        this.notify.success('Trip completed successfully');
-        this.loadTrips();
+    this.tripMgmtService.getTripById(trip.id).subscribe({
+      next: res => {
+        const t: any = res?.data;
+        if (!t) { this.notify.error('Could not load the trip'); return; }
+        this.completing.set({ trip: t, lines: (t.details || []).map((d: any) => {
+          const loaded = d.loadedQuantity ?? d.quantity ?? null;
+          return { materialName: d.material?.name || 'Material', planned: Number(d.quantity || 0), loaded, delivered: d.deliveredQuantity ?? loaded };
+        }) });
       },
-      error: (err) => this.notify.error(this.tripError(err, 'Failed to complete trip'))
+      error: err => this.notify.error(this.tripError(err, 'Could not load the trip'))
     });
+  }
+
+  completeLineError(l: { loaded: number | null; delivered: number | null }): string | null {
+    if (l.loaded === null || l.delivered === null || l.loaded === undefined || l.delivered === undefined) return 'Enter loaded and delivered';
+    if (Number(l.loaded) < 0 || Number(l.delivered) < 0) return 'Cannot be negative';
+    return null;
+  }
+
+  /** withQuantities = false: complete only, as before (quantities can still be entered later in Edit). */
+  confirmComplete(withQuantities: boolean): void {
+    const c = this.completing();
+    if (!c || this.completeBusy()) return;
+    if (withQuantities && c.lines.some(l => this.completeLineError(l))) return;
+    this.completeBusy.set(true);
+    const t = c.trip;
+    this.tripMgmtService.completeTrip(t.id).subscribe({
+      next: () => {
+        if (!withQuantities) { this.afterComplete('Trip completed successfully'); return; }
+        // Same save as Edit on a completed trip: only loaded / delivered change; everything else is sent back as it is.
+        const body: any = {
+          booking: { id: t.booking?.id }, tripDate: t.tripDate, vehicle: { id: t.vehicle?.id }, driver: { id: t.driver?.id },
+          quarry: t.quarry?.id ? { id: t.quarry.id } : null, loadingLocation: t.loadingLocation?.id ? { id: t.loadingLocation.id } : null,
+          details: (t.details || []).map((d: any, i: number) => ({
+            material: { id: d.material?.id }, uom: d.uom?.id ? { id: d.uom.id } : null, quantity: d.quantity,
+            rate: d.rate, loadingCharges: d.loadingCharges, royalty: d.royalty,
+            loadedQuantity: Number(c.lines[i].loaded), deliveredQuantity: Number(c.lines[i].delivered)
+          }))
+        };
+        this.tripMgmtService.updateTrip(t.id, body).subscribe({
+          next: () => this.afterComplete('Trip completed — loaded and delivered quantities saved'),
+          error: err => {
+            this.afterComplete(null);
+            this.notify.warning('Trip completed, but the quantities were not saved: ' + this.tripError(err, 'error') + ' Open Edit to enter them.');
+          }
+        });
+      },
+      error: err => { this.completeBusy.set(false); this.notify.error(this.tripError(err, 'Failed to complete trip')); }
+    });
+  }
+
+  private afterComplete(msg: string | null): void {
+    this.completeBusy.set(false);
+    this.completing.set(null);
+    if (msg) this.notify.success(msg);
+    this.loadTrips();
+  }
+
+  setCompleteLine(i: number, f: 'loaded' | 'delivered', v: any): void {
+    const c = this.completing(); if (!c) return;
+    const n = v === '' || v === null || v === undefined ? null : Number(v);
+    const lines = c.lines.map((l, k) => k === i ? { ...l, [f]: n, ...(f === 'loaded' && l.delivered === l.loaded ? { delivered: n } : {}) } : l);
+    this.completing.set({ ...c, lines });
   }
 
   deleteTrip(trip: Trip) {

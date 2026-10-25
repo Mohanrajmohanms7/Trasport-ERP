@@ -407,7 +407,11 @@
               <div class="flex flex-col min-h-0">
                 @if (!editingReceipt() && outstandingInvoices().length > 0) {
                   <div class="flex flex-col gap-2 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] overflow-hidden">
-                    <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider px-3 pt-3">Reconcile / Allocate Outstanding Invoices</span>
+                    <div class="flex items-center justify-between gap-2 px-3 pt-3">
+                      <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Reconcile / Allocate Outstanding Invoices</span>
+                      <button type="button" class="text-[11px] font-semibold text-[var(--ff-color-primary-600)] hover:underline" (click)="autoAllocate(true)" data-testid="alloc-oldest"
+                              title="Fill the amount received into the oldest invoices first">Allocate oldest first</button>
+                    </div>
 
                     @if (remainingUnallocated > 0) {
                       <div class="sticky top-0 z-10 mx-3 px-3 py-2.5 rounded-[8px] bg-[var(--ff-color-warning-50)] border border-[var(--ff-border-default)] flex items-center justify-between gap-3">

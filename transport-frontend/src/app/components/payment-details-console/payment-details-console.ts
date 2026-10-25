@@ -232,7 +232,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     });
 
     // Recalculate advance amount whenever amountReceived changes
-    this.receiptForm.get('amountReceived')?.valueChanges.subscribe(() => this.recalculateAdvance());
+    this.receiptForm.get('amountReceived')?.valueChanges.subscribe(() => { if (!this.manualAlloc) this.autoAllocate(false); this.recalculateAdvance(); });
   }
 
   get allocationsFormArray(): FormArray {
@@ -276,6 +276,34 @@ export class PaymentDetailsConsoleComponent implements OnInit {
     this.allocationsFormArray.valueChanges.subscribe(() => {
       this.recalculateAdvance();
     });
+    // A user edit of any allocation stops the automatic oldest-first fill (their split is never overwritten).
+    this.manualAlloc = false;
+    this.allocationsFormArray.controls.forEach(c => {
+      c.get('amount')?.valueChanges.subscribe(() => { this.manualAlloc = true; });
+      c.get('selected')?.valueChanges.subscribe(() => { this.manualAlloc = true; });
+    });
+    this.autoAllocate(false);
+  }
+
+  /** True once the user changed an allocation by hand. */
+  private manualAlloc = false;
+
+  /** Amount received → oldest outstanding invoices first (the usual way customers pay); the rest stays as advance. */
+  autoAllocate(userAsked: boolean): void {
+    if (userAsked) this.manualAlloc = false;
+    let left = Math.round(Number(this.receiptForm.get('amountReceived')?.value || 0) * 100) / 100;
+    const byAge = this.allocationsFormArray.controls
+      .map(c => ({ c, inv: this.outstandingInvoices().find(i => i.id === c.get('invoiceId')?.value) }))
+      .sort((a, b) => String(a.inv?.invoiceDate || '').localeCompare(String(b.inv?.invoiceDate || '')) || Number(a.inv?.id || 0) - Number(b.inv?.id || 0));
+    for (const { c } of byAge) {
+      const due = Math.round(Number(c.get('outstandingAmount')?.value || 0) * 100) / 100;
+      const amt = Math.max(0, Math.min(due, left));
+      left = Math.round((left - amt) * 100) / 100;
+      c.get('amount')?.setValue(amt, { emitEvent: false });
+      c.get('selected')?.setValue(amt > 0, { emitEvent: false });
+    }
+    this.allocationsFormArray.updateValueAndValidity({ emitEvent: false });
+    this.recalculateAdvance();
   }
 
   recalculateAdvance() {
