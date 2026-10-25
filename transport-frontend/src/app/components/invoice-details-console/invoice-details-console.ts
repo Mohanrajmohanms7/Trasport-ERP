@@ -216,6 +216,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       details: this.fb.array([])
     });
     this.invoiceForm.get('customer.id')?.valueChanges.subscribe(id => this.onCustomerForBilling(id));
+    this.invoiceForm.get('invoiceDate')?.valueChanges.subscribe(() => { if (this.autoLoadedFor) this.onCustomerForBilling(this.autoLoadedFor, true); });
   }
 
   get detailsArray(): FormArray {
@@ -731,11 +732,15 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   }
 
   /** New invoice: choosing a customer fills the lines from their completed, not-yet-invoiced trips (server-built). */
-  private onCustomerForBilling(rawId: any): void {
+  /** Customer whose trips were filled in (so a new invoice date can reload them up to that date). */
+  private autoLoadedFor: number | null = null;
+
+  private onCustomerForBilling(rawId: any, dateChanged = false): void {
     const customerId = Number(rawId) || null;
-    if (!customerId || this.editingInvoice()?.id) return;
+    if (!customerId || this.editingInvoice()?.id) { this.autoLoadedFor = null; return; }
     const typed = this.detailsArray.controls.some(r => !!r.get('material.id')?.value);
-    const load = () => this.invoiceMgmtService.getBillableLines(customerId).subscribe({
+    const upTo = String(this.invoiceForm.get('invoiceDate')?.value || '').slice(0, 10) || undefined;
+    const load = () => this.invoiceMgmtService.getBillableLines(customerId, upTo).subscribe({
       next: res => {
         if (Number(this.invoiceForm.get('customer.id')?.value) !== customerId) return;   // customer changed meanwhile
         const data = res?.data;
@@ -752,14 +757,19 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
             freightCharges: l.freightCharges, loadingCharges: l.loadingCharges, royalty: l.royalty, gstPercentage: l.gstPercentage
           }));
         }
-        if (!lines.length) { this.addDetail(); this.notify.info('No completed, uninvoiced trips for this customer — add lines manually if needed.'); }
-        else this.notify.success(`${data?.tripCount} trip(s) added (${lines.length} line(s)). Already invoiced trips are left out.`);
+        this.autoLoadedFor = customerId;
+        const later = data?.laterTrips ? ` ${data.laterTrips} later trip(s) after the invoice date wait for the next invoice.` : '';
+        const sites = new Set(lines.map((l: any) => l.siteName || '')).size;
+        const mixed = sites > 1 ? ` Trips from ${sites} delivery sites — remove a site's trips if you bill sites separately.` : '';
+        if (!lines.length) { this.addDetail(); this.notify.info('No completed, uninvoiced trips up to the invoice date for this customer.' + later); }
+        else this.notify.success(`${data?.tripCount} trip(s) up to ${upTo || 'today'} added (${lines.length} line(s)); invoiced trips left out.` + later + mixed);
         if (data?.skipped?.length) this.notify.warning('Not added: ' + data.skipped.join('; '));
       },
       error: err => this.notify.error(err?.error?.errors?.[0] || err?.error?.message || 'Could not load the customer\'s trips')
     });
     if (!typed) { load(); return; }
-    this.appConfirm.ask({ title: 'Load Customer Trips', message: 'Replace the current lines with this customer\'s uninvoiced trips?',
+    this.appConfirm.ask({ title: dateChanged ? 'Invoice Date Changed' : 'Load Customer Trips',
+      message: dateChanged ? 'Reload this customer\'s uninvoiced trips up to the new invoice date? (Lines are replaced.)' : 'Replace the current lines with this customer\'s uninvoiced trips?',
       type: 'warning', confirmText: 'Replace lines', cancelText: 'Keep my lines' }, load);
   }
 }

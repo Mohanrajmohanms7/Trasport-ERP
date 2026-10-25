@@ -1494,6 +1494,11 @@ R=$(bl $CUST); L1=$(echo "$R" | j "len([l for l in d['data']['lines'] if l['trip
 Q=$(echo "$R" | j "[l for l in d['data']['lines'] if l['tripId']==$IT1 and l['materialId']==$MAT][0]['quantity']"); FR=$(echo "$R" | j "[l for l in d['data']['lines'] if l['tripId']==$IT1 and l['materialId']==$MAT][0]['freightCharges']")
 python3 -c "import sys; sys.exit(0 if float('$Q')==2 and float('$FR')==10 else 1)" && pass "INVF lines built like invoice-from-trip (qty 2, transport charge 10)" || fail "INVF line values" "qty=$Q freight=$FR"
 [ "$(bl $CUST_TN | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && pass "INVF another customer does not get this trip" || fail "INVF other customer" "x"
+YDAY=$(date -d "$TODAY -1 day" +%F 2>/dev/null || date -v-1d +%F)
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/invoices/billable-lines?customerId=$CUST&upTo=$YDAY")
+[ "$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "0" ] && [ "$(echo "$R" | j "d['data']['laterTrips']")" -ge 1 ] && pass "INVF invoice dated before the trip: trip waits for the next invoice (counted as later)" || fail "INVF cut-off" "$(echo $R | cut -c1-200)"
+R=$(curl -s -H "Authorization: Bearer $TOKEN" "$API/invoices/billable-lines?customerId=$CUST&upTo=$TODAY")
+[ "$(echo "$R" | j "len([l for l in d['data']['lines'] if l['tripId']==$IT1])")" = "2" ] && pass "INVF invoice dated on the trip day: trip included" || fail "INVF cut-off today" "$(echo $R | cut -c1-200)"
 LINE() { echo '{"trip":{"id":'$IT1'},"material":{"id":'$1'},"quantity":'$2',"rate":'$3',"freightCharges":0,"loadingCharges":0,"royalty":0,"gstPercentage":5}'; }
 R=$(post /invoices '{"customer":{"id":'$CUST'},"paymentTerms":"NET_30","discount":0,"details":['"$(LINE $MAT 2 100)"']}')
 echo "$R" | grep -q "Trip Not Complete On Invoice" && pass "INVF invoice with only part of a trip's materials refused" || fail "INVF partial" "$(echo $R | cut -c1-200)"

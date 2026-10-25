@@ -711,15 +711,21 @@ public class SalesInvoiceService {
      * reported in "skipped". Same company / branch scope as Ready for billing.
      */
     @Transactional
-    public java.util.Map<String, Object> billableLinesForCustomer(Long customerId) {
+    public java.util.Map<String, Object> billableLinesForCustomer(Long customerId, java.time.LocalDate upTo) {
         Long companyId = tenantAccess.resolveCompanyId(null);
         org.springframework.data.domain.Page<Trip> ready = tripRepository.findCompletedTripsReadyForBilling(
                 companyId, tenantAccess.listBranchScope(), org.springframework.data.domain.PageRequest.of(0, 500));
         SalesInvoice preview = new SalesInvoice();
         java.util.List<String> skipped = new java.util.ArrayList<>();
-        int trips = 0;
-        for (Trip t : ready.getContent()) {
-            if (t.getBooking() == null || t.getBooking().getCustomer() == null || !customerId.equals(t.getBooking().getCustomer().getId())) continue;
+        int trips = 0, later = 0;
+        // Period billing: only trips on or before the invoice date (an invoice cannot be dated before its trips); oldest first.
+        java.util.List<Trip> mine = ready.getContent().stream()
+                .filter(t -> t.getBooking() != null && t.getBooking().getCustomer() != null && customerId.equals(t.getBooking().getCustomer().getId()))
+                .sorted(java.util.Comparator.comparing(Trip::getTripDate, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .thenComparing(Trip::getTripNumber, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .toList();
+        for (Trip t : mine) {
+            if (upTo != null && t.getTripDate() != null && t.getTripDate().isAfter(upTo)) { later++; continue; }
             int before = preview.getDetails().size();
             try {
                 addTripLines(preview, t.getId());
@@ -735,6 +741,9 @@ public class SalesInvoiceService {
             m.put("tripId", d.getTrip().getId());
             m.put("tripNumber", d.getTrip().getTripNumber());
             m.put("tripDate", d.getTrip().getTripDate());
+            if (d.getTrip().getBooking() != null && d.getTrip().getBooking().getDeliverySite() != null) {
+                m.put("siteName", d.getTrip().getBooking().getDeliverySite().getSiteName());
+            }
             m.put("materialId", d.getMaterial().getId());
             m.put("materialName", d.getMaterial().getName());
             if (d.getUom() != null) {
@@ -757,6 +766,7 @@ public class SalesInvoiceService {
         }
         java.util.Map<String, Object> out = new java.util.LinkedHashMap<>();
         out.put("tripCount", trips);
+        out.put("laterTrips", later);   // completed, uninvoiced, but dated after the invoice date (next invoice)
         out.put("lines", lines);
         out.put("skipped", skipped);
         return out;

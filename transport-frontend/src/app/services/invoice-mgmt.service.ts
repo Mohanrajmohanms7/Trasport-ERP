@@ -70,8 +70,10 @@ export class InvoiceMgmtService {
 
   /** One draft invoice for several completed trips of the same customer. */
   /** New invoice: the customer's completed, not-yet-invoiced trips as invoice lines (nothing saved). */
-  getBillableLines(customerId: number): Observable<ApiResponse<{ tripCount: number; lines: any[]; skipped: string[] }>> {
-    return this.http.get<ApiResponse<{ tripCount: number; lines: any[]; skipped: string[] }>>('/api/v1/invoices/billable-lines', { params: { customerId } });
+  getBillableLines(customerId: number, upTo?: string): Observable<ApiResponse<{ tripCount: number; laterTrips: number; lines: any[]; skipped: string[] }>> {
+    const params: any = { customerId };
+    if (upTo) params.upTo = upTo;
+    return this.http.get<ApiResponse<{ tripCount: number; laterTrips: number; lines: any[]; skipped: string[] }>>('/api/v1/invoices/billable-lines', { params });
   }
 
   createInvoiceFromTrips(tripIds: number[]): Observable<ApiResponse<SalesInvoice>> {

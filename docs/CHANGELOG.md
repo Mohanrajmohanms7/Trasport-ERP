@@ -10,7 +10,7 @@ module documents listed in [`README.md`](README.md).
 
 ## 2026-10-25
 - **New invoice: choosing a customer fills lines from their completed, uninvoiced trips; a trip is invoiced whole and once** (no migration)
-  `GET /api/v1/invoices/billable-lines?customerId=` builds lines exactly like invoice-from-trip (nothing saved); invoiced trips left out; removing a line removes its whole trip; the server refuses an invoice with only part of a trip's materials (the rest could never be billed).
+  `GET /api/v1/invoices/billable-lines?customerId=&upTo=` (period billing: only trips on or before the invoice date, oldest first, delivery site shown; later trips counted for the next invoice) builds lines exactly like invoice-from-trip (nothing saved); invoiced trips left out; removing a line removes its whole trip; the server refuses an invoice with only part of a trip's materials (the rest could never be billed).
 - **Trip form: booking materials still to dispatch auto-filled with their pending quantity** (no migration)
   Booking balance adds `pending` per line (booked − on trips, without tolerance); lines fully on trips are left out (before, the tolerance re-added them); quantity pre-filled; message when nothing is left.
 - **Fix: vehicle / user limit of a client on an unlimited plan can be edited** (no migration)

@@ -94,8 +94,9 @@ public class SalesInvoiceController {
 
     /** New invoice: the customer's completed, not-yet-invoiced trips as invoice lines (nothing is saved). */
     @GetMapping("/billable-lines")
-    public ApiResponse<java.util.Map<String, Object>> billableLines(@RequestParam Long customerId) {
-        return ApiResponse.success(invoiceService.billableLinesForCustomer(customerId), "Billable trips fetched");
+    public ApiResponse<java.util.Map<String, Object>> billableLines(@RequestParam Long customerId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate upTo) {
+        return ApiResponse.success(invoiceService.billableLinesForCustomer(customerId, upTo), "Billable trips fetched");
     }
 
     @PostMapping("/{id}/approve")
