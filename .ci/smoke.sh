@@ -1534,7 +1534,7 @@ body={'booking':{'id':t['booking']['id']},'tripDate':t['tripDate'],'vehicle':{'i
    'loadingCharges':d.get('loadingCharges'),'royalty':d.get('royalty'),'loadedQuantity':2,'deliveredQuantity':1.9} for d in t['details']]}
 print(json.dumps(body))" > /tmp/cd.json
 R=$(curl -s -X PUT "${H[@]}" $API/trips/$CDT --data @/tmp/cd.json)
-[ "$($PSQL "SELECT loaded_quantity||'/'||delivered_quantity FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "2.000/1.900" ] && pass "CWD complete dialog saves loaded 2 / delivered 1.9" || fail "CWD quantities" "$($PSQL "SELECT loaded_quantity||'/'||delivered_quantity FROM trip_details WHERE trip_id=$CDT") :: $(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT loaded_quantity::numeric(12,2)||'/'||delivered_quantity::numeric(12,2) FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "2.00/1.90" ] && pass "CWD complete dialog saves loaded 2 / delivered 1.9" || fail "CWD quantities" "$($PSQL "SELECT loaded_quantity||'/'||delivered_quantity FROM trip_details WHERE trip_id=$CDT") :: $(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "$BEFORE" ] && pass "CWD rates, loading and royalty unchanged ($BEFORE)" || fail "CWD rates changed" "$BEFORE -> $($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT")"
 
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
