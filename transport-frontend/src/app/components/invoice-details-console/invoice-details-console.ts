@@ -50,11 +50,15 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   customExportFormat = signal<'pdf' | 'xlsx' | null>(null);
   customExportRows: any[] = [];
   /** Row action: Custom PDF for one invoice (same popup, same marked read-only file). */
+  /** Row action: Custom PDF of one invoice, line by line (Quantity / Amount only; the invoice is not changed). */
+  customLineInvoiceId: number | null = null;
   openCustomExportFor(inv: any): void {
     this.customExportRows = [{ ...inv }];
+    this.customLineInvoiceId = inv?.id ?? null;
     this.customExportFormat.set('pdf');
   }
   openCustomExport(format: 'pdf' | 'xlsx'): void {
+    this.customLineInvoiceId = null;   // list-level statement (unchanged)
     this.customExportRows = this.invoices().map(i => ({ ...i }));   // a copy of the listed invoices
     this.customExportFormat.set(format);
   }

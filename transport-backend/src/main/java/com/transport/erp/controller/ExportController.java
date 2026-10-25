@@ -60,6 +60,17 @@ public class ExportController {
      * Invoice list with customer-facing adjusted amounts (Invoice List → Custom PDF / Custom Excel). Read only: no invoice
      * or other record is changed. Same finance roles as the invoice export.
      */
+    /** One invoice, line by line, with adjusted quantity / amount (row action Custom PDF). Read only. Finance roles. */
+    @PostMapping("/invoices/{id}/custom-lines")
+    public ResponseEntity<byte[]> exportInvoiceLinesCustom(@PathVariable Long id, @RequestBody List<XlsxExportService.CustomLineAmounts> lines) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean allowed = auth != null && auth.getAuthorities().stream().anyMatch(a -> FINANCE_ROLES.contains(a.getAuthority()));
+        if (!allowed) throw new AccessDeniedException("Finance exports need an accounts or admin role.");
+        byte[] body = exports.exportInvoiceLinesCustom(id, lines);
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"invoice_" + id + "_custom.pdf\"").body(body);
+    }
+
     @PostMapping("/invoices/custom")
     public ResponseEntity<byte[]> exportInvoicesCustom(@RequestParam(defaultValue = "xlsx") String format,
                                                        @RequestBody List<XlsxExportService.CustomInvoiceAmounts> rows) {

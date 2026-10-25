@@ -425,6 +425,72 @@ public class XlsxExportService {
         }
     }
 
+    /** One edited line of one invoice for the line-level custom PDF (quantity and taxable amount only). */
+    public record CustomLineAmounts(Long detailId, BigDecimal quantity, BigDecimal amount) {}
+
+    /**
+     * One invoice, line by line, with customer-facing ADJUSTED quantity / amount — READ ONLY: nothing is saved and the
+     * invoice is not changed. Official figures come from the database and are printed next to the adjusted ones; GST is
+     * recalculated with each line's GST rate (CGST + SGST or IGST as on the invoice). Marked "not a tax invoice".
+     */
+    @Transactional(readOnly = true)
+    public byte[] exportInvoiceLinesCustom(Long invoiceId, List<CustomLineAmounts> edits) {
+        Long companyId = tenantAccess.resolveCompanyId(null);
+        SalesInvoice inv = salesInvoiceRepository.findById(invoiceId)
+                .filter(x -> !Boolean.TRUE.equals(x.getIsDeleted()) && companyId.equals(x.getCompanyId()))
+                .orElseThrow(() -> customErr("The invoice was not found. Reload the invoice list and try again."));
+        java.util.Map<Long, CustomLineAmounts> byLine = new java.util.HashMap<>();
+        for (CustomLineAmounts e : edits == null ? List.<CustomLineAmounts>of() : edits) {
+            if (e == null || e.detailId() == null || byLine.put(e.detailId(), e) != null) throw customErr("Each invoice line can be listed once.");
+        }
+        boolean igst = "INTER_STATE".equalsIgnoreCase(inv.getSupplyType());
+        String[] headers = {"#", "Trip", "Material", "Official Qty", "Adjusted Qty", "Official Amount", "Adjusted Amount",
+                "GST %", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
+        List<Object[]> rows = new ArrayList<>();
+        BigDecimal[] t = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
+        int n = 0;
+        java.util.Set<Long> seen = new java.util.HashSet<>();
+        for (SalesInvoiceDetail d : inv.getDetails()) {
+            if (Boolean.TRUE.equals(d.getIsDeleted())) continue;
+            n++;
+            seen.add(d.getId());
+            CustomLineAmounts e = byLine.get(d.getId());
+            BigDecimal offQty = nz(d.getQuantity()), offAmt = nz(d.getTaxableAmount());
+            BigDecimal offTotal = offAmt.add(nz(d.getCgst())).add(nz(d.getSgst())).add(nz(d.getIgst()));
+            String no = inv.getInvoiceNumber() + " line " + n;
+            BigDecimal qty = e == null ? offQty : qty3(e.quantity(), no);
+            BigDecimal amt = e == null ? offAmt : moneyLine(e.amount(), no);
+            BigDecimal gstPct = nz(d.getGstPercentage());
+            BigDecimal tax = igst ? amt.multiply(gstPct).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
+                    : amt.multiply(gstPct).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(2));
+            BigDecimal total = amt.add(tax);
+            rows.add(new Object[]{n, d.getTrip() != null ? d.getTrip().getTripNumber() : "",
+                    d.getMaterial() != null ? d.getMaterial().getName() : "", offQty, qty, offAmt, amt, gstPct, tax, total, total.subtract(offTotal)});
+            BigDecimal[] v = {offQty, qty, offAmt, amt, tax, total, total.subtract(offTotal)};
+            for (int k = 0; k < v.length; k++) t[k] = t[k].add(v[k]);
+        }
+        if (!seen.containsAll(byLine.keySet())) throw customErr("A line in the custom PDF does not belong to this invoice.");
+        rows.add(new Object[]{"", "TOTAL", n + " line(s)", t[0], t[1], t[2], t[3], null, t[4], t[5], t[6]});
+        return render("pdf", "Invoice " + inv.getInvoiceNumber() + " — ADJUSTED quantities / amounts (official invoice figures shown; NOT a tax invoice)",
+                headers, rows);
+    }
+
+    private static BigDecimal qty3(BigDecimal v, String where) {
+        if (v == null) throw customErr("Quantity is required (" + where + ").");
+        if (v.signum() < 0) throw customErr("Quantity cannot be negative (" + where + ").");
+        if (v.stripTrailingZeros().scale() > 3) throw customErr("Quantity can have at most 3 decimals (" + where + ").");
+        if (v.compareTo(new BigDecimal("99999999.999")) > 0) throw customErr("Quantity is too large (" + where + ").");
+        return v.setScale(3, java.math.RoundingMode.UNNECESSARY);
+    }
+
+    private static BigDecimal moneyLine(BigDecimal v, String where) {
+        if (v == null) throw customErr("Amount is required (" + where + ").");
+        if (v.signum() < 0) throw customErr("Amount cannot be negative (" + where + ").");
+        if (v.stripTrailingZeros().scale() > 2) throw customErr("Amount can have at most 2 decimals (" + where + ").");
+        if (v.compareTo(new BigDecimal("999999999999.99")) > 0) throw customErr("Amount is too large (" + where + ").");
+        return v.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
+
     private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 
     private static BigDecimal money(BigDecimal v, String field, SalesInvoice i) {

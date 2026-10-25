@@ -31,12 +31,41 @@ interface Row {
     <div class="w-full max-w-6xl max-h-[92vh] flex flex-col rounded-xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
       <div class="flex items-start justify-between gap-3 p-4 border-b border-[var(--ff-border-default)]">
         <div>
-          <h2 class="text-base font-bold">Custom {{ format === 'pdf' ? 'PDF' : 'Excel' }} — adjusted amounts</h2>
+          <h2 class="text-base font-bold">{{ lineInvoiceId ? 'Custom PDF — adjust quantity / amount per line' : 'Custom ' + (format === 'pdf' ? 'PDF' : 'Excel') + ' — adjusted amounts' }}</h2>
           <p class="text-xs text-[var(--ff-text-secondary)]">{{ rows().length }} listed invoice(s). Changes apply to this file only — invoices are not changed and nothing is saved.
             The file shows the official invoice amounts next to the adjusted ones.</p>
         </div>
         <button type="button" class="w-9 h-9 rounded-lg hover:bg-[var(--ff-surface-hover)]" (click)="closed.emit()" aria-label="Close"><span class="material-icons">close</span></button>
       </div>
+      @if (lineInvoiceId) {
+      <div class="overflow-auto flex-1" data-testid="custom-lines">
+        @if (lineLoading()) { <p class="p-4 text-sm text-[var(--ff-text-muted)]">Loading invoice lines…</p> }
+        <table class="w-full text-xs">
+          <thead class="sticky top-0 bg-[var(--ff-surface-muted,#f1f5f9)] text-[var(--ff-text-secondary)]">
+            <tr><th class="p-2 text-left">Trip / Material</th><th class="p-2 text-right">Official qty</th><th class="p-2 text-right">Quantity</th>
+              <th class="p-2 text-right">Official amount</th><th class="p-2 text-right">Amount</th><th class="p-2 text-right">GST</th>
+              <th class="p-2 text-right">Total</th><th class="p-2 text-right">Difference</th></tr>
+          </thead>
+          <tbody>
+            @for (l of lines(); track l.detailId; let i = $index) {
+              <tr class="border-t border-[var(--ff-border-default)] align-top" [class.bg-amber-50]="l.qty !== l.officialQty || l.amount !== l.officialAmount">
+                <td class="p-2"><b>{{ l.material }}</b><div class="text-[10px] text-[var(--ff-text-muted)]">{{ l.trip }} · GST {{ l.gstPct }}%</div></td>
+                <td class="p-2 text-right">{{ l.officialQty | number:'1.0-3' }}</td>
+                <td class="p-1 text-right"><input type="number" min="0" step="0.001" class="w-24 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
+                    [class.border-rose-500]="!!lineError(l)" [attr.aria-label]="'Quantity ' + l.material" [ngModel]="l.qty" (ngModelChange)="setLine(i, 'qty', $event)" /></td>
+                <td class="p-2 text-right">{{ l.officialAmount | number:'1.2-2' }}</td>
+                <td class="p-1 text-right"><input type="number" min="0" step="0.01" class="w-28 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
+                    [class.border-rose-500]="!!lineError(l)" [attr.aria-label]="'Amount ' + l.material" [ngModel]="l.amount" (ngModelChange)="setLine(i, 'amount', $event)" /></td>
+                <td class="p-2 text-right">{{ lineTax(l) | number:'1.2-2' }}</td>
+                <td class="p-2 text-right font-semibold">{{ (l.amount || 0) + lineTax(l) | number:'1.2-2' }}</td>
+                <td class="p-2 text-right" [class.text-rose-600]="(l.amount || 0) + lineTax(l) !== l.officialTotal">{{ (l.amount || 0) + lineTax(l) - l.officialTotal | number:'1.2-2' }}</td>
+              </tr>
+              @if (lineError(l); as e) { <tr><td colspan="8" class="px-2 pb-2 text-[11px] text-rose-600" role="alert">{{ e }}</td></tr> }
+            }
+          </tbody>
+        </table>
+      </div>
+      } @else {
       <div class="overflow-auto flex-1">
         <table class="w-full text-xs">
           <thead class="sticky top-0 bg-[var(--ff-surface-muted,#f1f5f9)] text-[var(--ff-text-secondary)]">
@@ -85,12 +114,13 @@ interface Row {
           </tfoot>
         </table>
       </div>
+      }
       <div class="flex flex-wrap items-center justify-end gap-2 p-4 border-t border-[var(--ff-border-default)]">
-        @if (hasErrors()) { <span class="text-xs text-rose-600 mr-auto">Correct the highlighted amounts to download.</span> }
-        <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="reset()">Reset to official</button>
+        @if (lineInvoiceId ? linesInvalid() : hasErrors()) { <span class="text-xs text-rose-600 mr-auto">Correct the highlighted amounts to download.</span> }
+        <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="lineInvoiceId ? resetLines() : reset()">Reset to official</button>
         <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="closed.emit()">Cancel</button>
         <button type="button" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold disabled:opacity-50"
-                [disabled]="busy() || hasErrors() || !rows().length" (click)="download()">{{ busy() ? 'Preparing…' : 'Download ' + (format === 'pdf' ? 'PDF' : 'Excel') }}</button>
+                [disabled]="busy() || (lineInvoiceId ? (linesInvalid() || !lines().length) : (hasErrors() || !rows().length))" (click)="lineInvoiceId ? downloadLines() : download()">{{ busy() ? 'Preparing…' : 'Download ' + (format === 'pdf' ? 'PDF' : 'Excel') }}</button>
       </div>
     </div>
   </div>
@@ -104,6 +134,13 @@ export class InvoiceCustomExportComponent implements OnInit {
   @Input() invoices: any[] = [];
   @Input() format: 'pdf' | 'xlsx' = 'xlsx';
   @Output() closed = new EventEmitter<void>();
+  /** Row action: one invoice, line by line (only Quantity and Amount editable). */
+  @Input() lineInvoiceId: number | null = null;
+
+  lines = signal<LineRow[]>([]);
+  private officialLines: LineRow[] = [];
+  lineLoading = signal(false);
+  private interState = false;
 
   readonly editable: ('subtotal' | 'discount' | 'gst' | 'paid')[] = ['subtotal', 'discount', 'gst', 'paid'];
   rows = signal<Row[]>([]);
@@ -111,6 +148,7 @@ export class InvoiceCustomExportComponent implements OnInit {
   busy = signal(false);
 
   ngOnInit(): void {
+    if (this.lineInvoiceId) { this.loadLines(this.lineInvoiceId); return; }
     this.official = (this.invoices || []).filter(i => i?.id != null).map(i => ({
       invoiceId: Number(i.id),
       invoiceNumber: i.invoiceNumber || '',
@@ -126,6 +164,68 @@ export class InvoiceCustomExportComponent implements OnInit {
   }
 
   reset(): void { this.rows.set(this.official.map(r => ({ ...r }))); }
+
+  // ----- line mode: a copy of the invoice's lines; nothing is saved -----
+  private loadLines(id: number): void {
+    this.lineLoading.set(true);
+    this.http.get<any>(`/api/v1/invoices/${id}`).subscribe({
+      next: r => {
+        const inv = r?.data || {};
+        this.interState = String(inv.supplyType || '').toUpperCase() === 'INTER_STATE';
+        this.officialLines = (inv.details || []).filter((d: any) => !d.isDeleted).map((d: any) => ({
+          detailId: Number(d.id), material: d.material?.name || '', trip: d.trip?.tripNumber || '',
+          gstPct: Number(d.gstPercentage || 0),
+          officialQty: round3(d.quantity), officialAmount: round2(d.taxableAmount),
+          officialTotal: round2(Number(d.taxableAmount || 0) + Number(d.cgst || 0) + Number(d.sgst || 0) + Number(d.igst || 0)),
+          qty: round3(d.quantity), amount: round2(d.taxableAmount)
+        }));
+        this.resetLines();
+        this.lineLoading.set(false);
+      },
+      error: () => { this.lineLoading.set(false); this.notify.error('Could not load the invoice lines'); }
+    });
+  }
+  resetLines(): void { this.lines.set(this.officialLines.map(l => ({ ...l }))); }
+  setLine(i: number, f: 'qty' | 'amount', v: any): void {
+    const n = v === '' || v === null || v === undefined ? null : Number(v);
+    this.lines.update(list => list.map((l, k) => k === i ? { ...l, [f]: n } : l));
+  }
+  /** Same GST rule as the invoice: IGST = rate; otherwise CGST + SGST = half the rate each. */
+  lineTax(l: LineRow): number {
+    const a = l.amount || 0;
+    return this.interState ? round2(a * l.gstPct / 100) : round2(round2(a * l.gstPct / 200) * 2);
+  }
+  lineError(l: LineRow): string | null {
+    if (l.qty === null || Number.isNaN(l.qty)) return 'Enter a quantity';
+    if (l.amount === null || Number.isNaN(l.amount)) return 'Enter an amount';
+    if (l.qty < 0 || l.amount < 0) return 'Cannot be negative';
+    if (Math.round(l.qty * 1000) !== Number((l.qty * 1000).toFixed(6))) return 'Quantity: at most 3 decimals';
+    if (Math.round(l.amount * 100) !== Number((l.amount * 100).toFixed(6))) return 'Amount: at most 2 decimals';
+    return null;
+  }
+  linesInvalid = computed(() => this.lines().some(l => !!this.lineError(l)));
+
+  downloadLines(): void {
+    if (this.busy() || this.linesInvalid() || !this.lineInvoiceId) return;
+    this.busy.set(true);
+    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount }));
+    this.http.post(`/api/v1/exports/invoices/${this.lineInvoiceId}/custom-lines`, body, { responseType: 'blob' }).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `invoice_custom_${new Date().toISOString().slice(0, 10)}.pdf`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.busy.set(false);
+        this.notify.success('Custom PDF downloaded — the invoice was not changed');
+      },
+      error: async e => {
+        this.busy.set(false);
+        let msg = e?.status === 403 ? 'Your role cannot export invoices.' : 'Custom PDF failed. Try again.';
+        try { const j = JSON.parse(await (e?.error as Blob).text()); msg = j?.errors?.[0] || j?.message || msg; } catch { /* keep default */ }
+        this.notify.error(msg);
+      }
+    });
+  }
 
   set(index: number, field: 'subtotal' | 'discount' | 'gst' | 'paid', value: any): void {
     const v = value === '' || value === null || value === undefined ? null : Number(value);
@@ -190,6 +290,17 @@ export class InvoiceCustomExportComponent implements OnInit {
       }
     });
   }
+}
+
+interface LineRow {
+  detailId: number; material: string; trip: string; gstPct: number;
+  officialQty: number; officialAmount: number; officialTotal: number;
+  qty: number | null; amount: number | null;
+}
+
+function round3(v: any): number {
+  const n = Number(v || 0);
+  return Math.round((n + Number.EPSILON) * 1000) / 1000;
 }
 
 function round2(v: any): number {
