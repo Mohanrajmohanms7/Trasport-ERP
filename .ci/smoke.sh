@@ -1521,6 +1521,22 @@ R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"de
 R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"amount":10.555}]'); echo "$R" | grep -q "at most 2 decimals" && pass "CLP 3-decimal amount refused" || fail "CLP decimals" "$(echo $R | cut -c1-160)"
 C=$(as "$TO" POST "/exports/invoices/$LI/custom-lines" '[{"detailId":'$LD',"quantity":1,"amount":1}]'); [ "$C" = "403" ] && pass "CLP operator cannot use it (403)" || fail "CLP role" "$C"
 
+# ================= Complete with delivery: the trip screen's one-step dialog (complete + same quantity save as Edit) =================
+CDB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":2,"rate":100,"transportRate":10,"royaltyRate":5,"loadingCharge":3,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$CDB/approve >/dev/null
+CDT=$(post /trips '{"booking":{"id":'$CDB'},"tripDate":"'$TODAY'","vehicle":{"id":'$FVA'},"driver":{"id":'$FDA'},"details":[{"material":{"id":'$MAT'},"quantity":2}]}' | j "d['data']['id']")
+post /trips/$CDT/dispatch >/dev/null; post /trips/$CDT/complete >/dev/null
+BEFORE=$($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")
+curl -s -H "Authorization: Bearer $TOKEN" $API/trips/$CDT | python3 -c "
+import sys,json; t=json.load(sys.stdin)['data']
+body={'booking':{'id':t['booking']['id']},'tripDate':t['tripDate'],'vehicle':{'id':t['vehicle']['id']},'driver':{'id':t['driver']['id']},
+ 'quarry':({'id':t['quarry']['id']} if t.get('quarry') else None),'loadingLocation':({'id':t['loadingLocation']['id']} if t.get('loadingLocation') else None),
+ 'details':[{'material':{'id':d['material']['id']},'uom':({'id':d['uom']['id']} if d.get('uom') else None),'quantity':d['quantity'],'rate':d.get('rate'),
+   'loadingCharges':d.get('loadingCharges'),'royalty':d.get('royalty'),'loadedQuantity':2,'deliveredQuantity':1.9} for d in t['details']]}
+print(json.dumps(body))" > /tmp/cd.json
+R=$(curl -s -X PUT "${H[@]}" $API/trips/$CDT --data @/tmp/cd.json)
+[ "$($PSQL "SELECT loaded_quantity::numeric(12,2)||'/'||delivered_quantity::numeric(12,2) FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "2.00/1.90" ] && pass "CWD complete dialog saves loaded 2 / delivered 1.9" || fail "CWD quantities" "$($PSQL "SELECT loaded_quantity||'/'||delivered_quantity FROM trip_details WHERE trip_id=$CDT") :: $(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "$BEFORE" ] && pass "CWD rates, loading and royalty unchanged ($BEFORE)" || fail "CWD rates changed" "$BEFORE -> $($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT")"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]
