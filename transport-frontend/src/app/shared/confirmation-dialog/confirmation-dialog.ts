@@ -31,7 +31,9 @@ export class ConfirmationDialogComponent implements OnInit {
   isDark = false;
 
   get tone(): 'primary' | 'danger' | 'warning' {
-    return this.data.type || 'primary';
+    // Only these three are styled; anything else (e.g. 'info') used to give a white confirm button on white — invisible.
+    const t = String(this.data.type || '');
+    return t === 'danger' || t === 'warning' ? t : 'primary';
   }
 
   get iconName(): string {
