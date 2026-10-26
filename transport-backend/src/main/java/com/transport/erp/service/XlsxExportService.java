@@ -426,7 +426,7 @@ public class XlsxExportService {
     }
 
     /** One edited line of one invoice for the line-level custom PDF (quantity and taxable amount only). */
-    public record CustomLineAmounts(Long detailId, BigDecimal quantity, BigDecimal amount) {}
+    public record CustomLineAmounts(Long detailId, BigDecimal quantity, BigDecimal amount, BigDecimal rate, BigDecimal gstPercentage) {}
 
     /**
      * One invoice, line by line, with customer-facing ADJUSTED quantity / amount — READ ONLY: nothing is saved and the
@@ -444,8 +444,8 @@ public class XlsxExportService {
             if (e == null || e.detailId() == null || byLine.put(e.detailId(), e) != null) throw customErr("Each invoice line can be listed once.");
         }
         boolean igst = "INTER_STATE".equalsIgnoreCase(inv.getSupplyType());
-        String[] headers = {"#", "Trip", "Material", "Official Qty", "Adjusted Qty", "Official Amount", "Adjusted Amount",
-                "GST %", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
+        String[] headers = {"#", "Material", "Official Qty", "Adjusted Qty", "Official Rate", "Adjusted Rate", "Official Amount",
+                "Adjusted Amount", "GST % (official → adjusted)", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
         List<Object[]> rows = new ArrayList<>();
         BigDecimal[] t = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
         int n = 0;
@@ -459,18 +459,25 @@ public class XlsxExportService {
             BigDecimal offTotal = offAmt.add(nz(d.getCgst())).add(nz(d.getSgst())).add(nz(d.getIgst()));
             String no = inv.getInvoiceNumber() + " line " + n;
             BigDecimal qty = e == null ? offQty : qty3(e.quantity(), no);
-            BigDecimal amt = e == null ? offAmt : moneyLine(e.amount(), no);
-            BigDecimal gstPct = nz(d.getGstPercentage());
+            BigDecimal offGst = nz(d.getGstPercentage());
+            BigDecimal gstPct = e == null || e.gstPercentage() == null ? offGst : gstLine(e.gstPercentage(), no);
+            // Amount = qty × rate when only the rate is given (same 2-decimal rounding as the invoice).
+            BigDecimal amt = e == null ? offAmt : (e.amount() == null && e.rate() != null
+                    ? moneyLine(qty.multiply(moneyLine(e.rate(), no)).setScale(2, java.math.RoundingMode.HALF_UP), no) : moneyLine(e.amount(), no));
+            BigDecimal offRate = offQty.signum() == 0 ? BigDecimal.ZERO : offAmt.divide(offQty, 2, java.math.RoundingMode.HALF_UP);
+            BigDecimal rate = e != null && e.rate() != null ? moneyLine(e.rate(), no)
+                    : (qty.signum() == 0 ? BigDecimal.ZERO : amt.divide(qty, 2, java.math.RoundingMode.HALF_UP));
             BigDecimal tax = igst ? amt.multiply(gstPct).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
                     : amt.multiply(gstPct).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(2));
             BigDecimal total = amt.add(tax);
-            rows.add(new Object[]{n, d.getTrip() != null ? d.getTrip().getTripNumber() : "",
-                    d.getMaterial() != null ? d.getMaterial().getName() : "", offQty, qty, offAmt, amt, gstPct, tax, total, total.subtract(offTotal)});
+            String gstText = offGst.stripTrailingZeros().toPlainString() + "%" + (gstPct.compareTo(offGst) == 0 ? "" : " → " + gstPct.stripTrailingZeros().toPlainString() + "%");
+            String mat = (d.getMaterial() != null ? d.getMaterial().getName() : "") + (d.getTrip() != null ? " (" + d.getTrip().getTripNumber() + ")" : "");
+            rows.add(new Object[]{n, mat, offQty, qty, offRate, rate, offAmt, amt, gstText, tax, total, total.subtract(offTotal)});
             BigDecimal[] v = {offQty, qty, offAmt, amt, tax, total, total.subtract(offTotal)};
             for (int k = 0; k < v.length; k++) t[k] = t[k].add(v[k]);
         }
         if (!seen.containsAll(byLine.keySet())) throw customErr("A line in the custom PDF does not belong to this invoice.");
-        rows.add(new Object[]{"", "TOTAL", n + " line(s)", t[0], t[1], t[2], t[3], null, t[4], t[5], t[6]});
+        rows.add(new Object[]{"", "TOTAL (" + n + " line(s))", t[0], t[1], null, null, t[2], t[3], null, t[4], t[5], t[6]});
         return render("pdf", "Invoice " + inv.getInvoiceNumber() + " — ADJUSTED quantities / amounts (official invoice figures shown; NOT a tax invoice)",
                 headers, rows);
     }
@@ -489,6 +496,12 @@ public class XlsxExportService {
         if (v.stripTrailingZeros().scale() > 2) throw customErr("Amount can have at most 2 decimals (" + where + ").");
         if (v.compareTo(new BigDecimal("999999999999.99")) > 0) throw customErr("Amount is too large (" + where + ").");
         return v.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
+
+    private static BigDecimal gstLine(BigDecimal v, String where) {
+        if (v.signum() < 0 || v.compareTo(BigDecimal.valueOf(28)) > 0) throw customErr("GST % must be between 0 and 28 (" + where + ").");
+        if (v.stripTrailingZeros().scale() > 2) throw customErr("GST % can have at most 2 decimals (" + where + ").");
+        return v;
     }
 
     private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }

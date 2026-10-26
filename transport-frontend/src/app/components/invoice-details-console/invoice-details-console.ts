@@ -358,6 +358,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
 
   openAddInvoice() {
     this.editingInvoice.set(null);
+    this.pdfAfterSave = null;
     this.invoiceForm.reset({ paymentTerms: 'NET_30', discount: 0, invoiceDate: this.today, placeOfSupply: '' });
     while (this.detailsArray.length !== 0) {
       this.detailsArray.removeAt(0);
@@ -366,7 +367,11 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     this.showEditor.set(true);
   }
 
-  openEditInvoice(inv: SalesInvoice) {
+  /** Draft "Edit & PDF": after a successful save, download the Normal PDF of the saved draft. */
+  private pdfAfterSave: SalesInvoice | null = null;
+
+  openEditInvoice(inv: SalesInvoice, thenPdf = false) {
+    this.pdfAfterSave = thenPdf && inv.status === 'DRAFT' ? inv : null;
     this.editingInvoice.set(inv);
     this.invoiceForm.patchValue({
       customer: { id: inv.customer?.id },
@@ -411,6 +416,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
           this.notify.success('Invoice updated successfully');
           this.loadInvoices();
           this.showEditor.set(false);
+          if (this.pdfAfterSave && this.pdfAfterSave.id === invObj.id) { const p = this.pdfAfterSave; this.pdfAfterSave = null; this.downloadPdf(p); }
         },
         error: (err) => {
           this.loading.set(false);

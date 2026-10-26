@@ -1519,6 +1519,11 @@ OD=$($PSQL "SELECT id FROM sales_invoice_details WHERE invoice_id<>$LI AND is_de
 R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$OD',"quantity":1,"amount":1}]'); echo "$R" | grep -q "does not belong to this invoice" && pass "CLP a line of another invoice refused" || fail "CLP foreign line" "$(echo $R | cut -c1-160)"
 R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":-1,"amount":1}]'); echo "$R" | grep -q "cannot be negative" && pass "CLP negative quantity refused" || fail "CLP negative" "$(echo $R | cut -c1-160)"
 R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"amount":10.555}]'); echo "$R" | grep -q "at most 2 decimals" && pass "CLP 3-decimal amount refused" || fail "CLP decimals" "$(echo $R | cut -c1-160)"
+C=$(curl -s -o /tmp/cl2.pdf -w "%{http_code}" -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":2,"rate":5000,"gstPercentage":12}]')
+[ "$C" = "200" ] && [ "$(head -c 4 /tmp/cl2.pdf)" = "%PDF" ] && pass "CLP rate and GST % adjustable (amount = qty x rate)" || fail "CLP rate gst" "$C $(head -c 200 /tmp/cl2.pdf)"
+cp /tmp/cl2.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-custom-lines-rate-gst.pdf" 2>/dev/null || true
+R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"amount":1,"gstPercentage":30}]'); echo "$R" | grep -q "between 0 and 28" && pass "CLP GST % above 28 refused" || fail "CLP gst range" "$(echo $R | cut -c1-160)"
+[ "$(LFP)" = "$LB" ] && pass "CLP invoice still unchanged after rate / GST edits" || fail "CLP invoice changed 2" "x"
 C=$(as "$TO" POST "/exports/invoices/$LI/custom-lines" '[{"detailId":'$LD',"quantity":1,"amount":1}]'); [ "$C" = "403" ] && pass "CLP operator cannot use it (403)" || fail "CLP role" "$C"
 
 # ================= Complete with delivery: the trip screen's one-step dialog (complete + same quantity save as Edit) =================

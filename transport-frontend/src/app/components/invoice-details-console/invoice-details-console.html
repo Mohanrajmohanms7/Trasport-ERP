@@ -112,6 +112,10 @@
                         <button (click)="approveInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve & Post Ledger">
                           <span class="material-icons text-sm">check_circle</span>
                         </button>
+                        <button (click)="openEditInvoice(inv, true)" class="inline-flex items-center gap-1 h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] text-[11px] font-semibold"
+                                title="Edit & PDF: change this draft (qty, rate, GST…), save, then download the Normal PDF" data-testid="edit-and-pdf">
+                          <span class="material-icons text-sm">edit_note</span>PDF
+                        </button>
                         <button (click)="cancelInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] text-[11px] font-semibold" title="Cancel Invoice">
                           <span class="material-icons text-sm">cancel</span>
                         </button>
