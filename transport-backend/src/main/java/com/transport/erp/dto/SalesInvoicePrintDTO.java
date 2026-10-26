@@ -41,6 +41,11 @@ public class SalesInvoicePrintDTO {
     /** Logo image bytes resolved on the server for the PDF (not sent to the screen). */
     @com.fasterxml.jackson.annotation.JsonIgnore
     private byte[] logoImage;
+    /** Proforma mode (not a tax invoice): same layout, PROFORMA title / watermark, official total noted. Normal PDF: false. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private boolean proforma;
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private java.math.BigDecimal officialNetAmount;
     private String companyState;
     private String companyCity;
     private String companyPincode;

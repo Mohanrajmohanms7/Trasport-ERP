@@ -124,6 +124,11 @@ interface Row {
         @if (lineInvoiceId ? linesInvalid() : hasErrors()) { <span class="text-xs text-rose-600 mr-auto">Correct the highlighted amounts to download.</span> }
         <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="lineInvoiceId ? resetLines() : reset()">Reset to official</button>
         <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm font-semibold" (click)="closed.emit()">Cancel</button>
+        @if (lineInvoiceId) {
+          <button type="button" class="h-10 px-4 rounded-lg border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] text-sm font-semibold disabled:opacity-50"
+                  [disabled]="busy() || linesInvalid() || !lines().length" (click)="downloadProforma()" data-testid="download-proforma"
+                  title="Same layout as the invoice PDF, titled PROFORMA INVOICE — NOT A TAX INVOICE">Download Proforma (invoice layout)</button>
+        }
         <button type="button" class="h-10 px-4 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold disabled:opacity-50"
                 [disabled]="busy() || (lineInvoiceId ? (linesInvalid() || !lines().length) : (hasErrors() || !rows().length))" (click)="lineInvoiceId ? downloadLines() : download()">{{ busy() ? 'Preparing…' : 'Download ' + (format === 'pdf' ? 'PDF' : 'Excel') }}</button>
       </div>
@@ -220,6 +225,29 @@ export class InvoiceCustomExportComponent implements OnInit {
     return null;
   }
   linesInvalid = computed(() => this.lines().some(l => !!this.lineError(l)));
+
+  /** Proforma in the Normal PDF layout with these values (PROFORMA INVOICE — NOT A TAX INVOICE). Nothing is saved. */
+  downloadProforma(): void {
+    if (this.busy() || this.linesInvalid() || !this.lineInvoiceId) return;
+    this.busy.set(true);
+    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount, rate: l.rate, gstPercentage: l.gstPct }));
+    this.http.post(`/api/v1/invoices/${this.lineInvoiceId}/proforma-pdf`, body, { responseType: 'blob' }).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `proforma_${new Date().toISOString().slice(0, 10)}.pdf`; a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        this.busy.set(false);
+        this.notify.success('Proforma downloaded — the invoice was not changed');
+      },
+      error: async e => {
+        this.busy.set(false);
+        let msg = 'Proforma failed. Try again.';
+        try { const j = JSON.parse(await (e?.error as Blob).text()); msg = j?.errors?.[0] || j?.message || msg; } catch { /* keep default */ }
+        this.notify.error(msg);
+      }
+    });
+  }
 
   downloadLines(): void {
     if (this.busy() || this.linesInvalid() || !this.lineInvoiceId) return;

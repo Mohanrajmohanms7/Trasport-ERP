@@ -1524,6 +1524,14 @@ C=$(curl -s -o /tmp/cl2.pdf -w "%{http_code}" -X POST "${H[@]}" "$API/exports/in
 cp /tmp/cl2.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-custom-lines-rate-gst.pdf" 2>/dev/null || true
 R=$(curl -s -X POST "${H[@]}" "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"amount":1,"gstPercentage":30}]'); echo "$R" | grep -q "between 0 and 28" && pass "CLP GST % above 28 refused" || fail "CLP gst range" "$(echo $R | cut -c1-160)"
 [ "$(LFP)" = "$LB" ] && pass "CLP invoice still unchanged after rate / GST edits" || fail "CLP invoice changed 2" "x"
+C=$(curl -s -o /tmp/pf.pdf -w "%{http_code}" -X POST "${H[@]}" "$API/invoices/$LI/proforma-pdf" -d '[{"detailId":'$LD',"quantity":2,"rate":5000,"gstPercentage":12}]')
+[ "$C" = "200" ] && [ "$(head -c 4 /tmp/pf.pdf)" = "%PDF" ] && pass "PRO proforma in the invoice layout downloads" || fail "PRO pdf" "$C $(head -c 200 /tmp/pf.pdf)"
+cp /tmp/pf.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/proforma.pdf" 2>/dev/null || true
+R=$(curl -s -X POST "${H[@]}" "$API/invoices/$LI/proforma-pdf" -d '[{"detailId":'$LD',"quantity":1,"amount":1,"gstPercentage":40}]'); echo "$R" | grep -q "between 0 and 28" && pass "PRO GST % above 28 refused" || fail "PRO gst" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X POST "${H[@]}" "$API/invoices/$LI/proforma-pdf" -d '[{"detailId":'$OD',"quantity":1,"amount":1}]'); echo "$R" | grep -q "does not belong to this invoice" && pass "PRO a line of another invoice refused" || fail "PRO foreign line" "$(echo $R | cut -c1-160)"
+[ "$(LFP)" = "$LB" ] && pass "PRO invoice unchanged after proforma" || fail "PRO invoice changed" "x"
+C=$(curl -s -o /tmp/np.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/invoices/$LI/pdf); [ "$C" = "200" ] && [ "$(head -c 4 /tmp/np.pdf)" = "%PDF" ] && pass "PRO Normal PDF still works" || fail "PRO normal pdf" "$C"
+cp /tmp/np.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/normal-same-invoice.pdf" 2>/dev/null || true
 C=$(as "$TO" POST "/exports/invoices/$LI/custom-lines" '[{"detailId":'$LD',"quantity":1,"amount":1}]'); [ "$C" = "403" ] && pass "CLP operator cannot use it (403)" || fail "CLP role" "$C"
 
 # ================= Complete with delivery: the trip screen's one-step dialog (complete + same quantity save as Edit) =================

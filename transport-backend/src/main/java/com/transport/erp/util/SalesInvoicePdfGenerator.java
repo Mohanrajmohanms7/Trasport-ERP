@@ -38,7 +38,7 @@ public final class SalesInvoicePdfGenerator {
         initFonts();
         Document doc = new Document(PageSize.A4, 28, 28, 30, 34);
         PdfWriter writer = PdfWriter.getInstance(doc, os);
-        writer.setPageEvent(new PageEvents(watermarkFor(d.getStatus())));
+        writer.setPageEvent(new PageEvents(d.isProforma() ? "PROFORMA" : watermarkFor(d.getStatus())));
         doc.addTitle("Tax Invoice " + nz(d.getInvoiceNumber()));
         doc.open();
 
@@ -51,10 +51,10 @@ public final class SalesInvoicePdfGenerator {
         // 1. Title bar
         PdfPTable title = table(new float[]{25, 50, 25});
         title.addCell(cell("", f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.LEFT | Rectangle.TOP | Rectangle.BOTTOM));
-        PdfPCell t = cell("T A X   I N V O I C E", f(14, true, Color.BLACK), Element.ALIGN_CENTER, Rectangle.TOP | Rectangle.BOTTOM);
+        PdfPCell t = cell(d.isProforma() ? "P R O F O R M A   I N V O I C E" : "T A X   I N V O I C E", f(14, true, Color.BLACK), Element.ALIGN_CENTER, Rectangle.TOP | Rectangle.BOTTOM);
         t.setPaddingTop(6); t.setPaddingBottom(7);
         title.addCell(t);
-        title.addCell(cell("ORIGINAL FOR RECIPIENT", f(7, true, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.RIGHT | Rectangle.TOP | Rectangle.BOTTOM));
+        title.addCell(cell(d.isProforma() ? "NOT A TAX INVOICE" : "ORIGINAL FOR RECIPIENT", f(7, true, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.RIGHT | Rectangle.TOP | Rectangle.BOTTOM));
         doc.add(title);
 
         // 2-3. Company box + invoice facts
@@ -73,7 +73,7 @@ public final class SalesInvoicePdfGenerator {
         head.addCell(co);
 
         PdfPTable facts = table(new float[]{50, 50});
-        fact(facts, "INVOICE NO.", d.getInvoiceNumber(), true, true);
+        fact(facts, d.isProforma() ? "PROFORMA FOR INVOICE" : "INVOICE NO.", d.getInvoiceNumber(), true, true);
         fact(facts, "DATE", date(d.getInvoiceDate()), true, false);
         fact(facts, "BOOKING / ORDER", d.getBookingNumber(), false, true);
         fact(facts, "DUE DATE", date(d.getDueDate()), false, false);
@@ -128,10 +128,10 @@ public final class SalesInvoicePdfGenerator {
             desc.addElement(para(blank(it.getMaterialName()) ? "Transport charges" : it.getMaterialName(), f(9, true, Color.BLACK)));
             String tripLine = join(" · ", label("Trip ", it.getTripNumber()), date(it.getTripDate()), it.getVehicleNumber());
             if (!tripLine.isEmpty()) desc.addElement(para(tripLine, f(7, false, MUTED)));
-            String parts = join(" + ", part("Material", it.getRate()), part("Transport", it.getFreightCharges()),
+            String parts = d.isProforma() ? "" : join(" + ", part("Material", it.getRate()), part("Transport", it.getFreightCharges()),
                     part("Loading", it.getLoadingCharges()), part("Royalty", it.getRoyalty()));
             if (!parts.isEmpty()) desc.addElement(para(parts, f(7, false, MUTED)));
-            if ("ORDERED".equals(it.getQuantityBasis()) && it.getDeliveredQuantity() != null && qty.compareTo(it.getDeliveredQuantity()) != 0) {
+            if (!d.isProforma() && "ORDERED".equals(it.getQuantityBasis()) && it.getDeliveredQuantity() != null && qty.compareTo(it.getDeliveredQuantity()) != 0) {
                 desc.addElement(para("Delivered " + plain(it.getDeliveredQuantity()) + " · billed as ordered", f(7, true, new Color(150, 90, 0))));
             }
             if (z(it.getLineDiscount()).signum() > 0) desc.addElement(para("Less discount ₹" + money(it.getLineDiscount()), f(7, false, MUTED)));
@@ -234,7 +234,13 @@ public final class SalesInvoicePdfGenerator {
         sign.addElement(auth);
         foot.addCell(sign);
         doc.add(foot);
-        Paragraph cg2 = new Paragraph("This is a computer-generated invoice.", f(7, false, MUTED)); cg2.setAlignment(Element.ALIGN_CENTER); cg2.setSpacingBefore(4);
+        if (d.isProforma()) {
+            Paragraph pn = new Paragraph("PROFORMA with adjusted figures — NOT a tax invoice. Official invoice " + nz(d.getInvoiceNumber())
+                    + " total: ₹" + money(z(d.getOfficialNetAmount())) + ".", f(8, true, new Color(150, 30, 30)));
+            pn.setAlignment(Element.ALIGN_CENTER); pn.setSpacingBefore(6);
+            doc.add(pn);
+        }
+        Paragraph cg2 = new Paragraph(d.isProforma() ? "This is a computer-generated proforma." : "This is a computer-generated invoice.", f(7, false, MUTED)); cg2.setAlignment(Element.ALIGN_CENTER); cg2.setSpacingBefore(4);
         doc.add(cg2);
         doc.close();
     }
