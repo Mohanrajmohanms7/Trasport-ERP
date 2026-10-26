@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V87 (GST registration status) |
 
+## 2026-10-26
+- **Fix: confirm button invisible in "Generate Invoice" (Trips, Invoices) and a Driver Payroll popup** (frontend only)
+  Those dialogs passed type 'info', which the shared confirmation dialog does not style (white button on white); unknown types now use the standard primary (blue) style.
+
 ## 2026-10-25
 - **Complete trip with delivery in one step; receipts allocate to the oldest invoices first** (frontend only)
   Trip Complete opens a dialog with loaded / delivered pre-filled (planned) and saves them with the same calls as Edit ("Complete without quantities" keeps the old behaviour). Receipts: the amount received fills the oldest outstanding invoices first until the user edits an allocation; "Allocate oldest first" re-applies it.
