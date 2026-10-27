@@ -9,6 +9,7 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V87 (GST registration status) |
 
 ## 2026-10-27
+- **Line-level Custom PDF: GST column reads "5% to 12%"** (the PDF font has no arrow sign; it printed "5%  12%")
 - **User guides (EN + TA, in-app Help) brought up to date** (docs only)
   "What's new (October 2026)" summary; booking rate suggestions; trip auto-fill, regular driver / other-driver confirmation, complete with delivery, one trip at a time; fuel odometer and trip fill; invoice auto-fill up to the invoice date, Edit & PDF, Custom PDF / Proforma; receipts oldest first; GST registration, Bank & Invoice, HSN. Corrected Material Master (only material rate + HSN; transport / royalty / loading on the booking).
 

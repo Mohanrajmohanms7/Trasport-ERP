@@ -445,7 +445,7 @@ public class XlsxExportService {
         }
         boolean igst = "INTER_STATE".equalsIgnoreCase(inv.getSupplyType());
         String[] headers = {"#", "Material", "Official Qty", "Adjusted Qty", "Official Rate", "Adjusted Rate", "Official Amount",
-                "Adjusted Amount", "GST % (official → adjusted)", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
+                "Adjusted Amount", "GST % (official to adjusted)", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
         List<Object[]> rows = new ArrayList<>();
         BigDecimal[] t = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
         int n = 0;
@@ -470,7 +470,7 @@ public class XlsxExportService {
             BigDecimal tax = igst ? amt.multiply(gstPct).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
                     : amt.multiply(gstPct).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(2));
             BigDecimal total = amt.add(tax);
-            String gstText = offGst.stripTrailingZeros().toPlainString() + "%" + (gstPct.compareTo(offGst) == 0 ? "" : " → " + gstPct.stripTrailingZeros().toPlainString() + "%");
+            String gstText = offGst.stripTrailingZeros().toPlainString() + "%" + (gstPct.compareTo(offGst) == 0 ? "" : " to " + gstPct.stripTrailingZeros().toPlainString() + "%");
             String mat = (d.getMaterial() != null ? d.getMaterial().getName() : "") + (d.getTrip() != null ? " (" + d.getTrip().getTripNumber() + ")" : "");
             rows.add(new Object[]{n, mat, offQty, qty, offRate, rate, offAmt, amt, gstText, tax, total, total.subtract(offTotal)});
             BigDecimal[] v = {offQty, qty, offAmt, amt, tax, total, total.subtract(offTotal)};
