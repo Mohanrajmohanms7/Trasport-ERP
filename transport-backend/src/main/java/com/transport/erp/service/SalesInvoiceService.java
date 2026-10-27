@@ -950,6 +950,76 @@ public class SalesInvoiceService {
         com.transport.erp.util.SalesInvoicePdfGenerator.generateSalesInvoicePdf(data, os);
     }
 
+    /**
+     * PROFORMA in the Normal PDF layout (title "PROFORMA INVOICE — NOT A TAX INVOICE", PROFORMA watermark, official total
+     * noted) with only Qty / Rate / Taxable / GST % changed per line. Tax and totals are recalculated here with the invoice's
+     * rule (IGST, or CGST + SGST half each, 2 decimals). READ ONLY: works on a copy of the print data; nothing is saved.
+     */
+    @Transactional(readOnly = true)
+    public void generateProformaPdf(Long id, List<com.transport.erp.service.XlsxExportService.CustomLineAmounts> edits,
+                                    java.io.OutputStream os) throws Exception {
+        SalesInvoicePrintDTO data = getInvoicePrintData(id);   // tenant / branch checks as for the Normal PDF
+        java.util.Map<Long, com.transport.erp.service.XlsxExportService.CustomLineAmounts> byLine = new java.util.HashMap<>();
+        for (var e : edits == null ? List.<com.transport.erp.service.XlsxExportService.CustomLineAmounts>of() : edits) {
+            if (e == null || e.detailId() == null || byLine.put(e.detailId(), e) != null) throw proformaErr("Each invoice line can be listed once.");
+        }
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        if (data.getItems() != null) data.getItems().forEach(it -> ids.add(it.getDetailId()));
+        if (!ids.containsAll(byLine.keySet())) throw proformaErr("A line in the proforma does not belong to this invoice.");
+        boolean igst = data.getSupplyType() != null ? data.getSupplyType().toUpperCase().contains("INTER") : nzP(data.getTotalIGST()).signum() > 0;
+        BigDecimal officialNet = nzP(data.getNetAmount());
+        BigDecimal tTaxable = BigDecimal.ZERO, tC = BigDecimal.ZERO, tS = BigDecimal.ZERO, tI = BigDecimal.ZERO;
+        int n = 0;
+        for (var it : data.getItems() == null ? List.<SalesInvoicePrintDTO.SalesInvoicePrintLineItemDTO>of() : data.getItems()) {
+            n++;
+            var e = byLine.get(it.getDetailId());
+            String where = data.getInvoiceNumber() + " line " + n;
+            BigDecimal qty = e == null || e.quantity() == null ? nzP(it.getQuantity()) : proformaQty(e.quantity(), where);
+            BigDecimal gst = e == null || e.gstPercentage() == null ? nzP(it.getGstPercentage()) : proformaGst(e.gstPercentage(), where);
+            BigDecimal taxable = e == null ? nzP(it.getLineTaxable())
+                    : e.amount() != null ? proformaMoney(e.amount(), where)
+                    : e.rate() != null ? qty.multiply(proformaMoney(e.rate(), where)).setScale(2, java.math.RoundingMode.HALF_UP)
+                    : nzP(it.getLineTaxable());
+            BigDecimal rate = e != null && e.rate() != null ? proformaMoney(e.rate(), where)
+                    : qty.signum() == 0 ? BigDecimal.ZERO : taxable.divide(qty, 2, java.math.RoundingMode.HALF_UP);
+            BigDecimal c = BigDecimal.ZERO, s2 = BigDecimal.ZERO, i2 = BigDecimal.ZERO;
+            if (igst) i2 = taxable.multiply(gst).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            else { c = taxable.multiply(gst).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP); s2 = c; }
+            it.setQuantity(qty); it.setRate(rate);
+            it.setFreightCharges(BigDecimal.ZERO); it.setLoadingCharges(BigDecimal.ZERO); it.setRoyalty(BigDecimal.ZERO);
+            it.setLineSubtotal(taxable); it.setLineDiscount(BigDecimal.ZERO); it.setLineTaxable(taxable);
+            it.setGstPercentage(gst); it.setCgst(c); it.setSgst(s2); it.setIgst(i2);
+            it.setLineTax(c.add(s2).add(i2)); it.setNetAmount(taxable.add(c).add(s2).add(i2));
+            tTaxable = tTaxable.add(taxable); tC = tC.add(c); tS = tS.add(s2); tI = tI.add(i2);
+        }
+        data.setSubtotal(tTaxable); data.setDiscount(BigDecimal.ZERO); data.setTaxableAmount(tTaxable);
+        data.setTotalCGST(tC); data.setTotalSGST(tS); data.setTotalIGST(tI);
+        data.setNetAmount(tTaxable.add(tC).add(tS).add(tI));
+        data.setProforma(true);
+        data.setOfficialNetAmount(officialNet);
+        data.setLogoImage(loadLogo(data.getCompanyLogo()));
+        com.transport.erp.util.SalesInvoicePdfGenerator.generateSalesInvoicePdf(data, os);
+    }
+
+    private static BigDecimal nzP(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
+    private static BigDecimal proformaQty(BigDecimal v, String w) {
+        if (v.signum() < 0) throw proformaErr("Quantity cannot be negative (" + w + ").");
+        if (v.stripTrailingZeros().scale() > 3) throw proformaErr("Quantity can have at most 3 decimals (" + w + ").");
+        return v;
+    }
+    private static BigDecimal proformaMoney(BigDecimal v, String w) {
+        if (v.signum() < 0) throw proformaErr("Amount / rate cannot be negative (" + w + ").");
+        if (v.stripTrailingZeros().scale() > 2) throw proformaErr("Amount / rate can have at most 2 decimals (" + w + ").");
+        return v.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
+    private static BigDecimal proformaGst(BigDecimal v, String w) {
+        if (v.signum() < 0 || v.compareTo(BigDecimal.valueOf(28)) > 0) throw proformaErr("GST % must be between 0 and 28 (" + w + ").");
+        return v;
+    }
+    private static BusinessValidationException proformaErr(String m) {
+        return new BusinessValidationException("Proforma Not Valid", "PROFORMA_INVALID", m, "Correct the values and try again.");
+    }
+
     /** Days for a payment-terms code (IMMEDIATE = 0, NET_7 / NET_15 / NET_30 / NET_45 / NET_60). */
     static long termDays(String terms) {
         if (terms == null) return 0;

@@ -53,6 +53,17 @@ public class SalesInvoiceController {
         return ApiResponse.success(data, "Sales invoice print data fetched successfully");
     }
 
+    /** PROFORMA (not a tax invoice) in the Normal PDF layout with adjusted Qty / Rate / Taxable / GST %. Read only. */
+    @PostMapping("/{id}/proforma-pdf")
+    public void proformaPdf(@PathVariable Long id, @RequestBody List<com.transport.erp.service.XlsxExportService.CustomLineAmounts> lines,
+                            jakarta.servlet.http.HttpServletResponse response) throws Exception {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        invoiceService.generateProformaPdf(id, lines, out);   // validation errors surface before any bytes are written
+        response.setContentType("application/pdf");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=proforma_" + id + ".pdf");
+        response.getOutputStream().write(out.toByteArray());
+    }
+
     @GetMapping("/{id}/pdf")
     public void exportPdf(@PathVariable Long id, HttpServletResponse response) {
         try {

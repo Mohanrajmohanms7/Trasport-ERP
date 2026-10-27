@@ -9,6 +9,8 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V87 (GST registration status) |
 
 ## 2026-10-26
+- **Proforma in the invoice layout** (no migration)
+  Custom PDF popup (row) → "Download Proforma": same layout as the Normal PDF, titled "PROFORMA INVOICE — NOT A TAX INVOICE", PROFORMA watermark, official invoice total noted; only Qty / Rate / Taxable / GST % changed, tax and totals recalculated (`POST /api/v1/invoices/{id}/proforma-pdf`, read-only). Normal PDF unchanged.
 - **Draft invoices: "Edit & PDF"; Custom PDF lines: Rate and GST % adjustable** (no migration)
   Draft row action opens the invoice editor and downloads the Normal PDF after saving (the real invoice changes; Normal PDF unchanged). Line-level Custom PDF: Qty × Rate = Amount (or Amount ÷ Qty = Rate), GST % 0–28 recalculates tax; official vs adjusted qty / rate / amount / GST % printed; still "NOT a tax invoice", nothing saved.
 - **Fix: confirm button invisible in "Generate Invoice" (Trips, Invoices) and a Driver Payroll popup** (frontend only)
