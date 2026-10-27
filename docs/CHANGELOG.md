@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V87 (GST registration status) |
 
+## 2026-10-27
+- **User guides (EN + TA, in-app Help) brought up to date** (docs only)
+  "What's new (October 2026)" summary; booking rate suggestions; trip auto-fill, regular driver / other-driver confirmation, complete with delivery, one trip at a time; fuel odometer and trip fill; invoice auto-fill up to the invoice date, Edit & PDF, Custom PDF / Proforma; receipts oldest first; GST registration, Bank & Invoice, HSN. Corrected Material Master (only material rate + HSN; transport / royalty / loading on the booking).
+
 ## 2026-10-26
 - **Proforma in the invoice layout** (no migration)
   Custom PDF popup (row) → "Download Proforma": same layout as the Normal PDF, titled "PROFORMA INVOICE — NOT A TAX INVOICE", PROFORMA watermark, official invoice total noted; only Qty / Rate / Taxable / GST % changed, tax and totals recalculated (`POST /api/v1/invoices/{id}/proforma-pdf`, read-only). Normal PDF unchanged.
