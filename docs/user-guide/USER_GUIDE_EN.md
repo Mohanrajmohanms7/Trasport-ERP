@@ -41,6 +41,15 @@ from setting up the company to sending invoices, collecting money, paying driver
 > happened and **Send to support**. You get a ticket number like **PKC-TKT-00001**. Follow replies in **Help & Support**
 > (left menu); answer questions there, then click **Issue fixed** or **Still not working** when support marks it resolved.
 
+## What's new (October 2026)
+- **Trips:** choosing a booking fills every material **still to dispatch** with its pending quantity; choosing a lorry fills its
+  **regular driver**; another driver asks for confirmation; **Complete** asks for loaded / delivered in the same step.
+- **Invoices:** a new invoice fills the customer's **completed, not-yet-invoiced trips up to the invoice date**; draft
+  **Edit & PDF**; **Custom PDF / Proforma** with adjusted figures (never a tax invoice); new invoice PDF layout.
+- **Receipts:** the amount received fills the **oldest invoices first**.
+- **Fuel:** odometer checks; choosing a trip fills its vehicle and driver.
+- **Settings:** GST registration status, Bank & Invoice details, HSN codes on materials.
+
 ## Before you begin
 
 - **Signing in:** open the TransaFlow link, enter the **username** and **password** given by your administrator.
@@ -85,7 +94,11 @@ no other users are required.
 
 ### 1.1 System Settings — *Admin → System Settings*
 **Purpose:** company details used on invoices and numbering.
-- **Company Profile:** name, GSTIN, PAN, address, phone, email. *GSTIN is important — it decides GST type.*
+- **Company Profile:** name, **GST registration** (*Registered* — then the **GSTIN** is required; *Unregistered* or
+  *Pending* — no GSTIN), PAN, address, phone, email. *The GSTIN's first two digits are your state (33 = Tamil Nadu) and
+  decide CGST + SGST or IGST.*
+- **Bank & Invoice** (in Company Profile): bank name, branch, account no., IFSC, UPI ID and invoice terms — printed at the
+  bottom of every invoice (leave blank to print the space empty).
 - **Financial Years:** a year such as **01-Apr-2026 to 31-Mar-2027** must exist and be **Open**. Nothing can be posted
   to accounts on a date outside an open financial year.
 - **Settings:** number prefixes (e.g. `INV-`, `TRP-`, `BKG-`) and options such as
@@ -116,9 +129,10 @@ Vehicle types (Tipper, Trailer), capacities (10 T, 20 T), fuel types, expense ca
 
 ### 2.1 Material & Quarry — *Masters → Material & Quarry*
 **Purpose:** what you carry and where you load it.
-- **Materials tab** — *Code\*, Name\*, Category\**, **Default UOM** (the unit new order lines start with, e.g. *Unit*),
-  default **material rate**, **transport rate**, **royalty rate**, **loading charge** (all *per unit of the order*).
-  Example: `MSAND` — *M-Sand* — Unit — material ₹4,300, transport ₹1,450, royalty ₹270, loading ₹180 (per Unit).
+- **Materials tab** — *Code\*, Name\**, **Default UOM** (the unit new order lines start with, e.g. *Unit*), default
+  **material rate** (per unit) and **HSN / SAC code** (printed on invoices, e.g. 2505 for sand).
+  Example: `MSAND` — *M-Sand* — Unit — material ₹4,300 — HSN 2505. *Transport charge, royalty and loading are entered on
+  the booking (they depend on the site and quarry).*
 - **Quarries tab** — quarry name and location, e.g. *Madukkarai Quarry*.
 - **Loading Locations** — loading points with charges; **Pricing** — dated material prices.
 - **UOM Master → Order units** — which units can be used on bookings, trips and invoices. A new company starts with
@@ -145,6 +159,8 @@ Vehicle types (Tipper, Trailer), capacities (10 T, 20 T), fuel types, expense ca
 - Click **New vehicle**. **Mandatory:** Registration number\* (e.g. `TN38AB4521`), Display name\*.
   Also: type, category, capacity, brand, model, chassis/engine no, ownership (own / hired / client), branch,
   **insurance, fitness and permit expiry dates**, current odometer.
+- The driver assigned here is the lorry's **regular driver**: new trips fill it in automatically. Another driver can
+  still be used for a trip after confirming (this vehicle master is not changed).
 - Select a vehicle to add **photo**, **documents** (RC, insurance, permit — with expiry dates),
   see **service history**, and **assign a driver**.
 - Expiry dates feed the **Document expiry (compliance)** report — renew before they lapse.
@@ -190,7 +206,9 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 2. Choose **Customer\*** and **Delivery site**, priority.
 3. Add material lines: **Material\***, **Quantity\*** (e.g. 2), **Unit\*** (e.g. *Unit* — pre-filled with the material's
    default unit or the company default), **Rate / Unit\***, **Transport rate\***, **Royalty\***, **Loading\***,
-   **GST %\*** (e.g. 5). Default rates come from the material master. The list shows the order as **2 Unit M-Sand**.
+   **GST %\*** (e.g. 5). The material rate comes from the material master; **transport charge, royalty and loading are
+   suggested from this customer's last booking of the same material (and site)** — the hint shows which booking. The list
+   shows the order as **2 Unit M-Sand**.
 4. Save → status **PENDING**. Booking value = quantity × (material + transport + royalty + loading) + GST.
    All rates are per the line's unit.
 5. **Approve** the booking. *Trips can only be planned on approved bookings.*
@@ -213,9 +231,13 @@ Customer, Vehicle, Driver and Supplier masters, Materials, Spare Parts and Stock
 Click **Plan Dispatch Trip** and enter:
 - **Booking\*** (only approved bookings are listed), **Trip date\*** (not future, not before the booking date),
 - **Vehicle** and **Driver** (needed before dispatch), **Quarry** and **Loading point**,
-- Selecting the **booking** fills the form from it: customer, delivery site, booking remarks and one line per booking
-  material that still has quantity left. Each line shows *Booked · On other trips · Remaining* and the rate; tap
-  **Use 6 Unit** to plan the whole remaining quantity, or type the lorry's quantity. Only the booking's materials can be chosen.
+- Selecting the **booking** fills the form from it: customer, delivery site, booking remarks and **one line per material
+  still to dispatch, with the pending quantity already filled in** (booked − on other trips). Materials already fully on
+  trips are left out; if nothing is left you see *"All materials of this booking are already on trips"*. Lower the
+  quantity for a part load if needed. Only the booking's materials can be chosen.
+- Choosing the **vehicle** fills its **regular driver** (Vehicle Master). If you pick another driver, the app asks:
+  *"This vehicle is currently assigned to another driver. Do you want to use this vehicle with the selected driver for
+  this trip?"* — **confirm** to use that driver for this trip only.
 - Material line(s): **Material\*** (must be on the booking) and **Quantity\*** (e.g. 2). The unit is always the
   booking's unit (e.g. *Planned Qty (Unit)*) — it cannot be changed on the trip.
 
@@ -224,11 +246,13 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 
 ### 5.2 Dispatch → Complete
 - **Dispatch** when the truck leaves the quarry (vehicle + driver required) → **DISPATCHED**.
-- **Complete** when it reaches the site → **COMPLETED**.
+- **Complete** when it reaches the site: a window asks for **Loaded** and **Delivered** per material (pre-filled with the
+  planned quantity) → **Complete trip** saves both → **COMPLETED**. *Complete without quantities* lets you enter them later.
 - Order is fixed: PLANNED → DISPATCHED → COMPLETED. Only a PLANNED trip can be cancelled.
+- A lorry (and a driver) can be out on **one dispatched trip at a time**; inactive vehicles / drivers cannot be used on new trips.
 
 ### 5.3 Weighbridge and POD
-Open the completed trip (**Edit**):
+To correct the quantities later, open the completed trip (**Edit**):
 - **Loaded Qty** and **Delivered Qty**, in the booking's unit, e.g. 2.00 / 1.95 Unit → **shortage 0.05 Unit**
   (for a Ton booking: weighbridge tons). Delivered cannot be more than loaded. **The delivered quantity is what gets billed.**
 - Upload **POD / delivery challan / LR** in the trip documents.
@@ -245,12 +269,15 @@ Open the completed trip (**Edit**):
   **rate per litre\***, **previous\*** and **current odometer\***, **payment method\***, date, bill photo.
 - Saved as **DRAFT** → **Approve** posts it to accounts (Fuel Expense / Cash or Bank).
 - Only approved fuel counts in cost reports. Linking the trip gives correct **trip profit**.
+- Choosing the **trip** fills its vehicle and driver — fuel on a trip must be for that trip's lorry and driver.
+- **Odometer:** current lower than previous is refused. A previous reading lower than the lorry's last reading is refused
+  unless an **admin** confirms *"Meter was reset"* (odometer replaced).
 - **Fuel Requests:** a driver/dispatcher can request fuel for a trip; the request is approved and then fulfilled by a fuel entry.
 
 ### 6.2 Expenses — *Operations → Expenses*
 - **Record Expense Voucher:** **Expense date** (can be past, not future), **Category\*** (Toll, Driver Bata, Parking,
   Vehicle Repair, Insurance, Office…), vehicle, driver, **trip**, **Amount\***, **GST amount**, **Payment method\***,
-  **Description\***. Attach the bill.
+  **Description\***. Attach the bill. Choosing the trip fills its vehicle and driver (they must match the trip).
 - Status **SUBMITTED** → **Approve** posts to accounts (on the expense date). Reject if wrong.
 - *Driver Bata* expenses appear on the driver's salary slip for information (they are already paid).
 - If `REQUIRE_SEPARATE_APPROVER` is on, a different user must approve.
@@ -259,6 +286,12 @@ Open the completed trip (**Edit**):
 
 ## Chapter 7 — Invoice — *Finance → Invoices*
 **Purpose:** bill the customer for completed trips.
+**Quickest way:** **New invoice** → set the **invoice date** (e.g. month-end) → choose the **customer**. The lines fill with
+all of that customer's **completed, not-yet-invoiced trips up to the invoice date** (oldest first). Later trips wait for
+the next invoice (the message says how many). Removing a line removes **its whole trip** — a trip is always invoiced
+whole and only once.
+
+Or use Ready for billing:
 1. Open **Ready for billing** — all completed trips not yet invoiced.
 2. Tick the trips of **one customer** (or *select all of this customer*) → **One invoice for N trips**.
    (Or use the **Generate** button on a single trip.)
@@ -268,6 +301,12 @@ Open the completed trip (**Edit**):
    e.g. 33), discount, payment terms.
 5. **Approve** → posts **Customer Receivable** / **Freight Income** + **GST Liability**. Number `INV-2627/000xx`.
 6. **Print / PDF** (quantity is printed with its unit, e.g. *2 Unit*) and attach the **signed copy / e-way bill**.
+   On a **draft**, **Edit & PDF** opens the invoice, and after **Save** downloads the PDF with the new figures.
+
+**Custom PDF / Proforma (row icon):** adjust Qty, Rate, Amount or GST % per line for **one downloaded file** — the invoice
+is **not** changed. *Download PDF* gives a table of official vs adjusted figures; **Download Proforma** gives the same layout
+as the invoice, titled **PROFORMA INVOICE — NOT A TAX INVOICE**. The list buttons **Custom Excel / Custom PDF** do the same
+for all listed invoices. *To really change an invoice, edit the draft (or cancel and re-issue an approved one).*
 
 **GST example:** 19.8 t × ₹1,350 = ₹26,730 taxable; GST 5% = ₹1,336.50 → CGST ₹668.25 + SGST ₹668.25
 (same state) → total ₹28,066.50. For an out-of-state customer the tax is IGST ₹1,336.50.
@@ -283,7 +322,8 @@ accounts; the **Unbilled completed trips** report shows trips you forgot to bill
 **Purpose:** record money received from customers.
 1. **Record Payment Receipt:** **Customer\***, date, **Amount received\***, **Payment method\*** (Cash / Bank / UPI /
    Cheque), reference (UTR / cheque no).
-2. Allocate the amount to the customer's **open invoices** (oldest first). Any extra stays as **advance**.
+2. The amount fills the customer's **open invoices oldest first** automatically. Change any allocation if needed
+   (then it is not refilled); **Allocate oldest first** fills it again. Any extra stays as **advance**.
 3. Save → **Approve**. Invoices become **PAID** / **PARTIALLY PAID**; accounts: Cash/Bank ↔ Customer Receivable.
 4. Attach the cheque copy / UPI screenshot. See the **Customer Ledger** tab for the running balance.
 

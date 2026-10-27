@@ -109,6 +109,16 @@ If it does not exist yet, click <strong>+ Create "…"</strong> at the bottom, f
 happened and <strong>Send to support</strong>. You get a ticket number like <strong>PKC-TKT-00001</strong>. Follow replies in <strong>Help &amp; Support</strong>
 (left menu); answer questions there, then click <strong>Issue fixed</strong> or <strong>Still not working</strong> when support marks it resolved.</p>
 </blockquote>
+<h2 id="whats-new-october-2026">What's new (October 2026)</h2>
+<ul>
+<li><strong>Trips:</strong> choosing a booking fills every material <strong>still to dispatch</strong> with its pending quantity; choosing a lorry fills its
+  <strong>regular driver</strong>; another driver asks for confirmation; <strong>Complete</strong> asks for loaded / delivered in the same step.</li>
+<li><strong>Invoices:</strong> a new invoice fills the customer's <strong>completed, not-yet-invoiced trips up to the invoice date</strong>; draft
+  <strong>Edit &amp; PDF</strong>; <strong>Custom PDF / Proforma</strong> with adjusted figures (never a tax invoice); new invoice PDF layout.</li>
+<li><strong>Receipts:</strong> the amount received fills the <strong>oldest invoices first</strong>.</li>
+<li><strong>Fuel:</strong> odometer checks; choosing a trip fills its vehicle and driver.</li>
+<li><strong>Settings:</strong> GST registration status, Bank &amp; Invoice details, HSN codes on materials.</li>
+</ul>
 <h2 id="before-you-begin">Before you begin</h2>
 <ul>
 <li><strong>Signing in:</strong> open the TransaFlow link, enter the <strong>username</strong> and <strong>password</strong> given by your administrator.
@@ -182,7 +192,11 @@ no other users are required.
 <h2 id="chapter-1-one-time-company-setup-company-admin">Chapter 1 — One-time company setup (Company Admin)</h2>
 <h3 id="11-system-settings-admin-system-settings">1.1 System Settings — <em>Admin → System Settings</em></h3>
 <p><strong>Purpose:</strong> company details used on invoices and numbering.
-- <strong>Company Profile:</strong> name, GSTIN, PAN, address, phone, email. <em>GSTIN is important — it decides GST type.</em>
+- <strong>Company Profile:</strong> name, <strong>GST registration</strong> (<em>Registered</em> — then the <strong>GSTIN</strong> is required; <em>Unregistered</em> or
+  <em>Pending</em> — no GSTIN), PAN, address, phone, email. <em>The GSTIN's first two digits are your state (33 = Tamil Nadu) and
+  decide CGST + SGST or IGST.</em>
+- <strong>Bank &amp; Invoice</strong> (in Company Profile): bank name, branch, account no., IFSC, UPI ID and invoice terms — printed at the
+  bottom of every invoice (leave blank to print the space empty).
 - <strong>Financial Years:</strong> a year such as <strong>01-Apr-2026 to 31-Mar-2027</strong> must exist and be <strong>Open</strong>. Nothing can be posted
   to accounts on a date outside an open financial year.
 - <strong>Settings:</strong> number prefixes (e.g. <code>INV-</code>, <code>TRP-</code>, <code>BKG-</code>) and options such as
@@ -208,9 +222,10 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 </blockquote>
 <h3 id="21-material-quarry-masters-material-quarry">2.1 Material &amp; Quarry — <em>Masters → Material &amp; Quarry</em></h3>
 <p><strong>Purpose:</strong> what you carry and where you load it.
-- <strong>Materials tab</strong> — <em>Code*, Name*, Category*</em>, <strong>Default UOM</strong> (the unit new order lines start with, e.g. <em>Unit</em>),
-  default <strong>material rate</strong>, <strong>transport rate</strong>, <strong>royalty rate</strong>, <strong>loading charge</strong> (all <em>per unit of the order</em>).
-  Example: <code>MSAND</code> — <em>M-Sand</em> — Unit — material ₹4,300, transport ₹1,450, royalty ₹270, loading ₹180 (per Unit).
+- <strong>Materials tab</strong> — <em>Code*, Name*</em>, <strong>Default UOM</strong> (the unit new order lines start with, e.g. <em>Unit</em>), default
+  <strong>material rate</strong> (per unit) and <strong>HSN / SAC code</strong> (printed on invoices, e.g. 2505 for sand).
+  Example: <code>MSAND</code> — <em>M-Sand</em> — Unit — material ₹4,300 — HSN 2505. <em>Transport charge, royalty and loading are entered on
+  the booking (they depend on the site and quarry).</em>
 - <strong>Quarries tab</strong> — quarry name and location, e.g. <em>Madukkarai Quarry</em>.
 - <strong>Loading Locations</strong> — loading points with charges; <strong>Pricing</strong> — dated material prices.
 - <strong>UOM Master → Order units</strong> — which units can be used on bookings, trips and invoices. A new company starts with
@@ -235,6 +250,8 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 - Click <strong>New vehicle</strong>. <strong>Mandatory:</strong> Registration number* (e.g. <code>TN38AB4521</code>), Display name*.
   Also: type, category, capacity, brand, model, chassis/engine no, ownership (own / hired / client), branch,
   <strong>insurance, fitness and permit expiry dates</strong>, current odometer.
+- The driver assigned here is the lorry's <strong>regular driver</strong>: new trips fill it in automatically. Another driver can
+  still be used for a trip after confirming (this vehicle master is not changed).
 - Select a vehicle to add <strong>photo</strong>, <strong>documents</strong> (RC, insurance, permit — with expiry dates),
   see <strong>service history</strong>, and <strong>assign a driver</strong>.
 - Expiry dates feed the <strong>Document expiry (compliance)</strong> report — renew before they lapse.
@@ -273,7 +290,9 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 2. Choose <strong>Customer*</strong> and <strong>Delivery site</strong>, priority.
 3. Add material lines: <strong>Material*</strong>, <strong>Quantity*</strong> (e.g. 2), <strong>Unit*</strong> (e.g. <em>Unit</em> — pre-filled with the material's
    default unit or the company default), <strong>Rate / Unit*</strong>, <strong>Transport rate*</strong>, <strong>Royalty*</strong>, <strong>Loading*</strong>,
-   <strong>GST %*</strong> (e.g. 5). Default rates come from the material master. The list shows the order as <strong>2 Unit M-Sand</strong>.
+   <strong>GST %*</strong> (e.g. 5). The material rate comes from the material master; <strong>transport charge, royalty and loading are
+   suggested from this customer's last booking of the same material (and site)</strong> — the hint shows which booking. The list
+   shows the order as <strong>2 Unit M-Sand</strong>.
 4. Save → status <strong>PENDING</strong>. Booking value = quantity × (material + transport + royalty + loading) + GST.
    All rates are per the line's unit.
 5. <strong>Approve</strong> the booking. <em>Trips can only be planned on approved bookings.</em></p>
@@ -291,9 +310,13 @@ For drivers who use the mobile app, create a user with role <strong>DRIVER</stro
 <p>Click <strong>Plan Dispatch Trip</strong> and enter:
 - <strong>Booking*</strong> (only approved bookings are listed), <strong>Trip date*</strong> (not future, not before the booking date),
 - <strong>Vehicle</strong> and <strong>Driver</strong> (needed before dispatch), <strong>Quarry</strong> and <strong>Loading point</strong>,
-- Selecting the <strong>booking</strong> fills the form from it: customer, delivery site, booking remarks and one line per booking
-  material that still has quantity left. Each line shows <em>Booked · On other trips · Remaining</em> and the rate; tap
-  <strong>Use 6 Unit</strong> to plan the whole remaining quantity, or type the lorry's quantity. Only the booking's materials can be chosen.
+- Selecting the <strong>booking</strong> fills the form from it: customer, delivery site, booking remarks and <strong>one line per material
+  still to dispatch, with the pending quantity already filled in</strong> (booked − on other trips). Materials already fully on
+  trips are left out; if nothing is left you see <em>"All materials of this booking are already on trips"</em>. Lower the
+  quantity for a part load if needed. Only the booking's materials can be chosen.
+- Choosing the <strong>vehicle</strong> fills its <strong>regular driver</strong> (Vehicle Master). If you pick another driver, the app asks:
+  <em>"This vehicle is currently assigned to another driver. Do you want to use this vehicle with the selected driver for
+  this trip?"</em> — <strong>confirm</strong> to use that driver for this trip only.
 - Material line(s): <strong>Material*</strong> (must be on the booking) and <strong>Quantity*</strong> (e.g. 2). The unit is always the
   booking's unit (e.g. <em>Planned Qty (Unit)</em>) — it cannot be changed on the trip.</p>
 <p>Save → status <strong>PLANNED</strong>, number like <code>TRP-2627/00001</code>.
@@ -301,11 +324,13 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 <h3 id="52-dispatch-complete">5.2 Dispatch → Complete</h3>
 <ul>
 <li><strong>Dispatch</strong> when the truck leaves the quarry (vehicle + driver required) → <strong>DISPATCHED</strong>.</li>
-<li><strong>Complete</strong> when it reaches the site → <strong>COMPLETED</strong>.</li>
+<li><strong>Complete</strong> when it reaches the site: a window asks for <strong>Loaded</strong> and <strong>Delivered</strong> per material (pre-filled with the
+  planned quantity) → <strong>Complete trip</strong> saves both → <strong>COMPLETED</strong>. <em>Complete without quantities</em> lets you enter them later.</li>
 <li>Order is fixed: PLANNED → DISPATCHED → COMPLETED. Only a PLANNED trip can be cancelled.</li>
+<li>A lorry (and a driver) can be out on <strong>one dispatched trip at a time</strong>; inactive vehicles / drivers cannot be used on new trips.</li>
 </ul>
 <h3 id="53-weighbridge-and-pod">5.3 Weighbridge and POD</h3>
-<p>Open the completed trip (<strong>Edit</strong>):
+<p>To correct the quantities later, open the completed trip (<strong>Edit</strong>):
 - <strong>Loaded Qty</strong> and <strong>Delivered Qty</strong>, in the booking's unit, e.g. 2.00 / 1.95 Unit → <strong>shortage 0.05 Unit</strong>
   (for a Ton booking: weighbridge tons). Delivered cannot be more than loaded. <strong>The delivered quantity is what gets billed.</strong>
 - Upload <strong>POD / delivery challan / LR</strong> in the trip documents.
@@ -319,13 +344,16 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
   <strong>rate per litre*</strong>, <strong>previous*</strong> and <strong>current odometer*</strong>, <strong>payment method*</strong>, date, bill photo.</li>
 <li>Saved as <strong>DRAFT</strong> → <strong>Approve</strong> posts it to accounts (Fuel Expense / Cash or Bank).</li>
 <li>Only approved fuel counts in cost reports. Linking the trip gives correct <strong>trip profit</strong>.</li>
+<li>Choosing the <strong>trip</strong> fills its vehicle and driver — fuel on a trip must be for that trip's lorry and driver.</li>
+<li><strong>Odometer:</strong> current lower than previous is refused. A previous reading lower than the lorry's last reading is refused
+  unless an <strong>admin</strong> confirms <em>"Meter was reset"</em> (odometer replaced).</li>
 <li><strong>Fuel Requests:</strong> a driver/dispatcher can request fuel for a trip; the request is approved and then fulfilled by a fuel entry.</li>
 </ul>
 <h3 id="62-expenses-operations-expenses">6.2 Expenses — <em>Operations → Expenses</em></h3>
 <ul>
 <li><strong>Record Expense Voucher:</strong> <strong>Expense date</strong> (can be past, not future), <strong>Category*</strong> (Toll, Driver Bata, Parking,
   Vehicle Repair, Insurance, Office…), vehicle, driver, <strong>trip</strong>, <strong>Amount*</strong>, <strong>GST amount</strong>, <strong>Payment method*</strong>,
-  <strong>Description*</strong>. Attach the bill.</li>
+  <strong>Description*</strong>. Attach the bill. Choosing the trip fills its vehicle and driver (they must match the trip).</li>
 <li>Status <strong>SUBMITTED</strong> → <strong>Approve</strong> posts to accounts (on the expense date). Reject if wrong.</li>
 <li><em>Driver Bata</em> expenses appear on the driver's salary slip for information (they are already paid).</li>
 <li>If <code>REQUIRE_SEPARATE_APPROVER</code> is on, a different user must approve.</li>
@@ -333,6 +361,11 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 <hr />
 <h2 id="chapter-7-invoice-finance-invoices">Chapter 7 — Invoice — <em>Finance → Invoices</em></h2>
 <p><strong>Purpose:</strong> bill the customer for completed trips.
+<strong>Quickest way:</strong> <strong>New invoice</strong> → set the <strong>invoice date</strong> (e.g. month-end) → choose the <strong>customer</strong>. The lines fill with
+all of that customer's <strong>completed, not-yet-invoiced trips up to the invoice date</strong> (oldest first). Later trips wait for
+the next invoice (the message says how many). Removing a line removes <strong>its whole trip</strong> — a trip is always invoiced
+whole and only once.</p>
+<p>Or use Ready for billing:
 1. Open <strong>Ready for billing</strong> — all completed trips not yet invoiced.
 2. Tick the trips of <strong>one customer</strong> (or <em>select all of this customer</em>) → <strong>One invoice for N trips</strong>.
    (Or use the <strong>Generate</strong> button on a single trip.)
@@ -341,7 +374,12 @@ The total of all trips cannot exceed the booked quantity (plus the tolerance %).
 4. <strong>Edit</strong> the draft if needed: invoice date (not future, not before the trip date), place of supply (2-digit state code,
    e.g. 33), discount, payment terms.
 5. <strong>Approve</strong> → posts <strong>Customer Receivable</strong> / <strong>Freight Income</strong> + <strong>GST Liability</strong>. Number <code>INV-2627/000xx</code>.
-6. <strong>Print / PDF</strong> (quantity is printed with its unit, e.g. <em>2 Unit</em>) and attach the <strong>signed copy / e-way bill</strong>.</p>
+6. <strong>Print / PDF</strong> (quantity is printed with its unit, e.g. <em>2 Unit</em>) and attach the <strong>signed copy / e-way bill</strong>.
+   On a <strong>draft</strong>, <strong>Edit &amp; PDF</strong> opens the invoice, and after <strong>Save</strong> downloads the PDF with the new figures.</p>
+<p><strong>Custom PDF / Proforma (row icon):</strong> adjust Qty, Rate, Amount or GST % per line for <strong>one downloaded file</strong> — the invoice
+is <strong>not</strong> changed. <em>Download PDF</em> gives a table of official vs adjusted figures; <strong>Download Proforma</strong> gives the same layout
+as the invoice, titled <strong>PROFORMA INVOICE — NOT A TAX INVOICE</strong>. The list buttons <strong>Custom Excel / Custom PDF</strong> do the same
+for all listed invoices. <em>To really change an invoice, edit the draft (or cancel and re-issue an approved one).</em></p>
 <p><strong>GST example:</strong> 19.8 t × ₹1,350 = ₹26,730 taxable; GST 5% = ₹1,336.50 → CGST ₹668.25 + SGST ₹668.25
 (same state) → total ₹28,066.50. For an out-of-state customer the tax is IGST ₹1,336.50.</p>
 <p><strong>Rules:</strong> a trip can be billed only once; one invoice per customer; cancelling an approved invoice reverses its
@@ -352,7 +390,8 @@ accounts; the <strong>Unbilled completed trips</strong> report shows trips you f
 <p><strong>Purpose:</strong> record money received from customers.
 1. <strong>Record Payment Receipt:</strong> <strong>Customer*</strong>, date, <strong>Amount received*</strong>, <strong>Payment method*</strong> (Cash / Bank / UPI /
    Cheque), reference (UTR / cheque no).
-2. Allocate the amount to the customer's <strong>open invoices</strong> (oldest first). Any extra stays as <strong>advance</strong>.
+2. The amount fills the customer's <strong>open invoices oldest first</strong> automatically. Change any allocation if needed
+   (then it is not refilled); <strong>Allocate oldest first</strong> fills it again. Any extra stays as <strong>advance</strong>.
 3. Save → <strong>Approve</strong>. Invoices become <strong>PAID</strong> / <strong>PARTIALLY PAID</strong>; accounts: Cash/Bank ↔ Customer Receivable.
 4. Attach the cheque copy / UPI screenshot. See the <strong>Customer Ledger</strong> tab for the running balance.</p>
 <h3 id="settlement-dashboard-customer-receipts-settlement-dashboard">Settlement Dashboard (Customer Receipts → Settlement Dashboard)</h3>

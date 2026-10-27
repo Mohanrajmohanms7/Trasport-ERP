@@ -44,6 +44,25 @@
 > நடந்தது என எழுதி **Send to support** செய்யவும். **PKC-TKT-00001** போன்ற டிக்கெட் எண் கிடைக்கும். பதில்களை
 > **Help & Support** (இடது மெனு) இல் பார்க்கலாம்; தீர்ந்ததாகக் குறித்ததும் **Issue fixed** அல்லது **Still not working** அழுத்தவும்.
 
+## புதிய வசதிகள் (அக்டோபர் 2026)
+- **Trips:** Booking-ஐத் தேர்ந்தெடுத்தால், இன்னும் அனுப்பப்படாத ஒவ்வொரு material-உம் மீதமுள்ள அளவுடன் தானாக நிரப்பப்படும்;
+  முழுவதும் trip-களில் உள்ள material சேர்க்கப்படாது. Vehicle-ஐத் தேர்ந்தெடுத்தால் அதன் **வழக்கமான driver** (Vehicle Master)
+  தானாக வரும். வேறு driver-ஐத் தேர்ந்தெடுத்தால் உறுதிப்படுத்தக் கேட்கும் — இந்த trip-க்கு மட்டும் பயன்படுத்தலாம்.
+- **Complete:** Complete அழுத்தும்போதே ஒவ்வொரு material-க்கும் **Loaded / Delivered** அளவைக் கேட்கும் (திட்ட அளவு முன்பே
+  நிரப்பப்படும்) — Edit-ஐ மீண்டும் திறக்கத் தேவையில்லை.
+- **Invoices:** புதிய invoice-ல் **invoice தேதி**யை அமைத்து customer-ஐத் தேர்ந்தெடுத்தால், அந்த தேதி வரை முடிந்த, இன்னும்
+  invoice செய்யப்படாத trip-கள் அனைத்தும் தானாக வரும் (பழையது முதலில்). ஒரு trip எப்போதும் முழுமையாக, ஒருமுறை மட்டும்
+  invoice செய்யப்படும்.
+- **Draft invoice → Edit & PDF:** draft-ஐ மாற்றி Save செய்தவுடன் Normal PDF பதிவிறக்கமாகும்.
+- **Custom PDF / Proforma:** ஒரு கோப்புக்கு மட்டும் Qty, Rate, Amount, GST % மாற்றலாம் — invoice மாறாது. Proforma
+  invoice வடிவிலேயே வரும், ஆனால் **"PROFORMA INVOICE — NOT A TAX INVOICE"** என்று குறிக்கப்படும்.
+- **Receipts:** பெறப்பட்ட தொகை **பழைய invoice-களுக்கு முதலில்** தானாக ஒதுக்கப்படும்; நீங்கள் மாற்றலாம்.
+- **Fuel:** Trip-ஐத் தேர்ந்தெடுத்தால் அதன் vehicle, driver தானாக வரும். Current odometer, previous-ஐ விடக் குறைவாக இருக்கக்
+  கூடாது; meter மாற்றப்பட்டிருந்தால் admin மட்டும் **"Meter was reset"** என்று உறுதிப்படுத்தலாம்.
+- **Settings:** Company Profile-ல் **GST registration** (Registered என்றால் மட்டும் GSTIN தேவை), **Bank & Invoice**
+  விவரங்கள்; Material Master-ல் **HSN code**. Transport charge, royalty, loading ஆகியவை booking-ல் உள்ளிடப்படும்
+  (அதே customer-ன் கடைசி booking-லிருந்து பரிந்துரைக்கப்படும்).
+
 ## தொடங்கும் முன்
 
 - **உள்நுழைவு:** TransaFlow லிங்கைத் திறந்து, நிர்வாகி கொடுத்த **username** மற்றும் **password** உள்ளிடுங்கள்.
