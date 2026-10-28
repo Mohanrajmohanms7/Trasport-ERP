@@ -690,7 +690,9 @@ public class DriverPayrollService {
             dto.setAdvanceOutstandingNow(out == null ? BigDecimal.ZERO : out);
         }
         java.util.List<String> rules = new java.util.ArrayList<>();
-        for (var s : slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId())) {
+        for (var s : slabRepository == null ? java.util.List.<com.transport.erp.model.DriverPaySlab>of()
+                : slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId())) {
+            if (s.getTripsFrom() == null || s.getDailyAmount() == null) continue;
             String trips = s.getTripsTo() == null ? s.getTripsFrom() + " or more trips"
                     : (s.getTripsFrom().equals(s.getTripsTo()) ? s.getTripsFrom() + (s.getTripsFrom() == 1 ? " trip" : " trips") : s.getTripsFrom() + "–" + s.getTripsTo() + " trips");
             rules.add(trips + " ₹" + s.getDailyAmount().stripTrailingZeros().toPlainString() + " per day");
