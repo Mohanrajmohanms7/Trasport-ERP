@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V87 (GST registration status) |
 
+## 2026-10-28
+- **Driver salary slip PDF: new design** (no migration)
+  Same style as the invoice: company + slip facts (period, pay date, paid by, vouchers), driver (licence expiry, regular vehicle), work summary, earnings | deductions (basic salary shown only when above 0 — trip-based pay), net pay in words, daily trip earnings with trip numbers and vehicle, advance account (given in period, recovered, outstanding), signatures; DRAFT / CANCELLED watermark. Payroll calculations unchanged.
+
 ## 2026-10-27
 - **Line-level Custom PDF: GST column reads "5% to 12%"** (the PDF font has no arrow sign; it printed "5%  12%")
 - **User guides (EN + TA, in-app Help) brought up to date** (docs only)

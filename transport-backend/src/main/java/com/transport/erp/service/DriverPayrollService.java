@@ -639,6 +639,13 @@ public class DriverPayrollService {
             dto.setDriverCode(d.getCode());
             dto.setDriverPhone(d.getPhoneNumber());
             dto.setLicenseNumber(d.getLicenseNumber());
+            dto.setLicenseExpiryDate(d.getLicenseExpiryDate());
+            if (jdbcSlip != null) {
+                java.util.List<String> v = jdbcSlip.queryForList("""
+                        SELECT v.code FROM vehicle_driver_assignments a JOIN vehicles v ON v.id = a.vehicle_id
+                         WHERE a.driver_id = ? AND a.removal_date IS NULL AND a.is_deleted = false ORDER BY a.id DESC LIMIT 1""", String.class, d.getId());
+                dto.setRegularVehicle(v.isEmpty() ? null : v.get(0));
+            }
         }
 
         BigDecimal basic = payroll.getBasicSalary() != null ? payroll.getBasicSalary() : BigDecimal.ZERO;
@@ -660,8 +667,39 @@ public class DriverPayrollService {
         dto.setPaymentReference(payroll.getPaymentReference());
         dto.setRecoveryJvNumber(payroll.getRecoveryJvNumber());
         dto.setDeductionJvNumber(payroll.getDeductionJvNumber());
+        // Trip numbers and vehicles per day (completed trips of this driver in the pay period), advance account, slab rule.
+        java.util.Map<java.time.LocalDate, String[]> perDay = new java.util.HashMap<>();
+        if (jdbcSlip != null && payroll.getDriver() != null && payroll.getPayYear() != null && payroll.getPayMonth() != null) {
+            java.time.YearMonth ym = java.time.YearMonth.of(payroll.getPayYear(), payroll.getPayMonth());
+            for (java.util.Map<String, Object> r : jdbcSlip.queryForList("""
+                    SELECT t.trip_date, string_agg(t.trip_number, ', ' ORDER BY t.trip_number) nos,
+                           string_agg(DISTINCT v.code, ', ') veh
+                      FROM trips t LEFT JOIN vehicles v ON v.id = t.vehicle_id
+                     WHERE t.driver_id = ? AND t.company_id = ? AND t.is_deleted = false AND t.status = 'COMPLETED'
+                       AND t.trip_date BETWEEN ? AND ? GROUP BY t.trip_date""",
+                    payroll.getDriver().getId(), payroll.getCompanyId(), ym.atDay(1), ym.atEndOfMonth())) {
+                java.time.LocalDate day = ((java.sql.Date) r.get("trip_date")).toLocalDate();
+                perDay.put(day, new String[]{(String) r.get("nos"), (String) r.get("veh")});
+            }
+            BigDecimal given = jdbcSlip.queryForObject("""
+                    SELECT COALESCE(SUM(amount), 0) FROM driver_advances WHERE driver_id = ? AND is_deleted = false
+                       AND COALESCE(status, '') <> 'CANCELLED' AND advance_date BETWEEN ? AND ?""",
+                    BigDecimal.class, payroll.getDriver().getId(), ym.atDay(1), ym.atEndOfMonth());
+            dto.setAdvanceGivenInPeriod(given == null ? BigDecimal.ZERO : given);
+            BigDecimal out = advanceRepository.sumOutstanding(payroll.getDriver().getId());
+            dto.setAdvanceOutstandingNow(out == null ? BigDecimal.ZERO : out);
+        }
+        java.util.List<String> rules = new java.util.ArrayList<>();
+        for (var s : slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId())) {
+            String trips = s.getTripsTo() == null ? s.getTripsFrom() + " or more trips"
+                    : (s.getTripsFrom().equals(s.getTripsTo()) ? s.getTripsFrom() + (s.getTripsFrom() == 1 ? " trip" : " trips") : s.getTripsFrom() + "–" + s.getTripsTo() + " trips");
+            rules.add(trips + " ₹" + s.getDailyAmount().stripTrailingZeros().toPlainString() + " per day");
+        }
+        dto.setSlabRule(String.join(" · ", rules));
         for (DriverPayrollDay d : payroll.getDays()) {
             com.transport.erp.dto.DriverPayrollPrintDTO.DayLine line = new com.transport.erp.dto.DriverPayrollPrintDTO.DayLine();
+            String[] pd = perDay.get(d.getWorkDate());
+            if (pd != null) { line.setTripNumbers(pd[0]); line.setVehicles(pd[1]); }
             line.setWorkDate(d.getWorkDate());
             line.setTripCount(d.getTripCount());
             line.setSlab(slabLabel(d.getSlabTripsFrom(), d.getSlabTripsTo()));
@@ -725,4 +763,8 @@ public class DriverPayrollService {
         com.transport.erp.dto.DriverPayrollPrintDTO data = getSalarySlipPrintData(id);
         com.transport.erp.util.DriverSalarySlipPdfGenerator.generateSalarySlipPdf(data, os);
     }
+
+    /** Read-only lookups for the salary slip (trip numbers per day, regular vehicle, advances). Absent in plain unit tests. */
+    @Autowired(required = false)
+    private org.springframework.jdbc.core.JdbcTemplate jdbcSlip;
 }
