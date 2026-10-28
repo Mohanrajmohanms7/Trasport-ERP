@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
@@ -28,6 +29,22 @@ import { PickerService, activeOrSelected, tripLabel } from '../../services/picke
   templateUrl: './driver-payroll-console.html'
 })
 export class DriverPayrollConsoleComponent implements OnInit {
+  private httpRule = inject(HttpClient);
+  /** Owner rule DRIVER_BATA_EXCLUDES_TRIP (default true). */
+  bataExcludes = signal(true);
+  private loadBataRule(): void {
+    this.httpRule.get<any>('/api/v1/settings').subscribe({ next: r => {
+      const row = (r?.data || []).find((x: any) => (x.keyName || x.key) === 'DRIVER_BATA_EXCLUDES_TRIP');
+      this.bataExcludes.set(!row || String(row.valueData ?? row.value).trim().toLowerCase() !== 'false');
+    }, error: () => {} });
+  }
+  saveBataRule(exclude: boolean): void {
+    this.httpRule.put<any>('/api/v1/settings', { DRIVER_BATA_EXCLUDES_TRIP: String(exclude) }).subscribe({
+      next: () => { this.bataExcludes.set(exclude); this.notify.success(exclude ? 'Driver Bata trips are left out of daily pay' : 'Driver Bata trips count in daily pay'); },
+      error: e => { this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not save the rule'); this.loadBataRule(); }
+    });
+  }
+
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
   private api = inject(DriverPayrollService);
@@ -398,6 +415,7 @@ export class DriverPayrollConsoleComponent implements OnInit {
     this.api.getSlabs().subscribe({
       next: r => {
         this.slabs.set(r.data ?? []);
+        this.loadBataRule();
         while (this.slabRows.length) this.slabRows.removeAt(0);
         (r.data ?? []).forEach(s => this.addSlab(s));
         if (!this.slabRows.length) this.addSlab();
@@ -412,7 +430,8 @@ export class DriverPayrollConsoleComponent implements OnInit {
     this.slabRows.push(this.fb.group({
       tripsFrom: [s?.tripsFrom ?? nextFrom, [Validators.required, Validators.min(1)]],
       tripsTo: [s?.tripsTo ?? null],
-      dailyAmount: [s?.dailyAmount ?? null, [Validators.required, Validators.min(0)]]
+      dailyAmount: [s?.dailyAmount ?? null, [Validators.required, Validators.min(0)]],
+      wheelCount: [s?.wheelCount ?? null]
     }));
   }
 

@@ -24,7 +24,8 @@ public final class DriverPayrollCalculator {
     }
 
     /** One computed day. */
-    public record Day(LocalDate date, int tripCount, Integer slabFrom, Integer slabTo, BigDecimal amount) {
+    public record Day(LocalDate date, int tripCount, Integer slabFrom, Integer slabTo, BigDecimal amount, String wheel) {
+        public Day(LocalDate date, int tripCount, Integer slabFrom, Integer slabTo, BigDecimal amount) { this(date, tripCount, slabFrom, slabTo, amount, null); }
     }
 
     /** Month result. */
@@ -35,8 +36,69 @@ public final class DriverPayrollCalculator {
         return (v == null ? BigDecimal.ZERO : v).setScale(2, RoundingMode.HALF_UP);
     }
 
-    /** Slabs must start at 1+, not overlap, and only the highest may be open-ended. */
+    /** One trip for wheel-based pay: its business date and the wheel count of its lorry (null = not set). */
+    public record TripRef(LocalDate date, String wheel) {}
+
+    /**
+     * Slabs are checked per wheel-count group (NULL = "All vehicles"): each group starts at 1+, does not overlap and only
+     * its highest slab may be open-ended. Groups are independent.
+     */
     public static List<DriverPaySlab> validateSlabs(List<DriverPaySlab> slabs) {
+        Map<String, List<DriverPaySlab>> groups = new java.util.LinkedHashMap<>();
+        for (DriverPaySlab s : slabs) groups.computeIfAbsent(normWheel(s.getWheelCount()), k -> new ArrayList<>()).add(s);
+        List<DriverPaySlab> out = new ArrayList<>();
+        for (Map.Entry<String, List<DriverPaySlab>> g : groups.entrySet()) {
+            for (DriverPaySlab s : g.getValue()) s.setWheelCount(g.getKey());
+            out.addAll(validateGroup(g.getValue()));
+        }
+        return out;
+    }
+
+    public static final List<String> WHEEL_COUNTS = List.of("6", "10", "12", "14", "16", "18", "22", "EQUIPMENT");
+
+    /** "10" / "10W" / " 10 wheel " → "10"; "equipment" → "EQUIPMENT"; blank → null (= All vehicles). Unknown values are refused. */
+    public static String normWheel(String w) {
+        if (w == null || w.isBlank() || "ALL".equalsIgnoreCase(w.trim())) return null;
+        String v = w.trim().toUpperCase().replaceAll("[^0-9A-Z]", "").replaceAll("(WHEELS?|W)$", "");
+        if (!WHEEL_COUNTS.contains(v)) throw invalid("Wheel count must be one of 6, 10, 12, 14, 16, 18, 22 or Equipment.");
+        return v;
+    }
+
+    /**
+     * Wheel-based daily pay: per day the driver's trip count (all lorries that day) is paid with the slab of the
+     * highest-paying wheel count driven that day; a wheel count without its own slabs uses the "All vehicles" slabs.
+     * With only "All vehicles" slabs this gives exactly the same result as {@link #calculate}.
+     */
+    public static Result calculateByWheel(List<TripRef> trips, List<DriverPaySlab> slabs) {
+        Map<String, List<DriverPaySlab>> byWheel = new java.util.HashMap<>();
+        List<DriverPaySlab> all = new ArrayList<>();
+        for (DriverPaySlab s : slabs) {
+            if (s.getWheelCount() == null) all.add(s); else byWheel.computeIfAbsent(s.getWheelCount(), k -> new ArrayList<>()).add(s);
+        }
+        TreeMap<LocalDate, List<String>> perDay = new TreeMap<>();
+        for (TripRef t : trips) perDay.computeIfAbsent(t.date(), k -> new ArrayList<>()).add(t.wheel());
+        List<Day> days = new ArrayList<>();
+        int totalTrips = 0, tripDays = 0;
+        BigDecimal earnings = BigDecimal.ZERO;
+        for (Map.Entry<LocalDate, List<String>> e : perDay.entrySet()) {
+            int count = e.getValue().size();
+            if (count <= 0) continue;
+            DriverPaySlab best = null; String bestWheel = null;
+            for (String w : new java.util.TreeSet<>(e.getValue().stream().map(x -> x == null ? "" : x).toList())) {
+                String wheel = w.isEmpty() ? null : w;
+                List<DriverPaySlab> use = wheel != null && byWheel.containsKey(wheel) ? byWheel.get(wheel) : all;
+                DriverPaySlab s = slabFor(count, use);
+                String paidAs = wheel != null && byWheel.containsKey(wheel) ? wheel : null;
+                if (s != null && (best == null || s.getDailyAmount().compareTo(best.getDailyAmount()) > 0)) { best = s; bestWheel = paidAs; }
+            }
+            BigDecimal amount = best == null ? BigDecimal.ZERO.setScale(2) : money(best.getDailyAmount());
+            days.add(new Day(e.getKey(), count, best == null ? null : best.getTripsFrom(), best == null ? null : best.getTripsTo(), amount, bestWheel));
+            totalTrips += count; tripDays++; earnings = earnings.add(amount);
+        }
+        return new Result(days, totalTrips, tripDays, money(earnings));
+    }
+
+    private static List<DriverPaySlab> validateGroup(List<DriverPaySlab> slabs) {
         List<DriverPaySlab> sorted = new ArrayList<>(slabs);
         sorted.sort(Comparator.comparing(DriverPaySlab::getTripsFrom, Comparator.nullsFirst(Integer::compareTo)));
         Integer previousTo = null;

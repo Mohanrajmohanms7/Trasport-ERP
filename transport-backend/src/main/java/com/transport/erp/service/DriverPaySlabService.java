@@ -32,6 +32,7 @@ public class DriverPaySlabService {
             s.setTripsFrom(in.getTripsFrom());
             s.setTripsTo(in.getTripsTo());
             s.setDailyAmount(in.getDailyAmount());
+            s.setWheelCount(in.getWheelCount());
             incoming.add(s);
         }
         List<DriverPaySlab> valid = DriverPayrollCalculator.validateSlabs(incoming);

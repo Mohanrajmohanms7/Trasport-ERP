@@ -153,7 +153,8 @@ public final class DriverSalarySlipPdfGenerator {
             dt.addCell(cell(String.valueOf(x.getTripCount() == null ? 0 : x.getTripCount()), f(8, false, Color.BLACK), Element.ALIGN_CENTER, Rectangle.BOX));
             dt.addCell(cell(nz(x.getTripNumbers()), f(7, false, MUTED), Element.ALIGN_LEFT, Rectangle.BOX));
             dt.addCell(cell(nz(x.getVehicles()), f(7.5f, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
-            dt.addCell(cell(nz(x.getSlab()), f(7.5f, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
+            String wl = blank(x.getWheelCount()) ? "" : ("EQUIPMENT".equals(x.getWheelCount()) ? "Equip · " : x.getWheelCount() + "W · ");
+            dt.addCell(cell(wl + nz(x.getSlab()), f(7.5f, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
             dt.addCell(cell(money(x.getDailyAmount()), f(8, false, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.BOX));
         }
         if (days.isEmpty()) {
@@ -164,6 +165,13 @@ public final class DriverSalarySlipPdfGenerator {
         PdfPCell gap = cell("", f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX); gap.setColspan(3); dt.addCell(gap);
         dt.addCell(cell(money(d.getTripEarnings()), f(8.5f, true, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.BOX));
         doc.add(dt);
+        if (d.getExcludedTripCount() != null && d.getExcludedTripCount() > 0) {
+            Paragraph ex = new Paragraph("Not in daily pay — already paid per trip (Driver Bata): " + d.getExcludedTripCount() + " trip(s): "
+                    + nz(d.getExcludedTripNumbers()), f(7.5f, true, new Color(150, 30, 30)));
+            ex.setSpacingBefore(3); doc.add(ex);
+        }
+        Paragraph rule = new Paragraph("Each day is paid once, at the slab of the highest-paying lorry type driven that day.", f(7, false, MUTED));
+        rule.setSpacingBefore(2); doc.add(rule);
 
         // 8. Advance account
         PdfPTable ad = table(34, 22, 22, 22);
