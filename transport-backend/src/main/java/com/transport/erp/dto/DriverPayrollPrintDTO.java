@@ -26,6 +26,12 @@ public class DriverPayrollPrintDTO {
     private String driverCode;
     private String driverPhone;
     private String licenseNumber;
+    private java.time.LocalDate licenseExpiryDate;
+    private String regularVehicle;
+    /** e.g. "1 trip ₹500 per day · 2 or more trips ₹1,000 per day" */
+    private String slabRule;
+    private BigDecimal advanceGivenInPeriod = BigDecimal.ZERO;
+    private BigDecimal advanceOutstandingNow = BigDecimal.ZERO;
 
     // Financial Components
     private BigDecimal basicSalary = BigDecimal.ZERO;
@@ -76,6 +82,8 @@ public class DriverPayrollPrintDTO {
         private Integer tripCount;
         private String slab;
         private BigDecimal dailyAmount;
+        private String tripNumbers;
+        private String vehicles;
     }
 
     @Getter

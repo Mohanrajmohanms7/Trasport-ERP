@@ -148,6 +148,7 @@ SLIP=$(curl -s "${H[@]}" $API/driver-payrolls/$PR/print | j "len(d['data']['days
 [ "$SLIP" = "3" ] && pass "salary slip has 3 daily rows" || fail "slip days" "$SLIP"
 PDF=$(curl -s -o /tmp/slip.pdf -w "%{http_code}:%{content_type}" "${H[@]}" $API/driver-payrolls/$PR/pdf)
 [[ "$PDF" == 200:application/pdf* ]] && pass "salary slip PDF" || fail "pdf" "$PDF"
+mkdir -p "${GITHUB_WORKSPACE:-/tmp}/shots/pdf" && cp /tmp/slip.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/salary-slip.pdf" 2>/dev/null || true   # visual review
 R=$(post /driver-payrolls/$PR/cancel); echo "cancel: $R" | cut -c1-200
 OUT=$(curl -s "${H[@]}" $API/driver-advances/driver/$DRV/outstanding | j "d['data']")
 python3 -c "import sys; sys.exit(0 if abs(float('$OUT')-500)<0.001 else 1)" && pass "cancel returns advance to outstanding" || fail "cancel advance" "$OUT"
