@@ -22,6 +22,12 @@ import java.util.List;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DriverPayroll extends BaseEntity {
 
+    /** Trips left out of daily pay because they were already paid per trip (Driver Bata) (V88). */
+    @Column(name = "excluded_trip_count", nullable = false)
+    private Integer excludedTripCount = 0;
+    @Column(name = "excluded_trip_numbers", columnDefinition = "TEXT")
+    private String excludedTripNumbers;
+
     @Column(name = "payroll_number", nullable = false, length = 50)
     private String payrollNumber;
 

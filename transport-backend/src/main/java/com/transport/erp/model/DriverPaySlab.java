@@ -16,6 +16,10 @@ import java.time.LocalDate;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DriverPaySlab extends BaseEntity {
 
+    /** NULL = "All vehicles" (fallback); otherwise this slab applies to lorries with this wheel count only (V88). */
+    @Column(name = "wheel_count", length = 20)
+    private String wheelCount;
+
     @Column(name = "trips_from", nullable = false)
     private Integer tripsFrom;
 

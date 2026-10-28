@@ -69,6 +69,7 @@ public class VehicleService {
         // Odometer is written only via VehicleOdometerService — never via master create.
         vehicle.setCurrentOdometerKm(null);
         vehicle.setOdometerUpdatedAt(null);
+        vehicle.setWheelCount(com.transport.erp.service.DriverPayrollCalculator.normWheel(vehicle.getWheelCount()));
         return vehicleRepository.save(vehicle);
     }
 
@@ -101,6 +102,7 @@ public class VehicleService {
         vehicle.setCapacity(vehicleDetails.getCapacity());
         vehicle.setOwnerName(vehicleDetails.getOwnerName());
         vehicle.setOwnerType(vehicleDetails.getOwnerType());
+        vehicle.setWheelCount(com.transport.erp.service.DriverPayrollCalculator.normWheel(vehicleDetails.getWheelCount()));
         vehicle.setPurchaseDate(vehicleDetails.getPurchaseDate());
         vehicle.setInsuranceExpiryDate(vehicleDetails.getInsuranceExpiryDate());
         vehicle.setFitnessExpiryDate(vehicleDetails.getFitnessExpiryDate());

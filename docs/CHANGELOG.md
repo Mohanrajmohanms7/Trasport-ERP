@@ -4,11 +4,13 @@ Every merged change, newest first: date, pull request, database migration (if an
 Add one entry **with every pull request** (see `.github/pull_request_template.md`). Detail lives in the PR and in the
 module documents listed in [`README.md`](README.md).
 
-| Next Flyway migration | **V88** |
+| Next Flyway migration | **V89** |
 |---|---|
-| Latest migration on `main` | V87 (GST registration status) |
+| Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-10-28
+- **Driver payroll Part 1: wheel-based daily pay slabs; trips already paid by Driver Bata not paid twice** (**V88**)
+  Vehicle Master "Wheel count" (6 / 10 / 12 / 14 / 16 / 18 / 22 / Equipment); slabs per wheel count (existing slabs = All vehicles, unchanged results); a day is paid once at the highest-paying lorry type driven that day; owner setting DRIVER_BATA_EXCLUDES_TRIP (default: trips with approved / paid Driver Bata are left out of daily pay); salary slip shows the wheel rate per day and the excluded trips. Basic salary, allowances, deductions, advances, approvals, postings and cancellation unchanged.
 - **Driver salary slip PDF: new design** (no migration)
   Same style as the invoice: company + slip facts (period, pay date, paid by, vouchers), driver (licence expiry, regular vehicle), work summary, earnings | deductions (basic salary shown only when above 0 — trip-based pay), net pay in words, daily trip earnings with trip numbers and vehicle, advance account (given in period, recovered, outstanding), signatures; DRAFT / CANCELLED watermark. Payroll calculations unchanged.
 

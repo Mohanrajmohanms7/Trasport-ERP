@@ -18,6 +18,10 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Vehicle extends BaseEntity {
 
+    /** Wheel count for wheel-based driver pay slabs (V88): 6, 10, 12, 14, 16, 18, 22 or EQUIPMENT; blank = not set. */
+    @Column(name = "wheel_count", length = 20)
+    private String wheelCount;
+
     @Column(name = "chassis_number", length = 100)
     private String chassisNumber;
 

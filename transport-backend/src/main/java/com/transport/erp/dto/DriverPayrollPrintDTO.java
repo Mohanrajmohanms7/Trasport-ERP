@@ -30,6 +30,9 @@ public class DriverPayrollPrintDTO {
     private String regularVehicle;
     /** e.g. "1 trip ₹500 per day · 2 or more trips ₹1,000 per day" */
     private String slabRule;
+    /** Trips left out of daily pay because they were already paid per trip (Driver Bata). */
+    private Integer excludedTripCount = 0;
+    private String excludedTripNumbers;
     private BigDecimal advanceGivenInPeriod = BigDecimal.ZERO;
     private BigDecimal advanceOutstandingNow = BigDecimal.ZERO;
 
@@ -83,6 +86,8 @@ public class DriverPayrollPrintDTO {
         private String slab;
         private BigDecimal dailyAmount;
         private String tripNumbers;
+        /** Wheel count whose slab paid the day (null = All vehicles). */
+        private String wheelCount;
         private String vehicles;
     }
 

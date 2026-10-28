@@ -243,12 +243,38 @@ public class DriverPayrollService {
         List<DriverPaySlab> slabs = DriverPayrollCalculator.validateSlabs(
                 slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId()));
 
-        Map<LocalDate, Long> tripsByDate = new HashMap<>();
-        for (Object[] row : tripRepository.countTripsByDate(payroll.getDriver().getId(), payroll.getCompanyId(),
-                ELIGIBLE_TRIP_STATUSES, period.atDay(1), period.atEndOfMonth())) {
-            tripsByDate.put((LocalDate) row[0], ((Number) row[1]).longValue());
+        DriverPayrollCalculator.Result result;
+        java.util.List<String> excluded = new java.util.ArrayList<>();
+        if (jdbcSlip != null) {
+            // Wheel-based daily pay (V88): every completed trip with its lorry's wheel count; trips already paid per trip
+            // (approved / paid Driver Bata linked to the trip) are left out unless the owner set bata as a food allowance.
+            boolean excludeBataTrips = bataExcludesTrip(payroll.getCompanyId());
+            java.util.List<DriverPayrollCalculator.TripRef> refs = new java.util.ArrayList<>();
+            for (java.util.Map<String, Object> row : jdbcSlip.queryForList("""
+                    SELECT t.trip_date, t.trip_number, v.wheel_count,
+                           EXISTS (SELECT 1 FROM expenses e WHERE e.trip_id = t.id AND e.is_deleted = false
+                                      AND e.category = 'DRIVER_BATA' AND e.status IN ('APPROVED', 'PAID')
+                                      AND (e.driver_id IS NULL OR e.driver_id = t.driver_id)) AS bata_paid
+                      FROM trips t LEFT JOIN vehicles v ON v.id = t.vehicle_id
+                     WHERE t.driver_id = ? AND t.company_id = ? AND t.is_deleted = false AND t.status = 'COMPLETED'
+                       AND t.trip_date BETWEEN ? AND ? ORDER BY t.trip_date, t.trip_number""",
+                    payroll.getDriver().getId(), payroll.getCompanyId(), period.atDay(1), period.atEndOfMonth())) {
+                if (excludeBataTrips && Boolean.TRUE.equals(row.get("bata_paid"))) { excluded.add((String) row.get("trip_number")); continue; }
+                String wheel = null;
+                try { wheel = DriverPayrollCalculator.normWheel((String) row.get("wheel_count")); } catch (RuntimeException ignored) { }
+                refs.add(new DriverPayrollCalculator.TripRef(((java.sql.Date) row.get("trip_date")).toLocalDate(), wheel));
+            }
+            result = DriverPayrollCalculator.calculateByWheel(refs, slabs);
+        } else {
+            Map<LocalDate, Long> tripsByDate = new HashMap<>();
+            for (Object[] row : tripRepository.countTripsByDate(payroll.getDriver().getId(), payroll.getCompanyId(),
+                    ELIGIBLE_TRIP_STATUSES, period.atDay(1), period.atEndOfMonth())) {
+                tripsByDate.put((LocalDate) row[0], ((Number) row[1]).longValue());
+            }
+            result = DriverPayrollCalculator.calculate(tripsByDate, slabs);
         }
-        DriverPayrollCalculator.Result result = DriverPayrollCalculator.calculate(tripsByDate, slabs);
+        payroll.setExcludedTripCount(excluded.size());
+        payroll.setExcludedTripNumbers(excluded.isEmpty() ? null : String.join(", ", excluded));
         if (result.totalTrips() > 0 && slabs.isEmpty()) {
             throw new BusinessValidationException("Pay Slabs Not Configured", "PAY_SLABS_MISSING",
                     "The driver has " + result.totalTrips() + " completed trips in " + period + " but no daily pay slabs are set up.",
@@ -264,6 +290,7 @@ public class DriverPayrollService {
             d.setSlabTripsFrom(day.slabFrom());
             d.setSlabTripsTo(day.slabTo());
             d.setDailyAmount(day.amount());
+            d.setWheelCount(day.wheel());
             d.setCode("DAY-" + day.date());
             d.setName("Payroll day " + day.date());
             d.setCompanyId(payroll.getCompanyId());
@@ -676,8 +703,13 @@ public class DriverPayrollService {
                            string_agg(DISTINCT v.code, ', ') veh
                       FROM trips t LEFT JOIN vehicles v ON v.id = t.vehicle_id
                      WHERE t.driver_id = ? AND t.company_id = ? AND t.is_deleted = false AND t.status = 'COMPLETED'
-                       AND t.trip_date BETWEEN ? AND ? GROUP BY t.trip_date""",
-                    payroll.getDriver().getId(), payroll.getCompanyId(), ym.atDay(1), ym.atEndOfMonth())) {
+                       AND t.trip_date BETWEEN ? AND ?
+                       AND (? = false OR NOT EXISTS (SELECT 1 FROM expenses e WHERE e.trip_id = t.id AND e.is_deleted = false
+                             AND e.category = 'DRIVER_BATA' AND e.status IN ('APPROVED', 'PAID')
+                             AND (e.driver_id IS NULL OR e.driver_id = t.driver_id)))
+                     GROUP BY t.trip_date""",
+                    payroll.getDriver().getId(), payroll.getCompanyId(), ym.atDay(1), ym.atEndOfMonth(),
+                    payroll.getExcludedTripCount() != null && payroll.getExcludedTripCount() > 0)) {
                 java.time.LocalDate day = ((java.sql.Date) r.get("trip_date")).toLocalDate();
                 perDay.put(day, new String[]{(String) r.get("nos"), (String) r.get("veh")});
             }
@@ -695,13 +727,17 @@ public class DriverPayrollService {
             if (s.getTripsFrom() == null || s.getDailyAmount() == null) continue;
             String trips = s.getTripsTo() == null ? s.getTripsFrom() + " or more trips"
                     : (s.getTripsFrom().equals(s.getTripsTo()) ? s.getTripsFrom() + (s.getTripsFrom() == 1 ? " trip" : " trips") : s.getTripsFrom() + "–" + s.getTripsTo() + " trips");
-            rules.add(trips + " ₹" + s.getDailyAmount().stripTrailingZeros().toPlainString() + " per day");
+            String grp = s.getWheelCount() == null ? "" : ("EQUIPMENT".equals(s.getWheelCount()) ? "Equipment: " : s.getWheelCount() + "W: ");
+            rules.add(grp + trips + " ₹" + s.getDailyAmount().stripTrailingZeros().toPlainString() + " per day");
         }
         dto.setSlabRule(String.join(" · ", rules));
+        dto.setExcludedTripCount(payroll.getExcludedTripCount() == null ? 0 : payroll.getExcludedTripCount());
+        dto.setExcludedTripNumbers(payroll.getExcludedTripNumbers());
         for (DriverPayrollDay d : payroll.getDays()) {
             com.transport.erp.dto.DriverPayrollPrintDTO.DayLine line = new com.transport.erp.dto.DriverPayrollPrintDTO.DayLine();
             String[] pd = perDay.get(d.getWorkDate());
             if (pd != null) { line.setTripNumbers(pd[0]); line.setVehicles(pd[1]); }
+            line.setWheelCount(d.getWheelCount());
             line.setWorkDate(d.getWorkDate());
             line.setTripCount(d.getTripCount());
             line.setSlab(slabLabel(d.getSlabTripsFrom(), d.getSlabTripsTo()));
@@ -769,4 +805,16 @@ public class DriverPayrollService {
     /** Read-only lookups for the salary slip (trip numbers per day, regular vehicle, advances). Absent in plain unit tests. */
     @Autowired(required = false)
     private org.springframework.jdbc.core.JdbcTemplate jdbcSlip;
+
+    /** Owner setting: Driver Bata = payment for the trip (default true: leave those trips out of daily pay) or food allowance (false). */
+    public static final String BATA_EXCLUDES_TRIP = "DRIVER_BATA_EXCLUDES_TRIP";
+
+    @Autowired(required = false)
+    private AppSettingService appSettingService;
+
+    private boolean bataExcludesTrip(Long companyId) {
+        if (appSettingService == null) return true;
+        return appSettingService.getByKey(BATA_EXCLUDES_TRIP, companyId)
+                .map(x -> !"false".equalsIgnoreCase(String.valueOf(x.getValueData()).trim())).orElse(true);
+    }
 }

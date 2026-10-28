@@ -1551,6 +1551,43 @@ R=$(curl -s -X PUT "${H[@]}" $API/trips/$CDT --data @/tmp/cd.json)
 [ "$($PSQL "SELECT loaded_quantity::numeric(12,2)||'/'||delivered_quantity::numeric(12,2) FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "2.00/1.90" ] && pass "CWD complete dialog saves loaded 2 / delivered 1.9" || fail "CWD quantities" "$($PSQL "SELECT loaded_quantity||'/'||delivered_quantity FROM trip_details WHERE trip_id=$CDT") :: $(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT AND is_deleted=false")" = "$BEFORE" ] && pass "CWD rates, loading and royalty unchanged ($BEFORE)" || fail "CWD rates changed" "$BEFORE -> $($PSQL "SELECT rate||'/'||loading_charges||'/'||royalty FROM trip_details WHERE trip_id=$CDT")"
 
+# ================= Driver payroll Part 1: wheel-based slabs, highest type per day, Driver Bata trips not paid twice =================
+WV6=$(post /vehicles '{"code":"TN46WH0006","name":"TN46WH0006","status":"ACTIVE","wheelCount":"6"}' | j "d['data']['id']")
+WV10=$(post /vehicles '{"code":"TN46WH0010","name":"TN46WH0010","status":"ACTIVE","wheelCount":"10W"}' | j "d['data']['id']")
+[ "$($PSQL "SELECT wheel_count FROM vehicles WHERE id=$WV10")" = "10" ] && pass "WHL vehicle wheel count saved (10W -> 10)" || fail "WHL vehicle wheel" "x"
+WD=$(post /drivers '{"code":"WD-1","name":"Wheel Driver","licenseNumber":"TN4620267701","phoneNumber":"9000077701","status":"ACTIVE"}' | j "d['data']['id']")
+post /vehicles/$WV6/driver/$WD >/dev/null
+R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000},
+ {"wheelCount":"6","tripsFrom":1,"tripsTo":1,"dailyAmount":400},{"wheelCount":"6","tripsFrom":2,"tripsTo":null,"dailyAmount":800},
+ {"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":600},{"wheelCount":"10","tripsFrom":2,"tripsTo":2,"dailyAmount":1200},{"wheelCount":"10","tripsFrom":3,"tripsTo":null,"dailyAmount":1500}]')
+[ "$($PSQL "SELECT COUNT(*) FROM driver_pay_slabs WHERE company_id=1 AND is_deleted=false")" = "7" ] && pass "WHL slabs saved per wheel group (All, 6W, 10W)" || fail "WHL slabs" "$(echo $R | cut -c1-200)"
+R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":2,"dailyAmount":600},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":900}]'); echo "$R" | grep -q "overlap" && pass "WHL overlap inside one wheel group refused" || fail "WHL overlap" "$(echo $R | cut -c1-160)"
+WB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":3,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$WB/approve >/dev/null
+wtrip() { local T=$(post /trips '{"booking":{"id":'$WB'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$WD'},"confirmDriverOverride":true,"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']"); post /trips/$T/dispatch >/dev/null; post /trips/$T/complete >/dev/null; echo $T; }
+WT1=$(wtrip $WV6); WT2=$(wtrip $WV10); WT3=$(wtrip $WV10)
+WTN3=$($PSQL "SELECT trip_number FROM trips WHERE id=$WT3")
+WE=$(post /expenses '{"expenseDate":"'$TODAY'","category":"DRIVER_BATA","vehicle":{"id":'$WV10'},"driver":{"id":'$WD'},"trip":{"id":'$WT3'},"amount":300,"totalAmount":300,"paymentMethod":"CASH","description":"bata for trip 3"}' | j "d['data']['id']")
+post /expenses/$WE/approve >/dev/null
+[ "$($PSQL "SELECT status FROM expenses WHERE id=$WE")" = "APPROVED" ] || fail "WHL bata approve" "$($PSQL "SELECT status FROM expenses WHERE id=$WE")"
+CY=$(date +%Y); CM=$((10#$(date +%m)))
+R=$(post /driver-payrolls/generate '{"driverId":'$WD',"payYear":'$CY',"payMonth":'$CM'}'); WP=$(echo "$R" | j "d['data']['id']")
+WR=$($PSQL "SELECT trip_earnings||'/'||total_trips||'/'||excluded_trip_count FROM driver_payrolls WHERE id=$WP")
+[ "$WR" = "1200.00/2/1" ] && pass "WHL 6W + 10W trips on one day paid once at the 10W rate; bata trip excluded (1200 / 2 trips / 1 excluded)" || fail "WHL payroll" "$WR :: $(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT excluded_trip_numbers FROM driver_payrolls WHERE id=$WP")" = "$WTN3" ] && pass "WHL excluded trip recorded ($WTN3)" || fail "WHL excluded number" "x"
+[ "$($PSQL "SELECT wheel_count FROM driver_payroll_days WHERE payroll_id=$WP AND is_deleted=false")" = "10" ] && pass "WHL day paid at the 10-wheel slab" || fail "WHL day wheel" "x"
+put /settings '{"DRIVER_BATA_EXCLUDES_TRIP":"false"}' >/dev/null
+post /driver-payrolls/$WP/recalculate >/dev/null
+[ "$($PSQL "SELECT trip_earnings||'/'||total_trips||'/'||excluded_trip_count FROM driver_payrolls WHERE id=$WP")" = "1500.00/3/0" ] && pass "WHL bata as food allowance: the trip counts (3 trips at 10W 3+ = 1500)" || fail "WHL include" "$($PSQL "SELECT trip_earnings||'/'||total_trips||'/'||excluded_trip_count FROM driver_payrolls WHERE id=$WP")"
+put /settings '{"DRIVER_BATA_EXCLUDES_TRIP":"true"}' >/dev/null
+post /driver-payrolls/$WP/recalculate >/dev/null
+C=$(curl -s -o /tmp/ws.pdf -w "%{http_code}" "${H[@]}" $API/driver-payrolls/$WP/pdf); [ "$C" = "200" ] && [ "$(head -c 4 /tmp/ws.pdf)" = "%PDF" ] && pass "WHL salary slip PDF with wheel rate and excluded trips" || fail "WHL slip" "$C"
+cp /tmp/ws.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/salary-slip-wheel.pdf" 2>/dev/null || true
+post /driver-payrolls/$WP/approve >/dev/null; post /driver-payrolls/$WP/post >/dev/null
+[ "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")" = "POSTED" ] && pass "WHL approve and post work as before" || fail "WHL approve/post" "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")"
+post /driver-payrolls/$WP/cancel >/dev/null
+[ "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")" = "CANCELLED" ] && pass "WHL cancel reverses as before" || fail "WHL cancel" "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")"
+put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]' >/dev/null
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

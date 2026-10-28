@@ -10,6 +10,8 @@ export interface ApiResponse<T> {
 }
 
 export interface PaySlab {
+  /** null = All vehicles; else 6 / 10 / 12 / 14 / 16 / 18 / 22 / EQUIPMENT */
+  wheelCount?: string | null;
   id?: number;
   tripsFrom: number;
   tripsTo: number | null;

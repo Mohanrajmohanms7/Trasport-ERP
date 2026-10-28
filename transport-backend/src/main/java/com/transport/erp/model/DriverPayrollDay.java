@@ -17,6 +17,10 @@ import java.time.LocalDate;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DriverPayrollDay extends BaseEntity {
 
+    /** Wheel count whose slab paid this day (NULL = "All vehicles" slabs) (V88). */
+    @Column(name = "wheel_count", length = 20)
+    private String wheelCount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payroll_id", nullable = false)
     @JsonBackReference("payroll-days")
