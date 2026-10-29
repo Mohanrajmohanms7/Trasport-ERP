@@ -86,7 +86,7 @@ class DriverPayrollServiceTest {
         when(documentNumberService.next(any(), any(), any(), any())).thenReturn("PAY-2627/00001");
         when(slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(3L)).thenReturn(slabs());
         when(driverSalaryService.getSalaryByDriver(10L)).thenReturn(Optional.empty());
-        when(payrollRepository.findActiveForPeriod(any(), any(), any())).thenReturn(Optional.empty());
+        when(payrollRepository.findOverlapping(any(), any(), any())).thenReturn(java.util.List.of());
         when(payrollRepository.saveAndFlush(any())).thenAnswer(i -> withId(i.getArgument(0)));
         when(payrollRepository.save(any())).thenAnswer(i -> withId(i.getArgument(0)));
         when(advanceRepository.sumOutstanding(10L)).thenReturn(BigDecimal.ZERO);
@@ -249,11 +249,14 @@ class DriverPayrollServiceTest {
     }
 
     @Test
-    @DisplayName("Duplicate driver + month is rejected")
+    @DisplayName("A pay period overlapping an active payroll of the driver is rejected")
     void duplicatePeriodRejected() {
         tripsPerDay(1);
-        when(payrollRepository.findActiveForPeriod(10L, period.getYear(), period.getMonthValue()))
-                .thenReturn(Optional.of(new DriverPayroll()));
+        DriverPayroll existing = new DriverPayroll();
+        existing.setPayrollNumber("PAY-2627/00009");
+        existing.setPeriodFrom(period.atDay(1));
+        existing.setPeriodTo(period.atEndOfMonth());
+        when(payrollRepository.findOverlapping(eq(10L), any(), any())).thenReturn(java.util.List.of(existing));
         BusinessValidationException ex = assertThrows(BusinessValidationException.class,
                 () -> payrollService.createPayroll(request(), "acc"));
         assertEquals("PAYROLL_DUPLICATE_PAY_PERIOD", ex.getErrorCode());
@@ -264,7 +267,7 @@ class DriverPayrollServiceTest {
     @DisplayName("Concurrent generate: unique index violation becomes a clean duplicate error")
     void concurrentGenerateRejected() {
         tripsPerDay(1);
-        doThrow(new DataIntegrityViolationException("uq_driver_payroll_active_period")).when(payrollRepository).saveAndFlush(any());
+        doThrow(new DataIntegrityViolationException("uq_driver_payroll_active_start")).when(payrollRepository).saveAndFlush(any());
         BusinessValidationException ex = assertThrows(BusinessValidationException.class,
                 () -> payrollService.createPayroll(request(), "acc"));
         assertEquals("PAYROLL_DUPLICATE_PAY_PERIOD", ex.getErrorCode());
@@ -476,5 +479,22 @@ class DriverPayrollServiceTest {
         ArgumentCaptor<Collection<String>> statuses = ArgumentCaptor.forClass(Collection.class);
         verify(tripRepository).countTripsByDate(eq(10L), eq(3L), statuses.capture(), eq(period.atDay(1)), eq(period.atEndOfMonth()));
         assertFalse(statuses.getValue().contains("CANCELLED"));
+    }
+
+    @Test
+    @DisplayName("Part period 1-10: trips counted only in those days; period outside the month refused")
+    void partPeriodAndValidation() {
+        tripsPerDay(1);
+        var dto = request();
+        dto.setPeriodFrom(period.atDay(1));
+        dto.setPeriodTo(period.atDay(10));
+        DriverPayroll p = payrollService.createPayroll(dto, "acc");
+        assertEquals(period.atDay(1), p.getPeriodFrom());
+        assertEquals(period.atDay(10), p.getPeriodTo());
+        var bad = request();
+        bad.setPeriodFrom(period.atDay(20));
+        bad.setPeriodTo(period.plusMonths(1).atDay(5));
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () -> payrollService.createPayroll(bad, "acc"));
+        assertEquals("PAYROLL_PERIOD_INVALID", ex.getErrorCode());
     }
 }

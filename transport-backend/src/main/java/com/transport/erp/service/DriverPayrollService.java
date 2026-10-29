@@ -110,21 +110,38 @@ public class DriverPayrollService {
         Driver driver = parentAccess.requireDriver(dto.getDriverId());
         assertBranch(driver.getBranchId());
 
-        payrollRepository.findActiveForPeriod(driver.getId(), dto.getPayYear(), dto.getPayMonth()).ifPresent(p -> {
-            throw duplicatePeriod(driver, period);
-        });
+        // Pay period inside the month (default: the whole month); never overlapping another active payroll of the driver.
+        LocalDate from = dto.getPeriodFrom() != null ? dto.getPeriodFrom() : period.atDay(1);
+        LocalDate to = dto.getPeriodTo() != null ? dto.getPeriodTo() : period.atEndOfMonth();
+        if (!YearMonth.from(from).equals(period) || !YearMonth.from(to).equals(period) || from.isAfter(to)) {
+            throw new BusinessValidationException("Invalid Pay Period", "PAYROLL_PERIOD_INVALID",
+                    "The pay period must be inside " + period + " and 'from' cannot be after 'to'.", "Choose dates in the selected month.");
+        }
+        if (from.isAfter(LocalDate.now())) {
+            throw new BusinessValidationException("Future Pay Period", "PAYROLL_FUTURE_PERIOD",
+                    "The pay period starts on " + from + ", which is in the future.", "Start the period today or earlier.");
+        }
+        if (jdbcSlip != null) jdbcSlip.queryForList("SELECT pg_advisory_xact_lock(?)", 7_710_000_000L + driver.getId());   // one generate per driver at a time
+        for (DriverPayroll p : payrollRepository.findOverlapping(driver.getId(), from, to)) {
+            throw new BusinessValidationException("Pay Period Overlaps", "PAYROLL_DUPLICATE_PAY_PERIOD",
+                    String.format("Driver '%s' already has payroll %s for %s to %s, which overlaps %s to %s.", driver.getName(),
+                            p.getPayrollNumber(), p.getPeriodFrom(), p.getPeriodTo(), from, to),
+                    "Choose days that are not paid yet, or cancel that payroll first.");
+        }
 
         DriverPayroll payroll = new DriverPayroll();
         payroll.setDriver(driver);
         payroll.setPayYear(dto.getPayYear());
         payroll.setPayMonth(dto.getPayMonth());
+        payroll.setPeriodFrom(from);
+        payroll.setPeriodTo(to);
         payroll.setStatus("DRAFT");
         payroll.setIsDeleted(false);
         payroll.setCompanyId(driver.getCompanyId());
         payroll.setBranchId(driver.getBranchId());
         payroll.setPayrollNumber(documentNumberService.next(driver.getCompanyId(), "DRIVER_PAYROLL", "PAY-", LocalDate.now()));
         payroll.setCode(payroll.getPayrollNumber());
-        payroll.setName("Driver Payroll - " + driver.getName() + " (" + period + ")");
+        payroll.setName("Driver Payroll - " + driver.getName() + " (" + (from.getDayOfMonth() == 1 && to.equals(period.atEndOfMonth()) ? period.toString() : from + " to " + to) + ")");
         payroll.setDescription(dto.getDescription() != null ? dto.getDescription() : "Driver monthly payroll");
         payroll.setCreatedBy(username);
         payroll.setUpdatedBy(username);
@@ -224,7 +241,7 @@ public class DriverPayrollService {
             d.setPayroll(payroll);
             d.setDeductionType(type);
             d.setAmount(amt);
-            d.setDeductionDate(in.getDeductionDate() != null ? in.getDeductionDate() : period.atEndOfMonth().isAfter(LocalDate.now()) ? LocalDate.now() : period.atEndOfMonth());
+            d.setDeductionDate(in.getDeductionDate() != null ? in.getDeductionDate() : pTo(payroll).isAfter(LocalDate.now()) ? LocalDate.now() : pTo(payroll));
             d.setRemarks(in.getRemarks());
             d.setCode("DED-" + type);
             d.setName("Payroll deduction " + type);
@@ -258,7 +275,7 @@ public class DriverPayrollService {
                       FROM trips t LEFT JOIN vehicles v ON v.id = t.vehicle_id
                      WHERE t.driver_id = ? AND t.company_id = ? AND t.is_deleted = false AND t.status = 'COMPLETED'
                        AND t.trip_date BETWEEN ? AND ? ORDER BY t.trip_date, t.trip_number""",
-                    payroll.getDriver().getId(), payroll.getCompanyId(), period.atDay(1), period.atEndOfMonth())) {
+                    payroll.getDriver().getId(), payroll.getCompanyId(), pFrom(payroll), pTo(payroll))) {
                 if (excludeBataTrips && Boolean.TRUE.equals(row.get("bata_paid"))) { excluded.add((String) row.get("trip_number")); continue; }
                 String wheel = null;
                 try { wheel = DriverPayrollCalculator.normWheel((String) row.get("wheel_count")); } catch (RuntimeException ignored) { }
@@ -268,7 +285,7 @@ public class DriverPayrollService {
         } else {
             Map<LocalDate, Long> tripsByDate = new HashMap<>();
             for (Object[] row : tripRepository.countTripsByDate(payroll.getDriver().getId(), payroll.getCompanyId(),
-                    ELIGIBLE_TRIP_STATUSES, period.atDay(1), period.atEndOfMonth())) {
+                    ELIGIBLE_TRIP_STATUSES, pFrom(payroll), pTo(payroll))) {
                 tripsByDate.put((LocalDate) row[0], ((Number) row[1]).longValue());
             }
             result = DriverPayrollCalculator.calculate(tripsByDate, slabs);
@@ -316,7 +333,7 @@ public class DriverPayrollService {
             }
         }
 
-        BigDecimal bata = expenseRepository.sumDriverBata(payroll.getDriver().getId(), period.atDay(1), period.atEndOfMonth());
+        BigDecimal bata = expenseRepository.sumDriverBata(payroll.getDriver().getId(), pFrom(payroll), pTo(payroll));
         payroll.setBataPaid(DriverPayrollCalculator.money(bata));
         payroll.setTotalTrips(result.totalTrips());
         payroll.setTripDays(result.tripDays());
@@ -356,7 +373,7 @@ public class DriverPayrollService {
         requireStatus(payroll, "APPROVED", "posted");
 
         YearMonth period = YearMonth.of(payroll.getPayYear(), payroll.getPayMonth());
-        LocalDate postingDate = period.atEndOfMonth().isAfter(LocalDate.now()) ? LocalDate.now() : period.atEndOfMonth();
+        LocalDate postingDate = pTo(payroll).isAfter(LocalDate.now()) ? LocalDate.now() : pTo(payroll);
         periodValidationService.validatePostingAllowed(payroll.getCompanyId(), postingDate);
 
         Long cid = payroll.getCompanyId(), bid = payroll.getBranchId();
@@ -708,7 +725,7 @@ public class DriverPayrollService {
                              AND e.category = 'DRIVER_BATA' AND e.status IN ('APPROVED', 'PAID')
                              AND (e.driver_id IS NULL OR e.driver_id = t.driver_id)))
                      GROUP BY t.trip_date""",
-                    payroll.getDriver().getId(), payroll.getCompanyId(), ym.atDay(1), ym.atEndOfMonth(),
+                    payroll.getDriver().getId(), payroll.getCompanyId(), pFrom(payroll), pTo(payroll),
                     payroll.getExcludedTripCount() != null && payroll.getExcludedTripCount() > 0)) {
                 java.time.LocalDate day = ((java.sql.Date) r.get("trip_date")).toLocalDate();
                 perDay.put(day, new String[]{(String) r.get("nos"), (String) r.get("veh")});
@@ -716,14 +733,20 @@ public class DriverPayrollService {
             BigDecimal given = jdbcSlip.queryForObject("""
                     SELECT COALESCE(SUM(amount), 0) FROM driver_advances WHERE driver_id = ? AND is_deleted = false
                        AND COALESCE(status, '') <> 'CANCELLED' AND advance_date BETWEEN ? AND ?""",
-                    BigDecimal.class, payroll.getDriver().getId(), ym.atDay(1), ym.atEndOfMonth());
+                    BigDecimal.class, payroll.getDriver().getId(), pFrom(payroll), pTo(payroll));
             dto.setAdvanceGivenInPeriod(given == null ? BigDecimal.ZERO : given);
             BigDecimal out = advanceRepository.sumOutstanding(payroll.getDriver().getId());
             dto.setAdvanceOutstandingNow(out == null ? BigDecimal.ZERO : out);
         }
         java.util.List<String> rules = new java.util.ArrayList<>();
-        for (var s : slabRepository == null ? java.util.List.<com.transport.erp.model.DriverPaySlab>of()
-                : slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId())) {
+        java.util.List<com.transport.erp.model.DriverPaySlab> ordered = new java.util.ArrayList<>(slabRepository == null
+                ? java.util.List.<com.transport.erp.model.DriverPaySlab>of()
+                : slabRepository.findByCompanyIdAndIsDeletedFalseOrderByTripsFromAsc(payroll.getCompanyId()));
+        // All vehicles first, then by wheel count (6, 10 … 22, Equipment), each by trips
+        ordered.sort(java.util.Comparator.comparingInt((com.transport.erp.model.DriverPaySlab x) -> x.getWheelCount() == null ? -1
+                : ("EQUIPMENT".equals(x.getWheelCount()) ? 999 : Integer.parseInt(x.getWheelCount())))
+                .thenComparing(x -> x.getTripsFrom() == null ? 0 : x.getTripsFrom()));
+        for (var s : ordered) {
             if (s.getTripsFrom() == null || s.getDailyAmount() == null) continue;
             String trips = s.getTripsTo() == null ? s.getTripsFrom() + " or more trips"
                     : (s.getTripsFrom().equals(s.getTripsTo()) ? s.getTripsFrom() + (s.getTripsFrom() == 1 ? " trip" : " trips") : s.getTripsFrom() + "–" + s.getTripsTo() + " trips");
@@ -731,6 +754,8 @@ public class DriverPayrollService {
             rules.add(grp + trips + " ₹" + s.getDailyAmount().stripTrailingZeros().toPlainString() + " per day");
         }
         dto.setSlabRule(String.join(" · ", rules));
+        dto.setPeriodFrom(pFrom(payroll));
+        dto.setPeriodTo(pTo(payroll));
         dto.setExcludedTripCount(payroll.getExcludedTripCount() == null ? 0 : payroll.getExcludedTripCount());
         dto.setExcludedTripNumbers(payroll.getExcludedTripNumbers());
         for (DriverPayrollDay d : payroll.getDays()) {
@@ -816,5 +841,13 @@ public class DriverPayrollService {
         if (appSettingService == null) return true;
         return appSettingService.getByKey(BATA_EXCLUDES_TRIP, companyId)
                 .map(x -> !"false".equalsIgnoreCase(String.valueOf(x.getValueData()).trim())).orElse(true);
+    }
+
+    /** Pay period bounds (V89); payrolls saved before V89 cover their whole month. */
+    private static LocalDate pFrom(DriverPayroll p) {
+        return p.getPeriodFrom() != null ? p.getPeriodFrom() : YearMonth.of(p.getPayYear(), p.getPayMonth()).atDay(1);
+    }
+    private static LocalDate pTo(DriverPayroll p) {
+        return p.getPeriodTo() != null ? p.getPeriodTo() : YearMonth.of(p.getPayYear(), p.getPayMonth()).atEndOfMonth();
     }
 }

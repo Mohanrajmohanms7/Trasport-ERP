@@ -53,4 +53,13 @@ public interface DriverPayrollRepository extends JpaRepository<DriverPayroll, Lo
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM DriverPayroll p WHERE p.id = :id AND p.isDeleted = false")
     Optional<DriverPayroll> findByIdForUpdate(@Param("id") Long id);
+
+    /** Active payrolls of a driver whose period overlaps from..to (V89: no overlapping pay periods). */
+    @Query("""
+            SELECT p FROM DriverPayroll p
+            WHERE p.driver.id = :driverId AND p.isDeleted = false AND p.status <> 'CANCELLED'
+              AND p.periodFrom <= :toDate AND p.periodTo >= :fromDate
+            """)
+    java.util.List<DriverPayroll> findOverlapping(@Param("driverId") Long driverId, @Param("fromDate") java.time.LocalDate fromDate,
+                                                  @Param("toDate") java.time.LocalDate toDate);
 }

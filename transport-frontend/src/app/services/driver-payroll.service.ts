@@ -42,6 +42,9 @@ export interface SlabPayroll {
   driver: { id: number; name: string; code?: string };
   payYear: number;
   payMonth: number;
+  /** Pay period inside the month (V89). */
+  periodFrom?: string;
+  periodTo?: string;
   status: 'DRAFT' | 'APPROVED' | 'POSTED' | 'PAID' | 'CANCELLED';
   totalTrips: number;
   tripDays: number;

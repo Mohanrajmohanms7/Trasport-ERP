@@ -22,6 +22,12 @@ import java.util.List;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DriverPayroll extends BaseEntity {
 
+    /** Pay period inside one calendar month (V89); a whole month for monthly payrolls. */
+    @Column(name = "period_from", nullable = false)
+    private java.time.LocalDate periodFrom;
+    @Column(name = "period_to", nullable = false)
+    private java.time.LocalDate periodTo;
+
     /** Trips left out of daily pay because they were already paid per trip (Driver Bata) (V88). */
     @Column(name = "excluded_trip_count", nullable = false)
     private Integer excludedTripCount = 0;
