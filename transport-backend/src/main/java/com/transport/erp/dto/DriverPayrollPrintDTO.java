@@ -30,6 +30,8 @@ public class DriverPayrollPrintDTO {
     private String regularVehicle;
     /** e.g. "1 trip ₹500 per day · 2 or more trips ₹1,000 per day" */
     private String slabRule;
+    private java.time.LocalDate periodFrom;
+    private java.time.LocalDate periodTo;
     /** Trips left out of daily pay because they were already paid per trip (Driver Bata). */
     private Integer excludedTripCount = 0;
     private String excludedTripNumbers;

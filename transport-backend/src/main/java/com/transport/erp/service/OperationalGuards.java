@@ -129,12 +129,12 @@ public class OperationalGuards {
         if (driverId == null || oldDate == null || newDate == null || oldDate.equals(newDate)) return;
         for (LocalDate d : new LocalDate[]{oldDate, newDate}) {
             List<String> st = jdbc.queryForList("""
-                    SELECT status FROM driver_payrolls WHERE driver_id = :did AND pay_year = :y AND pay_month = :m
+                    SELECT status FROM driver_payrolls WHERE driver_id = :did AND :d BETWEEN period_from AND period_to
                        AND COALESCE(is_deleted, false) = false AND status NOT IN ('DRAFT', 'CANCELLED') LIMIT 1""",
-                    new MapSqlParameterSource("did", driverId).addValue("y", d.getYear()).addValue("m", d.getMonthValue()), String.class);
+                    new MapSqlParameterSource("did", driverId).addValue("d", d, java.sql.Types.DATE), String.class);
             if (!st.isEmpty()) {
                 throw err("Payroll Already Approved", "TRIP_DATE_PAYROLL_LOCKED",
-                        "The driver's payroll for " + d.getMonth() + " " + d.getYear() + " is " + st.get(0) + ", so this completed trip's date cannot change.",
+                        "The driver's payroll covering " + d + " is " + st.get(0) + ", so this completed trip's date cannot change.",
                         "Keep the date, or cancel that payroll first and generate it again.");
             }
         }

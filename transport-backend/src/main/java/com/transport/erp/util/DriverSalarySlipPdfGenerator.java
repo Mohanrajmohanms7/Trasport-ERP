@@ -264,6 +264,7 @@ public final class DriverSalarySlipPdfGenerator {
         t.addCell(c);
     }
     private static String period(DriverPayrollPrintDTO d) {
+        if (d.getPeriodFrom() != null && d.getPeriodTo() != null) return d.getPeriodFrom().format(DMY) + " to " + d.getPeriodTo().format(DMY);
         if (d.getPayYear() == null || d.getPayMonth() == null) return nz(d.getPayPeriod());
         YearMonth ym = YearMonth.of(d.getPayYear(), d.getPayMonth());
         return ym.atDay(1).format(DMY) + " to " + ym.atEndOfMonth().format(DMY);

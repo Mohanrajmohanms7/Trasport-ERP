@@ -1588,6 +1588,22 @@ post /driver-payrolls/$WP/cancel >/dev/null
 [ "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")" = "CANCELLED" ] && pass "WHL cancel reverses as before" || fail "WHL cancel" "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")"
 put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]' >/dev/null
 
+# ================= Driver payroll Part 2: flexible pay periods (no overlap, a day never paid twice) =================
+PDAY=$(date +%d | sed 's/^0//'); PYR=$(date +%Y); PMO=$(date +%m | sed 's/^0//'); MEND=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%F); MSTART=$(date +%Y-%m-01)
+pgen() { post /driver-payrolls/generate '{"driverId":'$FDA',"payYear":'$PYR',"payMonth":'$PMO',"periodFrom":"'$1'","periodTo":"'$2'","allowanceAmount":'${3:-0}'}'; }
+TODAYTRIPS=$($PSQL "SELECT COUNT(*) FROM trips WHERE driver_id=$FDA AND status='COMPLETED' AND is_deleted=false AND trip_date='$TODAY'")
+R=$(pgen $TODAY $MEND); PP2=$(echo "$R" | j "d['data']['id']")
+[ "$(echo "$R" | j "d['data']['totalTrips']")" = "$TODAYTRIPS" ] && [ "$($PSQL "SELECT period_from||'/'||period_to FROM driver_payrolls WHERE id=$PP2")" = "$TODAY/$MEND" ] && pass "PER period $TODAY..$MEND counts the trips in it ($TODAYTRIPS)" || fail "PER period generate" "$(echo $R | cut -c1-220)"
+R=$(pgen $MSTART $TODAY); echo "$R" | grep -q "Pay Period Overlaps" && pass "PER overlapping period refused" || fail "PER overlap" "$(echo $R | cut -c1-200)"
+if [ "$PDAY" -gt 1 ]; then
+  YDAY=$(date -d "$TODAY -1 day" +%F)
+  R=$(pgen $MSTART $YDAY 100); [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "PER earlier separate period in the same month allowed" || fail "PER second period" "$(echo $R | cut -c1-200)"
+else pass "PER earlier separate period (skipped on the 1st)"; fi
+R=$(pgen "$PYR-$(printf %02d $PMO)-20" "$(date -d "$MSTART +1 month +4 day" +%F)"); echo "$R" | grep -q "must be inside" && pass "PER period crossing into next month refused" || fail "PER cross month" "$(echo $R | cut -c1-200)"
+post /driver-payrolls/$PP2/approve >/dev/null; R=$(post /driver-payrolls/$PP2/cancel); 
+R=$(pgen $TODAY $MEND); [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "PER after cancel the same period can be generated again" || fail "PER regenerate" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE driver_id=$FDA AND period_from IS NULL")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE period_from IS NULL OR period_to IS NULL")" = "0" ] && pass "PER every payroll has a pay period (older ones = whole month)" || fail "PER null periods" "x"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

@@ -87,6 +87,9 @@ export class DriverPayrollConsoleComponent implements OnInit {
     driverId: ['', Validators.required],
     payYear: [new Date().getFullYear(), [Validators.required, Validators.min(2000)]],
     payMonth: [new Date().getMonth() + 1, Validators.required],
+    /** Pay period inside the month (empty = the whole month), e.g. 1-10 / 11-20 / 21-end. */
+    periodFrom: [''],
+    periodTo: [''],
     allowanceAmount: [0, Validators.min(0)],
     advanceAdjustment: [0, Validators.min(0)],
     description: [''],
@@ -329,6 +332,8 @@ export class DriverPayrollConsoleComponent implements OnInit {
       driverId: Number(v.driverId),
       payYear: Number(v.payYear),
       payMonth: Number(v.payMonth),
+      periodFrom: v.periodFrom || null,
+      periodTo: v.periodTo || null,
       allowanceAmount: Number(v.allowanceAmount || 0),
       advanceAdjustment: Number(v.advanceAdjustment || 0),
       description: v.description || undefined,
@@ -453,5 +458,25 @@ export class DriverPayrollConsoleComponent implements OnInit {
       next: r => { this.slabs.set(r.data ?? []); this.notify.success('Daily pay slabs saved'); },
       error: e => this.notify.error(this.err(e, 'Slabs could not be saved'))
     });
+  }
+
+  /** Quick pay periods inside the selected month: '1-10', '11-20', '21-end', 'month'. */
+  setPeriod(kind: string): void {
+    const y = Number(this.generateForm.get('payYear')?.value), m = Number(this.generateForm.get('payMonth')?.value);
+    if (!y || !m) return;
+    const last = new Date(y, m, 0).getDate();
+    const d = (day: number) => `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const map: Record<string, [string, string]> = { '1-10': [d(1), d(10)], '11-20': [d(11), d(20)], '21-end': [d(21), d(last)], 'month': ['', ''] };
+    const [f, t] = map[kind] || ['', ''];
+    this.generateForm.patchValue({ periodFrom: f, periodTo: t });
+  }
+
+  /** "Oct 2026" for a whole month, "01–10 Oct 2026" for a part period. */
+  periodText(p: any): string {
+    const m = `${this.monthName(p.payMonth)} ${p.payYear}`;
+    if (!p?.periodFrom || !p?.periodTo) return m;
+    const f = Number(String(p.periodFrom).slice(8, 10)), t = Number(String(p.periodTo).slice(8, 10));
+    const last = new Date(p.payYear, p.payMonth, 0).getDate();
+    return f === 1 && t === last ? m : `${String(f).padStart(2, '0')}–${String(t).padStart(2, '0')} ${m}`;
   }
 }

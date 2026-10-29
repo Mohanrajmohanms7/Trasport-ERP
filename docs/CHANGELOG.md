@@ -4,9 +4,13 @@ Every merged change, newest first: date, pull request, database migration (if an
 Add one entry **with every pull request** (see `.github/pull_request_template.md`). Detail lives in the PR and in the
 module documents listed in [`README.md`](README.md).
 
-| Next Flyway migration | **V89** |
+| Next Flyway migration | **V90** |
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
+
+## 2026-10-29
+- **Driver payroll Part 2: flexible pay periods** · **V89**
+  Generate Payroll takes From / To inside one month (Whole month, 1–10, 11–20, 21–end buttons); active periods of a driver never overlap (a day is never paid twice); trips, bata, deduction / posting dates, the salary slip and the trip-date lock use the period; existing payrolls = whole month. Slab rule on the slip in a stable order.
 
 ## 2026-10-28
 - **Driver payroll Part 1: wheel-based daily pay slabs; trips already paid by Driver Bata not paid twice** (**V88**)

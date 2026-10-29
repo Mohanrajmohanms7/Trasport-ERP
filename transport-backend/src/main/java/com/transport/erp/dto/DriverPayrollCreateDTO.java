@@ -18,6 +18,9 @@ public class DriverPayrollCreateDTO {
     private Long driverId;
     private Integer payYear;
     private Integer payMonth;
+    /** Optional pay period inside the month (e.g. 1-10); both empty = the whole month. */
+    private java.time.LocalDate periodFrom;
+    private java.time.LocalDate periodTo;
     /** Ignored: basic salary comes from the driver's salary configuration. Kept for API compatibility. */
     private BigDecimal basicSalary;
     private BigDecimal allowanceAmount;
