@@ -260,9 +260,9 @@
           <div formArrayName="rows" class="flex flex-col gap-2">
             @for (row of slabRows.controls; track row; let i = $index) {
               <div [formGroupName]="i" class="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end p-3 rounded-[10px] bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)]">
-                <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Wheel count
-                  <select formControlName="wheelCount" class="h-10 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm" data-testid="slab-wheel">
-                    <option [ngValue]="null">All vehicles</option><option value="6">6 wheel</option><option value="10">10 wheel</option><option value="12">12 wheel</option><option value="14">14 wheel</option><option value="16">16 wheel</option><option value="18">18 wheel</option><option value="22">22 wheel</option><option value="EQUIPMENT">Equipment</option>
+                <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Wheel count *
+                  <select required formControlName="wheelCount" class="h-10 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm" data-testid="slab-wheel">
+                    <option [ngValue]="null" disabled>Select wheel count</option><option value="6">6 wheel</option><option value="10">10 wheel</option><option value="12">12 wheel</option><option value="14">14 wheel</option><option value="16">16 wheel</option><option value="18">18 wheel</option><option value="22">22 wheel</option><option value="EQUIPMENT">Equipment</option>
                   </select>
                 </label>
                 <ff-number formControlName="tripsFrom" label="Trips From" [min]="1" [allowDecimal]="false" [required]="true" />
@@ -279,7 +279,7 @@
             <ff-button type="button" label="Save Slabs" icon="save" variant="primary" [disabled]="!canPost()" (ffClick)="saveSlabs()" />
           </div>
         </form>
-        <p class="text-[11px] text-[var(--ff-text-muted)]">Wheel count: slabs for a lorry type (e.g. 10 wheel) apply to trips on that type; other lorries use the "All vehicles" slabs.
+        <p class="text-[11px] text-[var(--ff-text-muted)]">Wheel count is required: each lorry type (e.g. 10 wheel) is paid from its own slabs. Add slabs for every wheel count your lorries have; a day with two types is paid once at the higher rate.
           A day is paid once, at the highest-paying lorry type driven that day.</p>
         <!-- Owner rule: is Driver Bata a payment for the trip (leave the trip out of daily pay) or a food allowance? -->
         <div class="rounded-[10px] border border-[var(--ff-border-default)] p-3 flex flex-col gap-2" data-testid="bata-rule">

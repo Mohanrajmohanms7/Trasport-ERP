@@ -69,7 +69,33 @@ public final class DriverPayrollCalculator {
      * highest-paying wheel count driven that day; a wheel count without its own slabs uses the "All vehicles" slabs.
      * With only "All vehicles" slabs this gives exactly the same result as {@link #calculate}.
      */
-    public static Result calculateByWheel(List<TripRef> trips, List<DriverPaySlab> slabs) {
+    public static Result calculateByWheel(List<TripRef> trips, List<DriverPaySlab> slabs) { return calculateByWheel(trips, slabs, false); }
+
+    /**
+     * Wheel count is mandatory (wheelOnly = true): every trip's lorry must have a wheel count and that wheel count must
+     * have slabs, otherwise the payroll is refused with what to fix (never a silent 0 or an "All vehicles" rate).
+     */
+    public static void requireWheelSlabs(List<TripRef> trips, List<String> tripVehiclesWithoutWheel, List<DriverPaySlab> slabs) {
+        if (!tripVehiclesWithoutWheel.isEmpty()) {
+            throw invalidAs("Wheel Count Missing", "PAYROLL_VEHICLE_WHEEL_MISSING",
+                    "Set the wheel count in Vehicle Master for: " + String.join(", ", new java.util.TreeSet<>(tripVehiclesWithoutWheel)) + ".",
+                    "Open Vehicle Master, choose the wheel count for each of these vehicles, then generate again.");
+        }
+        java.util.Set<String> have = new java.util.HashSet<>();
+        for (DriverPaySlab s : slabs) if (s.getWheelCount() != null) have.add(s.getWheelCount());
+        java.util.Set<String> need = new java.util.TreeSet<>();
+        for (TripRef t : trips) if (t.wheel() != null && !have.contains(t.wheel())) need.add("EQUIPMENT".equals(t.wheel()) ? "Equipment" : t.wheel() + " wheel");
+        if (!need.isEmpty()) {
+            throw invalidAs("Pay Slabs Missing", "PAYROLL_WHEEL_SLABS_MISSING",
+                    "No daily pay slabs for: " + String.join(", ", need) + ".", "Add these in Driver Payroll → Daily Pay Slabs, then generate again.");
+        }
+    }
+
+    private static com.transport.erp.exception.BusinessValidationException invalidAs(String title, String code, String msg, String fix) {
+        return new com.transport.erp.exception.BusinessValidationException(title, code, msg, fix);
+    }
+
+    public static Result calculateByWheel(List<TripRef> trips, List<DriverPaySlab> slabs, boolean wheelOnly) {
         Map<String, List<DriverPaySlab>> byWheel = new java.util.HashMap<>();
         List<DriverPaySlab> all = new ArrayList<>();
         for (DriverPaySlab s : slabs) {
@@ -86,7 +112,7 @@ public final class DriverPayrollCalculator {
             DriverPaySlab best = null; String bestWheel = null;
             for (String w : new java.util.TreeSet<>(e.getValue().stream().map(x -> x == null ? "" : x).toList())) {
                 String wheel = w.isEmpty() ? null : w;
-                List<DriverPaySlab> use = wheel != null && byWheel.containsKey(wheel) ? byWheel.get(wheel) : all;
+                List<DriverPaySlab> use = wheel != null && byWheel.containsKey(wheel) ? byWheel.get(wheel) : (wheelOnly ? List.of() : all);
                 DriverPaySlab s = slabFor(count, use);
                 String paidAs = wheel != null && byWheel.containsKey(wheel) ? wheel : null;
                 if (s != null && (best == null || s.getDailyAmount().compareTo(best.getDailyAmount()) > 0)) { best = s; bestWheel = paidAs; }

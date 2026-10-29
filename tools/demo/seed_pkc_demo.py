@@ -107,8 +107,8 @@ def main():
     tpl = api.post('/branches', {'code': 'TPL', 'name': 'Thanirpandal Yard', 'gstNumber': '33AAKFP4521M1Z6',
                                  'manager': 'R. Senthil', 'phone': '9443098765', 'status': 'ACTIVE',
                                  'address': 'NH-81 (Trichy–Chidambaram Road), Thanirpandal, Perambalur Dt 621115'})
-    api.put('/driver-pay-slabs', [{'tripsFrom': 1, 'tripsTo': 1, 'dailyAmount': 500},
-                                  {'tripsFrom': 2, 'tripsTo': None, 'dailyAmount': 1000}])
+    api.put('/driver-pay-slabs', [{'wheelCount': '10', 'tripsFrom': 1, 'tripsTo': 1, 'dailyAmount': 500},
+                                  {'wheelCount': '10', 'tripsFrom': 2, 'tripsTo': None, 'dailyAmount': 1000}])
 
     # ------------------------------------------------------------------ 2. Materials, quarries, loading points
     print('[2] Materials, quarries, loading points')
@@ -176,7 +176,7 @@ def main():
         ('TN46AE1357', 'Tata', 'LPK 2518 Tipper', 'SELF', 300, 280, 20, 142700),         # permit due soon
         ('TN46AF9876', 'Eicher', 'Pro 6028T Tipper', 'SELF', 180, 240, 200, 36500),
         ('TN46AG4321', 'Ashok Leyland', '1616 Tipper (attached)', 'HIRED', 90, 120, 90, 201300)]):
-        v = api.post('/vehicles', {'code': reg, 'name': f'{reg} — {brand}', 'brand': brand, 'model': model,
+        v = api.post('/vehicles', {'wheelCount': '10', 'code': reg, 'name': f'{reg} — {brand}', 'brand': brand, 'model': model,
                                    'ownerType': owner, 'ownerName': 'PKC Transport' if owner == 'SELF' else 'K. Mani (attached)',
                                    'chassisNumber': f'MAT{445000 + i * 7}', 'engineNumber': f'B6{880000 + i * 11}',
                                    'insuranceExpiryDate': (TODAY + timedelta(days=ins)).isoformat(),

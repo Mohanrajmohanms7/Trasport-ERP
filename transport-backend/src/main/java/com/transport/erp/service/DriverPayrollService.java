@@ -267,8 +267,9 @@ public class DriverPayrollService {
             // (approved / paid Driver Bata linked to the trip) are left out unless the owner set bata as a food allowance.
             boolean excludeBataTrips = bataExcludesTrip(payroll.getCompanyId());
             java.util.List<DriverPayrollCalculator.TripRef> refs = new java.util.ArrayList<>();
+            java.util.List<String> noWheel = new java.util.ArrayList<>();
             for (java.util.Map<String, Object> row : jdbcSlip.queryForList("""
-                    SELECT t.trip_date, t.trip_number, v.wheel_count,
+                    SELECT t.trip_date, t.trip_number, v.wheel_count, v.code AS vehicle_code,
                            EXISTS (SELECT 1 FROM expenses e WHERE e.trip_id = t.id AND e.is_deleted = false
                                       AND e.category = 'DRIVER_BATA' AND e.status IN ('APPROVED', 'PAID')
                                       AND (e.driver_id IS NULL OR e.driver_id = t.driver_id)) AS bata_paid
@@ -279,9 +280,11 @@ public class DriverPayrollService {
                 if (excludeBataTrips && Boolean.TRUE.equals(row.get("bata_paid"))) { excluded.add((String) row.get("trip_number")); continue; }
                 String wheel = null;
                 try { wheel = DriverPayrollCalculator.normWheel((String) row.get("wheel_count")); } catch (RuntimeException ignored) { }
+                if (wheel == null) noWheel.add(row.get("vehicle_code") == null ? "a trip without a vehicle (" + row.get("trip_number") + ")" : (String) row.get("vehicle_code"));
                 refs.add(new DriverPayrollCalculator.TripRef(((java.sql.Date) row.get("trip_date")).toLocalDate(), wheel));
             }
-            result = DriverPayrollCalculator.calculateByWheel(refs, slabs);
+            DriverPayrollCalculator.requireWheelSlabs(refs, noWheel, slabs);   // wheel count is mandatory: never pay a guessed rate
+            result = DriverPayrollCalculator.calculateByWheel(refs, slabs, true);
         } else {
             Map<LocalDate, Long> tripsByDate = new HashMap<>();
             for (Object[] row : tripRepository.countTripsByDate(payroll.getDriver().getId(), payroll.getCompanyId(),

@@ -32,6 +32,11 @@ public class DriverPaySlabService {
             s.setTripsFrom(in.getTripsFrom());
             s.setTripsTo(in.getTripsTo());
             s.setDailyAmount(in.getDailyAmount());
+            if (DriverPayrollCalculator.normWheel(in.getWheelCount()) == null) {
+                throw new com.transport.erp.exception.BusinessValidationException("Wheel Count Required", "SLAB_WHEEL_REQUIRED",
+                        "Every daily pay slab needs a wheel count (driver pay is calculated per wheel count).",
+                        "Choose the wheel count (e.g. 10 wheel) for each slab row.");
+            }
             s.setWheelCount(in.getWheelCount());
             incoming.add(s);
         }

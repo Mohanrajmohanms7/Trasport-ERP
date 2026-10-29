@@ -69,7 +69,7 @@ public class VehicleService {
         // Odometer is written only via VehicleOdometerService — never via master create.
         vehicle.setCurrentOdometerKm(null);
         vehicle.setOdometerUpdatedAt(null);
-        vehicle.setWheelCount(com.transport.erp.service.DriverPayrollCalculator.normWheel(vehicle.getWheelCount()));
+        vehicle.setWheelCount(requireWheel(vehicle.getWheelCount()));
         return vehicleRepository.save(vehicle);
     }
 
@@ -102,7 +102,7 @@ public class VehicleService {
         vehicle.setCapacity(vehicleDetails.getCapacity());
         vehicle.setOwnerName(vehicleDetails.getOwnerName());
         vehicle.setOwnerType(vehicleDetails.getOwnerType());
-        vehicle.setWheelCount(com.transport.erp.service.DriverPayrollCalculator.normWheel(vehicleDetails.getWheelCount()));
+        vehicle.setWheelCount(requireWheel(vehicleDetails.getWheelCount()));
         vehicle.setPurchaseDate(vehicleDetails.getPurchaseDate());
         vehicle.setInsuranceExpiryDate(vehicleDetails.getInsuranceExpiryDate());
         vehicle.setFitnessExpiryDate(vehicleDetails.getFitnessExpiryDate());
@@ -138,5 +138,15 @@ public class VehicleService {
         }
         vehicle.setStatus("ACTIVE".equals(vehicle.getStatus()) ? "INACTIVE" : "ACTIVE");
         return vehicleRepository.save(vehicle);
+    }
+
+    /** Wheel count is required: driver daily pay is calculated from it (6, 10, 12, 14, 16, 18, 22 or Equipment). */
+    private static String requireWheel(String raw) {
+        String w = com.transport.erp.service.DriverPayrollCalculator.normWheel(raw);
+        if (w == null) {
+            throw new com.transport.erp.exception.BusinessValidationException("Wheel Count Required", "VEHICLE_WHEEL_REQUIRED",
+                    "Select the wheel count of this vehicle — driver pay is calculated from it.", "Choose 6, 10, 12, 14, 16, 18, 22 wheel or Equipment.");
+        }
+        return w;
     }
 }

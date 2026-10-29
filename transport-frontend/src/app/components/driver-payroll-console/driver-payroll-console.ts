@@ -436,7 +436,7 @@ export class DriverPayrollConsoleComponent implements OnInit {
       tripsFrom: [s?.tripsFrom ?? nextFrom, [Validators.required, Validators.min(1)]],
       tripsTo: [s?.tripsTo ?? null],
       dailyAmount: [s?.dailyAmount ?? null, [Validators.required, Validators.min(0)]],
-      wheelCount: [s?.wheelCount ?? null]
+      wheelCount: [s?.wheelCount ?? null, Validators.required]
     }));
   }
 

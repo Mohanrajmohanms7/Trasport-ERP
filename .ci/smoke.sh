@@ -109,9 +109,9 @@ R=$(post /drivers '{"code":"D001","name":"Kumar","licenseNumber":"TN0120260001",
 DRV=$(echo "$R" | j "d['data']['id']")
 $PSQL "INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) SELECT 'PT-'||g.n||'-'||g.k, to_date('$PREV-0'||g.n,'YYYY-MM-DD'), $BOOK, $DRV, 'COMPLETED', 'PT-'||g.n||'-'||g.k, 'pt', 1, 1, now(), now(), false, 0 FROM (VALUES (1,1),(2,1),(2,2),(3,1),(3,2),(3,3),(3,4)) AS g(n,k);
 INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) VALUES ('PT-X', to_date('$PREV-04','YYYY-MM-DD'), $BOOK, $DRV, 'CANCELLED', 'PT-X', 'pt', 1, 1, now(), now(), false, 0);" >/dev/null
-R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]'); echo "slabs: $R" | cut -c1-200
+R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]'); echo "slabs: $R" | cut -c1-200
 echo "$R" | grep -q '"success":true' && pass "slabs saved" || fail "slabs" "$R"
-R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":2,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]')
+R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":2,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]')
 echo "$R" | grep -q "Invalid Pay Slab" && pass "overlapping slabs rejected" || fail "slab overlap" "$(echo $R | cut -c1-200)"
 R=$(post /driver-advances '{"driver":{"id":'$DRV'},"amount":500,"paymentMethod":"CASH"}'); echo "advance: $R" | cut -c1-250
 ANO=$(echo "$R" | j "d['data']['advanceNumber']")
@@ -273,8 +273,8 @@ ST=$(api GET "/inventory/stock?warehouseId=$W1&size=50" | j "[ (r['availableQuan
 echo "stock: $ST"; python3 -c "q,a,v=$ST; import sys; sys.exit(0 if abs(float(q)-20)<1e-6 and abs(float(a)-450)<1e-6 and abs(float(v)-9000)<1e-6 else 1)" && pass "stock 20 @ avg 450 = 9000" || fail "avg cost" "$ST"
 INVJ=$($PSQL "SELECT COALESCE(SUM(CASE WHEN d.account_code='1200' THEN j.amount ELSE 0 END),0) FROM journal_vouchers j JOIN chart_of_accounts d ON d.id=j.debit_account_id WHERE j.reference_number LIKE 'STK-%'")
 [ "$INVJ" = "9000.00" ] && pass "inventory account debited 9000 (opening 4000 + receipt 5000)" || fail "stock JVs" "$INVJ"
-R=$(api POST /vehicles '{"code":"TN01AB1234","name":"TN01AB1234","status":"ACTIVE"}'); echo "vehicle: $R" | cut -c1-200; VH=$(echo "$R" | j "d['data']['id']" 2>/dev/null)
-if [ -z "$VH" ] || [ "$VH" = "None" ]; then $PSQL "INSERT INTO vehicles (code,name,status,company_id,branch_id,created_date,updated_date,is_deleted,version) VALUES ('TN01AB1234','TN01AB1234','ACTIVE',1,1,now(),now(),false,0)" >/dev/null; VH=$($PSQL "SELECT id FROM vehicles WHERE code='TN01AB1234'"); fi
+R=$(api POST /vehicles '{"wheelCount":"10","code":"TN01AB1234","name":"TN01AB1234","status":"ACTIVE"}'); echo "vehicle: $R" | cut -c1-200; VH=$(echo "$R" | j "d['data']['id']" 2>/dev/null)
+if [ -z "$VH" ] || [ "$VH" = "None" ]; then $PSQL "INSERT INTO vehicles (code,name,status,company_id,branch_id,created_date,updated_date,is_deleted,version,wheel_count) VALUES ('TN01AB1234','TN01AB1234','ACTIVE',1,1,now(),now(),false,0,'10')" >/dev/null; VH=$($PSQL "SELECT id FROM vehicles WHERE code='TN01AB1234'"); fi
 echo "VH=$VH"
 MR=$(api POST /maintenance-requests '{"vehicleId":'$VH',"title":"Brake noise","description":"front","priority":"HIGH"}'); echo "mr: $MR" | cut -c1-300; MRID=$(echo "$MR" | j "d['data']['id']")
 api POST /maintenance-requests/$MRID/review '{}' >/dev/null; api POST /maintenance-requests/$MRID/approve >/dev/null
@@ -454,11 +454,11 @@ BS=$(api GET "/branches/summary" | j "len(d['data'])" 2>/dev/null); [ -n "$BS" ]
 R=$(api POST /branches '{"code":"BR-2","name":"Salem Yard","gstNumber":"BADGST","status":"ACTIVE"}'); echo "$R" | grep -qi "GSTIN\|gst" && pass "branch GSTIN validated" || fail "branch gst" "$(echo $R | cut -c1-150)"
 R=$(api POST /branches '{"code":"BR-2","name":"Salem Yard","city":"Salem","status":"ACTIVE"}'); B2=$(echo "$R" | j "d['data']['id']")
 R=$(api DELETE /branches/1); echo "$R" | grep -qi "Inactive\|in use\|has users" && pass "branch in use cannot be deleted" || fail "branch delete guard" "$(echo $R | cut -c1-150)"
-R=$(api POST /vehicles '{"code":"TN02XY9999","name":"TN02XY9999","status":"ACTIVE"}'); VB=$(echo "$R" | j "d['data'].get('branchId')"); [ -n "$VB" ] && [ "$VB" != "None" ] && pass "new vehicle gets a branch ($VB)" || fail "vehicle branch" "$(echo $R | cut -c1-150)"
+R=$(api POST /vehicles '{"wheelCount":"10","code":"TN02XY9999","name":"TN02XY9999","status":"ACTIVE"}'); VB=$(echo "$R" | j "d['data'].get('branchId')"); [ -n "$VB" ] && [ "$VB" != "None" ] && pass "new vehicle gets a branch ($VB)" || fail "vehicle branch" "$(echo $R | cut -c1-150)"
 
 
 # ---------------- Masters restructure (API unchanged) ----------------
-R=$(api POST /vehicles '{"code":"TN02CD5678","name":"Tipper 2","status":"ACTIVE","ownerType":"SELF"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "vehicle created from Vehicles screen API" || fail "vehicle create" "$(echo $R | cut -c1-160)"
+R=$(api POST /vehicles '{"wheelCount":"10","code":"TN02CD5678","name":"Tipper 2","status":"ACTIVE","ownerType":"SELF"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "vehicle created from Vehicles screen API" || fail "vehicle create" "$(echo $R | cut -c1-160)"
 R=$(api POST /customers '{"code":"C-NEW","name":"New Site Builders","gstNumber":"33AAAAA1111A1Z5","creditLimit":50000,"status":"ACTIVE"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "customer created from Customers screen API" || fail "customer create" "$(echo $R | cut -c1-160)"
 C=$(as "$TO" POST /branches '{"code":"X","name":"X"}'); [ "$C" = "403" ] && pass "only admins can add branches" || fail "branch guard" "$C"
 VB=$($PSQL "SELECT branch_id FROM vehicles WHERE code='TN02CD5678'"); [ -n "$VB" ] && pass "new vehicle gets a branch ($VB)" || fail "vehicle branch" "empty"
@@ -480,11 +480,11 @@ R=$(api DELETE /branches/$NB); [ "$(echo "$R" | j "d['success']")" = "True" ] &&
 NHO=$($PSQL "SELECT MIN(id) FROM branches WHERE company_id=$NCID")
 R=$(curl -s -X DELETE -H "Authorization: Bearer $TC" $API/branches/$NHO); [ "$(echo "$R" | j "d['success']")" = "False" ] && pass "cannot delete another tenant's branch" || fail "cross-tenant branch delete" "$(echo $R | cut -c1-200)"
 C=$(as "$TO" POST /lookups '{"lookupType":"FUEL_TYPE","code":"X","name":"X"}'); [ "$C" = "403" ] && pass "operator cannot change dropdown lists" || fail "lookup guard" "$C"
-R=$(api POST /vehicles '{"code":"TN09ZZ0001","name":"TN09ZZ0001","status":"ACTIVE"}'); VB=$(echo "$R" | j "d['data'].get('branchId')"); [ -n "$VB" ] && [ "$VB" != "None" ] && pass "new vehicle gets a branch ($VB)" || fail "vehicle branch" "$(echo $R | cut -c1-200)"
+R=$(api POST /vehicles '{"wheelCount":"10","code":"TN09ZZ0001","name":"TN09ZZ0001","status":"ACTIVE"}'); VB=$(echo "$R" | j "d['data'].get('branchId')"); [ -n "$VB" ] && [ "$VB" != "None" ] && pass "new vehicle gets a branch ($VB)" || fail "vehicle branch" "$(echo $R | cut -c1-200)"
 
 
 # ---------------- Vehicle & customer CRUD ----------------
-R=$(api POST /vehicles '{"code":"TN10CR0001","name":"Tipper TN10CR0001","status":"ACTIVE","brand":"Tata","ownerType":"SELF"}'); VID2=$(echo "$R" | j "d['data']['id']")
+R=$(api POST /vehicles '{"wheelCount":"10","code":"TN10CR0001","name":"Tipper TN10CR0001","status":"ACTIVE","brand":"Tata","ownerType":"SELF"}'); VID2=$(echo "$R" | j "d['data']['id']")
 [ -n "$VID2" ] && [ "$VID2" != "None" ] && pass "vehicle create" || fail "vehicle create" "$(echo $R | cut -c1-200)"
 R=$(api GET /vehicles/$VID2); [ "$(echo "$R" | j "d['data']['brand']")" = "Tata" ] && pass "vehicle view" || fail "vehicle view" "$(echo $R | cut -c1-160)"
 R=$(api PUT /vehicles/$VID2 '{"code":"TN10CR0001","name":"Tipper TN10CR0001","status":"ACTIVE","brand":"Ashok Leyland","ownerType":"SELF"}'); [ "$(echo "$R" | j "d['data']['brand']")" = "Ashok Leyland" ] && pass "vehicle edit" || fail "vehicle edit" "$(echo $R | cut -c1-160)"
@@ -553,12 +553,12 @@ def book(path, headers, rows):
     wb=Workbook(); ws=wb.active; ws.append(headers)
     for r in rows: ws.append(r)
     wb.save(path)
-book('/tmp/veh.xlsx',['Registration No *','Display Name *','Ownership','Insurance Valid Till','Brand'],[
- ['TN47BU0001','Tipper BU1','SELF','2027-03-31','Tata'],
- ['TN47BU0002','Tipper BU2','HIRED','31-12-2026','Eicher'],
- ['TN47BU0003','Tipper BU3','SELF','','Ashok Leyland'],
- ['TN47BU0004','Tipper BU4','SELF','2027-01-15','BharatBenz'],
- ['TN47BU0005','','OWNED','not a date','Tata']])
+book('/tmp/veh.xlsx',['Registration No *','Display Name *','Ownership','Insurance Valid Till','Brand','Wheel count *'],[
+ ['TN47BU0001','Tipper BU1','SELF','2027-03-31','Tata','10'],
+ ['TN47BU0002','Tipper BU2','HIRED','31-12-2026','Eicher','6'],
+ ['TN47BU0003','Tipper BU3','SELF','','Ashok Leyland','14'],
+ ['TN47BU0004','Tipper BU4','SELF','2027-01-15','BharatBenz','10'],
+ ['TN47BU0005','','OWNED','not a date','Tata','']])
 book('/tmp/cus.xlsx',['Customer Code *','Customer Name *','GSTIN','Phone','Credit Limit (₹)'],[
  ['BU-C1','Bulk Builders 1','33AAGFS1234K1Z5','9443100001',100000],
  ['BU-C1','Bulk Builders dup','','',0],
@@ -934,9 +934,9 @@ R=$(pa PUT client-plans/$NCID '{"planId":'$STARTER',"note":"ci downgrade"}'); [ 
 [ "$(code_of driver-payrolls)" = "403" ] && [ "$(code_of bookings)" = "200" ] && pass "Starter: payroll blocked, bookings allowed" || fail "starter access" "$(code_of driver-payrolls) $(code_of bookings)"
 R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/branches -d '{"code":"B2","name":"Second yard","status":"ACTIVE"}'); echo "$R" | grep -q "subscription allows" && pass "branch limit (1) enforced" || fail "branch limit" "$(echo $R | cut -c1-200)"
 USED=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$NCID AND is_deleted=false AND status='ACTIVE'"); N=0
-for i in $(seq $((USED+1)) 11); do R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"LIM'$i'","name":"Limit test '$i'","status":"ACTIVE"}'); echo "$R" | grep -q "subscription allows" && { N=$i; break; }; done
+for i in $(seq $((USED+1)) 11); do R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"LIM'$i'","name":"Limit test '$i'","status":"ACTIVE"}'); echo "$R" | grep -q "subscription allows" && { N=$i; break; }; done
 [ "$N" = "11" ] && pass "truck limit (10) enforced on the 11th truck" || fail "truck limit" "stopped at $N (started $USED)"
-R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"LIMX","name":"Inactive spare","status":"INACTIVE"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "inactive trucks do not count" || fail "inactive truck" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"LIMX","name":"Inactive spare","status":"INACTIVE"}'); [ "$(echo "$R" | j "d['success']")" = "True" ] && pass "inactive trucks do not count" || fail "inactive truck" "$(echo $R | cut -c1-160)"
 R=$(pa PUT client-plans/$NCID '{"planId":'$PRO'}'); [ "$(code_of payables/bills)" = "200" ] && pass "upgrade to Professional opens payables" || fail "upgrade" "$(code_of payables/bills)"
 curl -s -X PUT "${H[@]}" "$API/platform-admin/companies/$NCID/features" -d '{"features":{"suppliers":false},"reason":"ci dependency test"}' >/dev/null
 [ "$(code_of payables/bills)" = "403" ] && pass "dependency: no suppliers => no payables" || fail "dependency" "$(code_of payables/bills)"
@@ -1150,8 +1150,8 @@ C=$(as "$NT" PUT /lookups/$LID '{"type":"PAYMENT_METHOD","code":"PHONEPE_TEST","
 
 # ================= BUSINESS GAPS (flow review 3): one trip at a time, trip-matched costs, inactive, duplicates =================
 TODAY=$(date +%F)
-GV1=$(api POST /vehicles '{"code":"TN46GG0001","name":"TN46GG0001","status":"ACTIVE"}' | j "d['data']['id']")
-GV2=$(api POST /vehicles '{"code":"TN46GG0002","name":"TN46GG0002","status":"ACTIVE"}' | j "d['data']['id']")
+GV1=$(api POST /vehicles '{"wheelCount":"10","code":"TN46GG0001","name":"TN46GG0001","status":"ACTIVE"}' | j "d['data']['id']")
+GV2=$(api POST /vehicles '{"wheelCount":"10","code":"TN46GG0002","name":"TN46GG0002","status":"ACTIVE"}' | j "d['data']['id']")
 GD1=$(api POST /drivers '{"code":"GD-1","name":"Guard Driver One","licenseNumber":"TN4620260091","phoneNumber":"9000000091","status":"ACTIVE"}' | j "d['data']['id']")
 GD2=$(api POST /drivers '{"code":"GD-2","name":"Guard Driver Two","licenseNumber":"TN4620260092","phoneNumber":"9000000092","status":"ACTIVE"}' | j "d['data']['id']")
 api POST /vehicles/$GV1/driver/$GD1 >/dev/null; api POST /vehicles/$GV2/driver/$GD2 >/dev/null   # trips need the driver assigned to the lorry
@@ -1289,9 +1289,9 @@ R=$(edit_limits $((LPV+4)) "")
 R=$(edit_limits $((LPV-1)) ""); echo "$R" | grep -q "includes $LPV" && [ "$(lims)" = "$((LPV+4))/$((LPU+3))/4/3" ] && pass "LIM below the plan refused with a clear message, nothing changed" || fail "LIM below plan" "$(echo $R | cut -c1-200)"
 R=$(edit_limits -3 ""); echo "$R" | grep -qi "negative\|cannot be lower" && pass "LIM negative limit refused" || fail "LIM negative" "$(echo $R | cut -c1-160)"
 LT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"ltl.admin","password":"Ltl@2026x"}' | j "d['data']['token']")
-for i in $(seq 1 $((LPV+4))); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT'$((1000+i))'","name":"TN46LT'$((1000+i))'","status":"ACTIVE"}'; done
+for i in $(seq 1 $((LPV+4))); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"TN46LT'$((1000+i))'","name":"TN46LT'$((1000+i))'","status":"ACTIVE"}'; done
 OK=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")   # counted in the database (the API answers 200 even when it refuses)
-R=$(curl -s -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46LT9999","name":"TN46LT9999","status":"ACTIVE"}')
+R=$(curl -s -X POST -H "Authorization: Bearer $LT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"TN46LT9999","name":"TN46LT9999","status":"ACTIVE"}')
 AFTER=$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$LCID AND is_deleted=false AND status='ACTIVE'")
 [ "$OK" = "$((LPV+4))" ] && [ "$AFTER" = "$OK" ] && echo "$R" | grep -q "allows $((LPV+4)) active" && pass "LIM vehicle creation follows the edited limit ($OK created, next refused)" || fail "LIM enforcement" "created $OK / after $AFTER of $((LPV+4)) :: $(echo $R | cut -c1-160)"
 R=$(edit_limits $LPV ""); W=$(echo "$R" | j "d['data'].get('limitWarning') or ''")
@@ -1346,7 +1346,7 @@ R=$(dtrip $GV1 $GD2 '"confirmDriverOverride":true,'); DT=$(echo "$R" | j "d['dat
 R=$(dtrip 999999 $GD1 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Vehicle Not Found" && pass "DRV 5a unknown vehicle id refused" || fail "DRV 5a" "$(echo $R | cut -c1-200)"
 R=$(dtrip $GV1 999999 '"confirmDriverOverride":true,'); echo "$R" | grep -q "Driver Not Found" && pass "DRV 5b unknown driver id refused" || fail "DRV 5b" "$(echo $R | cut -c1-200)"
 XV=$($PSQL "SELECT id FROM vehicles WHERE company_id=$NCID AND is_deleted=false ORDER BY id LIMIT 1")   # another company's vehicle
-[ -z "$XV" ] && XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
+[ -z "$XV" ] && XV=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"TN46XX0001","name":"TN46XX0001","status":"ACTIVE"}' | j "d['data']['id']")
 XD=$(curl -s -X POST -H "Authorization: Bearer $NT" -H 'Content-Type: application/json' $API/drivers -d '{"code":"XD-1","name":"Other Co Driver","licenseNumber":"TN4620269901","phoneNumber":"9000099901","status":"ACTIVE"}' | j "d['data']['id']")
 N0=$(ntrips); R=$(dtrip $XV $GD1 '"confirmDriverOverride":true,'); R2=$(dtrip $GV1 $XD '"confirmDriverOverride":true,')
 echo "$R" | grep -q "Vehicle Not Found" && echo "$R2" | grep -q "Driver Not Found" && [ "$(ntrips)" = "$N0" ] && pass "DRV 9 another company's vehicle / driver refused even when confirmed" || fail "DRV 9" "$(echo $R | cut -c1-120) | $(echo $R2 | cut -c1-120)"
@@ -1391,8 +1391,8 @@ C=$(as "$TO" POST "/exports/invoices/custom?format=xlsx" "$BODY"); [ "$C" = "403
 
 # ================= Driver login acts for the lorry on their open trip (e.g. confirmed with another lorry) =================
 DU=$($PSQL "SELECT id FROM app_users WHERE username='drv1'"); DOLD=$($PSQL "SELECT id FROM drivers WHERE app_user_id=$DU")
-FVA=$(post /vehicles '{"code":"TN46FL0001","name":"TN46FL0001","status":"ACTIVE"}' | j "d['data']['id']")
-FVB=$(post /vehicles '{"code":"TN46FL0002","name":"TN46FL0002","status":"ACTIVE"}' | j "d['data']['id']")
+FVA=$(post /vehicles '{"wheelCount":"10","code":"TN46FL0001","name":"TN46FL0001","status":"ACTIVE"}' | j "d['data']['id']")
+FVB=$(post /vehicles '{"wheelCount":"10","code":"TN46FL0002","name":"TN46FL0002","status":"ACTIVE"}' | j "d['data']['id']")
 FDA=$(post /drivers '{"code":"FD-A","name":"Flow Driver A","licenseNumber":"TN4620268801","phoneNumber":"9000088801","status":"ACTIVE"}' | j "d['data']['id']")
 FDB=$(post /drivers '{"code":"FD-B","name":"Flow Driver B","licenseNumber":"TN4620268802","phoneNumber":"9000088802","status":"ACTIVE"}' | j "d['data']['id']")
 post /vehicles/$FVA/driver/$FDA >/dev/null; post /vehicles/$FVB/driver/$FDB >/dev/null
@@ -1463,9 +1463,9 @@ if d.get('subscriptionPlanId'): d['subscriptionPlan']={'id':d['subscriptionPlanI
 d['maxVehicles']=int('$1'); print(json.dumps(d))" > /tmp/u.json; curl -s -X PUT "${H[@]}" $API/platform-admin/companies/$UC --data @/tmp/u.json; }
 R=$(uedit 8); [ "$($PSQL "SELECT max_vehicles||'/'||COALESCE(extra_vehicles,0) FROM companies WHERE id=$UC")" = "8/0" ] && pass "UNL unlimited plan: vehicle limit 5 -> 8 saved (no extras)" || fail "UNL edit 8" "$(echo $R | cut -c1-200)"
 UT=$(curl -s -X POST $API/auth/login -H 'Content-Type: application/json' -d '{"username":"upl.admin","password":"Upl@2026x"}' | j "d['data']['token']")
-for i in $(seq 1 9); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46UP'$((100+i))'","name":"TN46UP'$((100+i))'","status":"ACTIVE"}'; done
+for i in $(seq 1 9); do curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"TN46UP'$((100+i))'","name":"TN46UP'$((100+i))'","status":"ACTIVE"}'; done
 [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false AND status='ACTIVE'")" = "8" ] && pass "UNL client can add 8 vehicles, the 9th is refused" || fail "UNL cap 8" "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false")"
-R=$(uedit 0); curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"code":"TN46UP200","name":"TN46UP200","status":"ACTIVE"}'
+R=$(uedit 0); curl -s -o /dev/null -X POST -H "Authorization: Bearer $UT" -H 'Content-Type: application/json' $API/vehicles -d '{"wheelCount":"10","code":"TN46UP200","name":"TN46UP200","status":"ACTIVE"}'
 [ "$($PSQL "SELECT max_vehicles FROM companies WHERE id=$UC")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM vehicles WHERE company_id=$UC AND is_deleted=false AND status='ACTIVE'")" = "9" ] && pass "UNL 0 = unlimited: the 9th vehicle is accepted" || fail "UNL zero" "$(echo $R | cut -c1-200)"
 
 # ================= Trip form auto-fill: only booking materials still to dispatch, with the pending quantity =================
@@ -1557,10 +1557,9 @@ WV10=$(post /vehicles '{"code":"TN46WH0010","name":"TN46WH0010","status":"ACTIVE
 [ "$($PSQL "SELECT wheel_count FROM vehicles WHERE id=$WV10")" = "10" ] && pass "WHL vehicle wheel count saved (10W -> 10)" || fail "WHL vehicle wheel" "x"
 WD=$(post /drivers '{"code":"WD-1","name":"Wheel Driver","licenseNumber":"TN4620267701","phoneNumber":"9000077701","status":"ACTIVE"}' | j "d['data']['id']")
 post /vehicles/$WV6/driver/$WD >/dev/null
-R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000},
- {"wheelCount":"6","tripsFrom":1,"tripsTo":1,"dailyAmount":400},{"wheelCount":"6","tripsFrom":2,"tripsTo":null,"dailyAmount":800},
+R=$(put /driver-pay-slabs '[{"wheelCount":"6","tripsFrom":1,"tripsTo":1,"dailyAmount":400},{"wheelCount":"6","tripsFrom":2,"tripsTo":null,"dailyAmount":800},
  {"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":600},{"wheelCount":"10","tripsFrom":2,"tripsTo":2,"dailyAmount":1200},{"wheelCount":"10","tripsFrom":3,"tripsTo":null,"dailyAmount":1500}]')
-[ "$($PSQL "SELECT COUNT(*) FROM driver_pay_slabs WHERE company_id=1 AND is_deleted=false")" = "7" ] && pass "WHL slabs saved per wheel group (All, 6W, 10W)" || fail "WHL slabs" "$(echo $R | cut -c1-200)"
+[ "$($PSQL "SELECT COUNT(*) FROM driver_pay_slabs WHERE company_id=1 AND is_deleted=false")" = "5" ] && pass "WHL slabs saved per wheel group (6W, 10W)" || fail "WHL slabs" "$(echo $R | cut -c1-200)"
 R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":2,"dailyAmount":600},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":900}]'); echo "$R" | grep -q "overlap" && pass "WHL overlap inside one wheel group refused" || fail "WHL overlap" "$(echo $R | cut -c1-160)"
 WB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":3,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$WB/approve >/dev/null
 wtrip() { local T=$(post /trips '{"booking":{"id":'$WB'},"tripDate":"'$TODAY'","vehicle":{"id":'$1'},"driver":{"id":'$WD'},"confirmDriverOverride":true,"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']"); post /trips/$T/dispatch >/dev/null; post /trips/$T/complete >/dev/null; echo $T; }
@@ -1586,7 +1585,7 @@ post /driver-payrolls/$WP/approve >/dev/null; post /driver-payrolls/$WP/post >/d
 [ "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")" = "POSTED" ] && pass "WHL approve and post work as before" || fail "WHL approve/post" "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")"
 post /driver-payrolls/$WP/cancel >/dev/null
 [ "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")" = "CANCELLED" ] && pass "WHL cancel reverses as before" || fail "WHL cancel" "$($PSQL "SELECT status FROM driver_payrolls WHERE id=$WP")"
-put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]' >/dev/null
+put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]' >/dev/null
 
 # ================= Driver payroll Part 2: flexible pay periods (no overlap, a day never paid twice) =================
 PDAY=$(date +%d | sed 's/^0//'); PYR=$(date +%Y); PMO=$(date +%m | sed 's/^0//'); MEND=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%F); MSTART=$(date +%Y-%m-01)
@@ -1603,6 +1602,19 @@ R=$(pgen "$PYR-$(printf %02d $PMO)-20" "$(date -d "$MSTART +1 month +4 day" +%F)
 post /driver-payrolls/$PP2/approve >/dev/null; R=$(post /driver-payrolls/$PP2/cancel); 
 R=$(pgen $TODAY $MEND); [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "PER after cancel the same period can be generated again" || fail "PER regenerate" "$(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE driver_id=$FDA AND period_from IS NULL")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE period_from IS NULL OR period_to IS NULL")" = "0" ] && pass "PER every payroll has a pay period (older ones = whole month)" || fail "PER null periods" "x"
+
+# ================= Wheel count mandatory: vehicles, slabs, payroll =================
+R=$(post /vehicles '{"code":"TN46NW0001","name":"No Wheel","status":"ACTIVE"}'); echo "$R" | grep -q "Wheel Count Required" && pass "MWC vehicle without wheel count refused" || fail "MWC vehicle" "$(echo $R | cut -c1-160)"
+R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":null,"dailyAmount":500}]'); echo "$R" | grep -q "Wheel Count Required" && pass "MWC slab without wheel count refused" || fail "MWC slab" "$(echo $R | cut -c1-160)"
+NWV=$(post /vehicles '{"wheelCount":"12","code":"TN46NW0012","name":"Twelve","status":"ACTIVE"}' | j "d['data']['id']")
+NWD=$(post /drivers '{"code":"NW-1","name":"No Slab Driver","licenseNumber":"TN4620268899","phoneNumber":"9000088899","status":"ACTIVE"}' | j "d['data']['id']"); post /vehicles/$NWV/driver/$NWD >/dev/null
+NB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":1,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$NB/approve >/dev/null
+NT=$(post /trips '{"booking":{"id":'$NB'},"tripDate":"'$TODAY'","vehicle":{"id":'$NWV'},"driver":{"id":'$NWD'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']"); post /trips/$NT/dispatch >/dev/null; post /trips/$NT/complete >/dev/null
+R=$(post /driver-payrolls/generate '{"driverId":'$NWD',"payYear":'$(date +%Y)',"payMonth":'$(date +%m | sed 's/^0//')',"allowanceAmount":0}')
+echo "$R" | grep -q "No daily pay slabs for: 12 wheel" && pass "MWC payroll refused when the lorry's wheel count has no slabs (says which)" || fail "MWC slabs missing" "$(echo $R | cut -c1-200)"
+$PSQL "UPDATE vehicles SET wheel_count=NULL WHERE id=$NWV" >/dev/null
+R=$(post /driver-payrolls/generate '{"driverId":'$NWD',"payYear":'$(date +%Y)',"payMonth":'$(date +%m | sed 's/^0//')',"allowanceAmount":0}')
+echo "$R" | grep -q "Set the wheel count in Vehicle Master for: TN46NW0012" && pass "MWC payroll refused for a lorry without wheel count (names it)" || fail "MWC no wheel" "$(echo $R | cut -c1-200)"
 
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
