@@ -89,6 +89,7 @@ public class BulkImportService {
                 c("chassisNumber", "Chassis No", false, "text", "MAT445000", ""),
                 c("engineNumber", "Engine No", false, "text", "B6880000", ""),
                 c("ownerType", "Ownership", false, "enum:SELF,HIRED,CLIENT", "SELF", "SELF = own, HIRED = attached, CLIENT = client owned"),
+                c("wheelCount", "Wheel count", true, "enum:6,10,12,14,16,18,22,EQUIPMENT", "10", "Driver pay depends on it: 6, 10, 12, 14, 16, 18, 22 or EQUIPMENT"),
                 c("ownerName", "Owner Name", false, "text", "PKC Transport", ""),
                 c("branch", "Branch Code", false, "branch", "HO", "Blank = your branch / head office"),
                 c("purchaseDate", "Purchase Date", false, "date", "2024-04-15", "YYYY-MM-DD or DD-MM-YYYY"),
@@ -473,6 +474,7 @@ public class BulkImportService {
                 x.setChassisNumber(blankToNull(v.get("chassisNumber")));
                 x.setEngineNumber(blankToNull(v.get("engineNumber")));
                 x.setOwnerType(v.getOrDefault("ownerType", "").isBlank() ? "SELF" : v.get("ownerType").toUpperCase(Locale.ROOT));
+                x.setWheelCount(v.get("wheelCount"));
                 x.setOwnerName(blankToNull(v.get("ownerName")));
                 x.setBranchId(idByCode("branches", companyId, v.get("branch")));
                 x.setPurchaseDate(date(v.get("purchaseDate")));

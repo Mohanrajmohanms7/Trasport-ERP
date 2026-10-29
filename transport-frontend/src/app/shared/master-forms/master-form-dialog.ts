@@ -39,7 +39,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../lookup-a
             <label class="flex flex-col gap-1">Chassis no<input class="mf-in" [(ngModel)]="f.chassisNumber" name="chassis" /></label>
             <label class="flex flex-col gap-1">Engine no<input class="mf-in" [(ngModel)]="f.engineNumber" name="engine" /></label>
             <label class="flex flex-col gap-1">Ownership<select class="mf-in" [(ngModel)]="f.ownerType" name="ownerType"><option value="SELF">Own vehicle</option><option value="HIRED">Hired / attached</option><option value="CLIENT">Client owned</option></select></label>
-            <label class="flex flex-col gap-1">Wheel count (for driver pay)<select class="mf-in" [(ngModel)]="f.wheelCount" name="wheelCount" data-testid="wheel-count"><option [ngValue]="null">Not set</option><option value="6">6 wheel</option><option value="10">10 wheel</option><option value="12">12 wheel</option><option value="14">14 wheel</option><option value="16">16 wheel</option><option value="18">18 wheel</option><option value="22">22 wheel</option><option value="EQUIPMENT">Equipment (JCB / excavator)</option></select></label>
+            <label class="flex flex-col gap-1">Wheel count * <span class="text-[10px] font-normal text-[var(--ff-text-muted)]">(driver pay)</span><select required class="mf-in" [(ngModel)]="f.wheelCount" name="wheelCount" data-testid="wheel-count"><option [ngValue]="null" disabled>Select wheel count</option><option value="6">6 wheel</option><option value="10">10 wheel</option><option value="12">12 wheel</option><option value="14">14 wheel</option><option value="16">16 wheel</option><option value="18">18 wheel</option><option value="22">22 wheel</option><option value="EQUIPMENT">Equipment (JCB / excavator)</option></select></label>
             <label class="flex flex-col gap-1">Owner name<input class="mf-in" [(ngModel)]="f.ownerName" name="ownerName" /></label>
             <label class="flex flex-col gap-1">Purchase date<input type="date" class="mf-in" [(ngModel)]="f.purchaseDate" name="pd" /></label>
             <label class="flex flex-col gap-1">Based at branch<select class="mf-in" [(ngModel)]="f.branchId" name="branch"><option [ngValue]="null">My branch / head office</option>@for (b of branches(); track b.id) {<option [ngValue]="b.id">{{ b.name }}</option>}</select></label>
@@ -131,6 +131,10 @@ export class MasterFormDialogComponent implements OnChanges {
       delete body.typeId; delete body.categoryId; delete body.capacityId;
     }
     ['purchaseDate', 'insuranceExpiryDate', 'fitnessExpiryDate', 'permitExpiryDate'].forEach(k => { if (body[k] === '') body[k] = null; });
+    if (this.kind() === 'vehicle' && !this.f.wheelCount) {   // driver pay is calculated from the wheel count
+      this.notify.error('Select the wheel count — driver pay is calculated from it.');
+      return;
+    }
     this.saving.set(true);
     const req = this.f.id ? this.http.put<any>(`${url}/${this.f.id}`, body) : this.http.post<any>(url, body);
     req.subscribe({
