@@ -9,6 +9,8 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-10-29
+- **Fix: Daily Pay Slabs screen dropped the Wheel count when saving** (frontend only)
+  Every row was sent as "All vehicles", so wheel-wise rows with the same trip range were refused as overlapping. The wheel count (optional; empty = All vehicles) is now sent.
 - **Driver payroll Part 2: flexible pay periods** · **V89**
   Generate Payroll takes From / To inside one month (Whole month, 1–10, 11–20, 21–end buttons); active periods of a driver never overlap (a day is never paid twice); trips, bata, deduction / posting dates, the salary slip and the trip-date lock use the period; existing payrolls = whole month. Slab rule on the slip in a stable order.
 

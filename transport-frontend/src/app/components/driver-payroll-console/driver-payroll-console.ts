@@ -452,7 +452,9 @@ export class DriverPayrollConsoleComponent implements OnInit {
     const rows = (this.slabRows.getRawValue() as any[]).map(r => ({
       tripsFrom: Number(r.tripsFrom),
       tripsTo: r.tripsTo === null || r.tripsTo === '' ? null : Number(r.tripsTo),
-      dailyAmount: Number(r.dailyAmount)
+      dailyAmount: Number(r.dailyAmount),
+      // optional: empty / "All vehicles" = applies to every lorry; otherwise only to that wheel count
+      wheelCount: r.wheelCount === null || r.wheelCount === undefined || r.wheelCount === '' ? null : String(r.wheelCount)
     }));
     this.api.saveSlabs(rows).subscribe({
       next: r => { this.slabs.set(r.data ?? []); this.notify.success('Daily pay slabs saved'); },
