@@ -107,8 +107,9 @@ PREV=$(date -d "$(date +%Y-%m-01) -1 day" +%Y-%m)
 PY=${PREV%-*}; PM=$((10#${PREV#*-}))
 R=$(post /drivers '{"code":"D001","name":"Kumar","licenseNumber":"TN0120260001","phoneNumber":"9000000001","status":"ACTIVE"}'); echo "driver: $R" | cut -c1-250
 DRV=$(echo "$R" | j "d['data']['id']")
-$PSQL "INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) SELECT 'PT-'||g.n||'-'||g.k, to_date('$PREV-0'||g.n,'YYYY-MM-DD'), $BOOK, $DRV, 'COMPLETED', 'PT-'||g.n||'-'||g.k, 'pt', 1, 1, now(), now(), false, 0 FROM (VALUES (1,1),(2,1),(2,2),(3,1),(3,2),(3,3),(3,4)) AS g(n,k);
-INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) VALUES ('PT-X', to_date('$PREV-04','YYYY-MM-DD'), $BOOK, $DRV, 'CANCELLED', 'PT-X', 'pt', 1, 1, now(), now(), false, 0);" >/dev/null
+PTV=$($PSQL "INSERT INTO vehicles (code,name,status,company_id,branch_id,created_date,updated_date,is_deleted,version,wheel_count) VALUES ('TN01PT0001','TN01PT0001','ACTIVE',1,1,now(),now(),false,0,'10') RETURNING id" | head -1)
+$PSQL "INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, vehicle_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) SELECT 'PT-'||g.n||'-'||g.k, to_date('$PREV-0'||g.n,'YYYY-MM-DD'), $BOOK, $DRV, $PTV, 'COMPLETED', 'PT-'||g.n||'-'||g.k, 'pt', 1, 1, now(), now(), false, 0 FROM (VALUES (1,1),(2,1),(2,2),(3,1),(3,2),(3,3),(3,4)) AS g(n,k);
+INSERT INTO trips (trip_number, trip_date, booking_id, driver_id, vehicle_id, status, code, name, company_id, branch_id, created_date, updated_date, is_deleted, version) VALUES ('PT-X', to_date('$PREV-04','YYYY-MM-DD'), $BOOK, $DRV, $PTV, 'CANCELLED', 'PT-X', 'pt', 1, 1, now(), now(), false, 0);" >/dev/null
 R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]'); echo "slabs: $R" | cut -c1-200
 echo "$R" | grep -q '"success":true' && pass "slabs saved" || fail "slabs" "$R"
 R=$(put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":2,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":null,"dailyAmount":1000}]')
@@ -1604,7 +1605,7 @@ R=$(pgen $TODAY $MEND); [ "$(echo "$R" | j "d.get('success')")" = "True" ] && pa
 [ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE driver_id=$FDA AND period_from IS NULL")" = "0" ] && [ "$($PSQL "SELECT COUNT(*) FROM driver_payrolls WHERE period_from IS NULL OR period_to IS NULL")" = "0" ] && pass "PER every payroll has a pay period (older ones = whole month)" || fail "PER null periods" "x"
 
 # ================= Wheel count mandatory: vehicles, slabs, payroll =================
-R=$(post /vehicles '{"code":"TN46NW0001","name":"No Wheel","status":"ACTIVE"}'); echo "$R" | grep -q "Wheel Count Required" && pass "MWC vehicle without wheel count refused" || fail "MWC vehicle" "$(echo $R | cut -c1-160)"
+R=$(post /vehicles '{"code":"TN46NW0001","name":"No Wheel","status":"ACTIVE"}'); echo "$R" | grep -q "Select the wheel count" && pass "MWC vehicle without wheel count refused" || fail "MWC vehicle" "$(echo $R | cut -c1-160)"
 R=$(put /driver-pay-slabs '[{"tripsFrom":1,"tripsTo":null,"dailyAmount":500}]'); echo "$R" | grep -q "Wheel Count Required" && pass "MWC slab without wheel count refused" || fail "MWC slab" "$(echo $R | cut -c1-160)"
 NWV=$(post /vehicles '{"wheelCount":"12","code":"TN46NW0012","name":"Twelve","status":"ACTIVE"}' | j "d['data']['id']")
 NWD=$(post /drivers '{"code":"NW-1","name":"No Slab Driver","licenseNumber":"TN4620268899","phoneNumber":"9000088899","status":"ACTIVE"}' | j "d['data']['id']"); post /vehicles/$NWV/driver/$NWD >/dev/null

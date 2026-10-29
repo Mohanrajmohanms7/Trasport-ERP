@@ -102,7 +102,8 @@ public class VehicleService {
         vehicle.setCapacity(vehicleDetails.getCapacity());
         vehicle.setOwnerName(vehicleDetails.getOwnerName());
         vehicle.setOwnerType(vehicleDetails.getOwnerType());
-        vehicle.setWheelCount(requireWheel(vehicleDetails.getWheelCount()));
+        // an edit that does not send the wheel count keeps the saved one; a vehicle can never end up without one
+        vehicle.setWheelCount(requireWheel(vehicleDetails.getWheelCount() != null ? vehicleDetails.getWheelCount() : vehicle.getWheelCount()));
         vehicle.setPurchaseDate(vehicleDetails.getPurchaseDate());
         vehicle.setInsuranceExpiryDate(vehicleDetails.getInsuranceExpiryDate());
         vehicle.setFitnessExpiryDate(vehicleDetails.getFitnessExpiryDate());
