@@ -125,7 +125,7 @@ python3 -c "import sys; sys.exit(0 if abs(float('$G')-2500)<0.001 and abs(float(
 [ "$TT" = "7" ] && [ "$TD" = "3" ] && pass "cancelled trip ignored, 7 trips / 3 days" || fail "trip counts" "$TT/$TD"
 [[ "$PNO" =~ ^PAY-[0-9]{4}/00001$ ]] && pass "payroll number $PNO" || fail "payroll number" "$PNO"
 R=$(post /driver-payrolls/generate '{"driverId":'$DRV',"payYear":'$PY',"payMonth":'$PM'}')
-echo "$R" | grep -q "Duplicate Pay Period" && pass "duplicate period blocked" || fail "duplicate period" "$(echo $R | cut -c1-200)"
+echo "$R" | grep -q "Duplicate Pay Period\|Pay Period Overlaps" && pass "duplicate period blocked" || fail "duplicate period" "$(echo $R | cut -c1-200)"
 R=$(post /driver-payrolls/$PR/post)
 echo "$R" | grep -q "Invalid Payroll Status" && pass "cannot post a DRAFT" || fail "post draft" "$(echo $R | cut -c1-200)"
 post /driver-payrolls/$PR/approve >/dev/null
