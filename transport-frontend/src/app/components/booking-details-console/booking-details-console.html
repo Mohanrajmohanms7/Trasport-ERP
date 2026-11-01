@@ -175,7 +175,14 @@
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptionsFor(row)" [required]="true" />
                     </div>
                     <ff-number formControlName="rate" [label]="'Material rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
-                    <ff-number formControlName="transportRate" [label]="'Transport charge / ' + (rowUnit(row) || 'unit')" [min]="0" />
+                    <div class="flex flex-col gap-1">
+                      <ff-number formControlName="transportRate" [label]="row.get('transportBasis')?.value === 'PER_TRIP' ? 'Transport per load (default, ₹)' : 'Transport charge / ' + (rowUnit(row) || 'unit')" [min]="0" />
+                      <div class="flex items-center gap-3 text-[11px]" role="radiogroup" aria-label="Transport charged">
+                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="radio" value="PER_UNIT" formControlName="transportBasis" /> Per {{ rowUnit(row) || 'unit' }}</label>
+                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="radio" value="PER_TRIP" formControlName="transportBasis" /> Per load (fixed / distance)</label>
+                      </div>
+                      <span class="text-[10px] text-[var(--ff-text-muted)]">{{ row.get('transportBasis')?.value === 'PER_TRIP' ? 'Charged once per lorry load; editable on each trip.' : 'Multiplied by the quantity.' }}</span>
+                    </div>
                     <ff-number formControlName="royaltyRate" [label]="'Royalty / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="loadingCharge" [label]="'Loading / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="gstPercentage" label="GST (%)" [min]="0" [max]="100" />

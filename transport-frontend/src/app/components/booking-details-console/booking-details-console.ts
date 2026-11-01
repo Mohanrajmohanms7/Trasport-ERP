@@ -262,7 +262,8 @@ export class BookingDetailsConsoleComponent implements OnInit {
   // Same formula as the backend: quantity x (material rate + transport + royalty + loading), all per unit of the line.
   getItemSubtotal(row: any): number {
     const qty = Number(row.get('quantity')?.value || 0);
-    const base = Number(row.get('rate')?.value || 0) + Number(row.get('transportRate')?.value || 0)
+    const perLoad = row.get('transportBasis')?.value === 'PER_TRIP';   // per-load transport is added per trip, not x quantity
+    const base = Number(row.get('rate')?.value || 0) + (perLoad ? 0 : Number(row.get('transportRate')?.value || 0))
       + Number(row.get('royaltyRate')?.value || 0) + Number(row.get('loadingCharge')?.value || 0);
     return Math.round(qty * base * 100) / 100;
   }
@@ -301,6 +302,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
       quantity: [1, [Validators.required, Validators.min(0.01)]],
       rate: [0, Validators.required],
       transportRate: [0, Validators.required],
+      transportBasis: ['PER_UNIT'],
       royaltyRate: [0, Validators.required],
       loadingCharge: [0, Validators.required],
       gstPercentage: [18, Validators.required]
@@ -333,7 +335,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
 
   perUnitTotal(row: AbstractControl): number {
     const v = (k: string) => Number(row.get(k)?.value || 0);
-    return v('rate') + v('transportRate') + v('royaltyRate') + v('loadingCharge');
+    return v('rate') + (row.get('transportBasis')?.value === 'PER_TRIP' ? 0 : v('transportRate')) + v('royaltyRate') + v('loadingCharge');
   }
 
   /** Same customer + delivery site + material booked before: suggest the rates used last time (user can change them). */
@@ -345,7 +347,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
       next: (r: any) => {
         const d = r?.data;
         if (!d || Number(row.get('material.id')?.value) !== materialId) return;   // user moved on
-        row.patchValue({ rate: d.rate ?? row.get('rate')?.value, transportRate: d.transportRate ?? 0, royaltyRate: d.royaltyRate ?? 0, loadingCharge: d.loadingCharge ?? 0 });
+        row.patchValue({ rate: d.rate ?? row.get('rate')?.value, transportRate: d.transportRate ?? 0, transportBasis: d.transportBasis || 'PER_UNIT', royaltyRate: d.royaltyRate ?? 0, loadingCharge: d.loadingCharge ?? 0 });
         this.rateHints.set(row, `Rates from ${d.bookingNumber || 'the last booking'}${d.bookingDate ? ' (' + d.bookingDate + ')' : ''}`);
       },
       error: () => {}
@@ -419,6 +421,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
           quantity: [d.quantity, [Validators.required, Validators.min(0.01)]],
           rate: [d.rate, Validators.required],
           transportRate: [d.transportRate, Validators.required],
+          transportBasis: [d.transportBasis || 'PER_UNIT'],
           royaltyRate: [d.royaltyRate, Validators.required],
           loadingCharge: [d.loadingCharge, Validators.required],
           gstPercentage: [d.gstPercentage, Validators.required]
