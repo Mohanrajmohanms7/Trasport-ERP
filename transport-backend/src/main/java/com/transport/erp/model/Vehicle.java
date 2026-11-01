@@ -18,6 +18,13 @@ import java.time.LocalDateTime;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Vehicle extends BaseEntity {
 
+    /** One load's payload (V90), e.g. 2 Unit; a trip may not carry more in that unit. Blank = not checked. */
+    @Column(name = "payload_capacity", precision = 12, scale = 3)
+    private java.math.BigDecimal payloadCapacity;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payload_uom_id")
+    private UomMaster payloadUom;
+
     /** Wheel count for wheel-based driver pay slabs (V88): 6, 10, 12, 14, 16, 18, 22 or EQUIPMENT; blank = not set. */
     @Column(name = "wheel_count", length = 20)
     private String wheelCount;

@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @Table(name = "trip_details")
 public class TripDetail extends BaseEntity {
 
+    /** Per-load transport amount when the booking line is PER_TRIP (distance-based; added once, not x quantity) (V90). */
+    @Column(name = "transport_amount", precision = 14, scale = 2)
+    private BigDecimal transportAmount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trip_id", nullable = false)
     @JsonBackReference

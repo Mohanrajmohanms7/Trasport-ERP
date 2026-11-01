@@ -384,6 +384,7 @@ public class TripService {
         }
 
         Map<Long, BigDecimal> thisTripQty = new HashMap<>();
+        java.util.Set<Long> seenMaterials = new java.util.HashSet<>();
         for (TripDetail d : trip.getDetails()) {
             if (d.getMaterial() == null || d.getMaterial().getId() == null) {
                 throw new IllegalArgumentException("Select a material on every trip line.");
@@ -394,6 +395,10 @@ public class TripService {
                 throw new BusinessValidationException("Material Not On Booking", "TRIP_MATERIAL_NOT_ON_BOOKING",
                         "Material " + materialName + " is not on booking " + booking.getBookingNumber() + ".",
                         "Pick a material from the booking, or add it to the booking first.");
+            }
+            if (!seenMaterials.add(bd.getMaterial().getId())) {   // one lorry load = one trip: a material appears once per load
+                throw new BusinessValidationException("Material Already In This Load", "TRIP_DUPLICATE_MATERIAL",
+                        materialName + " is already in this load.", "Each lorry load is its own trip — add another load (trip) instead.");
             }
             if (d.getQuantity() == null || d.getQuantity().signum() <= 0) {
                 throw new BusinessValidationException("Invalid Quantity", "TRIP_QUANTITY_INVALID",
@@ -420,12 +425,24 @@ public class TripService {
                     && trip.getLoadingLocation().getLoadingCharges() != null && trip.getLoadingLocation().getLoadingCharges().signum() > 0) {
                 d.setLoadingCharges(trip.getLoadingLocation().getLoadingCharges());   // booking has no loading rate: use the loading point's
             }
+            // Transport: PER_UNIT = booking rate x quantity on the invoice (no amount here); PER_TRIP = a fixed / distance-based
+            // amount for this load, defaulting to the booking's rate and editable per trip.
+            if ("PER_TRIP".equals(bd.getTransportBasis())) {
+                if (d.getTransportAmount() == null) d.setTransportAmount(nz(bd.getTransportRate()));
+                if (d.getTransportAmount().signum() < 0) {
+                    throw new BusinessValidationException("Invalid Transport Amount", "TRIP_TRANSPORT_NEGATIVE",
+                            "Transport amount for " + materialName + " cannot be negative.", "Enter the transport charge for this load.");
+                }
+            } else {
+                d.setTransportAmount(null);
+            }
             if (d.getCode() == null) d.setCode("TRIP-LINE");
             if (d.getName() == null) d.setName("Trip Line");
             String basis = billingQuantityPolicy == null ? BillingQuantityPolicy.DELIVERED : billingQuantityPolicy.basis(booking.getCompanyId());
             thisTripQty.merge(bd.getMaterial().getId(), BillingQuantityPolicy.billQty(d, basis), BigDecimal::add);
         }
 
+        assertWithinPayload(trip);
         BigDecimal tolerancePct = tolerancePercent(booking.getCompanyId());
         Map<Long, BigDecimal> alreadyMoved = movedByMaterial(booking.getId(), excludeTripId);
 
@@ -693,5 +710,67 @@ public class TripService {
 
         auditService.log(deletedByUsername, "TRIP_CANCELLED", "trips", trip.getId(), null,
                 "Cancelled trip itinerary: " + trip.getTripNumber());
+    }
+
+    /** One load may not carry more than the lorry's payload (V90; only lines in the payload's unit are compared). */
+    private void assertWithinPayload(Trip trip) {
+        if (trip.getVehicle() == null || trip.getVehicle().getId() == null || vehicleRepository == null) return;
+        com.transport.erp.model.Vehicle v = vehicleRepository.findById(trip.getVehicle().getId()).orElse(null);
+        if (v == null || v.getPayloadCapacity() == null || v.getPayloadCapacity().signum() <= 0 || v.getPayloadUom() == null) return;
+        Long unitId = v.getPayloadUom().getId();
+        BigDecimal load = BigDecimal.ZERO;
+        for (TripDetail d : trip.getDetails()) {
+            if (d.getUom() != null && unitId.equals(d.getUom().getId())) load = load.add(nz(d.getQuantity()));
+        }
+        if (load.compareTo(v.getPayloadCapacity()) > 0) {
+            String unit = " " + OrderUomService.label(v.getPayloadUom());
+            throw new BusinessValidationException("More Than The Lorry Carries", "TRIP_OVER_PAYLOAD",
+                    String.format("%s carries %s%s; this load is %s%s.", v.getCode(), v.getPayloadCapacity().stripTrailingZeros().toPlainString(), unit,
+                            load.stripTrailingZeros().toPlainString(), unit),
+                    "Reduce this load to the lorry's payload and add another load (trip) for the rest.");
+        }
+    }
+
+    /** One load (trip) in a "Dispatch loads" request. */
+    public record LoadRequest(Long vehicleId, Long driverId, java.time.LocalDate tripDate, Boolean confirmDriverOverride,
+                              List<LoadLine> lines) {}
+    public record LoadLine(Long materialId, BigDecimal quantity, BigDecimal transportAmount) {}
+
+    /**
+     * Dispatch loads: one PLANNED trip per lorry load for a booking, all-or-nothing. Every load goes through createTrip, so
+     * all rules apply (remaining booking quantity across the loads, payload, one material per load, vehicle / driver checks).
+     */
+    @Transactional
+    public List<Trip> planLoads(Long bookingId, List<LoadRequest> loads, String username) {
+        if (bookingId == null) throw new IllegalArgumentException("Choose the booking.");
+        if (loads == null || loads.isEmpty()) throw new IllegalArgumentException("Add at least one load.");
+        if (loads.size() > 50) throw new IllegalArgumentException("At most 50 loads at a time.");
+        List<Trip> created = new java.util.ArrayList<>();
+        int n = 0;
+        for (LoadRequest l : loads) {
+            n++;
+            if (l == null || l.vehicleId() == null || l.driverId() == null) throw new IllegalArgumentException("Load " + n + ": choose the lorry and the driver.");
+            Trip t = new Trip();
+            com.transport.erp.model.Booking b = new com.transport.erp.model.Booking(); b.setId(bookingId); t.setBooking(b);
+            com.transport.erp.model.Vehicle v = new com.transport.erp.model.Vehicle(); v.setId(l.vehicleId()); t.setVehicle(v);
+            com.transport.erp.model.Driver d = new com.transport.erp.model.Driver(); d.setId(l.driverId()); t.setDriver(d);
+            t.setTripDate(l.tripDate());
+            t.setConfirmDriverOverride(l.confirmDriverOverride());
+            List<TripDetail> details = new java.util.ArrayList<>();
+            for (LoadLine ln : l.lines() == null ? List.<LoadLine>of() : l.lines()) {
+                TripDetail td = new TripDetail();
+                com.transport.erp.model.Material m = new com.transport.erp.model.Material(); m.setId(ln.materialId()); td.setMaterial(m);
+                td.setQuantity(ln.quantity());
+                td.setTransportAmount(ln.transportAmount());
+                details.add(td);
+            }
+            t.setDetails(details);
+            try {
+                created.add(createTrip(t, username));
+            } catch (BusinessValidationException e) {
+                throw new BusinessValidationException(e.getTitle(), e.getErrorCode(), "Load " + n + ": " + e.getMessage(), e.getUserAction());
+            }
+        }
+        return created;
     }
 }

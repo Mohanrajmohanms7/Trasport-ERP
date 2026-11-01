@@ -1,5 +1,6 @@
 package com.transport.erp.controller;
 
+import java.util.List;
 import com.transport.erp.dto.ApiResponse;
 import com.transport.erp.model.Trip;
 import com.transport.erp.security.TenantAccessService;
@@ -62,6 +63,21 @@ public class TripController {
     public ApiResponse<Trip> getTripById(@PathVariable Long id) {
         Trip trip = tripService.getTripById(id);
         return ApiResponse.success(trip, "Trip details fetched successfully");
+    }
+
+    /** Dispatch loads: one planned trip per lorry load for a booking (all-or-nothing). */
+    public record PlanLoadsRequest(Long bookingId, List<TripService.LoadRequest> loads) {}
+
+    @PostMapping("/plan-loads")
+    public ApiResponse<List<java.util.Map<String, Object>>> planLoads(@RequestBody PlanLoadsRequest req) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        List<java.util.Map<String, Object>> out = new java.util.ArrayList<>();
+        for (Trip t : tripService.planLoads(req.bookingId(), req.loads(), username)) {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", t.getId()); m.put("tripNumber", t.getTripNumber()); m.put("tripDate", t.getTripDate());
+            out.add(m);
+        }
+        return ApiResponse.success(out, out.size() + " load(s) planned");
     }
 
     @PostMapping

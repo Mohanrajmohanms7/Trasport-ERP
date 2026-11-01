@@ -696,7 +696,13 @@ public class SalesInvoiceService {
             detail.setRate(positiveOr(td.getRate(), bookingDetail.getRate()));
             detail.setLoadingCharges(positiveOr(td.getLoadingCharges(), bookingDetail.getLoadingCharge()));
             detail.setRoyalty(positiveOr(td.getRoyalty(), bookingDetail.getRoyaltyRate()));
-            detail.setFreightCharges(bookingDetail.getTransportRate());
+            if ("PER_TRIP".equals(bookingDetail.getTransportBasis())) {
+                // fixed / distance-based amount for this load: added once to the line, never x quantity
+                detail.setFreightCharges(BigDecimal.ZERO);
+                detail.setTransportAmount(td.getTransportAmount() != null ? td.getTransportAmount() : bookingDetail.getTransportRate());
+            } else {
+                detail.setFreightCharges(bookingDetail.getTransportRate());
+            }
             detail.setGstPercentage(bookingDetail.getGstPercentage());
 
             invoice.getDetails().add(detail);
@@ -759,6 +765,7 @@ public class SalesInvoiceService {
             m.put("quantityBasis", d.getQuantityBasis());
             m.put("rate", d.getRate());
             m.put("freightCharges", d.getFreightCharges());
+            m.put("transportAmount", d.getTransportAmount());
             m.put("loadingCharges", d.getLoadingCharges());
             m.put("royalty", d.getRoyalty());
             m.put("gstPercentage", d.getGstPercentage());
