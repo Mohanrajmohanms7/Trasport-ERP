@@ -81,10 +81,10 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, hei
   await pg.screenshot({ path: 'shots/x-mobile-menu.png' });
   // Trip editor material lines and the Dispatch loads dialog on a phone (lines must be fully visible)
   try {
-    await pg.goto('http://localhost:4200/trips', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1000);
+    await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await pg.waitForTimeout(1000);
     await pg.locator('button:has-text("Plan Dispatch Trip")').first().click(); await pg.waitForTimeout(900);
     await pg.screenshot({ path: 'shots/x-mobile-trip-editor.png', fullPage: true });
-    await pg.goto('http://localhost:4200/trips', { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+    await pg.goto('http://localhost:4200/trips-planning', { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
     await pg.locator('[data-testid=trips-dispatch-loads]').click(); await pg.waitForTimeout(900);
     const sel = pg.locator('[data-testid=dl-booking]');
     if (await sel.locator('option').count() > 1) { await sel.selectOption({ index: 1 }); await pg.waitForTimeout(1500); }
