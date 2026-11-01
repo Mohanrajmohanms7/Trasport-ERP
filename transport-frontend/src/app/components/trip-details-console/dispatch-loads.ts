@@ -62,7 +62,7 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
               <div class="flex items-center justify-between gap-2">
                 <b class="text-sm">Load {{ i + 1 }}</b>
                 <div class="flex items-center gap-1">
-                  <input type="number" min="1" max="20" class="w-14 h-9 rounded-lg border px-1.5 text-center text-sm bg-[var(--ff-surface-card)]" [(ngModel)]="repeatN[i]" [attr.aria-label]="'Repeat load ' + (i + 1) + ' times'" />
+                  <input type="number" min="1" max="20" class="w-14 h-9 rounded-lg border px-1.5 text-center text-sm bg-[var(--ff-surface-card)]" [ngModel]="repeatN[i] ?? 1" (ngModelChange)="repeatN[i] = $event" [attr.aria-label]="'Repeat load ' + (i + 1) + ' times'" />
                   <button type="button" class="h-9 px-2.5 rounded-lg border border-[var(--ff-border-default)] text-xs font-semibold hover:bg-[var(--ff-surface-hover)]" (click)="repeat(i)" title="Add more loads with the same lorry">Repeat ×{{ repeatN[i] || 1 }}</button>
                   <button type="button" class="w-9 h-9 rounded-lg hover:bg-[var(--ff-surface-hover)]" (click)="removeLoad(i)" [attr.aria-label]="'Remove load ' + (i + 1)"><span class="material-icons text-base">delete</span></button>
                 </div>
