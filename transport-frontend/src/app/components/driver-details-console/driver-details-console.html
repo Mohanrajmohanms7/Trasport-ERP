@@ -112,7 +112,7 @@
             <ff-textbox formControlName="filePath" label="File Path / URL" placeholder="Optional reference" />
             <div class="driver-form__footer">
               <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showDocEditor.set(false)" />
-              <ff-button type="submit" label="Save" icon="save" variant="primary" />
+              <ff-button [disabled]="loading()" type="submit" label="Save" icon="save" variant="primary" />
             </div>
           </form>
         </ff-card>
@@ -134,7 +134,7 @@
             <ff-textarea formControlName="description" label="Remarks" [rows]="2" />
             <div class="driver-form__footer">
               <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showAttendanceEditor.set(false)" />
-              <ff-button type="submit" label="Save" icon="save" variant="primary" />
+              <ff-button [disabled]="loading()" type="submit" label="Save" icon="save" variant="primary" />
             </div>
           </form>
         </ff-card>
@@ -176,7 +176,7 @@
             <ff-number formControlName="advanceTaken" label="Advance Taken" [min]="0" [required]="true" />
             <div class="driver-form__footer">
               <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showSalaryEditor.set(false)" />
-              <ff-button type="submit" label="Save Payroll" icon="save" variant="primary" />
+              <ff-button [disabled]="loading()" type="submit" label="Save Payroll" icon="save" variant="primary" />
             </div>
           </form>
         </ff-card>

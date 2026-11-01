@@ -280,7 +280,7 @@ export class FuelDetailsConsoleComponent implements OnInit {
   }
 
   saveRequest() {
-    if (this.requestForm.invalid) return;
+    if (this.requestForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.requestForm.getRawValue();

@@ -196,7 +196,7 @@ export class CompanyAdministrationComponent implements OnInit {
   }
 
   saveCompany() {
-    if (this.companyForm.invalid) return;
+    if (this.companyForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     this.successMessage.set('');
@@ -294,7 +294,7 @@ export class CompanyAdministrationComponent implements OnInit {
   }
 
   saveSettings() {
-    if (this.settingsForm.invalid) return;
+    if (this.settingsForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     this.successMessage.set('');

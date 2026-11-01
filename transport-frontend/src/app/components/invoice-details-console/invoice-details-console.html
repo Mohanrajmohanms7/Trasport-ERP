@@ -261,13 +261,14 @@
                 </button>
               </div>
 
-              <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
+              <div formArrayName="details" class="ff-lines lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1 pb-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-2 lg:grid-cols-6 xl:grid-cols-11 gap-3 items-end">
-                    <div formGroupName="trip">
+                  <div [formGroupName]="idx" class="ff-line-row p-3 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px]">
+                    <div class="ff-line-sno" [attr.aria-label]="'Line ' + (idx + 1)"><span class="ff-line-field-label">S.No</span>{{ idx + 1 }}</div>
+                    <div class="ff-line-wide" formGroupName="trip">
                       <ff-dropdown formControlName="id" label="Trip reference" [remoteSearch]="tripPick.search" [resolveMissing]="tripPick.resolve" [options]="tripOptions" searchPlaceholder="Search options..." />
                     </div>
-                    <div formGroupName="material">
+                    <div class="ff-line-wide" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Master" [remoteSearch]="materialPick.search" [resolveMissing]="materialPick.resolve" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
@@ -295,7 +296,7 @@
                       </div>
                     </div>
 
-                    <div class="flex items-center justify-end gap-2 lg:pb-2">
+                    <div class="ff-line-auto flex items-center justify-end gap-2 pb-2">
                       <button type="button" (click)="removeDetail(idx)" class="p-2 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] rounded-lg transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
@@ -346,7 +347,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
-            <ff-button type="submit" label="Generate Billing Voucher" icon="save" variant="primary" [disabled]="detailsArray.length === 0 || discountTooHigh" />
+            <ff-button type="submit" label="Generate Billing Voucher" icon="save" variant="primary" [disabled]="(detailsArray.length === 0 || discountTooHigh) || loading()" />
           </div>
         </form>
       </div>

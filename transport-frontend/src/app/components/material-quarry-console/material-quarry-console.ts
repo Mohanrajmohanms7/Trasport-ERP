@@ -301,7 +301,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   }
 
   saveMaterial() {
-    if (this.materialForm.invalid) return;
+    if (this.materialForm.invalid || this.loading()) return;
     this.loading.set(true);
     this.saveError.set('');
     const formVal = this.materialForm.value;
@@ -394,7 +394,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   }
 
   saveQuarry() {
-    if (this.quarryForm.invalid) return;
+    if (this.quarryForm.invalid || this.loading()) return;
     this.loading.set(true);
     this.saveError.set('');
     const payload = {
@@ -475,7 +475,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   }
 
   saveUom() {
-    if (this.uomForm.invalid) return;
+    if (this.uomForm.invalid || this.loading()) return;
     this.loading.set(true);
     const existing = this.editingUom();
     const payload = this.uomForm.value;
@@ -548,7 +548,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   }
 
   saveConversion() {
-    if (this.conversionForm.invalid) return;
+    if (this.conversionForm.invalid || this.loading()) return;
     this.loading.set(true);
     const formVal = this.conversionForm.value;
     const existing = this.editingConversion();
@@ -643,7 +643,7 @@ export class MaterialQuarryConsoleComponent implements OnInit {
   }
 
   saveLocation() {
-    if (this.locationForm.invalid) return;
+    if (this.locationForm.invalid || this.loading()) return;
     this.loading.set(true);
 
     const val = this.locationForm.value;

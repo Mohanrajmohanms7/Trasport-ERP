@@ -18,6 +18,9 @@ done
 echo "login: $LR" | cut -c1-600
 TOKEN=$(echo "$LR" | j "d['data']['token']")
 [ -n "$TOKEN" ] && pass login || { fail login "no token"; grep -E "ERROR|Exception" -A3 /tmp/app.log | head -60; exit 1; }
+# Tests sometimes repeat an identical request on purpose (to check a refusal): opt out of the duplicate-submission guard.
+# The guard itself is tested further down with "command curl" (no opt-out), like a real double click.
+curl() { command curl -H 'X-Idempotency: off' "$@"; }
 H=(-H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json')
 post() { curl -s -X POST "${H[@]}" "$API$1" -d "${2:-{\}}"; }
 put()  { curl -s -X PUT  "${H[@]}" "$API$1" -d "$2"; }
@@ -1684,6 +1687,20 @@ INV=$(post /invoices/from-trips "{\"tripIds\":[$TIDS]}" | j "d['data']['id']")
 [ "$($PSQL "SELECT string_agg(DISTINCT taxable_amount::text, ',') FROM sales_invoice_details WHERE invoice_id=$INV AND material_id=$MAT AND quantity=2")" = "300.00" ] && pass "E2E invoice: per-unit transport x quantity (2 x (100 + 50) = 300)" || fail "E2E per-unit invoice" "$($PSQL "SELECT string_agg(quantity||'='||taxable_amount, ',') FROM sales_invoice_details WHERE invoice_id=$INV AND material_id=$MAT")"
 R=$(post /invoices/from-trips "{\"tripIds\":[$($PSQL "SELECT MIN(id) FROM trips WHERE booking_id=$DB1")]}"); [ "$(echo "$R" | j "d.get('success')")" != "True" ] && pass "E2E a load cannot be invoiced twice" || fail "E2E double billing" "$(echo $R | cut -c1-160)"
 curl -s -o /tmp/e2e-inv.pdf -H "Authorization: Bearer $TOKEN" $API/invoices/$INV/pdf; cp /tmp/e2e-inv.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/e2e-invoice-per-load.pdf" 2>/dev/null || true
+
+# ================= Duplicate submission guard (double click / retry never creates a second voucher) =================
+IDEM="IDEM-$RANDOM$RANDOM"
+dbl() { command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -D /tmp/idem$1.h "$API/expenses" -d '{"expenseDate":"'$TODAY'","category":"OFFICE_EXPENSE","amount":123,"paymentMethod":"CASH","description":"'$IDEM'"}' > /tmp/idem$1.json; }
+dbl 1 & dbl 2 & wait
+[ "$($PSQL "SELECT COUNT(*) FROM expenses WHERE description='$IDEM'")" = "1" ] && pass "DUP two simultaneous identical saves create ONE expense voucher" || fail "DUP simultaneous" "$($PSQL "SELECT COUNT(*) FROM expenses WHERE description='$IDEM'") :: $(cut -c1-160 /tmp/idem1.json)"
+grep -qi "X-Duplicate-Submission: replayed" /tmp/idem1.h /tmp/idem2.h && [ "$(python3 -c "import json; print(json.load(open('/tmp/idem1.json'))['data']['id']==json.load(open('/tmp/idem2.json'))['data']['id'])")" = "True" ] && pass "DUP the second click gets the first voucher back (same id, marked replayed)" || fail "DUP replay" "$(cut -c1-160 /tmp/idem2.json)"
+dbl 3; [ "$($PSQL "SELECT COUNT(*) FROM expenses WHERE description='$IDEM'")" = "1" ] && pass "DUP a third click right after still creates nothing new" || fail "DUP third" "x"
+IDEMB="IDEMB-$RANDOM"; bk() { command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$API/bookings" -d '{"customer":{"id":'$CUST'},"remarks":"'$IDEMB'","details":[{"material":{"id":'$MAT'},"quantity":1,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' > /dev/null; }
+bk & bk & wait
+[ "$($PSQL "SELECT COUNT(*) FROM bookings WHERE remarks='$IDEMB'")" = "1" ] && pass "DUP double-clicked booking saved once (numbering untouched)" || fail "DUP booking" "$($PSQL "SELECT COUNT(*) FROM bookings WHERE remarks='$IDEMB'")"
+R=$(command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$API/expenses" -d '{"expenseDate":"'$TODAY'","category":"OFFICE_EXPENSE","amount":-5,"paymentMethod":"CASH","description":"'$IDEM'-bad"}')
+R2=$(command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$API/expenses" -d '{"expenseDate":"'$TODAY'","category":"OFFICE_EXPENSE","amount":-5,"paymentMethod":"CASH","description":"'$IDEM'-bad"}')
+[ "$(echo "$R2" | j "d.get('success')")" != "True" ] && pass "DUP a refused request is not remembered (second try is checked again)" || fail "DUP refused" "$(echo $R2 | cut -c1-160)"
 
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"

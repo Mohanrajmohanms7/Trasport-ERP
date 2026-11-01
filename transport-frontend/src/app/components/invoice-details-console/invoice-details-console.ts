@@ -398,7 +398,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
   }
 
   saveInvoice() {
-    if (this.invoiceForm.invalid) return;
+    if (this.invoiceForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.invoiceForm.getRawValue();

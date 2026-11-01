@@ -347,4 +347,34 @@ const lg = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const lp = await lg.newPage();
 await lp.goto('http://localhost:4200/login', { waitUntil: 'networkidle' });
 await lp.screenshot({ path: 'shots/m-login.png' });
+// Changed screens at desktop, tablet and phone widths: S.No + one-row lines, Dispatch loads page, receipt panel
+for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 820, height: 1180 }, 't'], [{ width: 390, height: 844 }, 'm']]) {
+  const ctx = await browser.newContext({ viewport: vw });
+  await ctx.addInitScript(s => {
+    localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken);
+    localStorage.setItem('username', s.username); localStorage.setItem('name', 'Accounts Team');
+    localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN']));
+    localStorage.setItem('subscriptionExpired', 'false'); localStorage.setItem('companyId', String(s.companyId));
+    if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+  }, tenant);
+  const pg = await ctx.newPage();
+  const open = async (route, btn, name) => {
+    try {
+      await pg.goto('http://localhost:4200/' + route, { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+      if (btn) { await pg.locator(`button:has-text("${btn}")`).first().click(); await pg.waitForTimeout(1000); }
+      await pg.screenshot({ path: `shots/u-${tag}-${name}.png` });
+    } catch (e) { console.log('ux shot skipped', name, tag, e.message); }
+  };
+  await open('bookings', 'Register Booking Request', 'booking-lines');
+  await open('trips-planning', 'Plan Dispatch Trip', 'trip-lines');
+  await open('billing-invoices', 'Generate Tax Invoice', 'invoice-lines');
+  await open('payment-logs', 'Record Payment Receipt', 'receipt');
+  try {
+    await pg.goto('http://localhost:4200/dispatch-loads', { waitUntil: 'networkidle' }); await pg.waitForTimeout(900);
+    const sel = pg.locator('[data-testid=dl-booking]');
+    if (await sel.locator('option').count() > 1) { await sel.selectOption({ index: 1 }); await pg.waitForTimeout(1500); }
+    await pg.screenshot({ path: `shots/u-${tag}-dispatch-page.png` });
+  } catch (e) { console.log('ux shot skipped dispatch', tag, e.message); }
+  await ctx.close();
+}
 await browser.close();

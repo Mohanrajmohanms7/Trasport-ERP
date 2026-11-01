@@ -233,7 +233,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEntryForm.set(false)" />
-            <ff-button type="submit" label="Save Entry" icon="save" variant="primary" />
+            <ff-button [disabled]="loading()" type="submit" label="Save Entry" icon="save" variant="primary" />
           </div>
         </form>
       </div>
@@ -268,7 +268,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showRequestForm.set(false)" />
-            <ff-button type="submit" label="Submit Request" icon="save" variant="primary" />
+            <ff-button [disabled]="loading()" type="submit" label="Submit Request" icon="save" variant="primary" />
           </div>
         </form>
       </div>

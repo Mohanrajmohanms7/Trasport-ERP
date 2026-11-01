@@ -404,7 +404,26 @@
               </div>
 
               <!-- Allocation panel -->
-              <div class="flex flex-col min-h-0">
+              <div class="flex flex-col min-h-0 gap-3">
+                @if (!editingReceipt() && (((readyBilling()?.trips ?? 0) > 0) || rbDraft())) {
+                  <div class="rounded-[10px] border border-[var(--ff-border-default)] bg-[var(--ff-surface-hover)] p-3 flex flex-col gap-2" data-testid="ready-for-billing">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <span class="text-xs font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">Ready for billing</span>
+                      @if ((readyBilling()?.trips ?? 0) > 0) {
+                        <span class="text-xs"><b>{{ readyBilling()?.trips }}</b> completed trip(s) not invoiced yet · ≈ ₹{{ readyBilling()?.amount | number:'1.2-2' }} incl. GST</span>
+                      }
+                    </div>
+                    <p class="text-[11px] text-[var(--ff-text-secondary)]">A receipt can only be allocated to an approved invoice. Invoice these trips first, then allocate this receipt to it.</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                      @if (rbDraft(); as dr) {
+                        <span class="text-xs">Draft <b>{{ dr.number }}</b> created.</span>
+                        <button type="button" class="h-9 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold disabled:opacity-50" [disabled]="rbBusy()" (click)="approveDraft()" data-testid="rb-approve">Approve and use here</button>
+                      } @else {
+                        <button type="button" class="h-9 px-3 rounded-lg border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] text-xs font-semibold disabled:opacity-50" [disabled]="rbBusy()" (click)="createDraftFromReady()" data-testid="rb-create">{{ rbBusy() ? 'Creating…' : 'Create invoice for these trips' }}</button>
+                      }
+                    </div>
+                  </div>
+                }
                 @if (!editingReceipt() && outstandingInvoices().length > 0) {
                   <div class="flex flex-col gap-2 border border-[var(--ff-border-default)] rounded-[10px] bg-[var(--ff-surface-card)] overflow-hidden">
                     <div class="flex items-center justify-between gap-2 px-3 pt-3">
@@ -490,7 +509,7 @@
           }
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-[var(--ff-border-divider)] shrink-0 bg-[var(--ff-surface-hover)]">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showEditor.set(false)" />
-            <ff-button type="submit" label="Save Receipt" icon="save" variant="primary" [disabled]="(!editingReceipt() && remainingUnallocated < 0)" />
+            <ff-button type="submit" label="Save Receipt" icon="save" variant="primary" [disabled]="((!editingReceipt() && remainingUnallocated < 0)) || loading()" />
           </div>
         </form>
 

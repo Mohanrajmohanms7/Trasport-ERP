@@ -247,7 +247,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showUserEditor.set(false)" />
-            <ff-button type="submit" label="Save Specifications" icon="save" variant="primary" />
+            <ff-button [disabled]="loading()" type="submit" label="Save Specifications" icon="save" variant="primary" />
           </div>
         </form>
       </div>
@@ -291,7 +291,7 @@
 
           <div class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-slate-50 dark:bg-slate-950/40">
             <ff-button type="button" label="Cancel" variant="ghost" (ffClick)="showRoleEditor.set(false)" />
-            <ff-button type="submit" label="Save Role Specs" icon="save" variant="primary" />
+            <ff-button [disabled]="loading()" type="submit" label="Save Role Specs" icon="save" variant="primary" />
           </div>
         </form>
       </div>

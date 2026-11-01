@@ -679,3 +679,15 @@ form.ff-submitted textarea:invalid { border-color: #dc2626 !important; box-shado
   app-shell header .app-tenant-pill { flex-shrink: 0; }
   app-shell header button.w-10, app-shell header a.w-10 { width: 2.125rem; }
 }
+
+
+/* Itemized detail lines (Booking, Trip, Invoice): one item per row, S.No first, fixed field widths;
+   the list scrolls sideways on narrow screens instead of wrapping an item onto several lines. */
+.ff-lines { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ff-line-row { display: flex; flex-wrap: nowrap; align-items: flex-end; gap: .75rem; min-width: max-content; }
+.ff-line-row > * { flex: 0 0 auto; width: 9.5rem; }
+.ff-line-row > .ff-line-sno { width: 2.5rem; align-self: center; text-align: center; font-weight: 700; color: var(--ff-text-secondary); }
+.ff-line-row > .ff-line-wide { width: 15rem; }
+.ff-line-row > .ff-line-auto { width: auto; }
+.ff-line-field-label { display: block; font-size: 11px; font-weight: 600; color: var(--ff-text-muted); margin-bottom: .25rem; }
+.ff-line-select { height: 2.5rem; width: 100%; border-radius: .5rem; border: 1px solid var(--ff-border-default); background: var(--ff-surface-card); color: var(--ff-text-primary); padding: 0 .5rem; font-size: .875rem; }
