@@ -94,6 +94,9 @@
                       </button>
                     }
                     @if (bkg.status === 'APPROVED') {
+                      <button (click)="dispatchFor.set(bkg.id ?? null)" class="bkg-btn-solid" title="Send lorries: one load = one trip" data-testid="bkg-dispatch-loads">
+                        <span class="material-icons text-sm">local_shipping</span> Dispatch loads
+                      </button>
                       <button (click)="closeBooking(bkg)" class="bkg-btn-outline" title="No more loads needed">
                         <span class="material-icons text-sm">task_alt</span> Close
                       </button>
@@ -242,4 +245,8 @@
 
 @if (quick.open(); as q) {
   <app-quick-create [kind]="q.kind" [prefill]="q.text" [context]="q.context" (saved)="quick.done($event)" (closed)="quick.cancel()" />
+}
+
+@if (dispatchFor(); as bid) {
+  <app-dispatch-loads [bookingId]="bid" (closed)="dispatchFor.set(null)" (done)="dispatchFor.set(null); loadBookings()" />
 }

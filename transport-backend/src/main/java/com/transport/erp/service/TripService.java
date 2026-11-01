@@ -538,6 +538,7 @@ public class TripService {
             line.put("remaining", remaining);   // may include the over-delivery tolerance (limit for one more trip)
             // Still to dispatch = booked − already on trips (never counts the tolerance): a fully dispatched line has 0.
             line.put("pending", bookedQty.subtract(movedQty).max(BigDecimal.ZERO));
+            line.put("transportBasis", bd.getTransportBasis() == null ? "PER_UNIT" : bd.getTransportBasis());
             line.put("rate", nz(bd.getRate()));
             line.put("transportRate", nz(bd.getTransportRate()));
             line.put("royaltyRate", nz(bd.getRoyaltyRate()));

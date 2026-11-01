@@ -1,3 +1,4 @@
+import { DispatchLoadsComponent } from './dispatch-loads';
 import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -27,7 +28,7 @@ import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-imports: [FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
+imports: [DispatchLoadsComponent, FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -44,6 +45,8 @@ imports: [FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCre
   styles: []
 })
 export class TripDetailsConsoleComponent implements OnInit {
+  /** "Dispatch loads" dialog (one lorry load = one trip). */
+  showDispatchLoads = signal(false);
   private httpFlow = inject(HttpClient);
   private appConfirm = inject(AppConfirmService);
   private tripMgmtService = inject(TripMgmtService);
@@ -120,6 +123,15 @@ export class TripDetailsConsoleComponent implements OnInit {
    * Unit of a trip line: the unit the material was booked in (trips never change or convert it).
    * Falls back to the saved trip line while the booking list is still loading.
    */
+  /** True when this line's booking material charges transport per load (fixed / distance amount). */
+  rowPerLoad(row: any): boolean {
+    const id = Number(row?.get?.('material.id')?.value);
+    const bookingId = Number(this.tripForm?.getRawValue()?.booking?.id);
+    const line: any = this.bookings().find(b => b.id === bookingId)?.details?.find((d: any) => d.material?.id === id && !d.isDeleted);
+    if (line?.transportBasis) return line.transportBasis === 'PER_TRIP';
+    return !!(this.balance()?.lines || []).find((l: any) => Number(l.materialId) === id && l.transportBasis === 'PER_TRIP');
+  }
+
   rowUnit(row: any): string {
     const bookingId = Number(this.tripForm?.getRawValue()?.booking?.id);
     const matId = Number(row.get('material.id')?.value);
@@ -403,7 +415,9 @@ export class TripDetailsConsoleComponent implements OnInit {
       deliveredQuantity: [d?.deliveredQuantity ?? null, Validators.min(0)],
       rate: [d?.rate ?? 0],
       loadingCharges: [d?.loadingCharges ?? 0, Validators.min(0)],
-      royalty: [d?.royalty ?? 0]
+      royalty: [d?.royalty ?? 0],
+      /** Per-load transport (booking line "per load"): editable here; empty = the booking's amount. */
+      transportAmount: [d?.transportAmount ?? null, Validators.min(0)]
     });
   }
 

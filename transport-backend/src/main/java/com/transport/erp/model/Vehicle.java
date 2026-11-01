@@ -21,7 +21,7 @@ public class Vehicle extends BaseEntity {
     /** One load's payload (V90), e.g. 2 Unit; a trip may not carry more in that unit. Blank = not checked. */
     @Column(name = "payload_capacity", precision = 12, scale = 3)
     private java.math.BigDecimal payloadCapacity;
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)   // small lookup, always sent with the vehicle (dispatch screen needs its unit)
     @JoinColumn(name = "payload_uom_id")
     private UomMaster payloadUom;
 
