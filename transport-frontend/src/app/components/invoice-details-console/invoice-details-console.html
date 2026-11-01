@@ -278,7 +278,11 @@
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptions()" [required]="true" />
                     </div>
                     <ff-number formControlName="rate" [label]="perUnitLabel('Rate', row) + ' (INR)'" [min]="0" [required]="true" />
-                    <ff-number formControlName="freightCharges" [label]="perUnitLabel('Transport charge', row)" [min]="0" [required]="true" />
+                    @if (row.get('transportAmount')?.value !== null && row.get('transportAmount')?.value !== undefined) {
+                      <ff-number formControlName="transportAmount" label="Transport ₹ per load (once, not × qty)" [min]="0" />
+                    } @else {
+                      <ff-number formControlName="freightCharges" [label]="perUnitLabel('Transport charge', row)" [min]="0" [required]="true" />
+                    }
                     <ff-number formControlName="loadingCharges" [label]="perUnitLabel('Loading', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="royalty" [label]="perUnitLabel('Royalty', row)" [min]="0" [required]="true" />
                     <ff-number formControlName="gstPercentage" label="GST %" [min]="0" [max]="28" [required]="true" />

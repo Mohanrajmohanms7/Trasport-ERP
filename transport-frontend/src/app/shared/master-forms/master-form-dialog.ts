@@ -40,6 +40,9 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../lookup-a
             <label class="flex flex-col gap-1">Engine no<input class="mf-in" [(ngModel)]="f.engineNumber" name="engine" /></label>
             <label class="flex flex-col gap-1">Ownership<select class="mf-in" [(ngModel)]="f.ownerType" name="ownerType"><option value="SELF">Own vehicle</option><option value="HIRED">Hired / attached</option><option value="CLIENT">Client owned</option></select></label>
             <label class="flex flex-col gap-1">Wheel count * <span class="text-[10px] font-normal text-[var(--ff-text-muted)]">(driver pay)</span><select required class="mf-in" [(ngModel)]="f.wheelCount" name="wheelCount" data-testid="wheel-count"><option [ngValue]="null" disabled>Select wheel count</option><option value="6">6 wheel</option><option value="10">10 wheel</option><option value="12">12 wheel</option><option value="14">14 wheel</option><option value="16">16 wheel</option><option value="18">18 wheel</option><option value="22">22 wheel</option><option value="EQUIPMENT">Equipment (JCB / excavator)</option></select></label>
+            <label class="flex flex-col gap-1">Payload per load <span class="text-[10px] font-normal text-[var(--ff-text-muted)]">(optional — e.g. 2 Unit; a trip cannot carry more)</span>
+              <div class="flex gap-2"><input class="mf-in w-24" type="number" min="0" step="0.001" [(ngModel)]="f.payloadCapacity" name="payloadCapacity" data-testid="payload-capacity" />
+                <select class="mf-in flex-1" [(ngModel)]="f.payloadUomId" name="payloadUomId" data-testid="payload-uom"><option [ngValue]="null">Unit…</option>@for (u of uoms(); track u.id) { <option [ngValue]="u.id">{{ u.symbol || u.code }}</option> }</select></div></label>
             <label class="flex flex-col gap-1">Owner name<input class="mf-in" [(ngModel)]="f.ownerName" name="ownerName" /></label>
             <label class="flex flex-col gap-1">Purchase date<input type="date" class="mf-in" [(ngModel)]="f.purchaseDate" name="pd" /></label>
             <label class="flex flex-col gap-1">Based at branch<select class="mf-in" [(ngModel)]="f.branchId" name="branch"><option [ngValue]="null">My branch / head office</option>@for (b of branches(); track b.id) {<option [ngValue]="b.id">{{ b.name }}</option>}</select></label>
@@ -78,6 +81,8 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../lookup-a
 })
 export class MasterFormDialogComponent implements OnChanges {
   private http = inject(HttpClient);
+  /** Units for the payload (same list as order units). */
+  uoms = signal<any[]>([]);
   private notify = inject(FfNotificationService);
   private companyId = resolveTenantCompanyId();
 
@@ -101,6 +106,15 @@ export class MasterFormDialogComponent implements OnChanges {
   ngOnChanges(): void {
     const r = this.record();
     this.f = r ? { ...r } : { status: 'ACTIVE', ownerType: 'SELF', creditLimit: 0 };
+    if (this.kind() === 'vehicle') {
+      this.f.payloadUomId = r?.payloadUom?.id ?? null;
+      if (!this.uoms().length) {
+        this.http.get<any>('/api/v1/uoms', { params: { size: 200 } }).subscribe({
+          next: res => { const d = res?.data; this.uoms.set(Array.isArray(d) ? d : (d?.content || [])); },
+          error: () => { /* payload unit list unavailable: payload stays optional */ }
+        });
+      }
+    }
     if (this.kind() === 'vehicle') {
       this.f.typeId = r?.type?.id ?? null;
       this.f.categoryId = r?.category?.id ?? null;
@@ -131,6 +145,13 @@ export class MasterFormDialogComponent implements OnChanges {
       delete body.typeId; delete body.categoryId; delete body.capacityId;
     }
     ['purchaseDate', 'insuranceExpiryDate', 'fitnessExpiryDate', 'permitExpiryDate'].forEach(k => { if (body[k] === '') body[k] = null; });
+    if (this.kind() === 'vehicle') {
+      const p = body.payloadCapacity === '' || body.payloadCapacity === null || body.payloadCapacity === undefined ? null : Number(body.payloadCapacity);
+      if ((p && p > 0) !== !!body.payloadUomId) { this.notify.error('Enter both the payload and its unit (e.g. 2 Unit), or leave both empty.'); return; }
+      body.payloadCapacity = p && p > 0 ? p : null;
+      body.payloadUom = body.payloadUomId ? { id: body.payloadUomId } : null;
+      delete body.payloadUomId;
+    }
     if (this.kind() === 'vehicle' && !this.f.wheelCount) {   // driver pay is calculated from the wheel count
       this.notify.error('Select the wheel count — driver pay is calculated from it.');
       return;

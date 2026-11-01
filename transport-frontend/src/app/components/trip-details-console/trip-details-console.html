@@ -9,9 +9,14 @@
       </h1>
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage dispatch fleet allocations, vehicle driver assignments, and transit delivery confirmations</p>
     </div>
-    <button (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
+    <div class="flex flex-wrap gap-2 self-start md:self-auto">
+      <button (click)="showDispatchLoads.set(true)" class="flex items-center gap-2 border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] font-semibold py-2 px-4 rounded-[8px] transition text-xs" data-testid="trips-dispatch-loads" title="Send several lorries for a booking: one load = one trip">
+        <span class="material-icons text-sm">local_shipping</span> Dispatch loads
+      </button>
+      <button (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
       <span class="material-icons text-sm">schedule_send</span> Plan Dispatch Trip
     </button>
+    </div>
     <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="trips" /></div>
   </header>
 
@@ -224,7 +229,7 @@
               </div>
             }
 
-            <div class="flex-1 min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
+            <div class="lg:flex-1 lg:min-h-0 flex flex-col gap-3 border-t border-[var(--ff-border-divider)] pt-4">
               <div class="flex justify-between items-center shrink-0">
                 <span class="text-xs font-bold text-[var(--ff-text-primary)] uppercase tracking-wider">Allocated Materials Payload details</span>
                 <button type="button" (click)="addDetail()" [disabled]="isCompletedEdit" class="disabled:opacity-40 text-xs text-[var(--ff-color-primary-600)] hover:text-[var(--ff-color-primary-700)] flex items-center gap-1 font-semibold">
@@ -232,13 +237,16 @@
                 </button>
               </div>
 
-              <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
+              <div formArrayName="details" class="lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
                   <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
                     <div class="lg:col-span-2" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="qtyLabel('Planned Qty', row)" [min]="0" [required]="true" />
+                    @if (rowPerLoad(row)) {
+                      <ff-number formControlName="transportAmount" label="Transport ₹ (this load)" [min]="0" />
+                    }
                     <ff-number formControlName="loadedQuantity" [label]="qtyLabel('Loaded Qty', row)" [min]="0" />
                     <ff-number formControlName="deliveredQuantity" [label]="qtyLabel('Delivered Qty', row)" [min]="0" />
                     <div class="flex flex-col gap-1">
@@ -323,4 +331,8 @@
       </div>
     </div>
   </div>
+}
+
+@if (showDispatchLoads()) {
+  <app-dispatch-loads (closed)="showDispatchLoads.set(false)" (done)="showDispatchLoads.set(false); loadTrips()" />
 }

@@ -12,6 +12,10 @@ import java.math.BigDecimal;
 @Table(name = "sales_invoice_details")
 public class SalesInvoiceDetail extends BaseEntity {
 
+    /** Per-load transport amount (PER_TRIP booking lines): added once to the line, not x quantity (V90). */
+    @Column(name = "transport_amount", precision = 14, scale = 2)
+    private BigDecimal transportAmount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "invoice_id", nullable = false)
     @JsonBackReference

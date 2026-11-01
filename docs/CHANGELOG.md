@@ -4,11 +4,13 @@ Every merged change, newest first: date, pull request, database migration (if an
 Add one entry **with every pull request** (see `.github/pull_request_template.md`). Detail lives in the PR and in the
 module documents listed in [`README.md`](README.md).
 
-| Next Flyway migration | **V90** |
+| Next Flyway migration | **V91** |
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-11-01
+- **One lorry load = one trip: Dispatch loads, payload, per-load transport** · **V90**
+  Dispatch loads dialog (Trips page / approved booking row): progress per material, lorry → payload + regular driver + quantity, Repeat ×N, mixed loads, live checks; saves one planned trip per load (`POST /trips/plan-loads`, all-or-nothing). Rules on every trip: one material per load, not above the lorry's payload (same unit). Vehicle payload per load (optional). Booking line transport **per unit** (× qty, as before) or **per load** (fixed / distance amount entered per trip, added once on the invoice and PDF). Payroll counts each load as a trip on its own date / driver. Trip editor lines fully visible on phones.
 - **HANDOVER up to date** with October features (trips, invoices, receipts, fuel, driver payroll, Platform Admin, confirm dialog) (docs only)
 
 ## 2026-10-29

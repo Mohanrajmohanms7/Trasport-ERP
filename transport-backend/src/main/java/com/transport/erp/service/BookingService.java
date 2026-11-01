@@ -397,7 +397,9 @@ public class BookingService {
         if (d.getQuantity() == null || d.getQuantity().signum() <= 0) {
             throw new IllegalArgumentException("Booking quantity must be greater than zero.");
         }
-        BigDecimal base = nz(d.getRate()).add(nz(d.getTransportRate())).add(nz(d.getRoyaltyRate())).add(nz(d.getLoadingCharge()));
+        // PER_TRIP transport is a per-load amount added on each trip / invoice, not part of the per-unit value
+        BigDecimal transportPerUnit = "PER_TRIP".equalsIgnoreCase(d.getTransportBasis()) ? BigDecimal.ZERO : nz(d.getTransportRate());
+        BigDecimal base = nz(d.getRate()).add(transportPerUnit).add(nz(d.getRoyaltyRate())).add(nz(d.getLoadingCharge()));
         if (base.signum() < 0) throw new IllegalArgumentException("Booking rates cannot be negative.");
         BigDecimal taxable = d.getQuantity().multiply(base).setScale(2, java.math.RoundingMode.HALF_UP);
         BigDecimal tax = taxable.multiply(nz(d.getGstPercentage())).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);

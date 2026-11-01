@@ -70,6 +70,7 @@ public class VehicleService {
         vehicle.setCurrentOdometerKm(null);
         vehicle.setOdometerUpdatedAt(null);
         vehicle.setWheelCount(requireWheel(vehicle.getWheelCount()));
+        checkPayload(vehicle);
         return vehicleRepository.save(vehicle);
     }
 
@@ -100,10 +101,13 @@ public class VehicleService {
         vehicle.setType(vehicleDetails.getType());
         vehicle.setCategory(vehicleDetails.getCategory());
         vehicle.setCapacity(vehicleDetails.getCapacity());
+        vehicle.setPayloadCapacity(vehicleDetails.getPayloadCapacity());
+        vehicle.setPayloadUom(vehicleDetails.getPayloadUom());
         vehicle.setOwnerName(vehicleDetails.getOwnerName());
         vehicle.setOwnerType(vehicleDetails.getOwnerType());
         // an edit that does not send the wheel count keeps the saved one; a vehicle can never end up without one
         vehicle.setWheelCount(requireWheel(vehicleDetails.getWheelCount() != null ? vehicleDetails.getWheelCount() : vehicle.getWheelCount()));
+        checkPayload(vehicle);
         vehicle.setPurchaseDate(vehicleDetails.getPurchaseDate());
         vehicle.setInsuranceExpiryDate(vehicleDetails.getInsuranceExpiryDate());
         vehicle.setFitnessExpiryDate(vehicleDetails.getFitnessExpiryDate());
@@ -142,6 +146,16 @@ public class VehicleService {
     }
 
     /** Wheel count is required: driver daily pay is calculated from it (6, 10, 12, 14, 16, 18, 22 or Equipment). */
+    /** Payload must be positive with a unit, or both blank (no payload check). */
+    private static void checkPayload(com.transport.erp.model.Vehicle v) {
+        java.math.BigDecimal p = v.getPayloadCapacity();
+        if (p != null && p.signum() <= 0) v.setPayloadCapacity(p = null);
+        if ((p == null) != (v.getPayloadUom() == null || v.getPayloadUom().getId() == null)) {
+            throw new com.transport.erp.exception.BusinessValidationException("Payload Incomplete", "VEHICLE_PAYLOAD_INCOMPLETE",
+                    "Enter both the payload and its unit (e.g. 2 Unit), or leave both empty.", "Complete the payload capacity.");
+        }
+    }
+
     private static String requireWheel(String raw) {
         String w = com.transport.erp.service.DriverPayrollCalculator.normWheel(raw);
         if (w == null) {

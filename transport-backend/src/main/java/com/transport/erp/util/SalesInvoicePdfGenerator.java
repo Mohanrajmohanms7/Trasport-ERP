@@ -130,6 +130,9 @@ public final class SalesInvoicePdfGenerator {
             if (!tripLine.isEmpty()) desc.addElement(para(tripLine, f(7, false, MUTED)));
             String parts = d.isProforma() ? "" : join(" + ", part("Material", it.getRate()), part("Transport", it.getFreightCharges()),
                     part("Loading", it.getLoadingCharges()), part("Royalty", it.getRoyalty()));
+            if (!d.isProforma() && it.getTransportAmount() != null && it.getTransportAmount().signum() > 0) {
+                parts = join("  ·  ", parts, "Transport ₹" + money(it.getTransportAmount()) + " per load (added once)");
+            }
             if (!parts.isEmpty()) desc.addElement(para(parts, f(7, false, MUTED)));
             if (!d.isProforma() && "ORDERED".equals(it.getQuantityBasis()) && it.getDeliveredQuantity() != null && qty.compareTo(it.getDeliveredQuantity()) != 0) {
                 desc.addElement(para("Delivered " + plain(it.getDeliveredQuantity()) + " · billed as ordered", f(7, true, new Color(150, 90, 0))));

@@ -101,6 +101,8 @@ public class SalesInvoicePrintDTO {
         private String uomLabel;
         private BigDecimal rate = BigDecimal.ZERO;
         private BigDecimal freightCharges = BigDecimal.ZERO;
+        /** Per-load transport (added once to the line, not x quantity). */
+        private BigDecimal transportAmount;
         private BigDecimal loadingCharges = BigDecimal.ZERO;
         private BigDecimal royalty = BigDecimal.ZERO;
         private BigDecimal gstPercentage = BigDecimal.ZERO;

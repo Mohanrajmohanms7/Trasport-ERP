@@ -78,7 +78,12 @@ public final class InvoiceTaxCalculator {
             for (SalesInvoiceDetail d : lines) {
                 validateLine(d);
                 BigDecimal base = nz(d.getRate()).add(nz(d.getFreightCharges())).add(nz(d.getLoadingCharges())).add(nz(d.getRoyalty()));
-                BigDecimal lineTaxable = money(d.getQuantity().multiply(base));
+                BigDecimal lump = nz(d.getTransportAmount());   // per-load transport (PER_TRIP): once, not x quantity
+                if (lump.signum() < 0) {
+                    throw new BusinessValidationException("Invalid Transport Amount", "INVOICE_TRANSPORT_NEGATIVE",
+                            "Transport amount cannot be negative.", "Enter the transport charge for this load.");
+                }
+                BigDecimal lineTaxable = money(d.getQuantity().multiply(base).add(lump));
                 d.setTaxableAmount(lineTaxable); // pre-discount for now
                 subtotal = subtotal.add(lineTaxable);
             }

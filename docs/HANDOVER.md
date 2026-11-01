@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V90__…sql` (the next number is always at the top of `docs/CHANGELOG.md`) (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V91__…sql` (the next number is always at the top of `docs/CHANGELOG.md`) (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -133,6 +133,12 @@ ones (title / notice row "ADJUSTED amounts").
 (`GET /trips/booking-balance/{id}` → `pending` = booked − on active trips, no tolerance). Choosing a vehicle pre-fills its
 regular driver. **Complete** opens a dialog for loaded / delivered (same save as Edit; "Complete without quantities" keeps
 the old behaviour). Fuel / expense forms fill vehicle + driver from the chosen trip (new entries only).
+
+**Dispatch loads (V90).** One lorry load = one trip. `TripService.planLoads` / `POST /trips/plan-loads` creates one planned
+trip per load through `createTrip` (all-or-nothing). `applyBookingLines` refuses the same material twice in a trip
+(`TRIP_DUPLICATE_MATERIAL`) and `assertWithinPayload` a load above `vehicles.payload_capacity` in `payload_uom` (`TRIP_OVER_PAYLOAD`).
+`booking_details.transport_basis` PER_UNIT (rate × qty) / PER_TRIP (`trip_details.transport_amount`, default the booking rate,
+copied to `sales_invoice_details.transport_amount` and added once by `InvoiceTaxCalculator`).
 
 **Invoices.** A new invoice fills the customer's completed, not-yet-invoiced trips up to the invoice date
 (`GET /invoices/billable-lines?customerId=&upTo=`, built by the same code as invoice-from-trip; nothing saved). A trip is
