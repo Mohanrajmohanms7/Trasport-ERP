@@ -306,7 +306,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
       quantity: [1, [Validators.required, Validators.min(0.01)]],
       rate: [0, Validators.required],
       transportRate: [0, Validators.required],
-      transportBasis: ['PER_UNIT'],
+      transportBasis: ['PER_TRIP'],   // new lines: per load (fixed / distance) by default
       royaltyRate: [0, Validators.required],
       loadingCharge: [0, Validators.required],
       gstPercentage: [18, Validators.required]

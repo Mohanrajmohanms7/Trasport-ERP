@@ -167,10 +167,11 @@
                 </button>
               </div>
 
-              <div formArrayName="details" class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-1">
+              <div formArrayName="details" class="ff-lines lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1 pb-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 gap-3 items-end">
-                    <div class="lg:col-span-2" formGroupName="material">
+                  <div [formGroupName]="idx" class="ff-line-row p-3 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px]">
+                    <div class="ff-line-sno" [attr.aria-label]="'Line ' + (idx + 1)"><span class="ff-line-field-label">S.No</span>{{ idx + 1 }}</div>
+                    <div class="ff-line-wide" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Master" [createLabel]="qc.label('material')" (ffCreate)="newMaterial($event, row)" [remoteSearch]="materialPick.search" [resolveMissing]="materialPick.resolve" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="'Quantity' + (rowUnit(row) ? ' (' + rowUnit(row) + ')' : '')" [min]="0" [required]="true" />
@@ -178,14 +179,13 @@
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptionsFor(row)" [required]="true" />
                     </div>
                     <ff-number formControlName="rate" [label]="'Material rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
-                    <div class="flex flex-col gap-1">
-                      <ff-number formControlName="transportRate" [label]="row.get('transportBasis')?.value === 'PER_TRIP' ? 'Transport per load (default, ₹)' : 'Transport charge / ' + (rowUnit(row) || 'unit')" [min]="0" />
-                      <div class="flex items-center gap-3 text-[11px]" role="radiogroup" aria-label="Transport charged">
-                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="radio" value="PER_UNIT" formControlName="transportBasis" /> Per {{ rowUnit(row) || 'unit' }}</label>
-                        <label class="inline-flex items-center gap-1 cursor-pointer"><input type="radio" value="PER_TRIP" formControlName="transportBasis" /> Per load (fixed / distance)</label>
-                      </div>
-                      <span class="text-[10px] text-[var(--ff-text-muted)]">{{ row.get('transportBasis')?.value === 'PER_TRIP' ? 'Charged once per lorry load; editable on each trip.' : 'Multiplied by the quantity.' }}</span>
+                    <div>
+                      <label class="ff-line-field-label">Transport charged</label>
+                      <select class="ff-line-select" formControlName="transportBasis" aria-label="Transport charged" data-testid="transport-basis">
+                        <option value="PER_TRIP">Per load (fixed)</option><option value="PER_UNIT">Per {{ rowUnit(row) || 'unit' }}</option>
+                      </select>
                     </div>
+                    <ff-number formControlName="transportRate" [label]="row.get('transportBasis')?.value === 'PER_TRIP' ? 'Transport ₹ / load' : 'Transport ₹ / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="royaltyRate" [label]="'Royalty / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="loadingCharge" [label]="'Loading / ' + (rowUnit(row) || 'unit')" [min]="0" />
                     <ff-number formControlName="gstPercentage" label="GST (%)" [min]="0" [max]="100" />

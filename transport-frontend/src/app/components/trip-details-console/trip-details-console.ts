@@ -121,6 +121,15 @@ export class TripDetailsConsoleComponent implements OnInit {
    * Falls back to the saved trip line while the booking list is still loading.
    */
   /** True when this line's booking material charges transport per load (fixed / distance amount). */
+  /** Per-unit transport rate of this line's booking material (read-only on the trip; charged x quantity on the invoice). */
+  rowTransportRate(row: any): number | null {
+    const id = Number(row?.get?.('material.id')?.value);
+    const bookingId = Number(this.tripForm?.getRawValue()?.booking?.id);
+    const line: any = this.bookings().find(b => b.id === bookingId)?.details?.find((d: any) => d.material?.id === id && !d.isDeleted)
+      || (this.balance()?.lines || []).find((l: any) => Number(l.materialId) === id);
+    return line ? Number(line.transportRate ?? 0) : null;
+  }
+
   rowPerLoad(row: any): boolean {
     const id = Number(row?.get?.('material.id')?.value);
     const bookingId = Number(this.tripForm?.getRawValue()?.booking?.id);
@@ -281,7 +290,9 @@ export class TripDetailsConsoleComponent implements OnInit {
         for (const line of b.lines) {
           const pending = Number(line.pending ?? line.remaining);
           if (pending > 0) {
-            this.detailsArray.push(this.buildDetailRow({ material: { id: line.materialId }, quantity: Math.round(pending * 1000) / 1000 }));
+            const q = Math.round(pending * 1000) / 1000;   // planned = loaded = delivered until the weighbridge says otherwise
+            this.detailsArray.push(this.buildDetailRow({ material: { id: line.materialId }, quantity: q, loadedQuantity: q, deliveredQuantity: q,
+              transportAmount: line.transportBasis === 'PER_TRIP' ? Number(line.transportRate ?? 0) : null }));
           }
         }
         if (this.detailsArray.length === 0) {
@@ -403,7 +414,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
 
   private buildDetailRow(d?: any) {
-    return this.fb.group({
+    const g = this.fb.group({
       material: this.fb.group({
         id: [d?.material?.id ?? '', Validators.required]
       }),
@@ -416,6 +427,15 @@ export class TripDetailsConsoleComponent implements OnInit {
       /** Per-load transport (booking line "per load"): editable here; empty = the booking's amount. */
       transportAmount: [d?.transportAmount ?? null, Validators.min(0)]
     });
+    let lastQty = g.get('quantity')?.value;
+    g.get('quantity')?.valueChanges.subscribe(q => {
+      for (const k of ['loadedQuantity', 'deliveredQuantity']) {
+        const c = g.get(k);
+        if (c && (c.value === null || c.value === '' || Number(c.value) === Number(lastQty))) c.setValue(q, { emitEvent: false });
+      }
+      lastQty = q;
+    });
+    return g;
   }
 
   get detailsArray(): FormArray {

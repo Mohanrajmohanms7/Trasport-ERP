@@ -95,6 +95,7 @@ public class ExpenseService {
 
         // Calc totalAmount
         BigDecimal amt = expense.getAmount() != null ? expense.getAmount() : BigDecimal.ZERO;
+        assertAmounts(amt, expense.getGstAmount());
         BigDecimal gst = expense.getGstAmount() != null ? expense.getGstAmount() : BigDecimal.ZERO;
         expense.setTotalAmount(amt.add(gst));
 
@@ -140,6 +141,7 @@ public class ExpenseService {
         existing.setAmount(details.getAmount());
         existing.setGstAmount(details.getGstAmount());
         BigDecimal amt = details.getAmount() != null ? details.getAmount() : BigDecimal.ZERO;
+        assertAmounts(amt, details.getGstAmount());
         BigDecimal gst = details.getGstAmount() != null ? details.getGstAmount() : BigDecimal.ZERO;
         existing.setTotalAmount(amt.add(gst));
         existing.setPaymentMethod(details.getPaymentMethod());
@@ -381,5 +383,17 @@ public class ExpenseService {
 
         auditService.log(username, "EXPENSE_DELETED", "expenses", expense.getId(), null,
                 "Soft deleted expense entry: " + expense.getExpenseNumber());
+    }
+
+    /** An expense voucher must be for a positive amount; GST cannot be negative. */
+    private static void assertAmounts(BigDecimal amount, BigDecimal gst) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Invalid Amount", "EXPENSE_AMOUNT_INVALID",
+                    "The expense amount must be more than zero.", "Enter the amount on the bill.");
+        }
+        if (gst != null && gst.signum() < 0) {
+            throw new com.transport.erp.exception.BusinessValidationException("Invalid GST", "EXPENSE_GST_NEGATIVE",
+                    "GST amount cannot be negative.", "Enter the GST on the bill, or 0.");
+        }
     }
 }

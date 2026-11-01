@@ -237,15 +237,19 @@
                 </button>
               </div>
 
-              <div formArrayName="details" class="lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1">
+              <div formArrayName="details" class="ff-lines lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1 pb-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
-                  <div [formGroupName]="idx" class="p-4 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4 items-end">
-                    <div class="lg:col-span-2" formGroupName="material">
+                  <div [formGroupName]="idx" class="ff-line-row p-3 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px]">
+                    <div class="ff-line-sno" [attr.aria-label]="'Line ' + (idx + 1)"><span class="ff-line-field-label">S.No</span>{{ idx + 1 }}</div>
+                    <div class="ff-line-wide" formGroupName="material">
                       <ff-dropdown formControlName="id" label="Material Type" [options]="materialOptions" [required]="true" searchPlaceholder="Search options..." />
                     </div>
                     <ff-number formControlName="quantity" [label]="qtyLabel('Planned Qty', row)" [min]="0" [required]="true" />
                     @if (rowPerLoad(row)) {
                       <ff-number formControlName="transportAmount" label="Transport ₹ (this load)" [min]="0" />
+                    } @else {
+                      <div><span class="ff-line-field-label">Transport ₹ / {{ rowUnit(row) || 'unit' }}</span>
+                        <div class="h-10 px-3 rounded-[8px] border border-[var(--ff-border-default)] flex items-center justify-end font-mono text-xs tabular-nums" title="From the booking (charged per unit on the invoice)">{{ rowTransportRate(row) === null ? '—' : (rowTransportRate(row) | number:'1.2-2') }}</div></div>
                     }
                     <ff-number formControlName="loadedQuantity" [label]="qtyLabel('Loaded Qty', row)" [min]="0" />
                     <ff-number formControlName="deliveredQuantity" [label]="qtyLabel('Delivered Qty', row)" [min]="0" />
@@ -256,13 +260,13 @@
                         {{ getShortage(row) === null ? '—' : (getShortage(row) | number:'1.2-2') + (rowUnit(row) ? ' ' + rowUnit(row) : '') }}
                       </div>
                     </div>
-                    <div class="flex items-center justify-end gap-2 lg:pb-2">
+                    <div class="ff-line-auto flex items-center justify-end gap-2 pb-2">
                       <button type="button" (click)="removeDetail(idx)" [disabled]="isCompletedEdit" class="disabled:opacity-40 text-[var(--ff-text-muted)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Row">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
                     @if (balanceLine(row); as line) {
-                      <div class="sm:col-span-2 lg:col-span-7 -mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--ff-text-secondary)]">
+                      <div class="ff-line-auto self-center flex flex-nowrap items-center gap-x-3 whitespace-nowrap text-[11px] text-[var(--ff-text-secondary)] pb-2">
                         <span>Booked <b class="tabular-nums">{{ line.booked | number:'1.0-3' }}</b></span>
                         <span>· On other trips <b class="tabular-nums">{{ line.moved | number:'1.0-3' }}</b></span>
                         <span>· Remaining <b class="tabular-nums text-[var(--ff-text-primary)]">{{ rowRemaining(row) | number:'1.0-3' }} {{ rowUnit(row) }}</b></span>

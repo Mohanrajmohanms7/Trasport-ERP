@@ -15,6 +15,8 @@ export interface BookingTripBalanceLine {
   remaining: number;
   /** Still to dispatch: booked − already on trips (no tolerance); 0 when the line is fully on trips. */
   pending?: number;
+  /** PER_UNIT or PER_TRIP (per load) — how this booking line charges transport. */
+  transportBasis?: string;
   rate: number;
   transportRate: number;
   royaltyRate: number;
