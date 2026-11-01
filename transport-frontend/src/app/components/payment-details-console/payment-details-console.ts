@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
@@ -40,6 +41,12 @@ imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent
   styles: []
 })
 export class PaymentDetailsConsoleComponent implements OnInit {
+  /** Ready for billing: the customer's completed, not-yet-invoiced trips (invoice them, then allocate this receipt). */
+  private rbHttp = inject(HttpClient);
+  readyBilling = signal<{ trips: number; tripIds: number[]; amount: number } | null>(null);
+  rbBusy = signal(false);
+  rbDraft = signal<{ id: number; number: string } | null>(null);
+  private rbCustomer: number | null = null;
   private appConfirm = inject(AppConfirmService);
   /** Subscription feature access (hides tabs/buttons not in the client's plan). */
   readonly features = inject(FeatureService);
@@ -245,6 +252,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   }
 
   loadOutstanding(customerId: number) {
+    this.loadReadyForBilling(customerId);
     if (!customerId) {
       this.outstandingInvoices.set([]);
       this.clearAllocations();
@@ -1120,5 +1128,63 @@ export class PaymentDetailsConsoleComponent implements OnInit {
 
 
 
+
+  private loadReadyForBilling(customerId: number | null): void {
+    if (this.rbCustomer !== customerId) this.rbDraft.set(null);
+    this.rbCustomer = customerId || null;
+    this.readyBilling.set(null);
+    if (!customerId || this.editingReceipt()) return;
+    const upTo = String(this.receiptForm?.get('receiptDate')?.value || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+    this.rbHttp.get<any>('/api/v1/invoices/billable-lines', { params: { customerId, upTo } }).subscribe({
+      next: r => {
+        if (this.rbCustomer !== customerId) return;
+        const lines: any[] = r?.data?.lines || [];
+        let amount = 0;
+        for (const l of lines) {
+          const taxable = Number(l.quantity || 0) * (Number(l.rate || 0) + Number(l.freightCharges || 0) + Number(l.loadingCharges || 0) + Number(l.royalty || 0))
+            + Number(l.transportAmount || 0);
+          amount += taxable * (1 + Number(l.gstPercentage || 0) / 100);
+        }
+        const tripIds = [...new Set(lines.map(l => Number(l.tripId)))];
+        this.readyBilling.set({ trips: tripIds.length, tripIds, amount: Math.round(amount * 100) / 100 });
+      },
+      error: () => this.readyBilling.set(null)
+    });
+  }
+
+  /** Draft invoice for all ready trips (same as Invoices → Ready for billing). */
+  createDraftFromReady(): void {
+    const rb = this.readyBilling();
+    if (!rb?.tripIds.length || this.rbBusy()) return;
+    this.rbBusy.set(true);
+    this.rbHttp.post<any>('/api/v1/invoices/from-trips', { tripIds: rb.tripIds }).subscribe({
+      next: r => {
+        this.rbBusy.set(false);
+        const inv = r?.data;
+        if (r?.success === false || !inv?.id) { this.notify.error(r?.errors?.[0] || r?.message || 'Could not create the invoice'); return; }
+        this.rbDraft.set({ id: inv.id, number: inv.invoiceNumber || ('#' + inv.id) });
+        this.notify.success(`Draft invoice ${inv.invoiceNumber || ''} created for ${rb.trips} trip(s).`);
+        this.loadReadyForBilling(this.rbCustomer);
+      },
+      error: e => { this.rbBusy.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not create the invoice'); }
+    });
+  }
+
+  /** Approve the new draft (normal permission rules) so this receipt can be allocated to it. */
+  approveDraft(): void {
+    const d = this.rbDraft();
+    if (!d || this.rbBusy()) return;
+    this.rbBusy.set(true);
+    this.rbHttp.post<any>(`/api/v1/invoices/${d.id}/approve`, {}).subscribe({
+      next: r => {
+        this.rbBusy.set(false);
+        if (r?.success === false) { this.notify.error(r?.errors?.[0] || r?.message || 'Could not approve'); return; }
+        this.notify.success(`Invoice ${d.number} approved — it is now in the allocation list.`);
+        this.rbDraft.set(null);
+        if (this.rbCustomer) this.loadOutstanding(this.rbCustomer);
+      },
+      error: e => { this.rbBusy.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Approval needs an accounts / admin role. Approve it in Invoices.'); }
+    });
+  }
 }
 
