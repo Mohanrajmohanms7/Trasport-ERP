@@ -1625,26 +1625,38 @@ post /bookings/$DB1/approve >/dev/null
 UNIT=$($PSQL "SELECT uom_id FROM booking_details WHERE booking_id=$DB1 AND material_id=$MAT")
 L2=$(post /vehicles '{"wheelCount":"10","code":"TN46DL0002","name":"Two Unit Lorry","status":"ACTIVE","payloadCapacity":2,"payloadUom":{"id":'$UNIT'}}' | j "d['data']['id']")
 L3=$(post /vehicles '{"wheelCount":"12","code":"TN46DL0003","name":"Three Unit Lorry","status":"ACTIVE","payloadCapacity":3,"payloadUom":{"id":'$UNIT'}}' | j "d['data']['id']")
-[ "$($PSQL "SELECT payload_capacity::numeric(6,1)||'/'||(payload_uom_id=$UNIT) FROM vehicles WHERE id=$L2")" = "2.0/t" ] && pass "E2E vehicle payload saved (2 Unit)" || fail "E2E payload" "$($PSQL "SELECT payload_capacity||' '||payload_uom_id FROM vehicles WHERE id=$L2")"
+[ "$($PSQL "SELECT payload_capacity::numeric(6,1)||'/'||CASE WHEN payload_uom_id=$UNIT THEN 'unit-ok' ELSE 'unit-wrong' END FROM vehicles WHERE id=$L2")" = "2.0/unit-ok" ] && pass "E2E vehicle payload saved (2 Unit)" || fail "E2E payload" "$($PSQL "SELECT payload_capacity||' '||payload_uom_id FROM vehicles WHERE id=$L2")"
 R=$(post /vehicles '{"wheelCount":"10","code":"TN46DL0009","name":"Half","status":"ACTIVE","payloadCapacity":2}'); echo "$R" | grep -q "Enter both the payload and its unit" && pass "E2E payload without unit refused" || fail "E2E payload unit" "$(echo $R | cut -c1-160)"
 E1=$(post /drivers '{"code":"DL-1","name":"Load Driver One","licenseNumber":"TN4620261001","phoneNumber":"9000061001","status":"ACTIVE"}' | j "d['data']['id']")
 E2=$(post /drivers '{"code":"DL-2","name":"Load Driver Two","licenseNumber":"TN4620261002","phoneNumber":"9000061002","status":"ACTIVE"}' | j "d['data']['id']")
 post /vehicles/$L2/driver/$E1 >/dev/null; post /vehicles/$L3/driver/$E2 >/dev/null
 put /driver-pay-slabs '[{"wheelCount":"10","tripsFrom":1,"tripsTo":1,"dailyAmount":500},{"wheelCount":"10","tripsFrom":2,"tripsTo":4,"dailyAmount":1000},{"wheelCount":"10","tripsFrom":5,"tripsTo":null,"dailyAmount":1500},{"wheelCount":"12","tripsFrom":1,"tripsTo":1,"dailyAmount":600},{"wheelCount":"12","tripsFrom":2,"tripsTo":null,"dailyAmount":1200},{"wheelCount":"6","tripsFrom":1,"tripsTo":null,"dailyAmount":400}]' >/dev/null
-ld() { echo '{"vehicleId":'$1',"driverId":'$2',"tripDate":"'$TODAY'","lines":['$3']}'; }
-ln() { echo '{"materialId":'$1',"quantity":'$2'${3:+,"transportAmount":'$3'}}'; }
-plan() { post /trips/plan-loads '{"bookingId":'$DB1',"loads":['"$1"']}'; }
+# load spec "vehicle:driver:material/qty[/transport]+material/qty…" -> JSON built by Python (no shell quoting pitfalls)
+mkplan() { python3 -c "
+import json, sys
+loads = []
+for spec in sys.argv[2:]:
+    v, d, rest = spec.split(':', 2)
+    lines = []
+    for part in rest.split('+'):
+        f = part.split('/')
+        ln = {'materialId': int(f[0]), 'quantity': float(f[1])}
+        if len(f) > 2: ln['transportAmount'] = float(f[2])
+        lines.append(ln)
+    loads.append({'vehicleId': int(v), 'driverId': int(d), 'tripDate': '$TODAY', 'lines': lines})
+print(json.dumps({'bookingId': int(sys.argv[1]), 'loads': loads}))" "$@"; }
+planx() { post /trips/plan-loads "$(mkplan $DB1 "$@")"; }
 NT0=$($PSQL "SELECT COUNT(*) FROM trips WHERE booking_id=$DB1")
-R=$(plan "$(ld $L2 $E1 "$(ln $MAT 3)")"); echo "$R" | grep -q "carries 2" && pass "E2E load above the lorry's payload refused" || fail "E2E payload check" "$(echo $R | cut -c1-200)"
-R=$(plan "$(ld $L3 $E2 "$(ln $MAT 1),$(ln $MAT 1)")"); echo "$R" | grep -q "already in this load" && pass "E2E same material twice in one load refused" || fail "E2E dup material" "$(echo $R | cut -c1-200)"
-SIX=$(for k in 1 2 3 4 5 6; do printf '%s,' "$(ld $L2 $E1 "$(ln $MAT 2)")"; done); R=$(plan "${SIX%,}")
+R=$(planx "$L2:$E1:$MAT/3"); echo "$R" | grep -q "carries 2" && pass "E2E load above the lorry's payload refused" || fail "E2E payload check" "$(echo $R | cut -c1-200)"
+R=$(planx "$L3:$E2:$MAT/1+$MAT/1"); echo "$R" | grep -q "already in this load" && pass "E2E same material twice in one load refused" || fail "E2E dup material" "$(echo $R | cut -c1-200)"
+R=$(planx $(for k in 1 2 3 4 5 6; do echo "$L2:$E1:$MAT/2"; done))
 echo "$R" | grep -q "Booking Quantity Exceeded\|Only" && [ "$($PSQL "SELECT COUNT(*) FROM trips WHERE booking_id=$DB1")" = "$NT0" ] && pass "E2E 6 x 2 = 12 > 10 refused, nothing saved (all-or-nothing)" || fail "E2E over-booking" "$(echo $R | cut -c1-200)"
-R=$(plan "$(ld $L2 $E1 "$(ln $MAT 2)"),$(ld $L2 $E1 "$(ln $MAT 2)"),$(ld $L2 $E1 "$(ln $MAT 2)"),$(ld $L3 $E2 "$(ln $MAT 3)"),$(ld $L3 $E2 "$(ln $M2 3 3100)")")
+R=$(planx "$L2:$E1:$MAT/2" "$L2:$E1:$MAT/2" "$L2:$E1:$MAT/2" "$L3:$E2:$MAT/3" "$L3:$E2:$M2/3/3100")
 [ "$(echo "$R" | j "len(d['data'])")" = "5" ] && pass "E2E 5 loads planned as 5 trips (3 x 2-unit lorry, 3-unit lorry, per-load transport 3100)" || fail "E2E plan" "$(echo $R | cut -c1-220)"
 BAL=$(curl -s -H "Authorization: Bearer $TOKEN" $API/trips/booking-balance/$DB1 | j "' '.join(str(l['materialId'])+'='+str(float(l['pending'])) for l in d['data']['lines'])")
 echo "$BAL" | grep -q "$MAT=1.0" && echo "$BAL" | grep -q "$M2=0.0" && pass "E2E remaining after the first loads: M-Sand 1, second material 0 ($BAL)" || fail "E2E remaining" "$BAL"
-R=$(plan "$(ld $L2 $E1 "$(ln $MAT 1)")"); [ "$(echo "$R" | j "len(d['data'])")" = "1" ] && pass "E2E second dispatch session: last 1 unit planned" || fail "E2E second session" "$(echo $R | cut -c1-200)"
-R=$(plan "$(ld $L2 $E1 "$(ln $MAT 1)")"); echo "$R" | grep -q "Booking Quantity Exceeded\|Only" && pass "E2E nothing left: another load refused" || fail "E2E fully dispatched" "$(echo $R | cut -c1-200)"
+R=$(planx "$L2:$E1:$MAT/1"); [ "$(echo "$R" | j "len(d['data'])")" = "1" ] && pass "E2E second dispatch session: last 1 unit planned" || fail "E2E second session" "$(echo $R | cut -c1-200)"
+R=$(planx "$L2:$E1:$MAT/1"); echo "$R" | grep -q "Booking Quantity Exceeded\|Only" && pass "E2E nothing left: another load refused" || fail "E2E fully dispatched" "$(echo $R | cut -c1-200)"
 [ "$($PSQL "SELECT transport_amount FROM trip_details td JOIN trips t ON t.id=td.trip_id WHERE t.booking_id=$DB1 AND td.material_id=$M2")" = "3100.00" ] && [ "$($PSQL "SELECT COUNT(*) FROM trip_details td JOIN trips t ON t.id=td.trip_id WHERE t.booking_id=$DB1 AND td.material_id=$MAT AND td.transport_amount IS NOT NULL")" = "0" ] && pass "E2E per-load transport kept on its trip (3100); per-unit lines have none" || fail "E2E trip transport" "x"
 # dispatch and complete every load in order (a lorry is on one dispatched trip at a time)
 for t in $($PSQL "SELECT id FROM trips WHERE booking_id=$DB1 ORDER BY id"); do post /trips/$t/dispatch >/dev/null; post /trips/$t/complete >/dev/null; done
