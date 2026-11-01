@@ -9,6 +9,7 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-11-01
+- **Itemized lines polish:** "Swipe sideways to see all fields" hint on phones / tablets; booking label "Rate ₹ / Unit" fits one line (frontend only)
 - **No duplicate vouchers; consistent itemized lines; Dispatch loads page; receipts Ready for billing** (no migration)
   Server `DuplicateSubmitFilter`: an identical POST by the same user within 5 s is answered with the first result (no second voucher / booking / receipt; refused requests are not remembered); Save buttons disabled while saving (13 forms). S.No + one-row itemized lines with sideways scroll (Booking, Trip, Invoice). Booking "Transport charged" in its own column, Per load default for new lines. Trip lines auto-fill loaded / delivered / transport from the booking. Dispatch loads as a full-screen page (/dispatch-loads) from Booking and Trips with loading / empty states. Receipts: Ready for billing panel (draft invoice from un-invoiced trips, approve and allocate). Expense amount must be > 0.
 - **One lorry load = one trip: Dispatch loads, payload, per-load transport** · **V90**
