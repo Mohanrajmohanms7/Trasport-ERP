@@ -8,6 +8,9 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
+## 2026-11-01
+- **HANDOVER up to date** with October features (trips, invoices, receipts, fuel, driver payroll, Platform Admin, confirm dialog) (docs only)
+
 ## 2026-10-29
 - **Wheel count mandatory for vehicles and daily pay slabs** (no migration)
   Vehicle create / edit (Vehicle Master, quick create, Excel import with a required Wheel count column) and every slab row need a wheel count ("All vehicles" removed). Payroll pays each trip only from its lorry's wheel-count slabs and refuses with what to fix ("Set the wheel count in Vehicle Master for: …" / "No daily pay slabs for: 12 wheel") — never a guessed rate. Existing payrolls unchanged; old "All vehicles" slabs no longer used for new payrolls.
