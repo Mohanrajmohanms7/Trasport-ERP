@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface BookingDetail {
+  /** PER_UNIT = transport x quantity; PER_TRIP = fixed / distance amount per load (V90). */
+  transportBasis?: 'PER_UNIT' | 'PER_TRIP' | string;
   id?: number;
   material: { id: number; name?: string; code?: string };
   /** Unit the quantity is in (Unit, Ton …). Rates are per this unit. */
