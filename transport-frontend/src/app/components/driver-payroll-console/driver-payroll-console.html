@@ -363,7 +363,7 @@
         <ff-textbox formControlName="paymentReference" label="Reference (UTR / cheque no.)" />
         <div class="flex justify-end gap-2">
           <ff-button type="button" label="Close" variant="ghost" (ffClick)="showPay.set(false)" />
-          <ff-button type="submit" label="Confirm Payment" icon="payments" variant="primary" />
+          <ff-button [disabled]="loading()" type="submit" label="Confirm Payment" icon="payments" variant="primary" />
         </div>
       </form>
     </div>
@@ -383,7 +383,7 @@
         <ff-textbox formControlName="remarks" label="Remarks" />
         <div class="flex justify-end gap-2">
           <ff-button type="button" label="Close" variant="ghost" (ffClick)="showAdvance.set(false)" />
-          <ff-button type="submit" label="Issue Advance" icon="savings" variant="primary" />
+          <ff-button [disabled]="loading()" type="submit" label="Issue Advance" icon="savings" variant="primary" />
         </div>
       </form>
     </div>

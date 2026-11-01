@@ -143,6 +143,9 @@ public class SecurityConfig {
             // Subscription / client feature access (after the user is known)
             .addFilterAfter(new com.transport.erp.features.FeatureAccessFilter(featureAccessService, appUserRepository),
                     com.transport.erp.security.JwtAuthenticationFilter.class)
+            // Duplicate submission guard: an identical POST by the same user within a few seconds is answered with the
+            // first result instead of creating a second voucher / booking / receipt
+            .addFilterAfter(new com.transport.erp.security.DuplicateSubmitFilter(), com.transport.erp.features.FeatureAccessFilter.class)
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();

@@ -1109,7 +1109,7 @@ export class PlatformAdminComponent implements OnInit {
 
   saveCompany(): void {
 
-    if (this.companyForm.invalid) return;
+    if (this.companyForm.invalid || this.loading()) return;
     this.loading.set(true);
 
     const formVal = { ...this.companyForm.value };
@@ -1240,7 +1240,7 @@ export class PlatformAdminComponent implements OnInit {
   lim(v: any): string { return v === null || v === undefined || Number(v) <= 0 ? 'Unlimited' : String(v); }
 
   savePlan(): void {
-    if (this.planForm.invalid) return;
+    if (this.planForm.invalid || this.loading()) return;
     this.loading.set(true);
     const apiCall = this.editingPlan()
       ? this.platformService.updatePlan(this.editingPlan()!.id!, this.planForm.value)
@@ -1412,7 +1412,7 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   saveUser(): void {
-    if (this.userForm.invalid) return;
+    if (this.userForm.invalid || this.loading()) return;
     this.loading.set(true);
 
     const payload = this.userForm.value;
@@ -1741,7 +1741,7 @@ export class PlatformAdminComponent implements OnInit {
   }
 
   saveAnnouncement(): void {
-    if (this.announcementForm.invalid) return;
+    if (this.announcementForm.invalid || this.loading()) return;
     this.loading.set(true);
     this.platformService.createAnnouncement(this.announcementForm.value).subscribe({
       next: (res) => {

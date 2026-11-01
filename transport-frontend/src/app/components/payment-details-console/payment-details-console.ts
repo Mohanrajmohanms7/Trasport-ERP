@@ -632,7 +632,7 @@ export class PaymentDetailsConsoleComponent implements OnInit {
   }
 
   saveReceipt() {
-    if (this.receiptForm.invalid) return;
+    if (this.receiptForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.receiptForm.getRawValue();

@@ -200,7 +200,7 @@ export class ExpenseDetailsConsoleComponent implements OnInit {
   }
 
   saveExpense() {
-    if (this.expenseForm.invalid) return;
+    if (this.expenseForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.expenseForm.getRawValue();

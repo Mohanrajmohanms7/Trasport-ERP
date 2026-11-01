@@ -438,7 +438,7 @@ export class BookingDetailsConsoleComponent implements OnInit {
   }
 
   saveBooking() {
-    if (this.bookingForm.invalid) return;
+    if (this.bookingForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.bookingForm.getRawValue();

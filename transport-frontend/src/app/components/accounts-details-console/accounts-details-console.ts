@@ -134,7 +134,7 @@ export class AccountsDetailsConsoleComponent implements OnInit {
   }
 
   saveAccount() {
-    if (this.accountForm.invalid) return;
+    if (this.accountForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.accountForm.getRawValue();
@@ -170,7 +170,7 @@ export class AccountsDetailsConsoleComponent implements OnInit {
   }
 
   saveJournal() {
-    if (this.journalForm.invalid) return;
+    if (this.journalForm.invalid || this.loading()) return;
 
     this.loading.set(true);
     const val = this.journalForm.getRawValue();
