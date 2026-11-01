@@ -915,6 +915,7 @@ public class SalesInvoiceService {
                 }
                 idto.setRate(detail.getRate() != null ? detail.getRate() : BigDecimal.ZERO);
                 idto.setFreightCharges(detail.getFreightCharges() != null ? detail.getFreightCharges() : BigDecimal.ZERO);
+                idto.setTransportAmount(detail.getTransportAmount());
                 idto.setLoadingCharges(detail.getLoadingCharges() != null ? detail.getLoadingCharges() : BigDecimal.ZERO);
                 idto.setRoyalty(detail.getRoyalty() != null ? detail.getRoyalty() : BigDecimal.ZERO);
                 idto.setGstPercentage(detail.getGstPercentage() != null ? detail.getGstPercentage() : BigDecimal.ZERO);

@@ -237,7 +237,8 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
     const qty = Number(row.get('quantity')?.value || 0);
     const base = Number(row.get('rate')?.value || 0) + Number(row.get('freightCharges')?.value || 0)
       + Number(row.get('loadingCharges')?.value || 0) + Number(row.get('royalty')?.value || 0);
-    return this.round2(qty * base);
+    const perLoad = Number(row.get('transportAmount')?.value || 0);   // per-load transport: once, not x quantity (same as the server)
+    return this.round2(qty * base + perLoad);
   }
 
   private getItemDiscountShare(row: any): number {
@@ -304,6 +305,8 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
       quantityBasis: [d?.quantityBasis ?? null],
       rate: [d?.rate ?? 0, [Validators.required, Validators.min(0)]],
       freightCharges: [d?.freightCharges ?? 0, [Validators.required, Validators.min(0)]],
+      /** Per-load transport (booking line "per load"): added once to the line; null for per-unit lines. */
+      transportAmount: [d?.transportAmount ?? null, Validators.min(0)],
       loadingCharges: [d?.loadingCharges ?? 0, [Validators.required, Validators.min(0)]],
       royalty: [d?.royalty ?? 0, [Validators.required, Validators.min(0)]],
       gstPercentage: [d?.gstPercentage ?? 5, [Validators.required, Validators.min(0), Validators.max(28)]]
@@ -764,7 +767,7 @@ export class InvoiceDetailsConsoleComponent implements OnInit {
           this.detailsArray.push(this.buildDetailRow({
             trip: { id: l.tripId }, material: { id: l.materialId }, uom: l.uom, quantity: l.quantity,
             deliveredQuantity: l.deliveredQuantity, quantityBasis: l.quantityBasis, rate: l.rate,
-            freightCharges: l.freightCharges, loadingCharges: l.loadingCharges, royalty: l.royalty, gstPercentage: l.gstPercentage
+            freightCharges: l.freightCharges, transportAmount: l.transportAmount ?? null, loadingCharges: l.loadingCharges, royalty: l.royalty, gstPercentage: l.gstPercentage
           }));
         }
         this.autoLoadedFor = customerId;
