@@ -18,17 +18,19 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-  <div class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-slate-950/70 p-0 sm:p-3" role="dialog" aria-label="Dispatch loads">
-    <div class="w-full sm:max-w-3xl max-h-[100dvh] sm:max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-2xl bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]">
+  <div [class]="fullPage ? 'h-full min-h-0 flex flex-col' : 'fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-slate-950/70 p-0 sm:p-3'" [attr.role]="fullPage ? 'main' : 'dialog'" aria-label="Dispatch loads">
+    <div [class]="(fullPage ? 'w-full flex-1 min-h-0 rounded-[10px]' : 'w-full sm:max-w-3xl max-h-[100dvh] sm:max-h-[92vh] rounded-t-2xl sm:rounded-2xl') + ' flex flex-col bg-[var(--ff-surface-card)] border border-[var(--ff-border-default)]'">
       <div class="flex items-start justify-between gap-2 p-4 border-b border-[var(--ff-border-default)]">
         <div class="min-w-0">
           <h2 class="text-base font-bold">Dispatch loads</h2>
           <p class="text-xs text-[var(--ff-text-secondary)]">One lorry load = one trip. Add a load for every lorry you send.</p>
         </div>
-        <button type="button" class="w-10 h-10 shrink-0 rounded-lg hover:bg-[var(--ff-surface-hover)]" (click)="closed.emit()" aria-label="Close"><span class="material-icons">close</span></button>
+        <button type="button" class="h-10 shrink-0 rounded-lg hover:bg-[var(--ff-surface-hover)] px-2 inline-flex items-center gap-1 text-sm" (click)="closed.emit()" [attr.aria-label]="fullPage ? 'Back' : 'Close'">
+          <span class="material-icons">{{ fullPage ? 'arrow_back' : 'close' }}</span>@if (fullPage) { <span class="hidden sm:inline">Back</span> }</button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+      <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4" [class.lg:px-8]="fullPage">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--ff-text-muted)]">1 · Booking</h3>
         @if (!bookingId) {
           <label class="flex flex-col gap-1 text-xs font-semibold">Booking
             <select class="h-11 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm" [ngModel]="chosenBooking()" (ngModelChange)="chooseBooking($event)" data-testid="dl-booking">
@@ -37,7 +39,9 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
             </select>
           </label>
         }
-        @if (loading()) { <p class="text-sm text-[var(--ff-text-muted)]">Loading…</p> }
+        @if (loading()) { <p class="text-sm text-[var(--ff-text-muted)]" role="status">Loading the booking…</p> }
+        @if (!loading() && !bookingId && bookingsLoaded() && !bookings().length) { <p class="text-sm text-amber-700">No approved bookings to dispatch. Approve a booking first.</p> }
+        @if (bookingTitle()) { <p class="text-sm font-semibold">{{ bookingTitle() }}</p> }
 
         @if (lines().length) {
           <div class="flex flex-col gap-2" data-testid="dl-progress">
@@ -57,6 +61,10 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
             }
           </div>
 
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--ff-text-muted)] mt-2">2 · Lorry loads <span class="normal-case font-normal">(one load = one trip)</span></h3>
+          @if (!listsLoaded()) { <p class="text-sm text-[var(--ff-text-muted)]" role="status">Loading lorries and drivers…</p> }
+          @if (listsLoaded() && !vehicles().length) { <p class="text-sm text-amber-700">No active lorries found. Add one in Vehicle Master.</p> }
+          @if (listsLoaded() && !drivers().length) { <p class="text-sm text-amber-700">No active drivers found. Add one in Driver Master.</p> }
           @for (ld of loads(); track $index; let i = $index) {
             <div class="rounded-xl border border-[var(--ff-border-default)] p-3 flex flex-col gap-3" [attr.data-testid]="'dl-load-' + i">
               <div class="flex items-center justify-between gap-2">
@@ -110,7 +118,7 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
       </div>
 
       <div class="flex flex-wrap items-center justify-between gap-2 p-4 border-t border-[var(--ff-border-default)]">
-        <span class="text-xs text-[var(--ff-text-secondary)]">{{ loads().length }} load(s) → {{ loads().length }} trip(s), saved as Planned</span>
+        <span class="text-xs text-[var(--ff-text-secondary)]"><b>3 · Review:</b> {{ loads().length }} load(s) → {{ loads().length }} trip(s), saved as Planned{{ summaryText() }}</span>
         <div class="flex gap-2">
           <button type="button" class="h-11 px-4 rounded-lg border border-[var(--ff-border-default)] text-sm" (click)="closed.emit()">Cancel</button>
           <button type="button" class="h-11 px-5 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold disabled:opacity-50" [disabled]="!canSave()" (click)="save()" data-testid="dl-save">{{ busy() ? 'Saving…' : 'Plan ' + loads().length + ' trip(s)' }}</button>
@@ -123,6 +131,8 @@ export class DispatchLoadsComponent implements OnInit {
   private http = inject(HttpClient);
   private notify = inject(FfNotificationService);
   @Input() bookingId: number | null = null;
+  /** Full-screen page (route /dispatch-loads) instead of a popup. */
+  @Input() fullPage = false;
   @Output() closed = new EventEmitter<void>();
   @Output() done = new EventEmitter<void>();
 
@@ -134,14 +144,26 @@ export class DispatchLoadsComponent implements OnInit {
   drivers = signal<any[]>([]);
   loads = signal<Load[]>([]);
   loading = signal(false);
+  bookingsLoaded = signal(false);
+  private vehiclesLoaded = signal(false);
+  private driversLoaded = signal(false);
+  listsLoaded = computed(() => this.vehiclesLoaded() && this.driversLoaded());
+  bookingTitle = signal('');
   busy = signal(false);
   repeatN: Record<number, number> = {};
 
   ngOnInit(): void {
-    this.http.get<any>('/api/v1/vehicles', { params: { size: 500 } }).subscribe({ next: r => this.vehicles.set(list(r).filter((v: any) => (v.status || 'ACTIVE') === 'ACTIVE')) });
-    this.http.get<any>('/api/v1/drivers', { params: { size: 500 } }).subscribe({ next: r => this.drivers.set(list(r).filter((d: any) => (d.status || 'ACTIVE') === 'ACTIVE')) });
+    const fail = (what: string) => (e: any) => this.notify.error(`Could not load ${what}: ` + (e?.error?.errors?.[0] || e?.error?.message || e?.status || 'error'));
+    this.http.get<any>('/api/v1/vehicles', { params: { size: 500, sort: 'code,asc' } }).subscribe({
+      next: r => { this.vehicles.set(list(r).filter((v: any) => (v.status || 'ACTIVE') === 'ACTIVE')); this.vehiclesLoaded.set(true); },
+      error: e => { this.vehiclesLoaded.set(true); fail('lorries')(e); } });
+    this.http.get<any>('/api/v1/drivers', { params: { size: 500, sort: 'name,asc' } }).subscribe({
+      next: r => { this.drivers.set(list(r).filter((d: any) => (d.status || 'ACTIVE') === 'ACTIVE')); this.driversLoaded.set(true); },
+      error: e => { this.driversLoaded.set(true); fail('drivers')(e); } });
     if (this.bookingId) this.chooseBooking(this.bookingId);
-    else this.http.get<any>('/api/v1/bookings', { params: { status: 'APPROVED', size: 200 } }).subscribe({ next: r => this.bookings.set(list(r).filter((b: any) => b.status === 'APPROVED')) });
+    else this.http.get<any>('/api/v1/bookings', { params: { status: 'APPROVED', size: 200 } }).subscribe({
+      next: r => { this.bookings.set(list(r).filter((b: any) => b.status === 'APPROVED')); this.bookingsLoaded.set(true); },
+      error: e => { this.bookingsLoaded.set(true); fail('bookings')(e); } });
   }
 
   chooseBooking(id: number | null): void {
@@ -152,6 +174,8 @@ export class DispatchLoadsComponent implements OnInit {
     this.http.get<any>(`/api/v1/trips/booking-balance/${id}`).subscribe({
       next: r => {
         this.loading.set(false);
+        const b = r?.data || {};
+        this.bookingTitle.set([b.bookingNumber, b.customerName || b.customer?.name, b.siteName || b.deliverySite?.siteName].filter(Boolean).join(' · '));
         this.lines.set((r?.data?.lines || []).map((l: any) => ({
           materialId: Number(l.materialId), materialName: l.materialName, uomId: l.uom?.id ?? null, unit: l.uom?.label || l.uom?.symbol || 'Unit',
           booked: Number(l.booked || 0), onTrips: Number(l.moved || 0), pending: Number(l.pending ?? l.remaining ?? 0),
@@ -295,6 +319,12 @@ export class DispatchLoadsComponent implements OnInit {
       },
       error: e => { this.busy.set(false); this.notify.error(e?.error?.errors?.[0] || e?.error?.message || 'Could not plan the loads'); }
     });
+  }
+
+  /** " · M-Sand 10 Unit, Blue Metal 3 Unit" for the review line. */
+  summaryText(): string {
+    const parts = this.lines().map(l => ({ l, q: this.planned(l.materialId) })).filter(x => x.q > 0).map(x => `${x.l.materialName} ${fmtN(x.q)} ${x.l.unit}`);
+    return parts.length ? ' · ' + parts.join(', ') : '';
   }
 
   num(v: any): number | null { return v === '' || v === null || v === undefined ? null : Number(v); }

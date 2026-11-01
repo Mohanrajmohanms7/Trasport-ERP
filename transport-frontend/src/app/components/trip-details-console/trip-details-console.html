@@ -10,7 +10,7 @@
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage dispatch fleet allocations, vehicle driver assignments, and transit delivery confirmations</p>
     </div>
     <div class="flex flex-wrap gap-2 self-start md:self-auto">
-      <button (click)="showDispatchLoads.set(true)" class="flex items-center gap-2 border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] font-semibold py-2 px-4 rounded-[8px] transition text-xs" data-testid="trips-dispatch-loads" title="Send several lorries for a booking: one load = one trip">
+      <button (click)="router.navigate(['/dispatch-loads'])" class="flex items-center gap-2 border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] font-semibold py-2 px-4 rounded-[8px] transition text-xs" data-testid="trips-dispatch-loads" title="Send several lorries for a booking: one load = one trip">
         <span class="material-icons text-sm">local_shipping</span> Dispatch loads
       </button>
       <button (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
@@ -331,8 +331,4 @@
       </div>
     </div>
   </div>
-}
-
-@if (showDispatchLoads()) {
-  <app-dispatch-loads (closed)="showDispatchLoads.set(false)" (done)="showDispatchLoads.set(false); loadTrips()" />
 }

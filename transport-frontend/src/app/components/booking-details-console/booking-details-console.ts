@@ -1,4 +1,4 @@
-import { DispatchLoadsComponent } from '../trip-details-console/dispatch-loads';
+import { Router } from '@angular/router';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { AttachmentsPanelComponent } from '../../shared/attachments-panel/attachments-panel';
@@ -25,7 +25,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-booking-details-console',
   standalone: true,
-imports: [DispatchLoadsComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -108,8 +108,9 @@ imports: [DispatchLoadsComponent, FormValidationDirective, AttachmentsPanelCompo
   `]
 })
 export class BookingDetailsConsoleComponent implements OnInit {
-  /** Booking whose "Dispatch loads" dialog is open. */
-  dispatchFor = signal<number | null>(null);
+  private dlRouter = inject(Router);
+  /** Dispatch loads opens as a full-screen page (one lorry load = one trip). */
+  openDispatchLoads(id?: number): void { if (id) this.dlRouter.navigate(['/dispatch-loads'], { queryParams: { booking: id } }); }
   private appConfirm = inject(AppConfirmService);
   private bookingMgmtService = inject(BookingMgmtService);
   private masterService = inject(MasterService);

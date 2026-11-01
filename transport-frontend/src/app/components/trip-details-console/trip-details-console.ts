@@ -1,4 +1,3 @@
-import { DispatchLoadsComponent } from './dispatch-loads';
 import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -28,7 +27,7 @@ import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-imports: [DispatchLoadsComponent, FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,
@@ -45,13 +44,11 @@ imports: [DispatchLoadsComponent, FormsModule, FormValidationDirective, ExportBu
   styles: []
 })
 export class TripDetailsConsoleComponent implements OnInit {
-  /** "Dispatch loads" dialog (one lorry load = one trip). */
-  showDispatchLoads = signal(false);
   private httpFlow = inject(HttpClient);
   private appConfirm = inject(AppConfirmService);
   private tripMgmtService = inject(TripMgmtService);
   private invoiceMgmtService = inject(InvoiceMgmtService);
-  private router = inject(Router);
+  router = inject(Router);
   private masterService = inject(MasterService);
   private picker = inject(PickerService);
   private materialMgmtService = inject(MaterialMgmtService);

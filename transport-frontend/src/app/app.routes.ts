@@ -51,6 +51,7 @@ export const routes: Routes = [
       { path: 'customers', loadComponent: () => import('./components/customer-details-console/customer-details-console').then(m => m.CustomerDetailsConsoleComponent) },
       { path: 'materials-quarries', loadComponent: () => import('./components/material-quarry-console/material-quarry-console').then(m => m.MaterialQuarryConsoleComponent) },
       { path: 'bookings', loadComponent: () => import('./components/booking-details-console/booking-details-console').then(m => m.BookingDetailsConsoleComponent) },
+      { path: 'dispatch-loads', loadComponent: () => import('./components/trip-details-console/dispatch-loads-page').then(m => m.DispatchLoadsPageComponent) },
       { path: 'trips-planning', loadComponent: () => import('./components/trip-details-console/trip-details-console').then(m => m.TripDetailsConsoleComponent) },
       { path: 'fuel-logs', loadComponent: () => import('./components/fuel-details-console/fuel-details-console').then(m => m.FuelDetailsConsoleComponent) },
       { path: 'expense-logs', loadComponent: () => import('./components/expense-details-console/expense-details-console').then(m => m.ExpenseDetailsConsoleComponent) },
