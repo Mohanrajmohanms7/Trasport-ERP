@@ -129,6 +129,45 @@ open (Planned / Dispatched) trips (`DriverVehicleAuthorizationService`).
 `POST /api/v1/exports/invoices/custom` reads official amounts from the database and always prints them next to the adjusted
 ones (title / notice row "ADJUSTED amounts").
 
+**Trips (daily work).** Choosing a booking fills the materials still to dispatch with their pending quantity
+(`GET /trips/booking-balance/{id}` → `pending` = booked − on active trips, no tolerance). Choosing a vehicle pre-fills its
+regular driver. **Complete** opens a dialog for loaded / delivered (same save as Edit; "Complete without quantities" keeps
+the old behaviour). Fuel / expense forms fill vehicle + driver from the chosen trip (new entries only).
+
+**Invoices.** A new invoice fills the customer's completed, not-yet-invoiced trips up to the invoice date
+(`GET /invoices/billable-lines?customerId=&upTo=`, built by the same code as invoice-from-trip; nothing saved). A trip is
+invoiced whole and once: the server refuses an invoice with only part of a trip's materials (`INVOICE_TRIP_PARTIAL`).
+Draft invoices: **Edit & PDF** (editor, then the Normal PDF). Row **Custom PDF** (read-only, nothing saved): line table
+(`POST /exports/invoices/{id}/custom-lines`) or **Proforma** in the invoice layout titled "PROFORMA INVOICE — NOT A TAX
+INVOICE" (`POST /invoices/{id}/proforma-pdf`). The Normal PDF (tax invoice) never prints edited figures.
+
+**Receipts.** The amount received fills the oldest outstanding invoices first until the user edits an allocation
+("Allocate oldest first" re-applies). Server validation unchanged.
+
+**Fuel.** `OperationalGuards.assertFuelOdometer`: current below previous refused (save and approve); previous below the
+lorry's last reading refused unless an admin confirms a meter reset (`odometerReset`, request only).
+
+**Driver payroll.** Daily pay = slab amount per day (never per trip), from completed trips by the trip's actual driver.
+- **Wheel count is mandatory** (V88 + PR #52): vehicles (dialog, quick create, Excel import column) and every slab row.
+  Each day is paid once at the highest-paying wheel type driven that day; a trip is paid only from its lorry's wheel
+  slabs — missing wheel count / slabs refuse the payroll with what to fix (`PAYROLL_VEHICLE_WHEEL_MISSING`,
+  `PAYROLL_WHEEL_SLABS_MISSING`). Old "All vehicles" slabs are not used for new payrolls.
+- **Driver Bata**: trips with approved / paid Driver Bata linked to them are left out of daily pay — company setting
+  `DRIVER_BATA_EXCLUDES_TRIP` (default true; false = bata is a food allowance). Excluded trips are recorded on the payroll
+  (`excluded_trip_*`) and printed on the slip.
+- **Pay periods** (V89): `period_from` / `period_to` inside one month (default whole month); active periods of a driver
+  never overlap (service check under `pg_advisory_xact_lock`, start-day unique index, check constraint). Trips, bata,
+  deduction / posting dates, the slip and the trip-date lock use the period.
+- Status flow DRAFT → APPROVED → POSTED → PAID (CANCELLED reverses everything). Salary slip PDF:
+  `DriverSalarySlipPdfGenerator` (work summary, earnings | deductions, basic only when > 0, daily trips with trip numbers,
+  wheel rate, excluded trips, advance account).
+
+**Platform Admin.** Client limits: plans with a limit = plan + extras (below plan refused); unlimited plans store the
+entered number as the client's own cap (0 = unlimited). Every Platform Admin error also pops up as a notification.
+
+**Shared confirmation dialog.** Only `primary` / `danger` / `warning` are styled; any other type falls back to primary
+(an `info` type used to give an invisible white button).
+
 **Documentation.** `docs/README.md` indexes every document and says what to update for each kind of change; every PR adds an
 entry to `docs/CHANGELOG.md` (PR template checklist).
 
