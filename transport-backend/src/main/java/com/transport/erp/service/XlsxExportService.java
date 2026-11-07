@@ -494,6 +494,20 @@ public class XlsxExportService {
         }
         if (!seen.containsAll(byLine.keySet())) throw customErr("A line in the custom PDF does not belong to this invoice.");
         rows.add(new Object[]{"", "TOTAL (" + n + " line(s))", t[0], t[1], null, tOffTr, tTr, t[2], t[3], null, t[4], t[5], t[6]});
+        // Driver bata the customer pays directly to drivers: listed after the totals, information only (never in them).
+        java.util.Set<Long> bataTrips = new java.util.HashSet<>();
+        java.math.BigDecimal bataTotal = java.math.BigDecimal.ZERO;
+        for (SalesInvoiceDetail d : inv.getDetails()) {
+            com.transport.erp.model.Trip tr = d.getTrip();
+            if (tr == null || Boolean.TRUE.equals(d.getIsDeleted()) || !bataTrips.add(tr.getId())
+                    || tr.getCustomerPaidBata() == null || tr.getCustomerPaidBata().signum() <= 0) continue;
+            rows.add(new Object[]{"", "Driver bata " + tr.getTripNumber() + ": paid by the customer directly to the driver (not in the totals)",
+                    null, null, null, null, null, null, null, null, null, tr.getCustomerPaidBata(), null});
+            bataTotal = bataTotal.add(tr.getCustomerPaidBata());
+        }
+        if (bataTotal.signum() > 0) {
+            rows.add(new Object[]{"", "Total driver bata paid to drivers (not payable to us)", null, null, null, null, null, null, null, null, null, bataTotal, null});
+        }
         return render("pdf", "Invoice " + inv.getInvoiceNumber() + " — ADJUSTED quantities / amounts (official invoice figures shown; NOT a tax invoice)",
                 headers, rows);
     }

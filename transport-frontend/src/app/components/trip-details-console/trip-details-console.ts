@@ -386,6 +386,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       quarry: this.fb.group({ id: [''] }),
       loadingLocation: this.fb.group({ id: [''] }),
       remarks: [''],
+      customerPaidBata: [null as number | null, Validators.min(0)],
       details: this.fb.array([])
     });
     this.tripForm.get('booking.id')?.valueChanges.subscribe(id => this.onBookingChange(id));
@@ -509,7 +510,8 @@ export class TripDetailsConsoleComponent implements OnInit {
       tripDate: trip.tripDate || this.today,
       quarry: { id: trip.quarry?.id ?? '' },
       loadingLocation: { id: trip.loadingLocation?.id ?? '' },
-      remarks: trip.remarks
+      remarks: trip.remarks,
+      customerPaidBata: trip.customerPaidBata ?? null
     });
     this.suppressBookingChange = false;
 
@@ -640,7 +642,7 @@ export class TripDetailsConsoleComponent implements OnInit {
   }
 
   /** Complete with delivery: one dialog for loaded / delivered quantity (pre-filled), then the usual complete + quantity save. */
-  completing = signal<{ trip: any; lines: { materialName: string; planned: number; loaded: number | null; delivered: number | null }[] } | null>(null);
+  completing = signal<{ trip: any; bata: number | null; lines: { materialName: string; planned: number; loaded: number | null; delivered: number | null }[] } | null>(null);
   completeBusy = signal(false);
 
   completeTrip(trip: Trip) {
@@ -649,7 +651,7 @@ export class TripDetailsConsoleComponent implements OnInit {
       next: res => {
         const t: any = res?.data;
         if (!t) { this.notify.error('Could not load the trip'); return; }
-        this.completing.set({ trip: t, lines: (t.details || []).map((d: any) => {
+        this.completing.set({ trip: t, bata: t.customerPaidBata ?? null, lines: (t.details || []).map((d: any) => {
           const loaded = d.loadedQuantity ?? d.quantity ?? null;
           return { materialName: d.material?.name || 'Material', planned: Number(d.quantity || 0), loaded, delivered: d.deliveredQuantity ?? loaded };
         }) });
@@ -678,6 +680,7 @@ export class TripDetailsConsoleComponent implements OnInit {
         const body: any = {
           booking: { id: t.booking?.id }, tripDate: t.tripDate, vehicle: { id: t.vehicle?.id }, driver: { id: t.driver?.id },
           quarry: t.quarry?.id ? { id: t.quarry.id } : null, loadingLocation: t.loadingLocation?.id ? { id: t.loadingLocation.id } : null,
+          remarks: t.remarks, customerPaidBata: c.bata === null || c.bata === undefined || (c.bata as any) === '' ? null : Number(c.bata),
           details: (t.details || []).map((d: any, i: number) => ({
             material: { id: d.material?.id }, uom: d.uom?.id ? { id: d.uom.id } : null, quantity: d.quantity,
             rate: d.rate, loadingCharges: d.loadingCharges, royalty: d.royalty,
@@ -701,6 +704,12 @@ export class TripDetailsConsoleComponent implements OnInit {
     this.completing.set(null);
     if (msg) this.notify.success(msg);
     this.loadTrips();
+  }
+
+  /** Customer-paid driver bata in the Complete dialog (empty = none). */
+  setCompleteBata(v: any): void {
+    const c = this.completing(); if (!c) return;
+    this.completing.set({ ...c, bata: v === '' || v === null || v === undefined ? null : Number(v) });
   }
 
   setCompleteLine(i: number, f: 'loaded' | 'delivered', v: any): void {

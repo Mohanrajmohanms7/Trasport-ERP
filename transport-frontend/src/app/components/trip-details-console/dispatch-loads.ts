@@ -6,7 +6,7 @@ import { FfNotificationService } from '../../shared-ui/infrastructure/services/f
 
 interface BLine { materialId: number; materialName: string; uomId: number | null; unit: string; booked: number; onTrips: number; pending: number; perLoad: boolean; transportRate: number; }
 interface LLine { materialId: number | null; qty: number | null; transport: number | null; }
-interface Load { vehicleId: number | null; driverId: number | null; regularDriverId: number | null; date: string; lines: LLine[]; }
+interface Load { vehicleId: number | null; driverId: number | null; regularDriverId: number | null; date: string; lines: LLine[]; bata?: number | null; }
 
 /**
  * Dispatch loads: one lorry load = one trip. Shows each booking material's progress, lets the user add lorry loads
@@ -75,7 +75,7 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
                   <button type="button" class="w-9 h-9 rounded-lg hover:bg-[var(--ff-surface-hover)]" (click)="removeLoad(i)" [attr.aria-label]="'Remove load ' + (i + 1)"><span class="material-icons text-base">delete</span></button>
                 </div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Lorry *
                   <select class="h-11 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm text-[var(--ff-text-primary)]" [ngModel]="ld.vehicleId" (ngModelChange)="setVehicle(i, $event)">
                     <option [ngValue]="null">Choose lorry…</option>
@@ -88,6 +88,8 @@ interface Load { vehicleId: number | null; driverId: number | null; regularDrive
                   </select>
                   @if (ld.regularDriverId && ld.driverId && ld.driverId !== ld.regularDriverId) { <span class="text-[10px] text-amber-700">Not this lorry's regular driver — used for this trip only.</span> }
                 </label>
+                <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Driver bata by customer ₹
+                  <input type="number" min="0" step="0.01" placeholder="optional" class="h-11 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm text-right text-[var(--ff-text-primary)]" [ngModel]="ld.bata" (ngModelChange)="patchLoad(i, { bata: num($event) })" [attr.aria-label]="'Driver bata paid by customer, load ' + (i + 1)" /></label>
                 <label class="flex flex-col gap-1 text-[11px] font-semibold text-[var(--ff-text-muted)]">Date *
                   <input type="date" class="h-11 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] px-2 text-sm text-[var(--ff-text-primary)]" [max]="today" [ngModel]="ld.date" (ngModelChange)="patchLoad(i, { date: $event })" /></label>
               </div>
@@ -282,6 +284,7 @@ export class DispatchLoadsComponent implements OnInit {
     if (!ld.driverId) return 'Choose the driver.';
     if (!ld.date) return 'Choose the date.';
     if (ld.date > this.today) return 'The trip date cannot be in the future.';
+    if (ld.bata !== null && ld.bata !== undefined && ld.bata < 0) return 'Driver bata cannot be negative.';
     const seen = new Set<number | null>();
     for (const ln of ld.lines) {
       const l = this.line(ln.materialId);
@@ -308,6 +311,7 @@ export class DispatchLoadsComponent implements OnInit {
     const body = { bookingId, loads: this.loads().map(ld => ({
       vehicleId: ld.vehicleId, driverId: ld.driverId, tripDate: ld.date,
       confirmDriverOverride: !!(ld.regularDriverId && ld.driverId !== ld.regularDriverId),
+      customerPaidBata: ld.bata && ld.bata > 0 ? ld.bata : null,
       lines: ld.lines.map(x => ({ materialId: x.materialId, quantity: x.qty, transportAmount: this.perLoad(x.materialId) ? x.transport : null }))
     })) };
     this.http.post<any>('/api/v1/trips/plan-loads', body).subscribe({

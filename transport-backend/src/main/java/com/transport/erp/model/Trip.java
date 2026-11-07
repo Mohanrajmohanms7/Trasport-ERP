@@ -14,6 +14,11 @@ import java.util.List;
 @Table(name = "trips")
 public class Trip extends BaseEntity {
 
+    /** Driver bata the CUSTOMER pays directly to the driver (V91). Shown on the invoice PDF for information only; never in
+     *  invoice amounts, GST, receivables, accounts or payroll. */
+    @Column(name = "customer_paid_bata", precision = 12, scale = 2)
+    private java.math.BigDecimal customerPaidBata;
+
     /**
      * Request-only: the user confirmed using a driver other than the vehicle's regular (Vehicle Master) driver for this
      * trip. Not stored; the trip's driver is the actual driver. Vehicle Master is never changed by a trip.

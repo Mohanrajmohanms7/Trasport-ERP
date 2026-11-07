@@ -41,6 +41,18 @@ public class SalesInvoicePrintDTO {
     /** Logo image bytes resolved on the server for the PDF (not sent to the screen). */
     @com.fasterxml.jackson.annotation.JsonIgnore
     private byte[] logoImage;
+    /** Driver bata the customer pays directly to drivers (per trip). Information only: never in any total above. */
+    private java.util.List<BataLine> customerBata = new java.util.ArrayList<>();
+    private BigDecimal customerBataTotal = BigDecimal.ZERO;
+
+    @lombok.Data
+    public static class BataLine {
+        private String tripNumber;
+        private java.time.LocalDate tripDate;
+        private String vehicle;
+        private String driver;
+        private BigDecimal amount;
+    }
     /** Proforma mode (not a tax invoice): same layout, PROFORMA title / watermark, official total noted. Normal PDF: false. */
     @com.fasterxml.jackson.annotation.JsonIgnore
     private boolean proforma;

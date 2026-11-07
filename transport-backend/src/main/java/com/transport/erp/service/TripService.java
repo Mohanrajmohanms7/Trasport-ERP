@@ -203,6 +203,7 @@ public class TripService {
             }
         }
         applyBookingLines(trip, booking, null);
+        trip.setCustomerPaidBata(checkBata(trip.getCustomerPaidBata()));
 
         Trip saved = tripRepository.save(trip);
 
@@ -260,6 +261,7 @@ public class TripService {
         }
         resolveLoadingSource(existing, details.getQuarry(), details.getLoadingLocation());
         existing.setRemarks(details.getRemarks());
+        setCustomerPaidBata(existing, details.getCustomerPaidBata());
         existing.setUpdatedBy(updatedByUsername);
 
         // Replace details
@@ -734,7 +736,7 @@ public class TripService {
 
     /** One load (trip) in a "Dispatch loads" request. */
     public record LoadRequest(Long vehicleId, Long driverId, java.time.LocalDate tripDate, Boolean confirmDriverOverride,
-                              List<LoadLine> lines) {}
+                              List<LoadLine> lines, BigDecimal customerPaidBata) {}
     public record LoadLine(Long materialId, BigDecimal quantity, BigDecimal transportAmount) {}
 
     /**
@@ -757,6 +759,7 @@ public class TripService {
             com.transport.erp.model.Driver d = new com.transport.erp.model.Driver(); d.setId(l.driverId()); t.setDriver(d);
             t.setTripDate(l.tripDate());
             t.setConfirmDriverOverride(l.confirmDriverOverride());
+            t.setCustomerPaidBata(l.customerPaidBata());
             List<TripDetail> details = new java.util.ArrayList<>();
             for (LoadLine ln : l.lines() == null ? List.<LoadLine>of() : l.lines()) {
                 TripDetail td = new TripDetail();
@@ -774,4 +777,33 @@ public class TripService {
         }
         return created;
     }
+
+    /** Customer-paid driver bata: empty or 0 = none; never negative; at most 2 decimals. */
+    private static BigDecimal checkBata(BigDecimal v) {
+        if (v == null || v.signum() == 0) return null;
+        if (v.signum() < 0) throw new BusinessValidationException("Invalid Driver Bata", "TRIP_BATA_NEGATIVE",
+                "Driver bata paid by the customer cannot be negative.", "Enter the amount the customer pays the driver, or leave it empty.");
+        if (v.stripTrailingZeros().scale() > 2) throw new BusinessValidationException("Invalid Driver Bata", "TRIP_BATA_DECIMALS",
+                "Driver bata can have at most 2 decimals.", "Enter rupees and paise only.");
+        return v.setScale(2, java.math.RoundingMode.UNNECESSARY);
+    }
+
+    /** Changing it after the trip is on an active invoice would make the printed invoice disagree with the trip. */
+    private void setCustomerPaidBata(Trip existing, BigDecimal incoming) {
+        BigDecimal v = checkBata(incoming);
+        BigDecimal cur = existing.getCustomerPaidBata();
+        boolean same = (v == null && cur == null) || (v != null && cur != null && v.compareTo(cur) == 0);
+        if (same) return;
+        if (jdbc != null && !jdbc.queryForList("""
+                SELECT si.invoice_number FROM sales_invoice_details d JOIN sales_invoices si ON si.id = d.invoice_id
+                 WHERE d.trip_id = :t AND d.is_deleted = false AND si.is_deleted = false AND si.status <> 'CANCELLED' LIMIT 1""",
+                new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("t", existing.getId()), String.class).isEmpty()) {
+            throw new BusinessValidationException("Trip Already Invoiced", "TRIP_BATA_INVOICED",
+                    "This trip is on an invoice, so its customer-paid driver bata cannot change.", "Cancel the invoice first, or leave the amount as it is.");
+        }
+        existing.setCustomerPaidBata(v);
+    }
+
+    @Autowired(required = false)
+    private org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate jdbc;
 }

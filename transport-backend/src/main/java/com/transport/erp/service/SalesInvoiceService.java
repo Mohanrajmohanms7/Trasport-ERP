@@ -942,6 +942,21 @@ public class SalesInvoiceService {
         }
 
         dto.setItems(itemDTOs);
+        // Customer-paid driver bata per trip: printed for information; not part of taxable, GST, net or accounts.
+        java.util.Set<Long> seenTrips = new java.util.HashSet<>();
+        for (SalesInvoiceDetail detail : invoice.getDetails()) {
+            Trip t = detail.getTrip();
+            if (t == null || Boolean.TRUE.equals(detail.getIsDeleted()) || !seenTrips.add(t.getId())) continue;
+            if (t.getCustomerPaidBata() == null || t.getCustomerPaidBata().signum() <= 0) continue;
+            SalesInvoicePrintDTO.BataLine b = new SalesInvoicePrintDTO.BataLine();
+            b.setTripNumber(t.getTripNumber());
+            b.setTripDate(t.getTripDate());
+            b.setVehicle(t.getVehicle() != null ? t.getVehicle().getCode() : null);
+            b.setDriver(t.getDriver() != null ? t.getDriver().getName() : null);
+            b.setAmount(t.getCustomerPaidBata());
+            dto.getCustomerBata().add(b);
+            dto.setCustomerBataTotal(dto.getCustomerBataTotal().add(t.getCustomerPaidBata()));
+        }
         dto.setTotalCGST(totalCGST);
         dto.setTotalSGST(totalSGST);
         dto.setTotalIGST(totalIGST);

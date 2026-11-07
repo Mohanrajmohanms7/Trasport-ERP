@@ -217,6 +217,29 @@ public final class SalesInvoicePdfGenerator {
         }
         doc.add(hs);
 
+        // 7b. Driver bata paid by the customer directly to the driver — information only, not part of this invoice
+        if (d.getCustomerBata() != null && !d.getCustomerBata().isEmpty()) {
+            PdfPTable bt = table(new float[]{30, 16, 22, 18, 14});
+            bt.setSpacingBefore(6);
+            bt.setKeepTogether(true);
+            PdfPCell hdr = cell("DRIVER BATA — PAID BY YOU DIRECTLY TO THE DRIVER (NOT PART OF THIS INVOICE)", f(7.5f, true, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX);
+            hdr.setColspan(5); hdr.setBackgroundColor(HEAD); bt.addCell(hdr);
+            for (String h : new String[]{"TRIP", "DATE", "VEHICLE", "DRIVER", "DRIVER BATA"}) {
+                bt.addCell(cell(h, f(7, true, Color.BLACK), "DRIVER BATA".equals(h) ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT, Rectangle.BOX));
+            }
+            for (SalesInvoicePrintDTO.BataLine b : d.getCustomerBata()) {
+                bt.addCell(cell(nz(b.getTripNumber()), f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
+                bt.addCell(cell(b.getTripDate() == null ? "" : b.getTripDate().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")), f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
+                bt.addCell(cell(nz(b.getVehicle()), f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
+                bt.addCell(cell(nz(b.getDriver()), f(8, false, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX));
+                bt.addCell(cell("₹ " + money(b.getAmount()), f(8, false, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.BOX));
+            }
+            PdfPCell tl = cell("Total driver bata (paid to drivers, not payable to us)", f(8, true, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX);
+            tl.setColspan(4); bt.addCell(tl);
+            bt.addCell(cell("₹ " + money(d.getCustomerBataTotal()), f(8, true, Color.BLACK), Element.ALIGN_RIGHT, Rectangle.BOX));
+            doc.add(bt);
+        }
+
         // 8. Footer: bank, terms, signatory
         PdfPTable foot = table(new float[]{58, 42});
         foot.setKeepTogether(true);
