@@ -167,6 +167,7 @@
                 </button>
               </div>
 
+              <p class="lg:hidden text-[11px] text-[var(--ff-text-muted)] -mb-1">Swipe sideways to see all fields →</p>
               <div formArrayName="details" class="ff-lines lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1 pb-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
                   <div [formGroupName]="idx" class="ff-line-row p-3 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px]">
@@ -178,7 +179,7 @@
                     <div formGroupName="uom">
                       <ff-dropdown formControlName="id" label="Unit (UOM)" [options]="uomOptionsFor(row)" [required]="true" />
                     </div>
-                    <ff-number formControlName="rate" [label]="'Material rate / ' + (rowUnit(row) || 'unit') + ' (INR)'" [min]="0" [required]="true" />
+                    <ff-number formControlName="rate" [label]="'Rate ₹ / ' + (rowUnit(row) || 'unit')" [min]="0" [required]="true" />
                     <div>
                       <label class="ff-line-field-label">Transport charged</label>
                       <select class="ff-line-select" formControlName="transportBasis" aria-label="Transport charged" data-testid="transport-basis">

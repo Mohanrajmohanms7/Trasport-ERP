@@ -237,6 +237,7 @@
                 </button>
               </div>
 
+              <p class="lg:hidden text-[11px] text-[var(--ff-text-muted)] -mb-1">Swipe sideways to see all fields →</p>
               <div formArrayName="details" class="ff-lines lg:flex-1 lg:min-h-0 lg:overflow-y-auto flex flex-col gap-3 pr-1 pb-1">
                 @for (row of detailsArray.controls; track row; let idx = $index) {
                   <div [formGroupName]="idx" class="ff-line-row p-3 bg-[var(--ff-surface-hover)] border border-[var(--ff-border-default)] rounded-[10px]">
