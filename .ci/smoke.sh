@@ -1773,8 +1773,8 @@ cp /tmp/bata-inv.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-customer-bata.
 BD=$($PSQL "SELECT id FROM sales_invoice_details WHERE invoice_id=$BINV AND trip_id=$TB1 LIMIT 1")
 command curl -s -o /tmp/bata-pf.pdf -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/invoices/$BINV/proforma-pdf" -d '[{"detailId":'$BD',"quantity":2,"transport":1800}]'
 pdftxt /tmp/bata-pf.pdf | grep -q "DRIVER BATA" && pass "BATA proforma shows the bata box" || fail "BATA proforma" "x"
-command curl -s -o /tmp/bata-cl.pdf -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$BINV/custom-lines" -d '[{"detailId":'$BD',"quantity":2}]'
-pdftxt /tmp/bata-cl.pdf | grep -q "Driver bata" && pass "BATA custom PDF lists the bata after its totals" || fail "BATA custom" "x"
+command curl -s -o /tmp/bata-cl.pdf -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$BINV/custom-lines" -d '[{"detailId":'$BD',"quantity":2,"transport":2000}]'
+pdftxt /tmp/bata-cl.pdf | grep -qi "Driver bata" && pass "BATA custom PDF lists the bata after its totals" || fail "BATA custom" "$(head -c 160 /tmp/bata-cl.pdf)"
 curl -s -H "Authorization: Bearer $TOKEN" $API/trips/$TB1 | python3 -c "
 import sys,json; t=json.load(sys.stdin)['data']
 print(json.dumps({'booking':{'id':t['booking']['id']},'tripDate':t['tripDate'],'vehicle':{'id':t['vehicle']['id']},'driver':{'id':t['driver']['id']},'customerPaidBata':999,
