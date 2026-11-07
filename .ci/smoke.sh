@@ -1702,6 +1702,40 @@ R=$(command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: 
 R2=$(command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' "$API/expenses" -d '{"expenseDate":"'$TODAY'","category":"OFFICE_EXPENSE","amount":-5,"paymentMethod":"CASH","description":"'$IDEM'-bad"}')
 [ "$(echo "$R2" | j "d.get('success')")" != "True" ] && pass "DUP a refused request is not remembered (second try is checked again)" || fail "DUP refused" "$(echo $R2 | cut -c1-160)"
 
+# ================= Custom PDF: change transport amount (independent of the official-qty change) =================
+python3 -m pip install --quiet --disable-pip-version-check pypdf >/dev/null 2>&1 || true
+pdftxt() { python3 -c "
+import sys
+from pypdf import PdfReader
+print(' '.join((p.extract_text() or '') for p in PdfReader(sys.argv[1]).pages).replace('\n', ' '))" "$1" 2>/dev/null; }
+read OQ OFR OTA OTX <<< "$($PSQL "SELECT quantity, COALESCE(freight_charges,0), COALESCE(transport_amount,0), taxable_amount FROM sales_invoice_details WHERE id=$LD" | tr '|' ' ')"
+OTR=$(python3 -c "
+v = round(float('$OFR') * float('$OQ') + float('$OTA'), 2)
+i, d = f'{v:.2f}'.split('.')
+neg = i.startswith('-'); i = i.lstrip('-')
+if len(i) > 3:   # Indian grouping, as printed on the PDF (12,34,567.00)
+    h, t = i[:-3], i[-3:]; parts = []
+    while len(h) > 2: parts.insert(0, h[-2:]); h = h[:-2]
+    if h: parts.insert(0, h)
+    i = ','.join(parts) + ',' + t
+print(('-' if neg else '') + i + '.' + d)")
+cl() { command curl -s -o /tmp/ct$1.pdf -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$LI/custom-lines" -d "$2"; }
+LB2=$(LFP)
+C=$(cl 1 '[{"detailId":'$LD',"quantity":'$OQ',"transport":999}]'); T1=$(pdftxt /tmp/ct1.pdf)
+[ "$C" = "200" ] && echo "$T1" | grep -q "999.00" && echo "$T1" | grep -q "$OTR" && pass "CTR transport-only change: PDF shows official ($OTR) and new transport (999.00)" || fail "CTR transport only" "$C :: $(echo $T1 | cut -c1-240)"
+echo "$T1" | grep -Eq "Adjusted Transport.*" && [ "$(echo "$T1" | grep -o "$(printf '%.2f' $OQ)" | wc -l)" -ge 2 ] && pass "CTR transport change keeps the official qty" || fail "CTR qty kept" "$(echo $T1 | cut -c1-200)"
+C=$(cl 2 '[{"detailId":'$LD',"quantity":1.5,"amount":9000}]'); T2=$(pdftxt /tmp/ct2.pdf)
+[ "$C" = "200" ] && echo "$T2" | grep -q "1.50" && [ "$(echo "$T2" | grep -o "$OTR" | wc -l)" -ge 2 ] && pass "CTR qty-only change (old way) still works and leaves transport official ($OTR)" || fail "CTR qty only" "$C :: $(echo $T2 | cut -c1-240)"
+C=$(cl 3 '[{"detailId":'$LD',"quantity":1.5,"transport":250}]'); T3=$(pdftxt /tmp/ct3.pdf)
+[ "$C" = "200" ] && echo "$T3" | grep -q "1.50" && echo "$T3" | grep -q "250.00" && pass "CTR qty and transport changed together" || fail "CTR both" "$C :: $(echo $T3 | cut -c1-200)"
+R=$(command curl -s -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$LI/custom-lines" -d '[{"detailId":'$LD',"quantity":1,"transport":-1}]')
+echo "$R" | grep -q "cannot be negative" && pass "CTR negative transport refused" || fail "CTR negative" "$(echo $R | cut -c1-160)"
+C=$(command curl -s -o /tmp/ctp.pdf -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/invoices/$LI/proforma-pdf" -d '[{"detailId":'$LD',"quantity":'$OQ',"transport":777}]'); TP=$(pdftxt /tmp/ctp.pdf)
+[ "$C" = "200" ] && echo "$TP" | grep -q "777.00" && echo "$TP" | grep -qi "PROFORMA" && pass "CTR proforma shows the changed transport" || fail "CTR proforma" "$C :: $(echo $TP | cut -c1-200)"
+cp /tmp/ct1.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/custom-transport.pdf" 2>/dev/null || true; cp /tmp/ctp.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/proforma-transport.pdf" 2>/dev/null || true
+[ "$(LFP)" = "$LB2" ] && pass "CTR invoice and its lines unchanged after all custom PDFs" || fail "CTR invoice changed" "x"
+C=$(command curl -s -o /tmp/ctn.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/invoices/$LI/pdf); [ "$C" = "200" ] && pass "CTR Normal PDF still works" || fail "CTR normal" "$C"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

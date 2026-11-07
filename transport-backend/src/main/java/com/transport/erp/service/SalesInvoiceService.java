@@ -984,16 +984,29 @@ public class SalesInvoiceService {
             String where = data.getInvoiceNumber() + " line " + n;
             BigDecimal qty = e == null || e.quantity() == null ? nzP(it.getQuantity()) : proformaQty(e.quantity(), where);
             BigDecimal gst = e == null || e.gstPercentage() == null ? nzP(it.getGstPercentage()) : proformaGst(e.gstPercentage(), where);
-            BigDecimal taxable = e == null ? nzP(it.getLineTaxable())
-                    : e.amount() != null ? proformaMoney(e.amount(), where)
-                    : e.rate() != null ? qty.multiply(proformaMoney(e.rate(), where)).setScale(2, java.math.RoundingMode.HALF_UP)
-                    : nzP(it.getLineTaxable());
-            BigDecimal rate = e != null && e.rate() != null ? proformaMoney(e.rate(), where)
-                    : qty.signum() == 0 ? BigDecimal.ZERO : taxable.divide(qty, 2, java.math.RoundingMode.HALF_UP);
+            // Official transport of the line = per-unit transport x qty + per-load amount (as on the invoice).
+            BigDecimal offQty = nzP(it.getQuantity());
+            BigDecimal offTr = nzP(it.getFreightCharges()).multiply(offQty).add(nzP(it.getTransportAmount())).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal taxable, rate, tr;
+            if (e != null && e.transport() != null) {
+                tr = proformaMoney(e.transport(), where);   // transport changed: rate = material rate excl. transport
+                BigDecimal offRate = offQty.signum() == 0 ? BigDecimal.ZERO
+                        : nzP(it.getLineTaxable()).subtract(offTr).divide(offQty, 2, java.math.RoundingMode.HALF_UP);
+                rate = e.rate() != null ? proformaMoney(e.rate(), where) : offRate;
+                taxable = e.amount() != null ? proformaMoney(e.amount(), where) : qty.multiply(rate).add(tr).setScale(2, java.math.RoundingMode.HALF_UP);
+            } else {
+                tr = null;   // original behaviour: all-in rate, no separate transport line
+                taxable = e == null ? nzP(it.getLineTaxable())
+                        : e.amount() != null ? proformaMoney(e.amount(), where)
+                        : e.rate() != null ? qty.multiply(proformaMoney(e.rate(), where)).setScale(2, java.math.RoundingMode.HALF_UP)
+                        : nzP(it.getLineTaxable());
+                rate = e != null && e.rate() != null ? proformaMoney(e.rate(), where)
+                        : qty.signum() == 0 ? BigDecimal.ZERO : taxable.divide(qty, 2, java.math.RoundingMode.HALF_UP);
+            }
             BigDecimal c = BigDecimal.ZERO, s2 = BigDecimal.ZERO, i2 = BigDecimal.ZERO;
             if (igst) i2 = taxable.multiply(gst).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
             else { c = taxable.multiply(gst).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP); s2 = c; }
-            it.setQuantity(qty); it.setRate(rate);
+            it.setQuantity(qty); it.setRate(rate); it.setTransportAmount(tr);
             it.setFreightCharges(BigDecimal.ZERO); it.setLoadingCharges(BigDecimal.ZERO); it.setRoyalty(BigDecimal.ZERO);
             it.setLineSubtotal(taxable); it.setLineDiscount(BigDecimal.ZERO); it.setLineTaxable(taxable);
             it.setGstPercentage(gst); it.setCgst(c); it.setSgst(s2); it.setIgst(i2);

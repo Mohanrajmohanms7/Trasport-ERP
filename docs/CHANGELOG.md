@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
+## 2026-11-07
+- **Custom PDF / Proforma: change the transport amount per line** (no migration)
+  Next to Qty / Rate / Amount / GST %: Transport ₹ (official = per-unit transport × qty + per-load amount); Amount = Qty × Rate (excl. transport) + Transport. Sent as optional `transport` to `/exports/invoices/{id}/custom-lines` and `/invoices/{id}/proforma-pdf`; without it the old behaviour is unchanged. PDF shows official vs adjusted transport. Nothing saved.
+
 ## 2026-11-01
 - **Itemized lines polish:** "Swipe sideways to see all fields" hint on phones / tablets; booking label "Rate ₹ / Unit" fits one line (frontend only)
 - **No duplicate vouchers; consistent itemized lines; Dispatch loads page; receipts Ready for billing** (no migration)

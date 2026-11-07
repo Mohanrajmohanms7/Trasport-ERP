@@ -426,7 +426,8 @@ public class XlsxExportService {
     }
 
     /** One edited line of one invoice for the line-level custom PDF (quantity and taxable amount only). */
-    public record CustomLineAmounts(Long detailId, BigDecimal quantity, BigDecimal amount, BigDecimal rate, BigDecimal gstPercentage) {}
+    /** One edited line; transport (optional) = transport ₹ for the whole line — when sent, rate is the material rate excluding transport. */
+    public record CustomLineAmounts(Long detailId, BigDecimal quantity, BigDecimal amount, BigDecimal rate, BigDecimal gstPercentage, BigDecimal transport) {}
 
     /**
      * One invoice, line by line, with customer-facing ADJUSTED quantity / amount — READ ONLY: nothing is saved and the
@@ -444,10 +445,12 @@ public class XlsxExportService {
             if (e == null || e.detailId() == null || byLine.put(e.detailId(), e) != null) throw customErr("Each invoice line can be listed once.");
         }
         boolean igst = "INTER_STATE".equalsIgnoreCase(inv.getSupplyType());
-        String[] headers = {"#", "Material", "Official Qty", "Adjusted Qty", "Official Rate", "Adjusted Rate", "Official Amount",
-                "Adjusted Amount", "GST % (official to adjusted)", igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
+        String[] headers = {"#", "Material", "Official Qty", "Adjusted Qty", "Rate / unit excl. transport (official to adjusted)",
+                "Official Transport", "Adjusted Transport", "Official Amount", "Adjusted Amount", "GST % (official to adjusted)",
+                igst ? "IGST" : "CGST + SGST", "Adjusted Total", "Difference (Total)"};
         List<Object[]> rows = new ArrayList<>();
         BigDecimal[] t = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
+        BigDecimal tOffTr = BigDecimal.ZERO, tTr = BigDecimal.ZERO;
         int n = 0;
         java.util.Set<Long> seen = new java.util.HashSet<>();
         for (SalesInvoiceDetail d : inv.getDetails()) {
@@ -461,23 +464,36 @@ public class XlsxExportService {
             BigDecimal qty = e == null ? offQty : qty3(e.quantity(), no);
             BigDecimal offGst = nz(d.getGstPercentage());
             BigDecimal gstPct = e == null || e.gstPercentage() == null ? offGst : gstLine(e.gstPercentage(), no);
-            // Amount = qty × rate when only the rate is given (same 2-decimal rounding as the invoice).
-            BigDecimal amt = e == null ? offAmt : (e.amount() == null && e.rate() != null
-                    ? moneyLine(qty.multiply(moneyLine(e.rate(), no)).setScale(2, java.math.RoundingMode.HALF_UP), no) : moneyLine(e.amount(), no));
-            BigDecimal offRate = offQty.signum() == 0 ? BigDecimal.ZERO : offAmt.divide(offQty, 2, java.math.RoundingMode.HALF_UP);
-            BigDecimal rate = e != null && e.rate() != null ? moneyLine(e.rate(), no)
-                    : (qty.signum() == 0 ? BigDecimal.ZERO : amt.divide(qty, 2, java.math.RoundingMode.HALF_UP));
+            // Official transport of the line = per-unit transport x qty + per-load amount (same as the invoice).
+            BigDecimal offTr = nz(d.getFreightCharges()).multiply(offQty).add(nz(d.getTransportAmount())).setScale(2, java.math.RoundingMode.HALF_UP);
+            BigDecimal offRate = offQty.signum() == 0 ? BigDecimal.ZERO : offAmt.subtract(offTr).divide(offQty, 2, java.math.RoundingMode.HALF_UP);
+            BigDecimal tr, amt, rate;
+            if (e != null && e.transport() != null) {
+                // Transport changed: rate = material rate excl. transport; amount = qty x rate + transport.
+                tr = moneyLine(e.transport(), no);
+                rate = e.rate() != null ? moneyLine(e.rate(), no) : offRate;
+                amt = e.amount() != null ? moneyLine(e.amount(), no)
+                        : moneyLine(qty.multiply(rate).add(tr).setScale(2, java.math.RoundingMode.HALF_UP), no);
+            } else {
+                // Original behaviour (no transport sent): amount = qty x all-in rate, transport as on the invoice.
+                tr = offTr;
+                amt = e == null ? offAmt : (e.amount() == null && e.rate() != null
+                        ? moneyLine(qty.multiply(moneyLine(e.rate(), no)).setScale(2, java.math.RoundingMode.HALF_UP), no) : moneyLine(e.amount(), no));
+                rate = qty.signum() == 0 ? BigDecimal.ZERO : amt.subtract(tr).max(BigDecimal.ZERO).divide(qty, 2, java.math.RoundingMode.HALF_UP);
+            }
             BigDecimal tax = igst ? amt.multiply(gstPct).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP)
                     : amt.multiply(gstPct).divide(BigDecimal.valueOf(200), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(2));
             BigDecimal total = amt.add(tax);
             String gstText = offGst.stripTrailingZeros().toPlainString() + "%" + (gstPct.compareTo(offGst) == 0 ? "" : " to " + gstPct.stripTrailingZeros().toPlainString() + "%");
             String mat = (d.getMaterial() != null ? d.getMaterial().getName() : "") + (d.getTrip() != null ? " (" + d.getTrip().getTripNumber() + ")" : "");
-            rows.add(new Object[]{n, mat, offQty, qty, offRate, rate, offAmt, amt, gstText, tax, total, total.subtract(offTotal)});
+            String rateText = offRate.stripTrailingZeros().toPlainString() + (rate.compareTo(offRate) == 0 ? "" : " to " + rate.stripTrailingZeros().toPlainString());
+            rows.add(new Object[]{n, mat, offQty, qty, rateText, offTr, tr, offAmt, amt, gstText, tax, total, total.subtract(offTotal)});
             BigDecimal[] v = {offQty, qty, offAmt, amt, tax, total, total.subtract(offTotal)};
+            tOffTr = tOffTr.add(offTr); tTr = tTr.add(tr);
             for (int k = 0; k < v.length; k++) t[k] = t[k].add(v[k]);
         }
         if (!seen.containsAll(byLine.keySet())) throw customErr("A line in the custom PDF does not belong to this invoice.");
-        rows.add(new Object[]{"", "TOTAL (" + n + " line(s))", t[0], t[1], null, null, t[2], t[3], null, t[4], t[5], t[6]});
+        rows.add(new Object[]{"", "TOTAL (" + n + " line(s))", t[0], t[1], null, tOffTr, tTr, t[2], t[3], null, t[4], t[5], t[6]});
         return render("pdf", "Invoice " + inv.getInvoiceNumber() + " — ADJUSTED quantities / amounts (official invoice figures shown; NOT a tax invoice)",
                 headers, rows);
     }
