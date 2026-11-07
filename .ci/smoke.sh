@@ -1709,7 +1709,16 @@ import sys
 from pypdf import PdfReader
 print(' '.join((p.extract_text() or '') for p in PdfReader(sys.argv[1]).pages).replace('\n', ' '))" "$1" 2>/dev/null; }
 read OQ OFR OTA OTX <<< "$($PSQL "SELECT quantity, COALESCE(freight_charges,0), COALESCE(transport_amount,0), taxable_amount FROM sales_invoice_details WHERE id=$LD" | tr '|' ' ')"
-OTR=$(python3 -c "print(f'{round(float('$OFR')*float('$OQ')+float('$OTA'),2):.2f}')")
+OTR=$(python3 -c "
+v = round(float('$OFR') * float('$OQ') + float('$OTA'), 2)
+i, d = f'{v:.2f}'.split('.')
+neg = i.startswith('-'); i = i.lstrip('-')
+if len(i) > 3:   # Indian grouping, as printed on the PDF (12,34,567.00)
+    h, t = i[:-3], i[-3:]; parts = []
+    while len(h) > 2: parts.insert(0, h[-2:]); h = h[:-2]
+    if h: parts.insert(0, h)
+    i = ','.join(parts) + ',' + t
+print(('-' if neg else '') + i + '.' + d)")
 cl() { command curl -s -o /tmp/ct$1.pdf -w "%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$LI/custom-lines" -d "$2"; }
 LB2=$(LFP)
 C=$(cl 1 '[{"detailId":'$LD',"quantity":'$OQ',"transport":999}]'); T1=$(pdftxt /tmp/ct1.pdf)
