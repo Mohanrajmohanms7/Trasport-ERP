@@ -222,7 +222,7 @@ public final class SalesInvoicePdfGenerator {
             PdfPTable bt = table(new float[]{30, 16, 22, 18, 14});
             bt.setSpacingBefore(6);
             bt.setKeepTogether(true);
-            PdfPCell hdr = cell("DRIVER BATA — PAID BY YOU DIRECTLY TO THE DRIVER (NOT PART OF THIS INVOICE)", f(7.5f, true, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX);
+            PdfPCell hdr = cell("DRIVER BATA — PAID BY YOU DIRECTLY TO THE DRIVER (NOT PART OF THIS INVOICE)", f(8, true, Color.BLACK), Element.ALIGN_LEFT, Rectangle.BOX);
             hdr.setColspan(5); hdr.setBackgroundColor(HEAD); bt.addCell(hdr);
             for (String h : new String[]{"TRIP", "DATE", "VEHICLE", "DRIVER", "DRIVER BATA"}) {
                 bt.addCell(cell(h, f(7, true, Color.BLACK), "DRIVER BATA".equals(h) ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT, Rectangle.BOX));
