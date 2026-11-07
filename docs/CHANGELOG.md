@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
+## 2026-11-07
+- **Custom PDF / Proforma: change the transport amount per line** (no migration)
+  Next to Qty / Rate / Amount / GST %: Transport ₹ (official = per-unit transport × qty + per-load amount); Amount = Qty × Rate (excl. transport) + Transport. Sent as optional `transport` to `/exports/invoices/{id}/custom-lines` and `/invoices/{id}/proforma-pdf`; without it the old behaviour is unchanged. PDF shows official vs adjusted transport. Nothing saved.
+
 ## 2026-11-01
 - **No duplicate vouchers; consistent itemized lines; Dispatch loads page; receipts Ready for billing** (no migration)
   Server `DuplicateSubmitFilter`: an identical POST by the same user within 5 s is answered with the first result (no second voucher / booking / receipt; refused requests are not remembered); Save buttons disabled while saving (13 forms). S.No + one-row itemized lines with sideways scroll (Booking, Trip, Invoice). Booking "Transport charged" in its own column, Per load default for new lines. Trip lines auto-fill loaded / delivered / transport from the booking. Dispatch loads as a full-screen page (/dispatch-loads) from Booking and Trips with loading / empty states. Receipts: Ready for billing panel (draft invoice from un-invoiced trips, approve and allocate). Expense amount must be > 0.

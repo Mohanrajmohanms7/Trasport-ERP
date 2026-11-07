@@ -43,19 +43,23 @@ interface Row {
         <table class="w-full text-xs">
           <thead class="sticky top-0 bg-[var(--ff-surface-muted,#f1f5f9)] text-[var(--ff-text-secondary)]">
             <tr><th class="p-2 text-left">Trip / Material</th><th class="p-2 text-right">Official qty</th><th class="p-2 text-right">Quantity</th>
-              <th class="p-2 text-right">Rate</th><th class="p-2 text-right">Official amount</th><th class="p-2 text-right">Amount</th>
+              <th class="p-2 text-right">Rate ₹ / unit<div class="font-normal text-[10px]">excl. transport</div></th><th class="p-2 text-right">Transport ₹<div class="font-normal text-[10px]">this line</div></th>
+              <th class="p-2 text-right">Official amount</th><th class="p-2 text-right">Amount</th>
               <th class="p-2 text-right">GST %</th><th class="p-2 text-right">Tax</th>
               <th class="p-2 text-right">Total</th><th class="p-2 text-right">Difference</th></tr>
           </thead>
           <tbody>
             @for (l of lines(); track l.detailId; let i = $index) {
-              <tr class="border-t border-[var(--ff-border-default)] align-top" [class.bg-amber-50]="l.qty !== l.officialQty || l.amount !== l.officialAmount || l.gstPct !== l.officialGst">
+              <tr class="border-t border-[var(--ff-border-default)] align-top" [class.bg-amber-50]="l.qty !== l.officialQty || l.amount !== l.officialAmount || l.gstPct !== l.officialGst || l.transport !== l.officialTransport">
                 <td class="p-2"><b>{{ l.material }}</b><div class="text-[10px] text-[var(--ff-text-muted)]">{{ l.trip }} · official {{ l.officialRate | number:'1.2-2' }} / unit · GST {{ l.officialGst }}%</div></td>
                 <td class="p-2 text-right">{{ l.officialQty | number:'1.0-3' }}</td>
                 <td class="p-1 text-right"><input type="number" min="0" step="0.001" class="w-24 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
                     [class.border-rose-500]="!!lineError(l)" [attr.aria-label]="'Quantity ' + l.material" [ngModel]="l.qty" (ngModelChange)="setLine(i, 'qty', $event)" /></td>
                 <td class="p-1 text-right"><input type="number" min="0" step="0.01" class="w-24 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
                     [attr.aria-label]="'Rate ' + l.material" [ngModel]="l.rate" (ngModelChange)="setLine(i, 'rate', $event)" /></td>
+                <td class="p-1 text-right"><input type="number" min="0" step="0.01" class="w-24 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
+                    [class.border-rose-500]="!!lineError(l)" [attr.aria-label]="'Transport ' + l.material" [ngModel]="l.transport" (ngModelChange)="setLine(i, 'transport', $event)" data-testid="custom-transport" />
+                  <div class="text-[10px] text-[var(--ff-text-muted)]">official {{ l.officialTransport | number:'1.2-2' }}</div></td>
                 <td class="p-2 text-right">{{ l.officialAmount | number:'1.2-2' }}</td>
                 <td class="p-1 text-right"><input type="number" min="0" step="0.01" class="w-28 h-8 rounded border px-1.5 text-right text-xs bg-[var(--ff-surface-card)]"
                     [class.border-rose-500]="!!lineError(l)" [attr.aria-label]="'Amount ' + l.material" [ngModel]="l.amount" (ngModelChange)="setLine(i, 'amount', $event)" /></td>
@@ -65,7 +69,7 @@ interface Row {
                 <td class="p-2 text-right font-semibold">{{ (l.amount || 0) + lineTax(l) | number:'1.2-2' }}</td>
                 <td class="p-2 text-right" [class.text-rose-600]="(l.amount || 0) + lineTax(l) !== l.officialTotal">{{ (l.amount || 0) + lineTax(l) - l.officialTotal | number:'1.2-2' }}</td>
               </tr>
-              @if (lineError(l); as e) { <tr><td colspan="10" class="px-2 pb-2 text-[11px] text-rose-600" role="alert">{{ e }}</td></tr> }
+              @if (lineError(l); as e) { <tr><td colspan="11" class="px-2 pb-2 text-[11px] text-rose-600" role="alert">{{ e }}</td></tr> }
             }
           </tbody>
         </table>
@@ -186,8 +190,11 @@ export class InvoiceCustomExportComponent implements OnInit {
           detailId: Number(d.id), material: d.material?.name || '', trip: d.trip?.tripNumber || '',
           gstPct: Number(d.gstPercentage || 0),
           officialQty: round3(d.quantity), officialAmount: round2(d.taxableAmount), officialGst: Number(d.gstPercentage || 0),
-          officialRate: Number(d.quantity) ? round2(Number(d.taxableAmount || 0) / Number(d.quantity)) : 0,
-          rate: Number(d.quantity) ? round2(Number(d.taxableAmount || 0) / Number(d.quantity)) : 0,
+          // Transport of the line as on the invoice: per-unit transport x qty + per-load amount; rate excludes it.
+          officialTransport: round2(Number(d.freightCharges || 0) * Number(d.quantity || 0) + Number(d.transportAmount || 0)),
+          transport: round2(Number(d.freightCharges || 0) * Number(d.quantity || 0) + Number(d.transportAmount || 0)),
+          officialRate: Number(d.quantity) ? round2((Number(d.taxableAmount || 0) - (Number(d.freightCharges || 0) * Number(d.quantity || 0) + Number(d.transportAmount || 0))) / Number(d.quantity)) : 0,
+          rate: Number(d.quantity) ? round2((Number(d.taxableAmount || 0) - (Number(d.freightCharges || 0) * Number(d.quantity || 0) + Number(d.transportAmount || 0))) / Number(d.quantity)) : 0,
           officialTotal: round2(Number(d.taxableAmount || 0) + Number(d.cgst || 0) + Number(d.sgst || 0) + Number(d.igst || 0)),
           qty: round3(d.quantity), amount: round2(d.taxableAmount)
         }));
@@ -198,14 +205,14 @@ export class InvoiceCustomExportComponent implements OnInit {
     });
   }
   resetLines(): void { this.lines.set(this.officialLines.map(l => ({ ...l }))); }
-  /** Qty or Rate → Amount = Qty × Rate; Amount → Rate = Amount ÷ Qty; GST % → Tax (2-decimal rounding as the invoice). */
-  setLine(i: number, f: 'qty' | 'amount' | 'rate' | 'gstPct', v: any): void {
+  /** Qty, Rate or Transport → Amount = Qty × Rate + Transport; Amount → Rate = (Amount − Transport) ÷ Qty; GST % → Tax. */
+  setLine(i: number, f: 'qty' | 'amount' | 'rate' | 'gstPct' | 'transport', v: any): void {
     const n = v === '' || v === null || v === undefined ? null : Number(v);
     this.lines.update(list => list.map((l, k) => {
       if (k !== i) return l;
       const x: LineRow = { ...l, [f]: n } as LineRow;
-      if (f === 'qty' || f === 'rate') x.amount = x.qty !== null && x.rate !== null ? round2(x.qty * x.rate) : null;
-      if (f === 'amount') x.rate = x.qty && x.amount !== null ? round2(x.amount / x.qty) : x.rate;
+      if (f === 'qty' || f === 'rate' || f === 'transport') x.amount = x.qty !== null && x.rate !== null ? round2(x.qty * x.rate + (x.transport || 0)) : null;
+      if (f === 'amount') x.rate = x.qty && x.amount !== null ? round2((x.amount - (x.transport || 0)) / x.qty) : x.rate;
       return x;
     }));
   }
@@ -219,6 +226,8 @@ export class InvoiceCustomExportComponent implements OnInit {
     if (l.qty === null || Number.isNaN(l.qty)) return 'Enter a quantity';
     if (l.amount === null || Number.isNaN(l.amount)) return 'Enter an amount';
     if (l.qty < 0 || l.amount < 0 || (l.rate ?? 0) < 0) return 'Cannot be negative';
+    if (l.transport === null || Number.isNaN(l.transport) || l.transport < 0) return 'Transport: enter 0 or more';
+    if (Math.round(l.transport * 100) !== Number((l.transport * 100).toFixed(6))) return 'Transport: at most 2 decimals';
     if (l.gstPct === null || Number.isNaN(l.gstPct) || l.gstPct < 0 || l.gstPct > 28) return 'GST % must be between 0 and 28';
     if (Math.round(l.qty * 1000) !== Number((l.qty * 1000).toFixed(6))) return 'Quantity: at most 3 decimals';
     if (Math.round(l.amount * 100) !== Number((l.amount * 100).toFixed(6))) return 'Amount: at most 2 decimals';
@@ -230,7 +239,7 @@ export class InvoiceCustomExportComponent implements OnInit {
   downloadProforma(): void {
     if (this.busy() || this.linesInvalid() || !this.lineInvoiceId) return;
     this.busy.set(true);
-    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount, rate: l.rate, gstPercentage: l.gstPct }));
+    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount, rate: l.rate, gstPercentage: l.gstPct, transport: l.transport }));
     this.http.post(`/api/v1/invoices/${this.lineInvoiceId}/proforma-pdf`, body, { responseType: 'blob' }).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
@@ -252,7 +261,7 @@ export class InvoiceCustomExportComponent implements OnInit {
   downloadLines(): void {
     if (this.busy() || this.linesInvalid() || !this.lineInvoiceId) return;
     this.busy.set(true);
-    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount, rate: l.rate, gstPercentage: l.gstPct }));
+    const body = this.lines().map(l => ({ detailId: l.detailId, quantity: l.qty, amount: l.amount, rate: l.rate, gstPercentage: l.gstPct, transport: l.transport }));
     this.http.post(`/api/v1/exports/invoices/${this.lineInvoiceId}/custom-lines`, body, { responseType: 'blob' }).subscribe({
       next: blob => {
         const url = URL.createObjectURL(blob);
@@ -338,8 +347,8 @@ export class InvoiceCustomExportComponent implements OnInit {
 
 interface LineRow {
   detailId: number; material: string; trip: string; gstPct: number | null; officialGst: number;
-  officialQty: number; officialAmount: number; officialTotal: number; officialRate: number;
-  qty: number | null; amount: number | null; rate: number | null;
+  officialQty: number; officialAmount: number; officialTotal: number; officialRate: number; officialTransport: number;
+  qty: number | null; amount: number | null; rate: number | null; transport: number | null;
 }
 
 function round3(v: any): number {
