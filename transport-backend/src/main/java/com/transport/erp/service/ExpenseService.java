@@ -96,6 +96,7 @@ public class ExpenseService {
         // Calc totalAmount
         BigDecimal amt = expense.getAmount() != null ? expense.getAmount() : BigDecimal.ZERO;
         assertAmounts(amt, expense.getGstAmount());
+        assertNotCustomerPaidBata(expense);
         BigDecimal gst = expense.getGstAmount() != null ? expense.getGstAmount() : BigDecimal.ZERO;
         expense.setTotalAmount(amt.add(gst));
 
@@ -396,4 +397,19 @@ public class ExpenseService {
                     "GST amount cannot be negative.", "Enter the GST on the bill, or 0.");
         }
     }
+
+    /** A trip whose driver bata the customer pays directly: recording it again as an owner expense would pay it twice. */
+    private void assertNotCustomerPaidBata(Expense e) {
+        if (!"DRIVER_BATA".equalsIgnoreCase(e.getCategory()) || e.getTrip() == null || e.getTrip().getId() == null || tripRepoBata == null) return;
+        tripRepoBata.findById(e.getTrip().getId()).ifPresent(t -> {
+            if (t.getCustomerPaidBata() != null && t.getCustomerPaidBata().signum() > 0) {
+                throw new com.transport.erp.exception.BusinessValidationException("Bata Paid By Customer", "EXPENSE_BATA_CUSTOMER_PAID",
+                        "Trip " + t.getTripNumber() + "'s driver bata (₹" + t.getCustomerPaidBata().toPlainString() + ") is paid by the customer directly to the driver.",
+                        "Do not record it as an owner expense. If the owner also pays extra bata, record it without linking this trip.");
+            }
+        });
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.transport.erp.repository.TripRepository tripRepoBata;
 }

@@ -1736,6 +1736,54 @@ cp /tmp/ct1.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/custom-transport.pdf" 2>/de
 [ "$(LFP)" = "$LB2" ] && pass "CTR invoice and its lines unchanged after all custom PDFs" || fail "CTR invoice changed" "x"
 C=$(command curl -s -o /tmp/ctn.pdf -w "%{http_code}" -H "Authorization: Bearer $TOKEN" $API/invoices/$LI/pdf); [ "$C" = "200" ] && pass "CTR Normal PDF still works" || fail "CTR normal" "$C"
 
+# ================= Customer-paid driver bata per trip: shown on the invoice, never in its amounts / accounts / payroll =================
+BB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":4,"rate":100,"transportRate":2000,"transportBasis":"PER_TRIP","royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']")
+post /bookings/$BB/approve >/dev/null
+bplan() { post /trips/plan-loads "$(python3 -c "
+import json, sys
+loads = []
+for spec in sys.argv[1:]:
+    v, d, q, b = spec.split(':')
+    l = {'vehicleId': int(v), 'driverId': int(d), 'tripDate': '$TODAY', 'lines': [{'materialId': $MAT, 'quantity': float(q), 'transportAmount': 2000}]}
+    if b: l['customerPaidBata'] = float(b)
+    loads.append(l)
+print(json.dumps({'bookingId': $BB, 'loads': loads}))" "$@")"; }
+R=$(bplan "$L2:$E1:1:-5"); echo "$R" | grep -q "cannot be negative" && pass "BATA negative customer bata refused" || fail "BATA negative" "$(echo $R | cut -c1-160)"
+R=$(bplan "$L2:$E1:2:200" "$L3:$E2:1:300" "$L2:$E1:1:")
+[ "$(echo "$R" | j "len(d['data'])")" = "3" ] && pass "BATA 3 loads planned (bata 200, 300, none)" || fail "BATA plan" "$(echo $R | cut -c1-200)"
+read TB1 TB2 TB3 <<< "$($PSQL "SELECT string_agg(id::text, ' ' ORDER BY id) FROM trips WHERE booking_id=$BB")"
+[ "$($PSQL "SELECT string_agg(COALESCE(customer_paid_bata::text,'-'), ',' ORDER BY id) FROM trips WHERE booking_id=$BB")" = "200.00,300.00,-" ] && pass "BATA stored per trip (200, 300, none)" || fail "BATA stored" "$($PSQL "SELECT string_agg(COALESCE(customer_paid_bata::text,'-'), ',' ORDER BY id) FROM trips WHERE booking_id=$BB")"
+for t in $TB1 $TB2 $TB3; do post /trips/$t/dispatch >/dev/null; post /trips/$t/complete >/dev/null; done
+# the Complete dialog corrects trip 2's bata to 350 (same save as Edit)
+curl -s -H "Authorization: Bearer $TOKEN" $API/trips/$TB2 | python3 -c "
+import sys,json; t=json.load(sys.stdin)['data']
+print(json.dumps({'booking':{'id':t['booking']['id']},'tripDate':t['tripDate'],'vehicle':{'id':t['vehicle']['id']},'driver':{'id':t['driver']['id']},'customerPaidBata':350,
+ 'details':[{'material':{'id':d['material']['id']},'quantity':d['quantity'],'transportAmount':d.get('transportAmount'),'loadedQuantity':d['quantity'],'deliveredQuantity':d['quantity']} for d in t['details']]}))" > /tmp/bata2.json
+R=$(curl -s -X PUT "${H[@]}" $API/trips/$TB2 --data @/tmp/bata2.json); [ "$($PSQL "SELECT customer_paid_bata FROM trips WHERE id=$TB2")" = "350.00" ] && pass "BATA corrected at completion (300 -> 350)" || fail "BATA correct" "$(echo $R | cut -c1-200)"
+R=$(post /expenses '{"expenseDate":"'$TODAY'","category":"DRIVER_BATA","amount":200,"paymentMethod":"CASH","description":"bata dup","trip":{"id":'$TB1'},"driver":{"id":'$E1'}}')
+echo "$R" | grep -q "Bata Paid By Customer\|paid by the customer" && pass "BATA owner bata expense for a customer-paid trip refused (no double payment)" || fail "BATA expense guard" "$(echo $R | cut -c1-200)"
+BINV=$(post /invoices/from-trips "{\"tripIds\":[$TB1,$TB2,$TB3]}" | j "d['data']['id']"); post /invoices/$BINV/approve >/dev/null
+# taxable = (2x100 + 2000) + (1x100 + 2000) + (1x100 + 2000) = 6400; GST 5 % = 320; net 6720 — bata 550 never added
+[ "$($PSQL "SELECT taxable_amount||'/'||net_amount FROM sales_invoices WHERE id=$BINV")" = "6400.00/6720.00" ] && pass "BATA invoice taxable 6400 / net 6720: bata not in the invoice amounts" || fail "BATA invoice amounts" "$($PSQL "SELECT taxable_amount||'/'||net_amount FROM sales_invoices WHERE id=$BINV")"
+BINO=$($PSQL "SELECT invoice_number FROM sales_invoices WHERE id=$BINV")
+[ "$($PSQL "SELECT COUNT(*) FROM journal_vouchers WHERE is_deleted=false AND (description LIKE '%$BINO%' OR reference_number='$BINO') AND amount IN (200,350,550)")" = "0" ] && pass "BATA no accounting entry for the bata" || fail "BATA accounts" "x"
+command curl -s -o /tmp/bata-inv.pdf -H "Authorization: Bearer $TOKEN" $API/invoices/$BINV/pdf; BT=$(pdftxt /tmp/bata-inv.pdf)
+echo "$BT" | grep -q "DRIVER BATA" && echo "$BT" | grep -q "200.00" && echo "$BT" | grep -q "350.00" && echo "$BT" | grep -q "550.00" && echo "$BT" | grep -q "6,720.00" && pass "BATA invoice PDF: per-trip bata box (200, 350, total 550) and grand total 6,720 unchanged" || fail "BATA pdf" "$(echo $BT | cut -c1-300)"
+cp /tmp/bata-inv.pdf "${GITHUB_WORKSPACE:-/tmp}/shots/pdf/invoice-customer-bata.pdf" 2>/dev/null || true
+BD=$($PSQL "SELECT id FROM sales_invoice_details WHERE invoice_id=$BINV AND trip_id=$TB1 LIMIT 1")
+command curl -s -o /tmp/bata-pf.pdf -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/invoices/$BINV/proforma-pdf" -d '[{"detailId":'$BD',"quantity":2,"transport":1800}]'
+pdftxt /tmp/bata-pf.pdf | grep -q "DRIVER BATA" && pass "BATA proforma shows the bata box" || fail "BATA proforma" "x"
+command curl -s -o /tmp/bata-cl.pdf -X POST -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -H 'X-Idempotency: off' "$API/exports/invoices/$BINV/custom-lines" -d '[{"detailId":'$BD',"quantity":2,"transport":2000}]'
+pdftxt /tmp/bata-cl.pdf | grep -qi "Driver bata" && pass "BATA custom PDF lists the bata after its totals" || fail "BATA custom" "$(head -c 160 /tmp/bata-cl.pdf)"
+curl -s -H "Authorization: Bearer $TOKEN" $API/trips/$TB1 | python3 -c "
+import sys,json; t=json.load(sys.stdin)['data']
+print(json.dumps({'booking':{'id':t['booking']['id']},'tripDate':t['tripDate'],'vehicle':{'id':t['vehicle']['id']},'driver':{'id':t['driver']['id']},'customerPaidBata':999,
+ 'details':[{'material':{'id':d['material']['id']},'quantity':d['quantity'],'transportAmount':d.get('transportAmount'),'loadedQuantity':d.get('loadedQuantity'),'deliveredQuantity':d.get('deliveredQuantity')} for d in t['details']]}))" > /tmp/bata1.json
+R=$(curl -s -X PUT "${H[@]}" $API/trips/$TB1 --data @/tmp/bata1.json)
+echo "$R" | grep -q "Trip Already Invoiced" && pass "BATA cannot change once the trip is invoiced" || fail "BATA lock" "$(echo $R | cut -c1-200)"
+R=$(post /driver-payrolls/$P1/recalculate); GOT=$($PSQL "SELECT total_trips||'/'||excluded_trip_count||'/'||bata_paid FROM driver_payrolls WHERE id=$P1")
+[ "$GOT" = "6/0/0.00" ] && pass "BATA driver 1 payroll: bata trips still count (4 + 2 = 6 trips), nothing excluded, no owner bata ($GOT)" || fail "BATA payroll" "$GOT :: $(echo $R | cut -c1-160)"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

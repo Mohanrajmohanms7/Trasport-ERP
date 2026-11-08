@@ -66,6 +66,8 @@ export interface Trip {
   loadingLocation?: { id: number; loadingPoint?: string; name?: string } | null;
   status?: string; // PLANNED, DISPATCHED, COMPLETED, CANCELLED
   remarks?: string;
+  /** Driver bata the customer pays directly to the driver (shown on the invoice, never in its totals). */
+  customerPaidBata?: number | null;
   details: TripDetail[];
   billingStatus?: string;
   associatedInvoiceNumber?: string;

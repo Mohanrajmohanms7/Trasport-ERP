@@ -4,11 +4,13 @@ Every merged change, newest first: date, pull request, database migration (if an
 Add one entry **with every pull request** (see `.github/pull_request_template.md`). Detail lives in the PR and in the
 module documents listed in [`README.md`](README.md).
 
-| Next Flyway migration | **V91** |
+| Next Flyway migration | **V92** |
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-11-07
+- **Customer-paid driver bata per trip** · **V91**
+  `trips.customer_paid_bata`: entered on Dispatch loads / trip form / Complete dialog (varies per trip; locked once the trip is on an active invoice). Invoice PDF, Proforma and Custom PDF list it per trip below the totals ("paid by you directly to the driver — not part of this invoice"); never in taxable, GST, net, receivables, receipts, journals or payroll. An owner Driver Bata expense for such a trip is refused (no double payment).
 - **Custom PDF / Proforma: change the transport amount per line** (no migration)
   Next to Qty / Rate / Amount / GST %: Transport ₹ (official = per-unit transport × qty + per-load amount); Amount = Qty × Rate (excl. transport) + Transport. Sent as optional `transport` to `/exports/invoices/{id}/custom-lines` and `/invoices/{id}/proforma-pdf`; without it the old behaviour is unchanged. PDF shows official vs adjusted transport. Nothing saved.
 
