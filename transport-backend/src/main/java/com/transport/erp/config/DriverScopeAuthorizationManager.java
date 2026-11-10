@@ -26,13 +26,13 @@ public class DriverScopeAuthorizationManager implements AuthorizationManager<Req
             "/api/v1/driver-payrolls/my/**",
             "/api/v1/driver-payrolls/my",
             "/api/v1/files/**",
-            "/api/v1/attachments/**"
+            "/api/v1/attachments/**",
+            "/api/v1/driver-app/**"
     );
 
     /** Read-only lookups the driver app needs for its forms. */
     static final List<String> DRIVER_READ_PATHS = List.of(
-            "/api/v1/vehicles/**", "/api/v1/vehicles",
-            "/api/v1/drivers/**", "/api/v1/drivers",
+            // Privacy: no list of all vehicles / drivers for a driver login — own details come from /api/v1/driver-app/me
             "/api/v1/lookups/**", "/api/v1/uoms/**"
     );
 

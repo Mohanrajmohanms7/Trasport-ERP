@@ -93,6 +93,31 @@ public class DriverController {
         }
     }
 
+    /** Driver login in one step from Driver Master: create (+ link), reset password, enable / disable. Admin roles only. */
+    public record DriverLoginBody(String username, String password, Boolean active) {}
+
+    @PostMapping("/{id}/login")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
+    public ApiResponse<java.util.Map<String, Object>> createLogin(@PathVariable Long id, @RequestBody DriverLoginBody body, Authentication auth) {
+        Driver d = driverService.createLogin(id, body == null ? null : body.username(), body == null ? null : body.password(), auth != null ? auth.getName() : "SYSTEM");
+        return ApiResponse.success(java.util.Map.of("driverId", d.getId(), "appUserId", d.getAppUserId()), "Driver login created and linked");
+    }
+
+    @PostMapping("/{id}/login/password")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
+    public ApiResponse<String> resetLoginPassword(@PathVariable Long id, @RequestBody DriverLoginBody body, Authentication auth) {
+        driverService.resetLoginPassword(id, body == null ? null : body.password(), auth != null ? auth.getName() : "SYSTEM");
+        return ApiResponse.success("OK", "Password changed; the driver is signed out everywhere");
+    }
+
+    @PostMapping("/{id}/login/active")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('SUPER_ADMIN', 'COMPANY_ADMIN', 'BRANCH_MANAGER')")
+    public ApiResponse<String> setLoginActive(@PathVariable Long id, @RequestBody DriverLoginBody body, Authentication auth) {
+        boolean active = body != null && Boolean.TRUE.equals(body.active());
+        driverService.setLoginActive(id, active, auth != null ? auth.getName() : "SYSTEM");
+        return ApiResponse.success("OK", active ? "Driver login enabled" : "Driver login disabled");
+    }
+
     @PutMapping("/{id}/app-user")
     public ApiResponse<DriverAppUserResponse> linkAppUser(
             @PathVariable Long id,

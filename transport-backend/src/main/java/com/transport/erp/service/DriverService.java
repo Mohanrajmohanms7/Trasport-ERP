@@ -224,4 +224,62 @@ public class DriverService {
                 "DRIVER_APP_USER_INVALID: " + message,
                 "Choose an active DRIVER user in the same company that is not already linked.");
     }
+
+    // ------------------------------------------------------------------ driver login (one step from Driver Master)
+    @Autowired private UserService userService;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
+    /** Creates a DRIVER login for this driver (same company / branch) and links it, in one step. */
+    @Transactional
+    public Driver createLogin(Long driverId, String username, String password, String actor) {
+        Driver driver = loginDriver(driverId);
+        if (driver.getAppUserId() != null) throw invalidLink("This driver already has a login. Reset its password instead.");
+        com.transport.erp.model.AppUser u = new com.transport.erp.model.AppUser();
+        u.setUsername(username == null ? null : username.trim());
+        u.setPassword(password);
+        u.setName(driver.getName());
+        u.setCode("DRV-" + driver.getId());
+        u.setCompanyId(driver.getCompanyId());
+        u.setBranchId(driver.getBranchId());
+        u.setStatus("ACTIVE");
+        com.transport.erp.model.AppRole role = new com.transport.erp.model.AppRole();
+        role.setCode("DRIVER");
+        u.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
+        com.transport.erp.model.AppUser saved = userService.createUser(u, actor);
+        return linkAppUser(driverId, saved.getId(), actor);
+    }
+
+    /** New password for this driver's login; signs the driver out everywhere. */
+    @Transactional
+    public void resetLoginPassword(Long driverId, String password, String actor) {
+        com.transport.erp.model.AppUser u = loginUser(loginDriver(driverId));
+        if (password == null || password.length() < 8) throw invalidLink("Password must be at least 8 characters.");
+        u.setPassword(passwordEncoder.encode(password));
+        u.setTokenVersion((u.getTokenVersion() == null ? 0 : u.getTokenVersion()) + 1);
+        userRepository.save(u);
+        auditService.log(actor, "DRIVER_LOGIN_PASSWORD_RESET", "app_users", u.getId(), null, "Password reset for driver login " + u.getUsername());
+    }
+
+    /** Enable / disable this driver's login (disable signs the driver out at once). */
+    @Transactional
+    public void setLoginActive(Long driverId, boolean active, String actor) {
+        com.transport.erp.model.AppUser u = loginUser(loginDriver(driverId));
+        u.setStatus(active ? "ACTIVE" : "INACTIVE");
+        if (!active) u.setTokenVersion((u.getTokenVersion() == null ? 0 : u.getTokenVersion()) + 1);
+        userRepository.save(u);
+        auditService.log(actor, active ? "DRIVER_LOGIN_ENABLED" : "DRIVER_LOGIN_DISABLED", "app_users", u.getId(), null, "Driver login " + u.getUsername());
+    }
+
+    private Driver loginDriver(Long driverId) {
+        Driver driver = driverRepository.findById(driverId).filter(d -> !Boolean.TRUE.equals(d.getIsDeleted()))
+                .orElseThrow(() -> invalidLink("Driver not found."));
+        tenantAccess.assertCompanyAccess(driver.getCompanyId());
+        return driver;
+    }
+
+    private com.transport.erp.model.AppUser loginUser(Driver driver) {
+        if (driver.getAppUserId() == null) throw invalidLink("This driver has no login yet. Create one first.");
+        return userRepository.findById(driver.getAppUserId()).filter(x -> !Boolean.TRUE.equals(x.getIsDeleted()))
+                .orElseThrow(() -> invalidLink("The linked login was not found."));
+    }
 }
