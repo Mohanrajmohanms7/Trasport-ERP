@@ -38,7 +38,7 @@ public class RolePermissionService {
             new Module("accounts", "Accounts", List.of("/journal", "/accounts", "/financial-reports", "/ledger"), false),
             new Module("payroll", "Driver Payroll", List.of("/driver-payrolls", "/driver-pay-slabs", "/driver-advances"), false),
             new Module("reports", "Reports", List.of("/report-hub", "/reports", "/report-templates", "/scheduled-reports", "/exports"), false),
-            new Module("settings", "Settings & Users", List.of("/users", "/roles", "/permissions", "/role-permissions", "/settings", "/branches", "/company"), false));
+            new Module("settings", "Settings & Users", List.of("/users", "/roles", "/permissions", "/role-permissions", "/settings", "/branches", "/company"), true));   // company profile / branches are read by every screen
 
     /** Never managed here: platform admin (all access) and the fixed Driver App role. */
     public static final Set<String> NOT_MANAGED = Set.of("SUPER_ADMIN", "DRIVER");
