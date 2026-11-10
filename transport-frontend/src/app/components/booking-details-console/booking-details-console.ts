@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { Router } from '@angular/router';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -25,7 +26,7 @@ import { QuickCreateComponent, QuickCreateHost, QuickCreateService } from '../..
 @Component({
   selector: 'app-booking-details-console',
   standalone: true,
-imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FfCanDirective, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -27,7 +28,7 @@ import { SupportContextService } from '../../services/support.service';
 @Component({
   selector: 'app-trip-details-console',
   standalone: true,
-imports: [FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FfCanDirective, FormsModule, FormValidationDirective, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

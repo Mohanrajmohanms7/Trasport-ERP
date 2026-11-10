@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
@@ -23,7 +24,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../share
 @Component({
   selector: 'app-customer-details-console',
   standalone: true,
-  imports: [LookupAddComponent, FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
+  imports: [FfCanDirective, LookupAddComponent, FormValidationDirective, BulkUploadDialogComponent, MasterFormDialogComponent, ExportButtonsComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

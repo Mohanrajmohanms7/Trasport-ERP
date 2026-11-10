@@ -16,7 +16,7 @@
       <app-export-buttons module="customers" />
       @if (selectedCustomer() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(selectedCustomer())"><span class="material-icons text-base">edit</span>Edit customer</button>
-        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteCustomer(selectedCustomer())"><span class="material-icons text-base">delete</span>Delete</button>
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" ffCan="masters:delete" (click)="deleteCustomer(selectedCustomer())"><span class="material-icons text-base">delete</span>Delete</button>
       }
       <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="openCustomerForm(null)"><span class="material-icons text-base">person_add</span>New customer</button>
     </div>
@@ -142,7 +142,7 @@
                   <td class="p-4 text-[var(--ff-text-secondary)]">{{ site.managerName || 'N/A' }}</td>
                   <td class="p-4 text-[var(--ff-text-secondary)]">{{ site.address }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteSite(site)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Site">
+                    <button ffCan="masters:delete" (click)="deleteSite(site)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Site">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>
@@ -194,7 +194,7 @@
                   <td class="p-4 text-[var(--ff-text-secondary)]">{{ contact.email }}</td>
                   <td class="p-4 text-[var(--ff-text-secondary)]">{{ contact.phone }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteContact(contact)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Remove Contact">
+                    <button ffCan="masters:delete" (click)="deleteContact(contact)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Remove Contact">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>
@@ -244,7 +244,7 @@
                   <td class="p-4 font-mono text-[var(--ff-color-primary-600)] font-bold">{{ doc.docNumber }}</td>
                   <td class="p-4 text-[var(--ff-text-muted)] font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
                   <td class="p-4 text-center">
-                    <button (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Document">
+                    <button ffCan="masters:delete" (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Document">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </td>

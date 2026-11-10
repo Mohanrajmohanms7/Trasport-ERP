@@ -1816,6 +1816,22 @@ post /drivers/$DX/login/active '{"active":false}' >/dev/null; [ -z "$(tok drvapp
 post /drivers/$DX/login/active '{"active":true}' >/dev/null; DT3=$(tok drvapp1 Drv@2027y); [ -n "$DT3" ] && [ "$DT3" != "None" ] && pass "DAPP enabled again" || fail "DAPP enable" "x"
 [ "$(curl -s -o /dev/null -w "%{http_code}" "${H[@]}" $API/trips)" = "200" ] && pass "DAPP staff access unchanged" || fail "DAPP staff" "x"
 
+# ================= Roles phase 2: role permissions (module x action) enforced on the server =================
+G=$(curl -s "${H[@]}" "$API/role-permissions?role=OPERATOR"); [ "$(echo "$G" | j "str(d['data']['customized'])+'/'+str(all(m['view'] and m['add'] for m in d['data']['modules']))")" = "False/True" ] && pass "PERM role without a saved grid = full access" || fail "PERM default" "$(echo $G | cut -c1-200)"
+BASE=$(as "$TO" GET /invoices)
+R=$(put /role-permissions/OPERATOR '[{"module":"invoices","view":false,"add":false,"edit":false,"delete":false,"approve":false},{"module":"expenses","view":true,"add":false,"edit":true,"delete":false,"approve":false}]')
+[ "$(echo "$R" | j "d['data']['customized']")" = "True" ] && pass "PERM operator grid saved" || fail "PERM save" "$(echo $R | cut -c1-200)"
+C=$(as "$TO" GET /invoices); grep -q "Your role cannot View Invoices" /tmp/r.json && [ "$C" = "403" ] && pass "PERM operator refused Invoices view (server)" || fail "PERM view refused" "$C $(cut -c1-160 /tmp/r.json)"
+C=$(as "$TO" POST /expenses '{"expenseDate":"'$TODAY'","category":"OFFICE_EXPENSE","amount":10,"paymentMethod":"CASH","description":"perm test"}'); grep -q "Your role cannot Add Expenses" /tmp/r.json && pass "PERM operator refused Add Expenses" || fail "PERM add refused" "$C $(cut -c1-160 /tmp/r.json)"
+C=$(as "$TO" GET /expenses); [ "$C" = "200" ] && pass "PERM operator still views Expenses (view kept)" || fail "PERM view kept" "$C"
+C=$(as "$TO" GET /bookings); [ "$C" = "200" ] && pass "PERM other modules unchanged" || fail "PERM others" "$C"
+R=$(command curl -s -H "Authorization: Bearer $TO" $API/role-permissions/me); [ "$(echo "$R" | j "str(d['data']['invoices']['view'])+'/'+str(d['data']['expenses']['add'])+'/'+str(d['data']['bookings']['add'])")" = "False/False/True" ] && pass "PERM my rights reflect the grid" || fail "PERM me" "$(echo $R | cut -c1-200)"
+C=$(as "$TO" PUT /role-permissions/OPERATOR '[]'); [ "$C" = "403" ] && pass "PERM operator cannot change permissions" || fail "PERM edit role" "$C"
+R=$(put /role-permissions/COMPANY_ADMIN '[{"module":"settings","view":false,"add":false,"edit":false,"delete":false,"approve":false}]'); echo "$R" | grep -q "must keep View, Add and Edit on Settings" && pass "PERM company admin cannot be locked out of Settings & Users" || fail "PERM lockout" "$(echo $R | cut -c1-160)"
+R=$(put /role-permissions/DRIVER '[]'); echo "$R" | grep -q "fixed and cannot be changed" && pass "PERM driver role permissions fixed" || fail "PERM driver" "$(echo $R | cut -c1-160)"
+R=$(curl -s -X DELETE "${H[@]}" $API/role-permissions/OPERATOR); C=$(as "$TO" GET /invoices); [ "$C" = "$BASE" ] && pass "PERM reset gives the operator back exactly the old access ($C)" || fail "PERM reset" "$C vs $BASE"
+[ "$(curl -s -o /dev/null -w "%{http_code}" "${H[@]}" $API/invoices)" = "200" ] && pass "PERM admin unaffected" || fail "PERM admin" "x"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

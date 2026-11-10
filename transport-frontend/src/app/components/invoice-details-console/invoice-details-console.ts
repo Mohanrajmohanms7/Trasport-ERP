@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { InvoiceCustomExportComponent } from './invoice-custom-export';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -28,7 +29,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../share
 @Component({
   selector: 'app-invoice-details-console',
   standalone: true,
-imports: [InvoiceCustomExportComponent, LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FfCanDirective, InvoiceCustomExportComponent, LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

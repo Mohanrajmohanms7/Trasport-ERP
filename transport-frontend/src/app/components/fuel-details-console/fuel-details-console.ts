@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { HttpClient } from '@angular/common/http';
 import { AppConfirmService } from '../../shared/confirmation-dialog/app-confirm.service';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
@@ -24,7 +25,7 @@ import { LookupAddComponent, LookupAddHost, LookupAddService } from '../../share
 @Component({
   selector: 'app-fuel-details-console',
   standalone: true,
-imports: [LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
+imports: [FfCanDirective, LookupAddComponent, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, QuickCreateComponent, 
     CommonModule,
     ReactiveFormsModule,
     MatTabsModule,

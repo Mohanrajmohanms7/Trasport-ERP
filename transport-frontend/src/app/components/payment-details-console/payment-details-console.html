@@ -41,7 +41,7 @@
       @if (activeTab() === 'receipts' && features.has('receipts.receipts')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Deposited Receipts</span>
-          <button (click)="openAddReceipt()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
+          <button ffCan="receipts:add" (click)="openAddReceipt()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">payment</span> Record Payment Receipt
           </button>
         </div>
@@ -118,13 +118,13 @@
                         <button (click)="openEditReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] transition" title="Edit Draft">
                           <span class="material-icons text-sm">edit</span>
                         </button>
-                        <button (click)="approveReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] bg-[var(--ff-color-success-500)] text-white transition" title="Approve Receipt">
+                        <button ffCan="receipts:approve" (click)="approveReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] bg-[var(--ff-color-success-500)] text-white transition" title="Approve Receipt">
                           <span class="material-icons text-sm">check_circle</span>
                         </button>
                         <button (click)="cancelReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] transition" title="Cancel Draft">
                           <span class="material-icons text-sm">block</span>
                         </button>
-                        <button (click)="deleteReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Draft">
+                        <button ffCan="receipts:delete" (click)="deleteReceipt(rct)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Draft">
                           <span class="material-icons text-sm">delete</span>
                         </button>
                       } @else if (rct.status === 'APPROVED') {
@@ -417,7 +417,7 @@
                     <div class="flex flex-wrap items-center gap-2">
                       @if (rbDraft(); as dr) {
                         <span class="text-xs">Draft <b>{{ dr.number }}</b> created.</span>
-                        <button type="button" class="h-9 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold disabled:opacity-50" [disabled]="rbBusy()" (click)="approveDraft()" data-testid="rb-approve">Approve and use here</button>
+                        <button type="button" class="h-9 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-xs font-semibold disabled:opacity-50" [disabled]="rbBusy()" ffCan="receipts:approve" (click)="approveDraft()" data-testid="rb-approve">Approve and use here</button>
                       } @else {
                         <button type="button" class="h-9 px-3 rounded-lg border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] text-xs font-semibold disabled:opacity-50" [disabled]="rbBusy()" (click)="createDraftFromReady()" data-testid="rb-create">{{ rbBusy() ? 'Creating…' : 'Create invoice for these trips' }}</button>
                       }

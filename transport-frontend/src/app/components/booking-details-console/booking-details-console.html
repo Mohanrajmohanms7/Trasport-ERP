@@ -9,7 +9,7 @@
       </h1>
       <p class="text-[var(--ff-text-secondary)] text-sm mt-1">Manage customer material requests, itemized transport calculations, and billing approval workflows</p>
     </div>
-    <button (click)="openAddBooking()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
+    <button ffCan="bookings:add" (click)="openAddBooking()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
       <span class="material-icons text-sm">add_circle</span> Register Booking Request
     </button>
     <div class="flex flex-wrap gap-2 self-start md:self-auto"><app-export-buttons module="bookings" /></div>
@@ -86,7 +86,7 @@
                 <td class="p-4 text-center">
                   <div class="flex items-center justify-center gap-2">
                     @if (bkg.status === 'PENDING') {
-                      <button (click)="approveBooking(bkg)" class="bkg-btn-solid" title="Approve Request">
+                      <button ffCan="bookings:approve" (click)="approveBooking(bkg)" class="bkg-btn-solid" title="Approve Request">
                         <span class="material-icons text-sm">check_circle</span> Approve
                       </button>
                       <button (click)="rejectBooking(bkg)" class="bkg-btn-outline" title="Reject Request">
@@ -107,7 +107,7 @@
                       </button>
                     }
                     @if (bkg.status === 'PENDING' || bkg.status === 'DRAFT') {
-                      <button (click)="deleteBooking(bkg)" class="bkg-btn-outline" title="Cancel Booking">
+                      <button ffCan="bookings:delete" (click)="deleteBooking(bkg)" class="bkg-btn-outline" title="Cancel Booking">
                         <span class="material-icons text-sm">delete</span> Cancel
                       </button>
                     }

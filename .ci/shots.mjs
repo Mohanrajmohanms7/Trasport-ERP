@@ -396,4 +396,56 @@ try {
     await ctx.close();
   } else { console.log('driver app shots skipped: no driver login'); }
 } catch (e) { console.log('driver app shots skipped:', e.message); }
+// Role permissions: Permissions tab (company admin) and an operator's reduced menu / hidden buttons
+try {
+  const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tenant.token };
+  const cid = tenant.companyId;
+  await fetch(`${API}/role-permissions/OPERATOR?companyId=${cid}`, { method: 'PUT', headers: { ...H, 'X-Idempotency': 'off' },
+    body: JSON.stringify([{ module: 'invoices', view: false, add: false, edit: false, delete: false, approve: false },
+                          { module: 'expenses', view: true, add: false, edit: true, delete: false, approve: false }]) });
+  const shot = async (session, roles, route, after, name, vw) => {
+    const ctx = await browser.newContext({ viewport: vw || { width: 1440, height: 900 } });
+    await ctx.addInitScript(([s, r]) => {
+      localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken || '');
+      localStorage.setItem('username', s.username); localStorage.setItem('name', s.username);
+      localStorage.setItem('roles', JSON.stringify(r)); localStorage.setItem('subscriptionExpired', 'false');
+      localStorage.setItem('companyId', String(s.companyId)); if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+    }, [session, roles]);
+    const pg = await ctx.newPage();
+    await pg.goto('http://localhost:4200/' + route, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1200);
+    if (after) await after(pg);
+    await pg.screenshot({ path: `shots/x-perm-${name}.png` });
+    await ctx.close();
+  };
+  await shot(tenant, ['COMPANY_ADMIN'], 'users-roles', async pg => {
+    await pg.locator('[data-testid=tab-permissions]').click(); await pg.waitForTimeout(900);
+    await pg.locator('[data-testid=permissions-grid] select').first().selectOption('OPERATOR'); await pg.waitForTimeout(1200);
+  }, 'grid');
+  const op = await (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'op1', password: 'Secret@123' }) })).json();
+  if (op?.data?.token) {
+    await shot(op.data, ['OPERATOR'], 'expense-logs', null, 'operator-expenses');
+  } else { console.log('perm shots: operator login unavailable'); }
+  await fetch(`${API}/role-permissions/OPERATOR?companyId=${cid}`, { method: 'DELETE', headers: H });
+} catch (e) { console.log('perm shots skipped:', e.message); }
+// Users & Roles → Permissions tab (role grid) at desktop and phone width
+for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 390, height: 844 }, 'm']]) {
+  try {
+    const ctx = await browser.newContext({ viewport: vw });
+    await ctx.addInitScript(s => {
+      localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken);
+      localStorage.setItem('username', s.username); localStorage.setItem('name', 'Accounts Team');
+      localStorage.setItem('roles', JSON.stringify(['COMPANY_ADMIN'])); localStorage.setItem('subscriptionExpired', 'false');
+      localStorage.setItem('companyId', String(s.companyId)); if (s.branchId) localStorage.setItem('branchId', String(s.branchId));
+    }, tenant);
+    const pg = await ctx.newPage();
+    await pg.goto('http://localhost:4200/users-roles', { waitUntil: 'networkidle' }); await pg.waitForTimeout(800);
+    await pg.locator('[data-testid=tab-permissions]').click(); await pg.waitForTimeout(1000);
+    const sel = pg.locator('[data-testid=permissions-grid] select');
+    const values = await sel.locator('option').evaluateAll(o => o.map(x => x.value));
+    const pick = values.includes('OPERATOR') ? 'OPERATOR' : values.find(v => v);
+    if (pick) { await sel.selectOption(pick); await pg.waitForTimeout(1200); }
+    await pg.screenshot({ path: `shots/u-${tag}-permissions.png`, fullPage: tag === 'm' });
+    await ctx.close();
+  } catch (e) { console.log('permissions shot skipped', tag, e.message); }
+}
 await browser.close();

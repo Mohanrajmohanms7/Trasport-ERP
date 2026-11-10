@@ -4,11 +4,13 @@ Every merged change, newest first: date, pull request, database migration (if an
 Add one entry **with every pull request** (see `.github/pull_request_template.md`). Detail lives in the PR and in the
 module documents listed in [`README.md`](README.md).
 
-| Next Flyway migration | **V92** |
+| Next Flyway migration | **V93** |
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-11-10
+- **Role permissions (roles phase 2)** · **V92**
+  `role_module_permissions` per company: 16 modules x View / Add / Edit / Delete / Approve. No saved grid = full access (no change on deploy). `ModulePermissionFilter` enforces every API call ("Your role cannot Approve Invoices."); lists of masters / vehicles / drivers / bookings / trips stay readable for other screens' dropdowns. SUPER_ADMIN and DRIVER not managed; Company Admin keeps Settings & Users. API `/api/v1/role-permissions` (roles, grid, save, reset, me).
 - **Driver App (roles phase 1)** (no migration)
   Driver login lands on My Trips: own trips (lines, loaded / delivered, customer bata), My Bata (owner + customer paid), fuel requests for own open trips, My Salary, Maintenance — English + Tamil labels, phone-first (`/api/v1/driver-app/*`, own data only). Privacy: a driver login no longer reads all vehicles / drivers. Driver Master: Create login (DRIVER role, linked in one step), Reset password (signs out), Enable / Disable — Company Admin / Branch Manager only.
 
