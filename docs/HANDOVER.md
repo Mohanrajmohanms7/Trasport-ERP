@@ -29,7 +29,7 @@ Render. Fix or disconnect it.
 
 1. Branch from `main` (`feature/…`, `fix/…`).
 2. Follow the existing patterns below; reuse services (never write parallel logic).
-3. New DB change = new Flyway file `V92__…sql` (the next number is always at the top of `docs/CHANGELOG.md`) (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
+3. New DB change = new Flyway file `V93__…sql` (the next number is always at the top of `docs/CHANGELOG.md`) (never edit an applied migration). Keep entities in sync (`ddl-auto=validate`).
 4. Add checks for the change to `.ci/smoke.sh`; open a PR → **verify** must be green (Gate step).
 5. Update the user guide when screens/rules change: `docs/user-guide/USER_GUIDE_EN.md` + `USER_GUIDE_TA.md`, then regenerate
    `transport-frontend/public/help/user-guide-*.html` (Python `markdown`, see git history of those files).
@@ -147,6 +147,10 @@ trip under the invoice totals (`SalesInvoicePrintDTO.customerBata`), never in an
 **Driver App.** A DRIVER-only login is limited by `DriverScopeAuthorizationManager` (auth, maintenance requests, own payroll
 `/driver-payrolls/my`, files, `/driver-app/**`, lookups); `DriverAppService` answers only for the driver linked to the user
 (`drivers.app_user_id`). Driver Master creates / resets / disables that login (`DriverService.createLogin` …).
+
+**Role permissions (V92).** `RolePermissionService.MODULES` maps API path prefixes to 16 modules; `actionFor` maps GET → View,
+POST → Add (approve / reject / post / pay / cancel / close → Approve; dispatch / complete → Edit), PUT → Edit, DELETE → Delete.
+`ModulePermissionFilter` refuses what a saved grid does not allow; a role without rows keeps full access.
 
 **Invoices.** A new invoice fills the customer's completed, not-yet-invoiced trips up to the invoice date
 (`GET /invoices/billable-lines?customerId=&upTo=`, built by the same code as invoice-from-trip; nothing saved). A trip is

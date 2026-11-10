@@ -146,8 +146,16 @@ public class SecurityConfig {
             // Duplicate submission guard: an identical POST by the same user within a few seconds is answered with the
             // first result instead of creating a second voucher / booking / receipt
             .addFilterAfter(new com.transport.erp.security.DuplicateSubmitFilter(), com.transport.erp.features.FeatureAccessFilter.class)
+            // Role permissions (module x action) on top of the role / tenant / plan rules — can only take access away
+            .addFilterAfter(new com.transport.erp.security.ModulePermissionFilter(rolePermissionService, appUserRepositoryForPermissions),
+                    com.transport.erp.features.FeatureAccessFilter.class)
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.service.RolePermissionService rolePermissionService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.transport.erp.repository.AppUserRepository appUserRepositoryForPermissions;
 }
