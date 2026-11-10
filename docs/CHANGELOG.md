@@ -8,6 +8,10 @@ module documents listed in [`README.md`](README.md).
 |---|---|
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
+## 2026-11-10
+- **Driver App (roles phase 1)** (no migration)
+  Driver login lands on My Trips: own trips (lines, loaded / delivered, customer bata), My Bata (owner + customer paid), fuel requests for own open trips, My Salary, Maintenance — English + Tamil labels, phone-first (`/api/v1/driver-app/*`, own data only). Privacy: a driver login no longer reads all vehicles / drivers. Driver Master: Create login (DRIVER role, linked in one step), Reset password (signs out), Enable / Disable — Company Admin / Branch Manager only.
+
 ## 2026-11-07
 - **Customer-paid driver bata per trip** · **V91**
   `trips.customer_paid_bata`: entered on Dispatch loads / trip form / Complete dialog (varies per trip; locked once the trip is on an active invoice). Invoice PDF, Proforma and Custom PDF list it per trip below the totals ("paid by you directly to the driver — not part of this invoice"); never in taxable, GST, net, receivables, receipts, journals or payroll. An owner Driver Bata expense for such a trip is refused (no double payment).

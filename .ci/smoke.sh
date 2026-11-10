@@ -172,7 +172,8 @@ TD=$(tok drv1 Secret@123); TO=$(tok op1 Secret@123); TV=$(tok vw1 Secret@123); T
 [ -n "$TD" ] && [ -n "$TO" ] && [ -n "$TV" ] && [ -n "$TC" ] && pass "test users can log in" || fail "test users" "$TD|$TO|$TV|$TC"
 C=$(as "$TD" GET /invoices); [ "$C" = "403" ] && pass "driver login cannot read invoices" || fail "driver invoices" "$C"
 C=$(as "$TD" GET /maintenance-requests); [ "$C" != "403" ] && pass "driver login reaches maintenance requests ($C)" || fail "driver maintenance" "$C $(cut -c1-150 /tmp/r.json)"
-C=$(as "$TD" GET /vehicles); [ "$C" = "200" ] && pass "driver login can list vehicles" || fail "driver vehicles" "$C"
+C=$(as "$TD" GET /vehicles); [ "$C" = "403" ] && pass "driver login cannot list all vehicles (privacy)" || fail "driver vehicles" "$C"
+C=$(as "$TD" GET /drivers); [ "$C" = "403" ] && pass "driver login cannot list all drivers (privacy)" || fail "driver list" "$C"
 C=$(as "$TV" POST /customers '{"code":"VX","name":"Viewer Try"}'); [ "$C" = "403" ] && pass "viewer cannot create" || fail "viewer write" "$C"
 C=$(as "$TV" GET /customers); [ "$C" = "200" ] && pass "viewer can read" || fail "viewer read" "$C"
 C=$(as "$TO" POST /roles '{"code":"SUPER_ADMIN","name":"x"}'); [ "$C" = "403" ] && pass "operator cannot create roles" || fail "operator role" "$C"
@@ -1783,6 +1784,37 @@ R=$(curl -s -X PUT "${H[@]}" $API/trips/$TB1 --data @/tmp/bata1.json)
 echo "$R" | grep -q "Trip Already Invoiced" && pass "BATA cannot change once the trip is invoiced" || fail "BATA lock" "$(echo $R | cut -c1-200)"
 R=$(post /driver-payrolls/$P1/recalculate); GOT=$($PSQL "SELECT total_trips||'/'||excluded_trip_count||'/'||bata_paid FROM driver_payrolls WHERE id=$P1")
 [ "$GOT" = "6/0/0.00" ] && pass "BATA driver 1 payroll: bata trips still count (4 + 2 = 6 trips), nothing excluded, no owner bata ($GOT)" || fail "BATA payroll" "$GOT :: $(echo $R | cut -c1-160)"
+
+# ================= Driver App (phase 1): one-step driver login, own data only, privacy, fuel request, reset / disable =================
+DXV=$(post /vehicles '{"wheelCount":"10","code":"TN46DA0001","name":"Driver App Lorry","status":"ACTIVE"}' | j "d['data']['id']")
+DX=$(post /drivers '{"code":"DA-1","name":"App Driver One","licenseNumber":"TN4620267001","phoneNumber":"9000067001","status":"ACTIVE"}' | j "d['data']['id']")
+DY=$(post /drivers '{"code":"DA-2","name":"App Driver Two","licenseNumber":"TN4620267002","phoneNumber":"9000067002","status":"ACTIVE"}' | j "d['data']['id']")
+DYV=$(post /vehicles '{"wheelCount":"10","code":"TN46DA0002","name":"Other Lorry","status":"ACTIVE"}' | j "d['data']['id']")
+post /vehicles/$DXV/driver/$DX >/dev/null; post /vehicles/$DYV/driver/$DY >/dev/null
+R=$(post /drivers/$DX/login '{"username":"drvapp1","password":"Drv@2026x"}')
+[ "$($PSQL "SELECT COUNT(*) FROM drivers d JOIN app_users u ON u.id=d.app_user_id WHERE d.id=$DX AND u.username='drvapp1'")" = "1" ] && pass "DAPP login created and linked in one step" || fail "DAPP create login" "$(echo $R | cut -c1-200)"
+R=$(post /drivers/$DX/login '{"username":"drvapp1b","password":"Drv@2026x"}'); echo "$R" | grep -q "already has a login" && pass "DAPP second login for the same driver refused" || fail "DAPP dup login" "$(echo $R | cut -c1-160)"
+C=$(as "$TO" POST /drivers/$DY/login '{"username":"drvapp2","password":"Drv@2026x"}'); [ "$C" = "403" ] && pass "DAPP operator cannot create driver logins" || fail "DAPP role" "$C"
+DT=$(tok drvapp1 Drv@2026x); [ -n "$DT" ] && [ "$DT" != "None" ] && pass "DAPP driver can sign in" || fail "DAPP sign in" "no token"
+DB=$(post /bookings '{"customer":{"id":'$CUST'},"details":[{"material":{"id":'$MAT'},"quantity":4,"rate":100,"transportRate":0,"royaltyRate":0,"loadingCharge":0,"gstPercentage":5}]}' | j "d['data']['id']"); post /bookings/$DB/approve >/dev/null
+TX=$(post /trips '{"booking":{"id":'$DB'},"tripDate":"'$TODAY'","vehicle":{"id":'$DXV'},"driver":{"id":'$DX'},"customerPaidBata":150,"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
+TY=$(post /trips '{"booking":{"id":'$DB'},"tripDate":"'$TODAY'","vehicle":{"id":'$DYV'},"driver":{"id":'$DY'},"details":[{"material":{"id":'$MAT'},"quantity":1}]}' | j "d['data']['id']")
+R=$(command curl -s -H "Authorization: Bearer $DT" $API/driver-app/trips)
+echo "$R" | python3 -c "import sys,json; ids=[t['id'] for t in json.load(sys.stdin)['data']]; sys.exit(0 if $TX in ids and $TY not in ids else 1)" && pass "DAPP My Trips: own trip only (not another driver's)" || fail "DAPP own trips" "$(echo $R | cut -c1-200)"
+R=$(command curl -s -H "Authorization: Bearer $DT" $API/driver-app/me); echo "$R" | grep -q "App Driver One" && echo "$R" | grep -q "TN46DA0001" && pass "DAPP Me: own name and lorry" || fail "DAPP me" "$(echo $R | cut -c1-200)"
+for p in /trips /invoices /vehicles /drivers /driver-payrolls /expenses; do C=$(command curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $DT" $API$p); [ "$C" = "403" ] || { fail "DAPP blocked $p" "$C"; continue; }; done; pass "DAPP driver refused trips / invoices / vehicles / drivers / payroll / expenses lists"
+R=$(command curl -s -H "Authorization: Bearer $DT" "$API/driver-app/bata?month=$(date +%Y-%m)"); [ "$(echo "$R" | j "str(float(d['data']['customerPaidTotal']))")" = "150.0" ] && pass "DAPP My Bata: customer-paid 150 for own trip" || fail "DAPP bata" "$(echo $R | cut -c1-200)"
+R=$(command curl -s -X POST -H "Authorization: Bearer $DT" -H 'Content-Type: application/json' -H 'X-Idempotency: off' $API/driver-app/fuel-requests -d '{"tripId":'$TX',"litres":60,"amount":5500}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "DAPP fuel request for own open trip" || fail "DAPP fuel own" "$(echo $R | cut -c1-200)"
+R=$(command curl -s -X POST -H "Authorization: Bearer $DT" -H 'Content-Type: application/json' -H 'X-Idempotency: off' $API/driver-app/fuel-requests -d '{"tripId":'$TY',"litres":60}')
+echo "$R" | grep -q "Not Your Trip" && pass "DAPP fuel request for another driver's trip refused" || fail "DAPP fuel other" "$(echo $R | cut -c1-200)"
+[ "$(command curl -s -H "Authorization: Bearer $DT" $API/driver-app/fuel-requests | j "len(d['data'])")" = "1" ] && pass "DAPP My fuel requests lists own request" || fail "DAPP fuel list" "x"
+post /drivers/$DX/login/password '{"password":"Drv@2027y"}' >/dev/null
+C=$(command curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $DT" $API/driver-app/me); [ "$C" = "401" ] || [ "$C" = "403" ] && pass "DAPP password reset signs the driver out ($C)" || fail "DAPP reset logout" "$C"
+DT2=$(tok drvapp1 Drv@2027y); [ -n "$DT2" ] && [ "$DT2" != "None" ] && pass "DAPP new password works" || fail "DAPP new password" "x"
+post /drivers/$DX/login/active '{"active":false}' >/dev/null; [ -z "$(tok drvapp1 Drv@2027y | grep -v None)" ] && pass "DAPP disabled login cannot sign in" || fail "DAPP disable" "x"
+post /drivers/$DX/login/active '{"active":true}' >/dev/null; DT3=$(tok drvapp1 Drv@2027y); [ -n "$DT3" ] && [ "$DT3" != "None" ] && pass "DAPP enabled again" || fail "DAPP enable" "x"
+[ "$(curl -s -o /dev/null -w "%{http_code}" "${H[@]}" $API/trips)" = "200" ] && pass "DAPP staff access unchanged" || fail "DAPP staff" "x"
 
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"

@@ -17,6 +17,8 @@ import { resolveTenantCompanyId } from '../../shared/tenant-context';
 interface MenuItem {
   label: string;
   route: string;
+  /** Optional query parameters (e.g. Driver App tab). */
+  queryParams?: Record<string, string>;
   icon: string;
   badge?: string;
 }
@@ -486,8 +488,11 @@ export class AppShellComponent implements OnDestroy {
       return [{
         groupName: 'MY WORK',
         items: [
-          { label: 'Maintenance Requests', route: '/maintenance-requests', icon: 'report' },
-          { label: 'My Salary', route: '/driver-payroll', icon: 'badge' }
+          { label: 'My Trips · என் பயணங்கள்', route: '/driver-app', icon: 'local_shipping' },
+          { label: 'My Bata · என் பேட்டா', route: '/driver-app', queryParams: { tab: 'bata' }, icon: 'payments' },
+          { label: 'Fuel Request · டீசல்', route: '/driver-app', queryParams: { tab: 'fuel' }, icon: 'local_gas_station' },
+          { label: 'My Salary · சம்பளம்', route: '/driver-payroll', icon: 'badge' },
+          { label: 'Maintenance · பழுது', route: '/maintenance-requests', icon: 'report' }
         ]
       }];
     }

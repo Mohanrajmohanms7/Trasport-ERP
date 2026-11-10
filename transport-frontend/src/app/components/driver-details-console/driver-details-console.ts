@@ -479,6 +479,50 @@ export class DriverDetailsConsoleComponent implements OnInit {
     });
   }
 
+  newLoginUser = signal('');
+  newLoginPass = signal('');
+  loginBusy = signal(false);
+
+  /** One step: DRIVER login created in this driver's company / branch and linked. */
+  createDriverLogin(): void {
+    const d = this.selectedDriver(); if (!d?.id || this.loginBusy()) return;
+    const username = this.newLoginUser().trim(), password = this.newLoginPass();
+    if (!username || password.length < 8) { this.loginMessage.set('Enter a username and a password of at least 8 characters.'); return; }
+    this.loginBusy.set(true);
+    this.http.post<any>(`/api/v1/drivers/${d.id}/login`, { username, password }).subscribe({
+      next: r => {
+        this.loginBusy.set(false);
+        if (r?.success === false) { this.loginMessage.set(r?.errors?.[0] || r?.message || 'Could not create the login.'); return; }
+        const updated = { ...d, appUserId: r?.data?.appUserId ?? null, appUserName: username };
+        this.selectedDriver.set(updated as any);
+        this.loginUserId.set(String(r?.data?.appUserId ?? ''));
+        this.newLoginUser.set(''); this.newLoginPass.set('');
+        this.loginMessage.set(`Login "${username}" created and linked. The driver can sign in now.`);
+      },
+      error: e => { this.loginBusy.set(false); this.loginMessage.set(e?.error?.errors?.[0] || e?.error?.message || 'Could not create the login.'); }
+    });
+  }
+
+  resetDriverPassword(): void {
+    const d = this.selectedDriver(); if (!d?.id || this.loginBusy()) return;
+    const password = this.newLoginPass();
+    if (password.length < 8) { this.loginMessage.set('Enter a new password of at least 8 characters.'); return; }
+    this.loginBusy.set(true);
+    this.http.post<any>(`/api/v1/drivers/${d.id}/login/password`, { password }).subscribe({
+      next: () => { this.loginBusy.set(false); this.newLoginPass.set(''); this.loginMessage.set('Password changed. The driver is signed out on all phones.'); },
+      error: e => { this.loginBusy.set(false); this.loginMessage.set(e?.error?.errors?.[0] || e?.error?.message || 'Could not change the password.'); }
+    });
+  }
+
+  setDriverLoginActive(active: boolean): void {
+    const d = this.selectedDriver(); if (!d?.id || this.loginBusy()) return;
+    this.loginBusy.set(true);
+    this.http.post<any>(`/api/v1/drivers/${d.id}/login/active`, { active }).subscribe({
+      next: () => { this.loginBusy.set(false); this.loginMessage.set(active ? 'Login enabled.' : 'Login disabled. The driver is signed out.'); },
+      error: e => { this.loginBusy.set(false); this.loginMessage.set(e?.error?.errors?.[0] || e?.error?.message || 'Could not change the login.'); }
+    });
+  }
+
   saveDriverLogin(): void {
     const driver = this.selectedDriver();
     if (!driver?.id) return;

@@ -13,6 +13,9 @@ public interface AppRoleRepository extends JpaRepository<AppRole, Long> {
 
     Optional<AppRole> findByCodeAndCompanyIdAndIsDeletedFalse(String code, Long companyId);
 
+    /** The global (all-company) role with this code. */
+    Optional<AppRole> findFirstByCodeAndCompanyIdIsNullAndIsDeletedFalse(String code);
+
     java.util.List<AppRole> findAllByCodeAndIsDeletedFalse(String code);
     Page<AppRole> findByIsDeletedFalse(Pageable pageable);
 }
