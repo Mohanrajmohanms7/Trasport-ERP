@@ -246,7 +246,19 @@ public class DriverService {
         // The DRIVER role record (the company's own, else the global one) — roles are resolved by id.
         com.transport.erp.model.AppRole driverRole = roleRepoForLogin.findByCodeAndCompanyIdAndIsDeletedFalse("DRIVER", driver.getCompanyId())
                 .or(() -> roleRepoForLogin.findFirstByCodeAndCompanyIdIsNullAndIsDeletedFalse("DRIVER"))
-                .orElseThrow(() -> invalidLink("The DRIVER role is missing. Ask the platform admin to set up roles."));
+                .orElseGet(() -> {   // companies onboarded before the Driver App have no DRIVER role yet: create theirs
+                    com.transport.erp.model.AppRole r = new com.transport.erp.model.AppRole();
+                    r.setCode("DRIVER");
+                    r.setName("Driver");
+                    r.setDescription("Driver App: own trips, bata, fuel requests, salary and maintenance requests");
+                    r.setStatus("ACTIVE");
+                    r.setCompanyId(driver.getCompanyId());
+                    r.setBranchId(driver.getBranchId());
+                    r.setCreatedBy(actor);
+                    com.transport.erp.model.AppRole saved = roleRepoForLogin.save(r);
+                    auditService.log(actor, "ROLE_CREATED", "app_roles", saved.getId(), null, "DRIVER role created for company " + driver.getCompanyId());
+                    return saved;
+                });
         com.transport.erp.model.AppRole ref = new com.transport.erp.model.AppRole();
         ref.setId(driverRole.getId());
         u.setRoles(new java.util.HashSet<>(java.util.Set.of(ref)));

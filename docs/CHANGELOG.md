@@ -9,6 +9,7 @@ module documents listed in [`README.md`](README.md).
 | Latest migration on `main` | V88 (payroll wheel-count slabs) |
 
 ## 2026-11-10
+- **Fix: driver "Create login" failed with "The DRIVER role is missing"** for companies onboarded before the Driver App: the company's DRIVER role is now created automatically; onboarding creates it for new companies (no migration)
 - **Role permissions (roles phase 2)** · **V92**
   `role_module_permissions` per company: 16 modules x View / Add / Edit / Delete / Approve. No saved grid = full access (no change on deploy). `ModulePermissionFilter` enforces every API call ("Your role cannot Approve Invoices."); lists of masters / vehicles / drivers / bookings / trips stay readable for other screens' dropdowns. SUPER_ADMIN and DRIVER not managed; Company Admin keeps Settings & Users. API `/api/v1/role-permissions` (roles, grid, save, reset, me).
 - **Driver App (roles phase 1)** (no migration)
