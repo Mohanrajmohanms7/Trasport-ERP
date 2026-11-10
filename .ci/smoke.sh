@@ -1832,6 +1832,17 @@ R=$(put /role-permissions/DRIVER '[]'); echo "$R" | grep -q "fixed and cannot be
 R=$(curl -s -X DELETE "${H[@]}" $API/role-permissions/OPERATOR); C=$(as "$TO" GET /invoices); [ "$C" = "$BASE" ] && pass "PERM reset gives the operator back exactly the old access ($C)" || fail "PERM reset" "$C vs $BASE"
 [ "$(curl -s -o /dev/null -w "%{http_code}" "${H[@]}" $API/invoices)" = "200" ] && pass "PERM admin unaffected" || fail "PERM admin" "x"
 
+# ================= Driver login for a company that has no DRIVER role yet (older companies) =================
+$PSQL "UPDATE app_roles SET is_deleted=true WHERE code='DRIVER' AND company_id=$CI2" >/dev/null
+GLOBAL_DRV=$($PSQL "SELECT COUNT(*) FROM app_roles WHERE code='DRIVER' AND company_id IS NULL AND is_deleted=false")
+NRD=$(command curl -s -X POST -H "Authorization: Bearer $TC" -H 'Content-Type: application/json' -H 'X-Idempotency: off' $API/drivers -d '{"code":"NR-1","name":"No Role Driver","licenseNumber":"TN4620269901","phoneNumber":"9000069901","status":"ACTIVE"}' | j "d['data']['id']")
+R=$(command curl -s -X POST -H "Authorization: Bearer $TC" -H 'Content-Type: application/json' -H 'X-Idempotency: off' $API/drivers/$NRD/login -d '{"username":"norole.drv","password":"Drv@2026x"}')
+[ "$(echo "$R" | j "d.get('success')")" = "True" ] && pass "DROLE driver login works for a company without a DRIVER role" || fail "DROLE create login" "$(echo $R | cut -c1-200)"
+if [ "$GLOBAL_DRV" = "0" ]; then
+  [ "$($PSQL "SELECT COUNT(*) FROM app_roles WHERE code='DRIVER' AND company_id=$CI2 AND is_deleted=false")" = "1" ] && pass "DROLE the company's DRIVER role was created" || fail "DROLE role created" "x"
+fi
+NT=$(tok norole.drv Drv@2026x); C=$(command curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $NT" $API/driver-app/me); [ "$C" = "200" ] && pass "DROLE that driver signs in to the Driver App" || fail "DROLE sign in" "$C"
+
 [ -n "$FAILED_LIST" ] && printf "%b\n" "$FAILED_LIST"
 echo "SMOKE_FAILS=$FAILS"
 [ "$FAILS" -eq 0 ]

@@ -521,6 +521,9 @@ public class PlatformAdminServiceImpl implements PlatformAdminService {
         createTenantRole(savedCompany.getId(), savedBranch.getId(),
                 "VIEWER", "Viewer", "Read-only access",
                 filterPermissions(allPermissions, "VIEW"));
+        // Driver App logins (own trips / bata / salary; limited by DriverScopeAuthorizationManager)
+        createTenantRole(savedCompany.getId(), savedBranch.getId(), "DRIVER", "Driver",
+                "Driver App: own trips, bata, fuel requests, salary and maintenance requests", java.util.List.of());
         steps.add(step("INSERT_DEFAULT_ROLES", "Insert Default Roles", "DONE",
                 "COMPANY_ADMIN, BRANCH_MANAGER, OPERATOR, ACCOUNTANT, VIEWER", stepNo++));
 
