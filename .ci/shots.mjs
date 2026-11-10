@@ -377,4 +377,23 @@ for (const [vw, tag] of [[{ width: 1440, height: 900 }, 'd'], [{ width: 820, hei
   } catch (e) { console.log('ux shot skipped dispatch', tag, e.message); }
   await ctx.close();
 }
+// Driver App on a phone, signed in as the test driver created by the smoke run
+try {
+  const dl = await (await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'drvapp1', password: 'Drv@2027y' }) })).json();
+  if (dl?.data?.token) {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await ctx.addInitScript(s => {
+      localStorage.setItem('token', s.token); localStorage.setItem('refreshToken', s.refreshToken || '');
+      localStorage.setItem('username', s.username); localStorage.setItem('name', 'App Driver One');
+      localStorage.setItem('roles', JSON.stringify(['DRIVER'])); localStorage.setItem('subscriptionExpired', 'false');
+      localStorage.setItem('companyId', String(s.companyId));
+    }, dl.data);
+    const pg = await ctx.newPage();
+    for (const [q, n] of [['', 'trips'], ['?tab=bata', 'bata'], ['?tab=fuel', 'fuel']]) {
+      await pg.goto('http://localhost:4200/driver-app' + q, { waitUntil: 'networkidle' }); await pg.waitForTimeout(1200);
+      await pg.screenshot({ path: `shots/x-driver-app-${n}.png` });
+    }
+    await ctx.close();
+  } else { console.log('driver app shots skipped: no driver login'); }
+} catch (e) { console.log('driver app shots skipped:', e.message); }
 await browser.close();
