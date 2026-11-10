@@ -227,6 +227,7 @@ public class DriverService {
 
     // ------------------------------------------------------------------ driver login (one step from Driver Master)
     @Autowired private UserService userService;
+    @Autowired private com.transport.erp.repository.AppRoleRepository roleRepoForLogin;
     @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     /** Creates a DRIVER login for this driver (same company / branch) and links it, in one step. */
@@ -242,9 +243,13 @@ public class DriverService {
         u.setCompanyId(driver.getCompanyId());
         u.setBranchId(driver.getBranchId());
         u.setStatus("ACTIVE");
-        com.transport.erp.model.AppRole role = new com.transport.erp.model.AppRole();
-        role.setCode("DRIVER");
-        u.setRoles(new java.util.HashSet<>(java.util.Set.of(role)));
+        // The DRIVER role record (the company's own, else the global one) — roles are resolved by id.
+        com.transport.erp.model.AppRole driverRole = roleRepoForLogin.findByCodeAndCompanyIdAndIsDeletedFalse("DRIVER", driver.getCompanyId())
+                .or(() -> roleRepoForLogin.findByCodeAndIsDeletedFalse("DRIVER"))
+                .orElseThrow(() -> invalidLink("The DRIVER role is missing. Ask the platform admin to set up roles."));
+        com.transport.erp.model.AppRole ref = new com.transport.erp.model.AppRole();
+        ref.setId(driverRole.getId());
+        u.setRoles(new java.util.HashSet<>(java.util.Set.of(ref)));
         com.transport.erp.model.AppUser saved = userService.createUser(u, actor);
         return linkAppUser(driverId, saved.getId(), actor);
     }
