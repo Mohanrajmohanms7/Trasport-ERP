@@ -22,6 +22,9 @@
       <button (click)="activeTab.set('roles')" [class.border-b-2]="activeTab() === 'roles'" [class.border-blue-600]="activeTab() === 'roles'" [class.text-slate-900]="activeTab() === 'roles'" [class.dark:text-white]="activeTab() === 'roles'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 transition hover:text-slate-900 dark:hover:text-white">
         Roles & Matrix
       </button>
+      <button (click)="activeTab.set('permissions'); loadPermRoles()" [class.border-b-2]="activeTab() === 'permissions'" [class.border-blue-600]="activeTab() === 'permissions'" [class.text-slate-900]="activeTab() === 'permissions'" class="pb-3 px-4 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-300" data-testid="tab-permissions">
+        Permissions
+      </button>
     </div>
 
     <!-- Tab Viewports -->
@@ -105,6 +108,45 @@
         }
 
         <!-- 2. Roles & Permissions Tab Viewport -->
+        @if (activeTab() === 'permissions') {
+          <div class="flex flex-col gap-3 min-h-0" data-testid="permissions-grid">
+            <div class="flex flex-wrap items-end gap-2">
+              <label class="flex flex-col gap-1 text-xs font-semibold">Role
+                <select class="h-10 rounded-lg border border-slate-200 px-2 text-sm bg-[var(--ff-surface-card)] text-[var(--ff-text-primary)]" [value]="permRole()" (change)="loadPermGrid($any($event.target).value)">
+                  <option value="">Choose a role…</option>
+                  @for (r of permRoles(); track r) { <option [value]="r">{{ r }}</option> }
+                </select></label>
+              @if (permGrid()) {
+                <span class="text-xs" [class.text-amber-700]="permGrid().customized">{{ permGrid().customized ? 'Custom permissions' : 'Full access (nothing restricted)' }}</span>
+              }
+            </div>
+            <p class="text-[11px] text-slate-500">Untick what this role must not do. The server enforces it (the user sees "Your role cannot …"). For masters, vehicles, drivers, bookings, trips and settings, View controls the menu — their lists stay available to other screens' dropdowns. Super Admin and Driver are fixed.</p>
+            @if (permGrid(); as g) {
+              <div class="overflow-x-auto rounded-lg border border-slate-200">
+                <table class="w-full text-xs">
+                  <thead class="bg-[var(--ff-surface-hover)]"><tr>
+                    <th class="p-2 text-left">Module</th>
+                    @for (a of permActions; track a) { <th class="p-2 text-center capitalize">{{ a }}</th> }
+                  </tr></thead>
+                  <tbody>
+                    @for (m of g.modules; track m.module) {
+                      <tr class="border-t border-slate-100">
+                        <td class="p-2 font-semibold">{{ m.label }}</td>
+                        @for (a of permActions; track a) {
+                          <td class="p-2 text-center"><input type="checkbox" class="w-5 h-5" [checked]="m[a]" [disabled]="a !== 'view' && !m.view" (change)="togglePerm(m, a, $any($event.target).checked)" [attr.aria-label]="a + ' ' + m.label" /></td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-bold text-xs disabled:opacity-50" [disabled]="permBusy()" (click)="savePerms()">Save permissions</button>
+                <button type="button" class="px-4 py-2 rounded-lg border border-slate-300 font-bold text-xs disabled:opacity-50" [disabled]="permBusy() || !g.customized" (click)="resetPerms()">Reset to full access</button>
+              </div>
+            }
+          </div>
+        }
         @if (activeTab() === 'roles') {
           <div class="flex justify-between items-center shrink-0">
             <span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Enterprise Roles Definition</span>

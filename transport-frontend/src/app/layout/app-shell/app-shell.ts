@@ -1,3 +1,4 @@
+import { PermissionStore } from '../../shared/permissions/permission-store.service';
 import { FeatureService } from '../../services/feature.service';
 import { Component, signal, computed, inject, HostListener, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -213,6 +214,9 @@ import { SupportContextService, SupportService } from '../../services/support.se
   `]
 })
 export class AppShellComponent implements OnDestroy {
+  /** Role permissions: menu items of modules the role cannot view are hidden (the server enforces them too). */
+  perms = inject(PermissionStore);
+  private permsLoaded = (() => { setTimeout(() => this.perms.load()); return true; })();
   private router = inject(Router);
   private theme = inject(FfThemeService);
   private auth = inject(AuthService);

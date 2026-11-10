@@ -61,6 +61,7 @@
           }
           
           @for (item of group.items; track item.route + item.label) {
+            @if (perms.canRoute(item.route)) {
             <a [routerLink]="item.route" [queryParams]="$any(item).queryParams ?? null" 
                routerLinkActive="app-nav-item--active"
                class="app-nav-item group">
@@ -77,6 +78,7 @@
                 </span>
               }
             </a>
+            }
           }
         </div>
       }

@@ -14,7 +14,7 @@
       <div class="flex gap-2 self-start md:self-auto">
         @if (tab() === 'payrolls') {
           <app-export-buttons module="payroll" />
-          <ff-button label="Generate Payroll" icon="calculate" variant="primary" (ffClick)="openGenerate()" />
+          <ff-button label="Generate Payroll" icon="calculate" variant="primary" ffCan="payroll:add" (ffClick)="openGenerate()" />
         }
         @if (tab() === 'advances' && features.has('payroll.advances')) {
           <app-export-buttons module="driver-advances" />
@@ -123,18 +123,18 @@
                 @if (!isDriverOnly()) {
                   @if (p.status === 'DRAFT') {
                     <ff-button label="Recalculate" icon="refresh" variant="ghost" (ffClick)="recalculate(p)" />
-                    <ff-button label="Edit" icon="edit" variant="ghost" (ffClick)="openGenerate(p)" />
+                    <ff-button label="Edit" icon="edit" variant="ghost" ffCan="payroll:add" (ffClick)="openGenerate(p)" />
                     <ff-button label="Delete" icon="delete" variant="ghost" (ffClick)="remove(p)" />
-                    <ff-button label="Approve" icon="task_alt" variant="primary" (ffClick)="approve(p)" />
+                    <ff-button label="Approve" icon="task_alt" variant="primary" ffCan="payroll:approve" (ffClick)="approve(p)" />
                   }
                   @if (p.status === 'APPROVED' && canPost()) {
-                    <ff-button label="Post to Accounts" icon="account_balance" variant="primary" (ffClick)="post(p)" />
+                    <ff-button label="Post to Accounts" icon="account_balance" variant="primary" ffCan="payroll:approve" (ffClick)="post(p)" />
                   }
                   @if (p.status === 'POSTED') {
-                    <ff-button label="Pay Salary" icon="payments" variant="primary" (ffClick)="openPay(p)" />
+                    <ff-button label="Pay Salary" icon="payments" variant="primary" ffCan="payroll:approve" (ffClick)="openPay(p)" />
                   }
                   @if (p.status === 'APPROVED' || p.status === 'POSTED' || p.status === 'PAID') {
-                    <ff-button label="Cancel" icon="block" variant="ghost" (ffClick)="cancel(p)" />
+                    <ff-button label="Cancel" icon="block" variant="ghost" ffCan="payroll:approve" (ffClick)="cancel(p)" />
                   }
                 }
                 <ff-button label="Salary Slip" icon="picture_as_pdf" variant="ghost" (ffClick)="downloadSlip(p)" />
@@ -276,7 +276,7 @@
           </div>
           <div class="flex gap-2">
             <ff-button type="button" label="Add Slab" icon="add" variant="ghost" (ffClick)="addSlab()" />
-            <ff-button type="button" label="Save Slabs" icon="save" variant="primary" [disabled]="!canPost()" (ffClick)="saveSlabs()" />
+            <ff-button type="button" label="Save Slabs" icon="save" variant="primary" [disabled]="!canPost()" ffCan="payroll:edit" (ffClick)="saveSlabs()" />
           </div>
         </form>
         <p class="text-[11px] text-[var(--ff-text-muted)]">Wheel count is required: each lorry type (e.g. 10 wheel) is paid from its own slabs. Add slabs for every wheel count your lorries have; a day with two types is paid once at the higher rate.

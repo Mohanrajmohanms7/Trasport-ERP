@@ -31,7 +31,7 @@
       <!-- List View -->
       <div class="flex justify-between items-center shrink-0">
         <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Voucher List</span>
-        <button (click)="openAddExpense()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
+        <button ffCan="expenses:add" (click)="openAddExpense()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
           <span class="material-icons text-sm">add_circle</span> Record Expense Voucher
         </button>
       </div>
@@ -80,7 +80,7 @@
                 <td class="p-4 text-center">
                   <div class="flex items-center justify-center gap-2">
                     @if (exp.status === 'SUBMITTED') {
-                      <button (click)="approveExpense(exp)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve Request">
+                      <button ffCan="expenses:approve" (click)="approveExpense(exp)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve Request">
                         <span class="material-icons text-sm">check_circle</span>
                       </button>
                       <button (click)="rejectExpense(exp)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] text-[11px] font-semibold" title="Reject Request">
@@ -90,7 +90,7 @@
                     <button (click)="openEditExpense(exp)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Voucher">
                       <span class="material-icons text-sm">edit</span>
                     </button>
-                    <button (click)="deleteExpense(exp)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Voucher">
+                    <button ffCan="expenses:delete" (click)="deleteExpense(exp)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Voucher">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                   </div>

@@ -16,7 +16,7 @@
       <app-export-buttons module="vehicles" />
       @if (selectedVehicle() && view() === 'detail') {
         <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5" (click)="openVehicleForm(selectedVehicle())"><span class="material-icons text-base">edit</span>Edit vehicle</button>
-        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" (click)="deleteVehicle(selectedVehicle())"><span class="material-icons text-base">delete</span>Delete</button>
+        <button type="button" class="h-10 px-3 rounded-lg border border-[var(--ff-border-default)] bg-[var(--ff-surface-card)] text-sm font-semibold inline-flex items-center gap-1.5 text-rose-600" ffCan="vehicles:delete" (click)="deleteVehicle(selectedVehicle())"><span class="material-icons text-base">delete</span>Delete</button>
       }
       <button type="button" class="h-10 px-3 rounded-lg bg-[var(--ff-color-primary-600)] text-white text-sm font-semibold inline-flex items-center gap-1.5" (click)="openVehicleForm(null)"><span class="material-icons text-base">add</span>New vehicle</button>
     </div>
@@ -275,7 +275,7 @@
                       <td class="p-4 text-[var(--ff-text-secondary)] font-semibold">{{ doc.expiryDate }}</td>
                       <td class="p-4 text-[var(--ff-text-muted)] font-mono text-[10px]">{{ doc.filePath || 'None' }}</td>
                       <td class="p-4 text-center">
-                        <button (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition duration-200 cursor-pointer" title="Delete Document">
+                        <button ffCan="vehicles:delete" (click)="deleteDocument(doc)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition duration-200 cursor-pointer" title="Delete Document">
                           <span class="material-icons text-sm">delete</span>
                         </button>
                       </td>
@@ -352,10 +352,10 @@
                       <td class="p-4 text-right tabular-nums font-mono text-[var(--ff-color-success-500)] font-bold">₹{{ log.cost | number }}</td>
                       <td class="p-4 text-center flex items-center justify-center gap-1">
                         @if ((log.status || 'DRAFT') === 'DRAFT') {
-                          <button (click)="approveLog(log)" class="px-2.5 py-1 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white rounded-[8px] text-[10px] font-bold cursor-pointer border-none shadow-none transition" title="Approve & Post JV">
+                          <button ffCan="vehicles:approve" (click)="approveLog(log)" class="px-2.5 py-1 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white rounded-[8px] text-[10px] font-bold cursor-pointer border-none shadow-none transition" title="Approve & Post JV">
                             Approve
                           </button>
-                          <button (click)="deleteLog(log)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition cursor-pointer" title="Delete Draft">
+                          <button ffCan="vehicles:delete" (click)="deleteLog(log)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition cursor-pointer" title="Delete Draft">
                             <span class="material-icons text-sm">delete</span>
                           </button>
                         } @else if (log.status === 'APPROVED') {

@@ -1,3 +1,5 @@
+import { FfNotificationService } from '../../shared-ui/infrastructure/services/ff-notification.service';
+import { HttpClient } from '@angular/common/http';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -40,6 +42,46 @@ import {
   styles: []
 })
 export class UserRoleManagementComponent implements OnInit {
+  // ---- Permissions tab (role x module x View / Add / Edit / Delete / Approve) — enforced by the server
+  private permHttp = inject(HttpClient);
+  readonly permActions = ['view', 'add', 'edit', 'delete', 'approve'];
+  permRoles = signal<string[]>([]);
+  permRole = signal('');
+  permGrid = signal<any>(null);
+  permBusy = signal(false);
+  loadPermRoles(): void {
+    this.permHttp.get<any>('/api/v1/role-permissions/roles').subscribe({ next: r => this.permRoles.set(r?.data || []) });
+  }
+  loadPermGrid(role: string): void {
+    this.permRole.set(role); this.permGrid.set(null);
+    if (!role) return;
+    this.permHttp.get<any>('/api/v1/role-permissions', { params: { role } }).subscribe({ next: r => this.permGrid.set(r?.data) });
+  }
+  togglePerm(m: any, a: string, on: boolean): void {
+    m[a] = on;
+    if (a === 'view' && !on) for (const x of this.permActions) m[x] = false;   // no View = nothing else
+    this.permGrid.set({ ...this.permGrid() });
+  }
+  savePerms(): void {
+    const g = this.permGrid(); if (!g || this.permBusy()) return;
+    this.permBusy.set(true);
+    const rows = g.modules.map((m: any) => ({ module: m.module, view: m.view, add: m.add, edit: m.edit, delete: m.delete, approve: m.approve }));
+    this.permHttp.put<any>(`/api/v1/role-permissions/${encodeURIComponent(this.permRole())}`, rows).subscribe({
+      next: r => { this.permBusy.set(false); this.permGrid.set(r?.data); this.notifyPerm('Permissions saved for ' + this.permRole(), true); },
+      error: e => { this.permBusy.set(false); this.notifyPerm(e?.error?.errors?.[0] || e?.error?.message || 'Could not save', false); }
+    });
+  }
+  resetPerms(): void {
+    if (this.permBusy()) return;
+    this.permBusy.set(true);
+    this.permHttp.delete<any>(`/api/v1/role-permissions/${encodeURIComponent(this.permRole())}`).subscribe({
+      next: r => { this.permBusy.set(false); this.permGrid.set(r?.data); this.notifyPerm(this.permRole() + ' has full access again', true); },
+      error: e => { this.permBusy.set(false); this.notifyPerm(e?.error?.errors?.[0] || e?.error?.message || 'Could not reset', false); }
+    });
+  }
+  private permToast = inject(FfNotificationService);
+  private notifyPerm(msg: string, ok: boolean): void { if (ok) this.permToast.success(msg); else this.permToast.error(msg); }
+
   private userRoleService = inject(UserRoleService);
   private fb = inject(FormBuilder);
   private dialog = inject(MatDialog);

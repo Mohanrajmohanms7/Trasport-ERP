@@ -1,3 +1,4 @@
+import { FfCanDirective } from '../../shared/permissions/ff-can.directive';
 import { HttpClient } from '@angular/common/http';
 import { FormValidationDirective } from '../../shared/form-validation.directive';
 import { FeatureService } from '../../services/feature.service';
@@ -25,7 +26,7 @@ import { PickerService, activeOrSelected, tripLabel } from '../../services/picke
 @Component({
   selector: 'app-driver-payroll-console',
   standalone: true,
-  imports: [FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
+  imports: [FfCanDirective, FormValidationDirective, AttachmentsPanelComponent, ExportButtonsComponent, CommonModule, ReactiveFormsModule, MatDialogModule, FfButtonComponent, FfDatepickerComponent, FfDropdownComponent, FfNumberComponent, FfTextboxComponent],
   templateUrl: './driver-payroll-console.html'
 })
 export class DriverPayrollConsoleComponent implements OnInit {

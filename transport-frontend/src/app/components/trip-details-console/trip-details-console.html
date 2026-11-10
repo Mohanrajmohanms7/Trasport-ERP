@@ -13,7 +13,7 @@
       <button (click)="router.navigate(['/dispatch-loads'])" class="flex items-center gap-2 border border-[var(--ff-color-primary-600)] text-[var(--ff-color-primary-600)] hover:bg-[var(--ff-surface-hover)] font-semibold py-2 px-4 rounded-[8px] transition text-xs" data-testid="trips-dispatch-loads" title="Send several lorries for a booking: one load = one trip">
         <span class="material-icons text-sm">local_shipping</span> Dispatch loads
       </button>
-      <button (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
+      <button ffCan="trips:add" (click)="openAddTrip()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs self-start md:self-auto">
       <span class="material-icons text-sm">schedule_send</span> Plan Dispatch Trip
     </button>
     </div>
@@ -130,7 +130,7 @@
                     </button>
                     }
                     @if (trip.status === 'PLANNED') {
-                    <button (click)="deleteTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Cancel Itinerary">
+                    <button ffCan="trips:delete" (click)="deleteTrip(trip)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Cancel Itinerary">
                       <span class="material-icons text-sm">delete</span>
                     </button>
                     }

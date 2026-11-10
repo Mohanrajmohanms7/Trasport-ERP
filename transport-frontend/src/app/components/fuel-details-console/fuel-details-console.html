@@ -36,7 +36,7 @@
       @if (activeTab() === 'entries' && features.has('fuel.entries')) {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-[11px] font-bold text-[var(--ff-text-muted)] uppercase tracking-[0.05em]">Refueling Logs</span>
-          <button (click)="openAddEntry()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
+          <button ffCan="fuel:add" (click)="openAddEntry()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">local_gas_station</span> Add Fuel Entry
           </button>
         </div>
@@ -72,7 +72,7 @@
                       <button (click)="openEditEntry(entry)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:text-[var(--ff-text-primary)] hover:bg-[var(--ff-surface-hover)] transition" title="Edit Log">
                         <span class="material-icons text-sm">edit</span>
                       </button>
-                      <button (click)="deleteEntry(entry)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Log">
+                      <button ffCan="fuel:delete" (click)="deleteEntry(entry)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Delete Log">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
@@ -136,7 +136,7 @@
                   <td class="p-4 text-center">
                     <div class="flex items-center justify-center gap-3">
                       @if (req.status === 'PENDING') {
-                        <button (click)="approveRequest(req)" class="inline-flex items-center h-8 px-2 rounded-[8px] bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white transition" title="Approve Request">
+                        <button ffCan="fuel:approve" (click)="approveRequest(req)" class="inline-flex items-center h-8 px-2 rounded-[8px] bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white transition" title="Approve Request">
                           <span class="material-icons text-sm">check_circle</span>
                         </button>
                         <button (click)="rejectRequest(req)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-color-danger-500)] hover:bg-[var(--ff-color-danger-50)] transition" title="Reject Request">

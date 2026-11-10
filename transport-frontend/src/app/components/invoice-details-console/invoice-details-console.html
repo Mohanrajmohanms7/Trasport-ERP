@@ -56,7 +56,7 @@
       @if (billingTab() === 'ledger') {
         <div class="flex justify-between items-center shrink-0">
           <span class="text-xs font-bold text-[var(--ff-text-muted)] uppercase tracking-wider">Generated Vouchers</span>
-          <button (click)="openAddInvoice()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
+          <button ffCan="invoices:add" (click)="openAddInvoice()" class="flex items-center gap-2 bg-[var(--ff-color-primary-600)] hover:bg-[var(--ff-color-primary-700)] text-white font-semibold py-2 px-4 rounded-[8px] shadow-none transition text-xs">
             <span class="material-icons text-sm">receipt</span> Generate Tax Invoice
           </button>
         </div>
@@ -109,7 +109,7 @@
                         </button>
                       </div>
                       @if (inv.status === 'DRAFT') {
-                        <button (click)="approveInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve & Post Ledger">
+                        <button ffCan="invoices:approve" (click)="approveInvoice(inv)" class="inline-flex items-center h-8 px-2.5 rounded-[8px] bg-[var(--ff-color-success-500)] text-white text-[11px] font-semibold" title="Approve & Post Ledger">
                           <span class="material-icons text-sm">check_circle</span>
                         </button>
                         <button (click)="openEditInvoice(inv, true)" class="inline-flex items-center gap-1 h-8 px-2.5 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-color-primary-600)] text-[11px] font-semibold"
@@ -123,7 +123,7 @@
                       <button (click)="openEditInvoice(inv)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-surface-hover)] hover:text-[var(--ff-text-primary)] transition" title="Edit Billing Detail">
                         <span class="material-icons text-sm">edit</span>
                       </button>
-                      <button (click)="deleteInvoice(inv)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Record">
+                      <button ffCan="invoices:delete" (click)="deleteInvoice(inv)" class="inline-flex items-center h-8 px-2 rounded-[8px] border border-[var(--ff-border-default)] text-[var(--ff-text-secondary)] hover:bg-[var(--ff-color-danger-50)] hover:text-[var(--ff-color-danger-500)] transition" title="Delete Record">
                         <span class="material-icons text-sm">delete</span>
                       </button>
                     </div>
