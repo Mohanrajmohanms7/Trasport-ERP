@@ -144,6 +144,10 @@ copied to `sales_invoice_details.transport_amount` and added once by `InvoiceTax
 trip under the invoice totals (`SalesInvoicePrintDTO.customerBata`), never in any invoice amount, journal or payroll;
 `ExpenseService` refuses an owner DRIVER_BATA expense for such a trip; `TripService` locks it once the trip is invoiced.
 
+**Driver App.** A DRIVER-only login is limited by `DriverScopeAuthorizationManager` (auth, maintenance requests, own payroll
+`/driver-payrolls/my`, files, `/driver-app/**`, lookups); `DriverAppService` answers only for the driver linked to the user
+(`drivers.app_user_id`). Driver Master creates / resets / disables that login (`DriverService.createLogin` …).
+
 **Invoices.** A new invoice fills the customer's completed, not-yet-invoiced trips up to the invoice date
 (`GET /invoices/billable-lines?customerId=&upTo=`, built by the same code as invoice-from-trip; nothing saved). A trip is
 invoiced whole and once: the server refuses an invoice with only part of a trip's materials (`INVOICE_TRIP_PARTIAL`).

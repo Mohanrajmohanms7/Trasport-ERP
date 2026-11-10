@@ -193,7 +193,26 @@
           <option value="">— Not linked —</option>
           @for (u of driverUsers(); track u.id) { <option [value]="u.id">{{ u.name }} ({{ u.username }})</option> }
         </select>
-        @if (!driverUsers().length) { <p class="text-xs text-slate-500">No login with the DRIVER role yet. Create one in Admin → Users &amp; Roles.</p> }
+        @if (!driverUsers().length) { <p class="text-xs text-slate-500">No login with the DRIVER role yet — create one below.</p> }
+        <div class="flex flex-col gap-2 rounded-lg border border-slate-200 p-3" data-testid="driver-login-actions">
+          @if (!driver.appUserId) {
+            <b>Create a login for this driver</b>
+            <div class="flex flex-wrap gap-2">
+              <input class="border border-slate-200 rounded-lg px-3 py-2" placeholder="Username" autocomplete="off" [value]="newLoginUser()" (input)="newLoginUser.set($any($event.target).value)" aria-label="New login username" />
+              <input class="border border-slate-200 rounded-lg px-3 py-2" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" [value]="newLoginPass()" (input)="newLoginPass.set($any($event.target).value)" aria-label="New login password" />
+              <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold" [disabled]="loginBusy()" (click)="createDriverLogin()">Create login</button>
+            </div>
+            <p class="text-[11px] text-slate-500">Gets the Driver role and is linked to this driver automatically. The driver sees only their own trips, bata and salary.</p>
+          } @else {
+            <b>Driver login</b>
+            <div class="flex flex-wrap gap-2">
+              <input class="border border-slate-200 rounded-lg px-3 py-2" type="password" placeholder="New password (8+)" autocomplete="new-password" [value]="newLoginPass()" (input)="newLoginPass.set($any($event.target).value)" aria-label="New password" />
+              <button type="button" class="px-3 py-2 rounded-lg border border-slate-300 font-bold" [disabled]="loginBusy()" (click)="resetDriverPassword()">Reset password</button>
+              <button type="button" class="px-3 py-2 rounded-lg border border-slate-300 font-bold" [disabled]="loginBusy()" (click)="setDriverLoginActive(false)">Disable login</button>
+              <button type="button" class="px-3 py-2 rounded-lg border border-slate-300 font-bold" [disabled]="loginBusy()" (click)="setDriverLoginActive(true)">Enable login</button>
+            </div>
+          }
+        </div>
         <button type="button" class="px-3 py-2 rounded-lg bg-blue-600 text-white font-bold border-none cursor-pointer w-fit" (click)="saveDriverLogin()">Save login link</button>
         @if (loginMessage()) {
           <p>{{ loginMessage() }}</p>
