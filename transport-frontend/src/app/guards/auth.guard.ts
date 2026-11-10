@@ -25,9 +25,9 @@ export const authGuard: CanActivateFn = (route, state) => {
       }
     } else if (roles.length > 0 && roles.every((r: string) => r === 'DRIVER')) {
       // Driver app login: only the driver screens
-      const allowed = ['/maintenance-requests', '/driver-payroll', '/profile'];
+      const allowed = ['/driver-app', '/maintenance-requests', '/driver-payroll', '/profile'];
       if (!allowed.some(p => url.startsWith(p))) {
-        router.navigate(['/maintenance-requests']);
+        router.navigate(['/driver-app']);
         return false;
       }
     } else {
