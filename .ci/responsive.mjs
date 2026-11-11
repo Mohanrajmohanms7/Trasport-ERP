@@ -85,7 +85,7 @@ async function audit(session, route, vpName, vp, idx) {
     await pg.goto(`${APP}/${route}`, { waitUntil: 'networkidle', timeout: 25000 });
     await pg.waitForTimeout(700);
     rec.page = await pg.evaluate(measure, null);
-    if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/\//g, '_')}.png` });
+    if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/[\/?=]/g, '_')}.png` });
     // Row actions reachable: the actions cell of the first row of every list table must be on-screen (phone / tablet).
     if (vpName !== 'desktop') {
       rec.actions = await pg.evaluate(() => {
@@ -136,7 +136,7 @@ async function audit(session, route, vpName, vp, idx) {
         await pg.keyboard.press('Escape').catch(() => {});
       }
       (rec.dialogs = rec.dialogs || []).push(out);
-      if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/\//g, '_')}-${kind}.png` });
+      if (SHOT.has(vpName)) await pg.screenshot({ path: `shots/responsive/${vpName}-${String(idx).padStart(2, '0')}-${route.replace(/[\/?=]/g, '_')}-${kind}.png` });
       await pg.keyboard.press('Escape').catch(() => {});
       await pg.locator('button:visible').filter({ hasText: /^\s*(close|cancel)\s*$/i }).first().click({ timeout: 1500 }).catch(() => {});
       await pg.goto(`${APP}/${route}`, { waitUntil: 'networkidle', timeout: 25000 }).catch(() => {}); await pg.waitForTimeout(500);
@@ -155,6 +155,13 @@ async function audit(session, route, vpName, vp, idx) {
 let i = 0;
 for (const r of tenantRoutes) { i++; for (const [n, vp] of VIEWPORTS) await audit(tenant, r, n, vp, i); }
 for (const r of platformRoutes) { i++; for (const [n, vp] of VIEWPORTS) await audit(platform, r, n, vp, i); }
+// Driver screens (DRIVER login created by the smoke run): Driver App tabs, My Salary, maintenance list and form
+const driverSession = await login('drvapp1', 'Drv@2027y');
+if (driverSession) {
+  for (const r of ['driver-app', 'driver-app?tab=bata', 'driver-app?tab=fuel', 'driver-payroll', 'maintenance-requests', 'maintenance-requests/new']) {
+    i++; for (const [n, vp] of VIEWPORTS) await audit(driverSession, r, n, vp, i);
+  }
+} else { console.log('RESPONSIVE driver screens skipped: no driver login'); }
 await browser.close();
 fs.writeFileSync('shots/responsive/audit.json', JSON.stringify(results, null, 1));
 
